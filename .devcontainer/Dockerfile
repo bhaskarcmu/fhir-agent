@@ -44,9 +44,6 @@ RUN wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/shar
     apt-get update && apt-get install -y terraform && \
     rm -rf /var/lib/apt/lists/*
 
-# Install Claude Code (via pip - CORRECT METHOD)
-RUN pip3 install claude-code
-
 # Install GitHub Copilot CLI (optional, for terminal completions)
 RUN npm install -g @github/copilot-cli
 
@@ -54,6 +51,9 @@ RUN npm install -g @github/copilot-cli
 RUN python3 -m venv /opt/pyenv && \
     /opt/pyenv/bin/pip install --upgrade pip setuptools wheel && \
     /opt/pyenv/bin/pip install fastapi uvicorn httpx pydantic
+
+# Install Claude Code in the existing virtual environment (FIX)
+RUN /opt/pyenv/bin/pip install claude-code
 
 # Set environment variables
 ENV VIRTUAL_ENV=/opt/pyenv
