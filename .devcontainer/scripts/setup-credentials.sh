@@ -1,21 +1,30 @@
 #!/bin/bash
-# setup-credentials.sh - Runs on container start to configure AI tools
+# Defensive setup of AI tools – logs all attempts but never exits with error
 
-echo "🔧 Setting up AI tooling credentials..."
+LOG_FILE="/workspaces/setup.log"
+echo "=== Starting AI tool setup at $(date) ===" >> "$LOG_FILE"
 
-# Claude Code configuration
-if [ -n "$CLAUDE_API_KEY" ]; then
-    mkdir -p ~/.claude
-    echo "{\"apiKey\": \"$CLAUDE_API_KEY\"}" > ~/.claude/config.json
-    echo "✅ Claude Code configured"
+# Ensure we are in the workspace
+cd /workspaces || { echo "Could not cd to /workspaces" >> "$LOG_FILE"; exit 0; }
+
+# 1. Claude Code configuration
+if command -v claude &> /dev/null; then
+    echo "Claude Code binary found." >> "$LOG_FILE"
+    # Try to authenticate if API key is present
+    if [ -n "$CLAUDE_API_KEY" ]; then
+        mkdir -p ~/.claude
+        echo "{\"apiKey\": \"$CLAUDE_API_KEY\"}" > ~/.claude/config.json
+        echo "Claude Code API key written." >> "$LOG_FILE"
+    else
+        echo "No CLAUDE_API_KEY set, Claude will prompt later." >> "$LOG_FILE"
+    fi
 else
-    echo "⚠️  CLAUDE_API_KEY not set. Claude Code will prompt for key on first use."
+    echo "Claude Code not installed." >> "$LOG_FILE"
 fi
 
-# Continue.dev configuration (uses Claude API)
-mkdir -p /workspaces/fhir-agentic-risk-triage/.vscode
-
-cat > /workspaces/fhir-agentic-risk-triage/.vscode/settings.json << EOF
+# 2. Continue.dev configuration
+mkdir -p .vscode
+cat > .vscode/settings.json <<EOF
 {
     "continue.models": [
         {
@@ -33,14 +42,11 @@ cat > /workspaces/fhir-agentic-risk-triage/.vscode/settings.json << EOF
     }
 }
 EOF
+echo "Continue.dev settings written." >> "$LOG_FILE"
 
-echo "✅ Continue.dev configured (using CLAUDE_API_KEY)"
-
-# Roo Code configuration
-if [ -n "$CLAUDE_API_KEY" ]; then
-    # Roo Code stores config in ~/.roo-cline
-    mkdir -p ~/.roo-cline
-    cat > ~/.roo-cline/settings.json << EOF
+# 3. Roo Code configuration
+mkdir -p ~/.roo-cline
+cat > ~/.roo-cline/settings.json <<EOF
 {
     "apiKey": "${CLAUDE_API_KEY}",
     "provider": "anthropic",
@@ -49,41 +55,29 @@ if [ -n "$CLAUDE_API_KEY" ]; then
     "temperature": 0.7
 }
 EOF
-    echo "✅ Roo Code configured"
+echo "Roo Code settings written." >> "$LOG_FILE"
+
+# 4. GitHub Copilot CLI – test if gh extension is installed
+if command -v gh &> /dev/null; then
+    if gh extension list | grep -q copilot; then
+        echo "GitHub Copilot CLI extension is installed." >> "$LOG_FILE"
+    else
+        echo "GitHub Copilot CLI extension not found. Attempting to install..." >> "$LOG_FILE"
+        gh extension install github/gh-copilot 2>> "$LOG_FILE" || echo "Manual install failed" >> "$LOG_FILE"
+    fi
 else
-    echo "⚠️  CLAUDE_API_KEY not set. Roo Code will prompt for API key on first use."
+    echo "GitHub CLI not installed, Copilot CLI unavailable." >> "$LOG_FILE"
 fi
 
-# GitHub Copilot CLI configuration
-if command -v copilot &> /dev/null; then
-    echo "✅ GitHub Copilot CLI available"
+# 5. Summary of errors from Dockerfile (if any)
+if [ -f /var/log/devcontainer/errors.log ]; then
+    echo "=== Errors from Dockerfile build ===" >> "$LOG_FILE"
+    cat /var/log/devcontainer/errors.log >> "$LOG_FILE"
 fi
 
-# Check Copilot token (optional)
-if [ -n "$COPILOT_TOKEN" ]; then
-    echo "✅ Copilot token configured"
-else
-    echo "⚠️  COPILOT_TOKEN not set. Copilot may still work via GitHub login."
+if [ -f /var/log/devcontainer/copilot.log ]; then
+    echo "=== Copilot CLI installation attempts ===" >> "$LOG_FILE"
+    cat /var/log/devcontainer/copilot.log >> "$LOG_FILE"
 fi
 
-echo ""
-echo "🎉 AI tooling setup complete!"
-echo ""
-echo "📋 Next steps:"
-echo "   1. Ensure CLAUDE_API_KEY is set in Codespace secrets"
-echo "   2. Open Command Palette → 'Continue: Login' (if prompted)"
-echo "   3. GitHub Copilot should activate automatically"
-echo "   4. Roo Code: Open Command Palette → 'Roo Code: Open in New Tab'"
-echo ""
-echo "🤖 Your AI Stack:"
-echo "   - GitHub Copilot: Autocomplete + Chat"
-echo "   - Claude Code: Terminal-based agent"
-echo "   - Continue.dev: VS Code chat with Claude"
-echo "   - Roo Code: Agentic task execution (autonomous coding)"
-echo ""
-echo "🔥 Roo Code is your agentic assistant - perfect for this project!"
-echo "   It can:"
-echo "   - Execute complex multi-step tasks"
-echo "   - Create and edit files autonomously"
-echo "   - Run terminal commands with approval"
-echo "   - Review and refactor code"
+echo "=== AI tool setup completed at $(date) ===" >> "$LOG_FILE"
