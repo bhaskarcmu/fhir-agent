@@ -44,7 +44,7 @@
   "remoteUser": "vscode",
   "containerEnv": {
     "CLAUDE_API_KEY": "${localEnv:CLAUDE_API_KEY}",
-    "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}",
+    "COPILOT_TOKEN": "${localEnv:COPILOT_TOKEN}",
     "ANTHROPIC_API_KEY": "${localEnv:CLAUDE_API_KEY}"
   }
 }
