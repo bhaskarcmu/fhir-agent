@@ -19,7 +19,7 @@ RUN apt-get update && apt-get install -y \
     wget \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Node.js (required for Claude Code)
+# Install Node.js (required for some tools)
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y nodejs && \
     rm -rf /var/lib/apt/lists/*
@@ -44,8 +44,8 @@ RUN wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/shar
     apt-get update && apt-get install -y terraform && \
     rm -rf /var/lib/apt/lists/*
 
-# Install Claude Code (npm package)
-RUN npm install -g @anthropic/claude-code
+# Install Claude Code (via pip - CORRECT METHOD)
+RUN pip3 install claude-code
 
 # Install GitHub Copilot CLI (optional, for terminal completions)
 RUN npm install -g @github/copilot-cli
