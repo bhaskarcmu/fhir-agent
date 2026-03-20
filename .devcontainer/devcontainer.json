@@ -1,5 +1,5 @@
 {
-  "name": "FHIR Spring Boot Dev",
+  "name": "Agentic Healthcare Platform",
   "build": {
     "dockerfile": "Dockerfile"
   },
@@ -9,8 +9,42 @@
         "vscjava.vscode-java-pack",
         "vmware.vscode-spring-boot",
         "ms-python.python",
-        "googlecloudtools.cloudcode"
-      ]
+        "googlecloudtools.cloudcode",
+        "github.copilot",
+        "github.copilot-chat",
+        "continue.continue",
+        "rooveterinaryinc.roo-cline",
+        "ms-kubernetes-tools.vscode-kubernetes-tools",
+        "hashicorp.terraform",
+        "redhat.vscode-yaml"
+      ],
+      "settings": {
+        "java.configuration.updateBuildConfiguration": "automatic",
+        "python.defaultInterpreterPath": "/opt/pyenv/bin/python",
+        "github.copilot.enable": true,
+        "continue.enableTabAutocomplete": true,
+        "continue.telemetryEnabled": false,
+        "roo-cline.apiKey": "",
+        "roo-cline.provider": "anthropic",
+        "roo-cline.model": "claude-3-5-sonnet-20241022"
+      }
     }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "enableNonRootDocker": "true",
+      "moby": "true"
+    }
+  },
+  "mounts": [
+    "source=${env:HOME}${env:USERPROFILE}/.kube,target=/home/vscode/.kube,type=bind,consistency=cached"
+  ],
+  "postCreateCommand": "/workspaces/.devcontainer/scripts/setup-credentials.sh",
+  "remoteUser": "vscode",
+  "containerEnv": {
+    "CLAUDE_API_KEY": "${localEnv:CLAUDE_API_KEY}",
+    "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}",
+    "ANTHROPIC_API_KEY": "${localEnv:CLAUDE_API_KEY}"
   }
 }
