@@ -40,7 +40,7 @@
   "mounts": [
     "source=${env:HOME}${env:USERPROFILE}/.kube,target=/home/vscode/.kube,type=bind,consistency=cached"
   ],
-  "postCreateCommand": "/workspaces/.devcontainer/scripts/setup-credentials.sh",
+  "postCreateCommand": "bash .devcontainer/scripts/setup-credentials.sh",
   "remoteUser": "vscode",
   "containerEnv": {
     "CLAUDE_API_KEY": "${localEnv:CLAUDE_API_KEY}",
