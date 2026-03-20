@@ -59,6 +59,13 @@ if command -v copilot &> /dev/null; then
     echo "✅ GitHub Copilot CLI available"
 fi
 
+# Check Copilot token (optional)
+if [ -n "$COPILOT_TOKEN" ]; then
+    echo "✅ Copilot token configured"
+else
+    echo "⚠️  COPILOT_TOKEN not set. Copilot may still work via GitHub login."
+fi
+
 echo ""
 echo "🎉 AI tooling setup complete!"
 echo ""
