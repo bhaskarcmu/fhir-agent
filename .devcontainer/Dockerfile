@@ -44,15 +44,22 @@ RUN wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/shar
     apt-get update && apt-get install -y terraform && \
     rm -rf /var/lib/apt/lists/*
 
-# Install GitHub Copilot CLI (optional, for terminal completions)
-RUN npm install -g @github/copilot-cli
+# Install GitHub CLI (required for Copilot CLI extension)
+RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+    && apt-get update && apt-get install -y gh \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install GitHub Copilot CLI extension (terminal completions)
+RUN gh extension install github/gh-copilot
 
 # Create Python virtual environment for MCP agent work
 RUN python3 -m venv /opt/pyenv && \
     /opt/pyenv/bin/pip install --upgrade pip setuptools wheel && \
     /opt/pyenv/bin/pip install fastapi uvicorn httpx pydantic
 
-# Install Claude Code in the existing virtual environment (FIX)
+# Install Claude Code in the existing virtual environment
 RUN /opt/pyenv/bin/pip install claude-code
 
 # Set environment variables
