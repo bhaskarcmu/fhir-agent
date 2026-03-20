@@ -63,8 +63,4 @@ ENV NODE_OPTIONS="--max-old-space-size=4096"
 # Create scripts directory for helper scripts
 RUN mkdir -p /workspaces/.devcontainer/scripts
 
-# Create credential setup script (runs on container start)
-COPY setup-credentials.sh /workspaces/.devcontainer/scripts/setup-credentials.sh
-RUN chmod +x /workspaces/.devcontainer/scripts/setup-credentials.sh
-
 WORKDIR /workspaces
