@@ -3,6 +3,20 @@
   "build": {
     "dockerfile": "Dockerfile"
   },
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    },
+    "ghcr.io/devcontainers/features/gcloud:1": {},
+    "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {
+      "kubectl": "latest",
+      "helm": "latest",
+      "minikube": "none"
+    },
+    "ghcr.io/devcontainers/features/terraform:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
+  },
   "customizations": {
     "vscode": {
       "extensions": [
@@ -19,9 +33,6 @@
         "redhat.vscode-yaml"
       ]
     }
-  },
-  "features": {
-    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
   },
   "mounts": [
     "source=${env:HOME}${env:USERPROFILE}/.kube,target=/home/vscode/.kube,type=bind,consistency=cached"
