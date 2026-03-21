@@ -1,5 +1,5 @@
 {
-  "name": "Agentic Healthcare Platform (test: +docker +github-cli +node +terraform +kubectl)",
+  "name": "Agentic Healthcare Platform",
   "build": {
     "dockerfile": "Dockerfile"
   },
@@ -22,14 +22,20 @@
         "vscjava.vscode-java-pack",
         "vmware.vscode-spring-boot",
         "ms-python.python",
+        "googlecloudtools.cloudcode",
         "github.copilot",
         "github.copilot-chat",
         "continue.continue",
         "rooveterinaryinc.roo-cline",
+        "ms-kubernetes-tools.vscode-kubernetes-tools",
+        "hashicorp.terraform",
         "redhat.vscode-yaml"
       ]
     }
   },
+  "mounts": [
+    "source=${env:HOME}${env:USERPROFILE}/.kube,target=/home/vscode/.kube,type=bind,consistency=cached"
+  ],
   "remoteUser": "vscode",
   "containerEnv": {
     "CLAUDE_API_KEY": "${localEnv:CLAUDE_API_KEY}",
