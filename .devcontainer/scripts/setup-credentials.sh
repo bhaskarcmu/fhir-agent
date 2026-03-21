@@ -1,82 +1,83 @@
 #!/bin/bash
-# Defensive setup of AI tools – logs all attempts but never exits with error
+# Configures AI tool credentials after the devcontainer starts.
+# Runs as the postDevcontainerStart automation via .ona/automations.yaml.
+# Logs all steps to /workspaces/setup.log. Never exits with error.
 
 LOG_FILE="/workspaces/setup.log"
-echo "=== Starting AI tool setup at $(date) ===" >> "$LOG_FILE"
+REPO_DIR="/workspaces/fhir-agent"
 
-# Ensure we are in the workspace
-cd /workspaces || { echo "Could not cd to /workspaces" >> "$LOG_FILE"; exit 0; }
+echo "=== AI tool setup starting at $(date) ===" >> "$LOG_FILE"
 
-# 1. Claude Code – should be installed by Dockerfile
+# 1. Claude Code
 if command -v claude &> /dev/null; then
-    echo "Claude Code binary found." >> "$LOG_FILE"
-    # Write API key for Claude Code if present
+    echo "Claude Code: found at $(which claude)" >> "$LOG_FILE"
     if [ -n "$CLAUDE_API_KEY" ]; then
         mkdir -p ~/.claude
-        echo "{\"apiKey\": \"$CLAUDE_API_KEY\"}" > ~/.claude/config.json
-        echo "Claude Code API key written." >> "$LOG_FILE"
+        printf '{"apiKey": "%s"}\n' "$CLAUDE_API_KEY" > ~/.claude/config.json
+        echo "Claude Code: API key written" >> "$LOG_FILE"
     else
-        echo "No CLAUDE_API_KEY set, Claude will prompt later." >> "$LOG_FILE"
+        echo "Claude Code: no CLAUDE_API_KEY set, will prompt on first use" >> "$LOG_FILE"
     fi
 else
-    echo "Claude Code not installed." >> "$LOG_FILE"
+    echo "Claude Code: binary not found" >> "$LOG_FILE"
 fi
 
-# 2. Continue.dev configuration
-mkdir -p .vscode
-cat > .vscode/settings.json <<EOF
+# 2. Continue.dev — written into the repo's .vscode directory
+# Unquoted heredoc delimiter so shell variables expand correctly
+if [ -n "$CLAUDE_API_KEY" ]; then
+    mkdir -p "$REPO_DIR/.vscode"
+    cat > "$REPO_DIR/.vscode/settings.json" << EOF
 {
     "continue.models": [
         {
             "title": "Claude 3.5 Sonnet",
             "provider": "anthropic",
             "model": "claude-3-5-sonnet-20241022",
-            "apiKey": "${CLAUDE_API_KEY}"
+            "apiKey": "$CLAUDE_API_KEY"
         }
     ],
     "continue.tabAutocompleteModel": {
         "title": "Claude 3.5 Sonnet",
         "provider": "anthropic",
         "model": "claude-3-5-sonnet-20241022",
-        "apiKey": "${CLAUDE_API_KEY}"
+        "apiKey": "$CLAUDE_API_KEY"
     }
 }
 EOF
-echo "Continue.dev settings written." >> "$LOG_FILE"
+    echo "Continue.dev: settings written to $REPO_DIR/.vscode/settings.json" >> "$LOG_FILE"
+else
+    echo "Continue.dev: no CLAUDE_API_KEY set, skipping" >> "$LOG_FILE"
+fi
 
-# 3. Roo Code configuration
-mkdir -p ~/.roo-cline
-cat > ~/.roo-cline/settings.json <<EOF
+# 3. Roo Code
+if [ -n "$CLAUDE_API_KEY" ]; then
+    mkdir -p ~/.roo-cline
+    cat > ~/.roo-cline/settings.json << EOF
 {
-    "apiKey": "${CLAUDE_API_KEY}",
+    "apiKey": "$CLAUDE_API_KEY",
     "provider": "anthropic",
     "model": "claude-3-5-sonnet-20241022",
     "maxTokens": 4096,
     "temperature": 0.7
 }
 EOF
-echo "Roo Code settings written." >> "$LOG_FILE"
-
-# 4. GitHub Copilot CLI – ensure extension is installed
-if command -v gh &> /dev/null; then
-    # Check if extension is already installed
-    if gh extension list | grep -q "github/gh-copilot"; then
-        echo "GitHub Copilot CLI extension is installed." >> "$LOG_FILE"
-    else
-        echo "GitHub Copilot CLI extension not found. Attempting to install..." >> "$LOG_FILE"
-        # Install the extension
-        gh extension install github/gh-copilot 2>> "$LOG_FILE" || echo "Installation failed" >> "$LOG_FILE"
-        # Run a dummy command to trigger any first‑run prompts (optional)
-        gh copilot suggest "test" > /dev/null 2>&1 || true
-    fi
+    echo "Roo Code: settings written" >> "$LOG_FILE"
 else
-    echo "GitHub CLI not installed, Copilot CLI unavailable." >> "$LOG_FILE"
+    echo "Roo Code: no CLAUDE_API_KEY set, skipping" >> "$LOG_FILE"
 fi
 
-# 5. Summary of errors from Dockerfile (if any)
-if [ -f /var/log/devcontainer/errors.log ]; then
-    echo "=== Errors from Dockerfile build ===" >> "$LOG_FILE"
-    cat /var/log/devcontainer/errors.log >> "$LOG_FILE"
+# 4. GitHub Copilot CLI extension
+if command -v gh &> /dev/null; then
+    if gh extension list 2>/dev/null | grep -q "github/gh-copilot"; then
+        echo "GitHub Copilot CLI: already installed" >> "$LOG_FILE"
+    else
+        echo "GitHub Copilot CLI: installing extension..." >> "$LOG_FILE"
+        gh extension install github/gh-copilot 2>> "$LOG_FILE" \
+            && echo "GitHub Copilot CLI: installed" >> "$LOG_FILE" \
+            || echo "GitHub Copilot CLI: install failed (gh auth login may be required)" >> "$LOG_FILE"
+    fi
+else
+    echo "GitHub Copilot CLI: gh not found" >> "$LOG_FILE"
 fi
 
 echo "=== AI tool setup completed at $(date) ===" >> "$LOG_FILE"
