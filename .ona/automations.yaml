@@ -1,8 +1,12 @@
 tasks:
   setupCredentials:
     name: Setup AI tool credentials
-    description: Configure Claude Code, Continue.dev, Roo Code, and GitHub Copilot CLI using environment secrets.
+    description: >
+      Installs Claude Code CLI and configures credentials for all AI tools:
+      Claude Code, Continue.dev, Roo Code, and GitHub Copilot CLI.
+      Runs automatically after the devcontainer starts.
     command: |
-      bash .devcontainer/scripts/setup-credentials.sh 2>&1 | tee /workspaces/setup.log
+      npm install -g @anthropic-ai/claude-code 2>&1 | tee -a /workspaces/setup.log
+      bash /workspaces/fhir-agent/.devcontainer/scripts/setup-credentials.sh 2>&1 | tee -a /workspaces/setup.log
     triggeredBy:
       - postDevcontainerStart
