@@ -66,15 +66,26 @@ else
     echo "Roo Code: no CLAUDE_API_KEY set, skipping" >> "$LOG_FILE"
 fi
 
-# 4. GitHub Copilot CLI extension
+# 4. GitHub CLI auth + Copilot CLI extension
+# Requires a fine-grained PAT with Copilot (read) permission set as GH_TOKEN secret in Ona.
 if command -v gh &> /dev/null; then
+    # Authenticate using GH_TOKEN if set (fine-grained PAT required, not classic ghp_ token)
+    if [ -n "$GH_TOKEN" ]; then
+        echo "$GH_TOKEN" | gh auth login --with-token 2>> "$LOG_FILE" \
+            && echo "GitHub CLI: authenticated via GH_TOKEN" >> "$LOG_FILE" \
+            || echo "GitHub CLI: auth failed — ensure GH_TOKEN is a fine-grained PAT with Copilot (read) permission" >> "$LOG_FILE"
+    else
+        echo "GitHub CLI: no GH_TOKEN set — run 'gh auth login' manually" >> "$LOG_FILE"
+    fi
+
+    # Install Copilot CLI extension if not already present
     if gh extension list 2>/dev/null | grep -q "github/gh-copilot"; then
         echo "GitHub Copilot CLI: already installed" >> "$LOG_FILE"
     else
         echo "GitHub Copilot CLI: installing extension..." >> "$LOG_FILE"
         gh extension install github/gh-copilot 2>> "$LOG_FILE" \
             && echo "GitHub Copilot CLI: installed" >> "$LOG_FILE" \
-            || echo "GitHub Copilot CLI: install failed (gh auth login may be required)" >> "$LOG_FILE"
+            || echo "GitHub Copilot CLI: install failed" >> "$LOG_FILE"
     fi
 else
     echo "GitHub Copilot CLI: gh not found" >> "$LOG_FILE"
