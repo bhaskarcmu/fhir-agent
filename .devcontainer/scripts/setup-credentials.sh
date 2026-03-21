@@ -66,11 +66,26 @@ else
     echo "Roo Code: no CLAUDE_API_KEY set, skipping" >> "$LOG_FILE"
 fi
 
-# 4. GitHub Copilot CLI extension
-# GH_TOKEN (fine-grained PAT with Copilot read permission) is used only to
-# install the extension. It is passed as an environment variable scoped to
-# that single command and never passed to 'gh auth login', so it cannot
-# overwrite the git repo credentials configured separately via gh auth.
+# 4. GitHub CLI auth (repo access)
+# GITHUB_TOKEN_REPO is a classic PAT with repo scope, used for gh CLI commands
+# (gh pr, gh issue, etc.) and git operations. Kept separate from GH_TOKEN to
+# avoid interfering with Copilot's fine-grained PAT requirements.
+if command -v gh &> /dev/null; then
+    if [ -n "$GITHUB_TOKEN_REPO" ]; then
+        echo "$GITHUB_TOKEN_REPO" | gh auth login --with-token 2>> "$LOG_FILE" \
+            && echo "GitHub CLI: authenticated via GITHUB_TOKEN_REPO" >> "$LOG_FILE" \
+            || echo "GitHub CLI: auth failed — check GITHUB_TOKEN_REPO secret" >> "$LOG_FILE"
+    else
+        echo "GitHub CLI: no GITHUB_TOKEN_REPO set — run 'gh auth login' manually" >> "$LOG_FILE"
+    fi
+else
+    echo "GitHub CLI: gh not found" >> "$LOG_FILE"
+fi
+
+# 5. GitHub Copilot CLI extension
+# GH_TOKEN (fine-grained PAT with Copilot read permission) is scoped to the
+# extension install command only — never passed to 'gh auth login', so it
+# cannot overwrite the repo credentials configured in step 4 above.
 if command -v gh &> /dev/null; then
     if gh extension list 2>/dev/null | grep -q "github/gh-copilot"; then
         echo "GitHub Copilot CLI: already installed" >> "$LOG_FILE"
