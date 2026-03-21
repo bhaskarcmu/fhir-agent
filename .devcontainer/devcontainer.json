@@ -1,7 +1,10 @@
 {
-  "name": "Agentic Healthcare Platform (minimal test)",
+  "name": "Agentic Healthcare Platform (test: +docker)",
   "build": {
     "dockerfile": "Dockerfile"
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
   },
   "customizations": {
     "vscode": {
