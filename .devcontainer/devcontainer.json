@@ -1,5 +1,5 @@
 {
-  "name": "Agentic Healthcare Platform (step 4: +node)",
+  "name": "Agentic Healthcare Platform (step 5: +terraform)",
   "build": {
     "dockerfile": "Dockerfile"
   },
@@ -8,7 +8,8 @@
     "ghcr.io/devcontainers/features/github-cli:1": {},
     "ghcr.io/devcontainers/features/node:1": {
       "version": "20"
-    }
+    },
+    "ghcr.io/devcontainers/features/terraform:1": {}
   },
   "customizations": {
     "vscode": {
