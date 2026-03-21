@@ -7,10 +7,10 @@ echo "=== Starting AI tool setup at $(date) ===" >> "$LOG_FILE"
 # Ensure we are in the workspace
 cd /workspaces || { echo "Could not cd to /workspaces" >> "$LOG_FILE"; exit 0; }
 
-# 1. Claude Code configuration
+# 1. Claude Code – should be installed by Dockerfile
 if command -v claude &> /dev/null; then
     echo "Claude Code binary found." >> "$LOG_FILE"
-    # Try to authenticate if API key is present
+    # Write API key for Claude Code if present
     if [ -n "$CLAUDE_API_KEY" ]; then
         mkdir -p ~/.claude
         echo "{\"apiKey\": \"$CLAUDE_API_KEY\"}" > ~/.claude/config.json
@@ -57,13 +57,17 @@ cat > ~/.roo-cline/settings.json <<EOF
 EOF
 echo "Roo Code settings written." >> "$LOG_FILE"
 
-# 4. GitHub Copilot CLI – test if gh extension is installed
+# 4. GitHub Copilot CLI – ensure extension is installed
 if command -v gh &> /dev/null; then
-    if gh extension list | grep -q copilot; then
+    # Check if extension is already installed
+    if gh extension list | grep -q "github/gh-copilot"; then
         echo "GitHub Copilot CLI extension is installed." >> "$LOG_FILE"
     else
         echo "GitHub Copilot CLI extension not found. Attempting to install..." >> "$LOG_FILE"
-        gh extension install github/gh-copilot 2>> "$LOG_FILE" || echo "Manual install failed" >> "$LOG_FILE"
+        # Install the extension
+        gh extension install github/gh-copilot 2>> "$LOG_FILE" || echo "Installation failed" >> "$LOG_FILE"
+        # Run a dummy command to trigger any first‑run prompts (optional)
+        gh copilot suggest "test" > /dev/null 2>&1 || true
     fi
 else
     echo "GitHub CLI not installed, Copilot CLI unavailable." >> "$LOG_FILE"
@@ -73,11 +77,6 @@ fi
 if [ -f /var/log/devcontainer/errors.log ]; then
     echo "=== Errors from Dockerfile build ===" >> "$LOG_FILE"
     cat /var/log/devcontainer/errors.log >> "$LOG_FILE"
-fi
-
-if [ -f /var/log/devcontainer/copilot.log ]; then
-    echo "=== Copilot CLI installation attempts ===" >> "$LOG_FILE"
-    cat /var/log/devcontainer/copilot.log >> "$LOG_FILE"
 fi
 
 echo "=== AI tool setup completed at $(date) ===" >> "$LOG_FILE"
