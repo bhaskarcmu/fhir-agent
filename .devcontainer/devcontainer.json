@@ -1,5 +1,5 @@
 {
-  "name": "Agentic Healthcare Platform (Defensive)",
+  "name": "Agentic Healthcare Platform",
   "build": {
     "dockerfile": "Dockerfile"
   },
@@ -21,11 +21,7 @@
     }
   },
   "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {
-      "version": "latest",
-      "enableNonRootDocker": "true",
-      "moby": "true"
-    }
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
   },
   "mounts": [
     "source=${env:HOME}${env:USERPROFILE}/.kube,target=/home/vscode/.kube,type=bind,consistency=cached"
