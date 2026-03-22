@@ -9,12 +9,31 @@ REPO_DIR="/workspaces/fhir-agent"
 echo "=== AI tool setup starting at $(date) ===" >> "$LOG_FILE"
 
 # 1. Claude Code
+# Claude Code reads ANTHROPIC_API_KEY from the environment — it does NOT use
+# ~/.claude/config.json. Ensure the variable is exported for interactive shells
+# by writing it to ~/.bashrc and ~/.profile as a fallback in case the
+# devcontainer containerEnv mapping doesn't propagate to all shell sessions.
 if command -v claude &> /dev/null; then
     echo "Claude Code: found at $(which claude)" >> "$LOG_FILE"
     if [ -n "$CLAUDE_API_KEY" ]; then
-        mkdir -p ~/.claude
-        printf '{"apiKey": "%s"}\n' "$CLAUDE_API_KEY" > ~/.claude/config.json
-        echo "Claude Code: API key written" >> "$LOG_FILE"
+        # /etc/environment is read before shell profiles and may contain a stale
+        # empty value from the devcontainer containerEnv mapping. Fix it first.
+        if grep -q "^ANTHROPIC_API_KEY=" /etc/environment 2>/dev/null; then
+            sudo sed -i "s|^ANTHROPIC_API_KEY=.*|ANTHROPIC_API_KEY=$CLAUDE_API_KEY|" /etc/environment
+        else
+            echo "ANTHROPIC_API_KEY=$CLAUDE_API_KEY" | sudo tee -a /etc/environment > /dev/null
+        fi
+
+        # Write to all shell profiles so interactive terminals pick it up
+        for profile in ~/.bashrc ~/.profile ~/.zshrc ~/.zprofile; do
+            touch "$profile"
+            if ! grep -q "ANTHROPIC_API_KEY" "$profile" 2>/dev/null; then
+                echo "export ANTHROPIC_API_KEY=\"$CLAUDE_API_KEY\"" >> "$profile"
+            fi
+        done
+        # Also export for the current session
+        export ANTHROPIC_API_KEY="$CLAUDE_API_KEY"
+        echo "Claude Code: ANTHROPIC_API_KEY set in /etc/environment and shell profiles" >> "$LOG_FILE"
     else
         echo "Claude Code: no CLAUDE_API_KEY set, will prompt on first use" >> "$LOG_FILE"
     fi
