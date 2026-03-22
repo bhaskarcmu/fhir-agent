@@ -1,0 +1,82 @@
+# Neon Serverless PostgreSQL Profile
+# Activated with: SPRING_PROFILES_ACTIVE=neon ./mvnw spring-boot:run
+#
+# Datasource is configured entirely via environment variables — not YAML interpolation.
+# Spring Boot maps env vars directly to properties (uppercase + underscores → dot notation):
+#   SPRING_DATASOURCE_URL               → spring.datasource.url
+#   SPRING_DATASOURCE_DRIVER_CLASS_NAME → spring.datasource.driver-class-name
+#   SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT → spring.jpa.properties.hibernate.dialect
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# REQUIRED ENVIRONMENT VARIABLES (set as Ona project secrets or export locally)
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# 1. SPRING_DATASOURCE_URL  (REQUIRED)
+#    Format:  jdbc:postgresql://HOST/DBNAME?user=USERNAME&password=PASSWORD&sslmode=require
+#    How to get: Neon Dashboard → select project → Connection string → JDBC format
+#    Example: jdbc:postgresql://ep-cool-wave-12345.us-east-1.neon.tech/neondb?user=neon_user&password=xxxxxxxx&sslmode=require
+#
+# 2. SPRING_DATASOURCE_DRIVER_CLASS_NAME  (REQUIRED)
+#    Always: org.postgresql.Driver
+#
+# 3. SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT  (REQUIRED)
+#    Always: ca.uhn.fhir.jpa.model.dialect.HapiFhirPostgresDialect
+#    Purpose: Tells Hibernate to generate PostgreSQL-optimised SQL for HAPI FHIR tables.
+#
+# 4. HIBERNATE_DIALECT  (REQUIRED — legacy compatibility)
+#    Always: ca.uhn.fhir.jpa.model.dialect.HapiFhirPostgresDialect
+#    Note: Read by JpaHibernatePropertiesProvider as a fallback when
+#    SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT is not set. Set both to be safe.
+#    Can be consolidated once all code paths use SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# TESTING LOCALLY WITH NEON
+# ─────────────────────────────────────────────────────────────────────────────
+#
+#   export SPRING_DATASOURCE_URL="jdbc:postgresql://HOST/DBNAME?user=USER&password=PASS&sslmode=require"
+#   export SPRING_DATASOURCE_DRIVER_CLASS_NAME="org.postgresql.Driver"
+#   export SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT="ca.uhn.fhir.jpa.model.dialect.HapiFhirPostgresDialect"
+#   export HIBERNATE_DIALECT="ca.uhn.fhir.jpa.model.dialect.HapiFhirPostgresDialect"
+#   SPRING_PROFILES_ACTIVE=neon ./mvnw spring-boot:run
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# TROUBLESHOOTING
+# ─────────────────────────────────────────────────────────────────────────────
+#
+#   Error: "Unable to create connection" or "Connection refused"
+#   → Verify SPRING_DATASOURCE_URL is correct and the Neon database is active.
+#     Neon databases auto-suspend after inactivity; the first connection may be slow.
+#
+#   Error: "Driver org.postgresql.Driver claims to not accept jdbcUrl, jdbc:h2:..."
+#   → SPRING_DATASOURCE_DRIVER_CLASS_NAME is set to the Postgres driver but the URL
+#     is still pointing to H2. Ensure SPRING_DATASOURCE_URL is also set correctly.
+#
+#   Error: "HapiFhirPostgresDialect not found" or dialect-related startup failure
+#   → SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT is missing or misspelled.
+#
+#   Error: "password authentication failed for user"
+#   → Check the username and password embedded in SPRING_DATASOURCE_URL.
+
+spring:
+  datasource:
+    generate-unique-name: false
+    hikari:
+      maximum-pool-size: 5        # Neon free tier supports limited concurrent connections
+      minimum-idle: 1             # Keep at least 1 connection warm
+      connection-timeout: 30000   # Wait up to 30s for a connection (Neon may cold-start)
+      idle-timeout: 600000        # Release idle connections after 10 minutes
+      connection-test-query: SELECT 1  # Validate connections before use
+
+  jpa:
+    properties:
+      hibernate:
+        jdbc:
+          lob:
+            # Neon uses PgBouncer connection pooling, which does not support
+            # context-aware LOB creation. This disables it to prevent errors
+            # when storing binary FHIR resources (e.g., DocumentReference).
+            non_contextual_creation: true
+
+  h2:
+    console:
+      enabled: false  # H2 web console is not available in the Neon profile
