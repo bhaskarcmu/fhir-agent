@@ -1,5 +1,5 @@
 # IDE / editor
-.vscode/settings.json
+# .vscode/settings.json is tracked — contains shared Java runtime config
 .idea/
 *.swp
 *.swo

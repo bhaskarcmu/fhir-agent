@@ -1,0 +1,23 @@
+{
+    "java.configuration.runtimes": [
+        {
+            "name": "JavaSE-21",
+            "path": "/usr/lib/jvm/java-21-openjdk-amd64",
+            "default": true
+        }
+    ],
+    "java.home": "/usr/lib/jvm/java-21-openjdk-amd64",
+    "java.compile.nullAnalysis.mode": "disabled",
+    "continue.models": [
+        {
+            "title": "Claude 3.5 Sonnet",
+            "provider": "anthropic",
+            "model": "claude-3-5-sonnet-20241022"
+        }
+    ],
+    "continue.tabAutocompleteModel": {
+        "title": "Claude 3.5 Sonnet",
+        "provider": "anthropic",
+        "model": "claude-3-5-sonnet-20241022"
+    }
+}
