@@ -1,0 +1,36 @@
+# Neon serverless PostgreSQL profile.
+# Activated with: SPRING_PROFILES_ACTIVE=neon
+#
+# Datasource is configured via environment variables — not YAML interpolation.
+# Spring Boot maps env vars directly to properties:
+#   SPRING_DATASOURCE_URL                        → spring.datasource.url
+#   SPRING_DATASOURCE_DRIVER_CLASS_NAME          → spring.datasource.driver-class-name
+#   SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT      → spring.jpa.properties.hibernate.dialect
+#
+# Required env vars (set as Ona project secrets):
+#   SPRING_DATASOURCE_URL=jdbc:postgresql://host/db?user=x&password=y&sslmode=require
+#   SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
+#   SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=ca.uhn.fhir.jpa.model.dialect.HapiFhirPostgresDialect
+#   HIBERNATE_DIALECT=ca.uhn.fhir.jpa.model.dialect.HapiFhirPostgresDialect
+
+spring:
+  datasource:
+    generate-unique-name: false
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+      connection-timeout: 30000
+      idle-timeout: 600000
+      connection-test-query: SELECT 1
+
+  jpa:
+    properties:
+      hibernate:
+        jdbc:
+          # Required for Neon's PgBouncer-compatible pooler
+          lob:
+            non_contextual_creation: true
+
+  h2:
+    console:
+      enabled: false
