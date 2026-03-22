@@ -34,13 +34,20 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 		"spring.datasource.driver-class-name=org.h2.Driver",
 		"spring.jpa.properties.hibernate.dialect=ca.uhn.fhir.jpa.model.dialect.HapiFhirH2Dialect",
 	"hapi.fhir.fhir_version=r4",
-	"hapi.fhir.userRequestRetryVersionConflictsInterceptorEnabled=true",
+	"hapi.fhir.user-request-retry-version-conflicts-interceptor-enabled=true",
 	"spring.jpa.properties.hibernate.search.backend.directory.type=local-heap"
 })
 
 /**
- * This class tests running parallel updates to a single resource with and without setting the 'X-Retry-On-Version-Conflict' header
- * to ensure we get the expected behavior of detecting conflicts
+ * Tests concurrent updates to a single FHIR resource to verify version-conflict
+ * handling behavior with and without the {@code X-Retry-On-Version-Conflict} header.
+ *
+ * <p>FHIR uses optimistic locking: each resource has a version ID, and concurrent
+ * updates to the same version produce a conflict (HTTP 409). The server can
+ * automatically retry conflicting updates when the client sends:
+ * <pre>X-Retry-On-Version-Conflict: retry; max-retries=10</pre>
+ *
+ * <p>Tests cover both direct PUT requests and FHIR transaction Bundles containing PUT entries.
  */
 public class ParallelUpdatesVersionConflictTest {
 
@@ -63,7 +70,9 @@ public class ParallelUpdatesVersionConflictTest {
 
 	@Test
 	void testParallelResourceUpdateBundle() throws Throwable {
-		//send 10 bundles with updates to the patient in parallel, except the header to deconflict them
+		// 10 threads each send a transaction Bundle containing PUT Patient/{id} with a
+		// different family name. All include X-Retry-On-Version-Conflict so the server
+		// retries on conflict. All 10 must complete with HTTP 200.
 		Patient pat = new Patient();
 		String patId = client.create().resource(pat).execute().getId().getIdPart();
 		launchThreads(patId, true, "X-Retry-On-Version-Conflict");
@@ -71,7 +80,9 @@ public class ParallelUpdatesVersionConflictTest {
 
 	@Test
 	void testParallelResourceUpdateNoBundle() throws Throwable {
-		//send 10 resource puts  to the patient in parallel, except the header to deconflict them
+		// 10 threads each send a direct PUT Patient/{id} with a different family name.
+		// All include X-Retry-On-Version-Conflict so the server retries on conflict.
+		// All 10 must complete with HTTP 200.
 		Patient pat = new Patient();
 		String patId = client.create().resource(pat).execute().getId().getIdPart();
 		launchThreads(patId, false, "X-Retry-On-Version-Conflict");
@@ -79,7 +90,9 @@ public class ParallelUpdatesVersionConflictTest {
 
 	@Test
 	void testParallelResourceUpdateBundleExpectConflict() {
-		//send 10 bundles with updates to the patient in parallel, expect a ResourceVersionConflictException since we are not setting the retry header
+		// 10 threads each send a transaction Bundle containing PUT Patient/{id}.
+		// The retry header is NOT set (wrong header name used), so the server does not
+		// retry on conflict. Expects ResourceVersionConflictException (HTTP 409).
 		Patient pat = new Patient();
 		String patId = client.create().resource(pat).execute().getId().getIdPart();
 		ResourceVersionConflictException exception = assertThrows(ResourceVersionConflictException.class, () ->
@@ -88,7 +101,9 @@ public class ParallelUpdatesVersionConflictTest {
 
 	@Test
 	void testParallelResourceUpdateNoBundleExpectConflict() {
-		//send 10 resource puts  to the patient in parallel, expect a ResourceVersionConflictException since we are not setting the retry header
+		// 10 threads each send a direct PUT Patient/{id}.
+		// The retry header is NOT set (wrong header name used), so the server does not
+		// retry on conflict. Expects ResourceVersionConflictException (HTTP 409).
 		Patient pat = new Patient();
 		String patId = client.create().resource(pat).execute().getId().getIdPart();
 		ResourceVersionConflictException exception = assertThrows(ResourceVersionConflictException.class, () ->

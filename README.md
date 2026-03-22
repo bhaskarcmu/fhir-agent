@@ -66,7 +66,7 @@ The server is intentionally generic — it does not emulate any specific EHR. Th
 
 ### Prerequisites
 
-- **Java 21** (JDK)
+- **Java 21** (JDK — required; pom.xml targets Java 21)
 - **Maven 3.8+** (or use the included Maven wrapper `./mvnw`)
 - **Docker** (optional — required for integration tests using Testcontainers)
 - **Neon** account (optional — required for cloud PostgreSQL profile)
@@ -135,6 +135,26 @@ cd fhir-server
 | Guardrail effectiveness | Zero autonomous actions below confidence threshold; all high-risk scenarios escalate |
 | Agent adaptation | Agent learns from human overrides |
 | Development velocity | Adding a new MCP tool takes < 1 day |
+
+---
+
+## Known Limitations & Future Work
+
+### Phase 1 (Current)
+- ✅ Generic FHIR R4 server (all resource endpoints)
+- ✅ H2 in-memory (dev) and Neon serverless PostgreSQL (prod) profiles
+- ✅ Versioned profile URL fallback for validation
+- ✅ 39 unit and integration tests passing
+
+### Phase 2 (Next)
+- ⏳ **EHR Emulators**: Epic and Athena customizations (auth stubs, custom profiles, proprietary extensions)
+- ⏳ **Triage Service**: Business logic for drug-allergy risk evaluation and recommendation generation
+- ⏳ **MCP Agent**: LLM-powered orchestration layer using FHIR tools
+
+### Known Issues
+- Versioned profile URL fallback (`VersionedUrlFallbackValidationSupport`) is a workaround for a gap in HAPI FHIR core; can be removed once HAPI FHIR natively resolves versioned canonical URLs in `DefaultProfileValidationSupport`
+- Binary storage defaults to database; filesystem mode requires explicit `hapi.fhir.binary_storage_mode` and `hapi.fhir.binary_storage_filesystem_base_directory` configuration
+- MDM (patient matching) is disabled by default; enable with `hapi.fhir.mdm_enabled=true`
 
 ---
 

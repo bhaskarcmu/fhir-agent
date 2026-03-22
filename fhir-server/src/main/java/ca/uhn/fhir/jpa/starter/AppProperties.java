@@ -112,7 +112,7 @@ public class AppProperties {
 	private Boolean resource_dbhistory_enabled = true;
 	private Boolean upliftedRefchains_enabled = false;
 
-	private boolean userRequestRetryVersionConflictsInterceptorEnabled = false;
+	private boolean user_request_retry_version_conflicts_interceptor_enabled = false;
 
 	private List<Integer> search_prefetch_thresholds = new ArrayList<>();
 	private Boolean pre_expand_value_sets = true;
@@ -718,12 +718,12 @@ public class AppProperties {
 	}
 
 	public Boolean getUserRequestRetryVersionConflictsInterceptorEnabled() {
-		return userRequestRetryVersionConflictsInterceptorEnabled;
+		return user_request_retry_version_conflicts_interceptor_enabled;
 	}
 
 	public void setUserRequestRetryVersionConflictsInterceptorEnabled(
 			Boolean userRequestRetryVersionConflictsInterceptorEnabled) {
-		this.userRequestRetryVersionConflictsInterceptorEnabled = userRequestRetryVersionConflictsInterceptorEnabled;
+		this.user_request_retry_version_conflicts_interceptor_enabled = userRequestRetryVersionConflictsInterceptorEnabled;
 	}
 
 	public boolean getEnable_index_of_type() {

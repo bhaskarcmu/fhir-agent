@@ -10,19 +10,34 @@ import java.util.Set;
 import java.util.function.Function;
 
 /**
- * A validation support that provides fallback behavior for versioned canonical URLs.
+ * Handles FHIR profile URLs with version suffixes (e.g., {@code Patient|4.0.1}) by
+ * falling back to non-versioned URLs (e.g., {@code Patient}) when exact versioned
+ * matches are not found in the validation chain.
  *
- * When a versioned URL like "http://hl7.org/fhir/StructureDefinition/Organization|4.0.1"
- * is requested, this support first tries the exact versioned URL, then falls back to
- * the non-versioned URL if not found.
+ * <p><b>Background:</b> When Implementation Guides reference FHIR base resources with
+ * version suffixes (e.g., {@code http://hl7.org/fhir/StructureDefinition/Patient|4.0.1}),
+ * validation fails with "Unable to locate profile" errors because HAPI FHIR's
+ * {@link org.hl7.fhir.common.hapi.validation.support.DefaultProfileValidationSupport}
+ * only loads profiles without version suffixes. The validation chain cannot match
+ * the versioned canonical URL to any known StructureDefinition.
  *
- * For non-versioned URLs or URLs not matching the configured prefixes, this support
- * returns null to let other supports in the chain handle the request.
+ * <p><b>Workaround:</b> This support intercepts versioned canonical URLs, strips the
+ * version suffix, and retries the lookup against the chain. It acts as a bridge between
+ * IG-referenced versioned profiles and the core FHIR definitions loaded by
+ * {@code DefaultProfileValidationSupport}.
  *
- * This addresses issues where profiles reference versioned base FHIR resources that
- * aren't available with exact version matching in the validation context.
+ * <p>For non-versioned URLs, or URLs not matching the configured prefixes, this support
+ * returns {@code null} immediately, allowing other supports in the chain to handle them.
+ *
+ * <p><b>TODO:</b> HAPI FHIR should natively support versioned base profile resolution
+ * or expose a hook for custom version-aware lookup. Track upstream progress at:
+ * <a href="https://github.com/hapifhir/hapi-fhir/issues">https://github.com/hapifhir/hapi-fhir/issues</a>.
+ * This class can be removed once HAPI FHIR handles versioned canonical URLs in
+ * {@code DefaultProfileValidationSupport} without requiring a workaround.
+ *
+ * @see org.hl7.fhir.common.hapi.validation.support.DefaultProfileValidationSupport
+ * @see org.hl7.fhir.common.hapi.validation.support.ValidationSupportChain
  */
-// TODO: this should be fixed in core
 public class VersionedUrlFallbackValidationSupport implements IValidationSupport {
 
 	private static final Logger ourLog = LoggerFactory.getLogger(VersionedUrlFallbackValidationSupport.class);

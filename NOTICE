@@ -12,7 +12,7 @@ Each component is used in accordance with its respective licence.
 HAPI FHIR JPA Server Starter
 ------------------------------------------------------------------------
 Source:    https://github.com/hapifhir/hapi-fhir-jpaserver-starter
-Version:   8.8.0
+Version:   8.8.0 (HAPI FHIR library version)
 Licence:   Apache License, Version 2.0
            https://www.apache.org/licenses/LICENSE-2.0
 
@@ -38,7 +38,7 @@ The following files were modified from the original:
 HAPI FHIR (Core Libraries)
 ------------------------------------------------------------------------
 Source:    https://github.com/hapifhir/hapi-fhir
-Version:   8.8.0
+Version:   8.8.0 (HAPI FHIR library version)
 Licence:   Apache License, Version 2.0
            https://www.apache.org/licenses/LICENSE-2.0
 

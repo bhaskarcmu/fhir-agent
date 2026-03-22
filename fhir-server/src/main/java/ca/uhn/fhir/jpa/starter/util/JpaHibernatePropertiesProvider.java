@@ -23,18 +23,44 @@ public class JpaHibernatePropertiesProvider extends HibernatePropertiesProvider 
 
 	private final Dialect myDialect;
 
+	/**
+	 * Resolves the Hibernate dialect using an explicit priority order to prevent
+	 * unwanted JDBC-based auto-detection in multi-datasource environments.
+	 *
+	 * <p><b>Why this matters:</b> In environments where Neon (PostgreSQL) env vars are
+	 * set globally (e.g., {@code SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver}),
+	 * the default HAPI FHIR dialect resolution opens a JDBC connection to determine the
+	 * dialect. If the target database is H2 (e.g., during testing), the Postgres driver
+	 * rejects the H2 URL, causing startup failure.
+	 *
+	 * <p><b>Priority order:</b>
+	 * <ol>
+	 *   <li>{@code spring.jpa.properties.hibernate.dialect} from Spring {@link Environment}
+	 *       — most reliable; available before the entity manager factory is fully initialised,
+	 *       and takes precedence over environment variables when set in {@code @SpringBootTest}
+	 *       properties.</li>
+	 *   <li>{@code hibernate.dialect} from the JPA property map — set after full
+	 *       initialisation; used when the dialect is configured via {@code spring.jpa.properties}
+	 *       in YAML rather than as an env var.</li>
+	 *   <li>JDBC connection-based auto-detection — last resort; opens a real database
+	 *       connection. Avoided when possible because it can select the wrong driver in
+	 *       mixed-datasource environments.</li>
+	 * </ol>
+	 *
+	 * @param theEntityManagerFactory the JPA entity manager factory bean
+	 * @param theEnvironment          the Spring environment (used for property lookup)
+	 * @see ca.uhn.fhir.jpa.config.HibernatePropertiesProvider
+	 */
 	public JpaHibernatePropertiesProvider(
 			LocalContainerEntityManagerFactoryBean theEntityManagerFactory,
 			Environment theEnvironment) {
-		// Check the JPA property map first (set after full initialisation).
-		// Fall back to spring.jpa.properties.hibernate.dialect from the Spring
-		// Environment — this is reliably available even before the entity manager
-		// factory bean is fully initialised, which prevents dialect auto-detection
-		// from opening a connection to a fallback embedded H2 datasource.
-		String dialectClass =
-				(String) theEntityManagerFactory.getJpaPropertyMap().get("hibernate.dialect");
+		// Priority 1: Spring Environment property (highest reliability; wins over env vars
+		// when overridden in @SpringBootTest properties, which is critical for H2 tests
+		// running in an environment that also has Neon env vars set globally).
+		String dialectClass = theEnvironment.getProperty("spring.jpa.properties.hibernate.dialect");
 		if (!isNotBlank(dialectClass)) {
-			dialectClass = theEnvironment.getProperty("spring.jpa.properties.hibernate.dialect");
+			// Priority 2: JPA property map (populated after full bean initialisation).
+			dialectClass = (String) theEntityManagerFactory.getJpaPropertyMap().get("hibernate.dialect");
 		}
 		if (isNotBlank(dialectClass)) {
 			myDialect = ReflectionUtil.newInstanceOrReturnNull(dialectClass, Dialect.class);

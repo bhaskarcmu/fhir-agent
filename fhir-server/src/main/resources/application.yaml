@@ -335,7 +335,7 @@ hapi:
     # -------------------------------------------------------------------------------
     mdm_enabled: false
     mdm_rules_json_location: "mdm-rules.json"
-    # userRequestRetryVersionConflictsInterceptorEnabled: false
+    # user-request-retry-version-conflicts-interceptor-enabled: false
 
     # -------------------------------------------------------------------------------
     # I. Terminology / ValueSet Expansion
