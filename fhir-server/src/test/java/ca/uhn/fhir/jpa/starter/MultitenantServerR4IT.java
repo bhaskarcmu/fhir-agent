@@ -27,6 +27,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = {Application.class}, properties =
 	{
 		"spring.datasource.url=jdbc:h2:mem:dbr4-mt",
+		"spring.datasource.driver-class-name=org.h2.Driver",
+		"spring.jpa.properties.hibernate.dialect=ca.uhn.fhir.jpa.model.dialect.HapiFhirH2Dialect",
 		"spring.jpa.properties.hibernate.search.backend.directory.type=local-heap",
 		"hapi.fhir.fhir_version=r4",
 		"hapi.fhir.subscription.websocket_enabled=true",

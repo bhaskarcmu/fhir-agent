@@ -10,6 +10,8 @@ import org.springframework.test.context.ActiveProfiles;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = {Application.class}, properties = {
 		"hapi.fhir.custom-bean-packages=some.custom.pkg1,some.custom.pkg2",
 		"spring.datasource.url=jdbc:h2:mem:dbr4",
+		"spring.datasource.driver-class-name=org.h2.Driver",
+		"spring.jpa.properties.hibernate.dialect=ca.uhn.fhir.jpa.model.dialect.HapiFhirH2Dialect",
 		"hapi.fhir.enable_repository_validating_interceptor=true",
 		"hapi.fhir.fhir_version=r4",
 		"hapi.fhir.mdm_enabled=false",

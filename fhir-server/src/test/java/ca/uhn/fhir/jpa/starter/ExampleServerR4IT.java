@@ -56,6 +56,8 @@ import static org.opencds.cqf.fhir.utility.r4.Parameters.stringPart;
 		RepositoryConfig.class
 	}, properties = {
 	"spring.datasource.url=jdbc:h2:mem:dbr4",
+		"spring.datasource.driver-class-name=org.h2.Driver",
+		"spring.jpa.properties.hibernate.dialect=ca.uhn.fhir.jpa.model.dialect.HapiFhirH2Dialect",
 	"spring.ai.mcp.server.enabled=false",
 	"hapi.fhir.enable_repository_validating_interceptor=true",
 	"hapi.fhir.fhir_version=r4",

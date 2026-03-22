@@ -20,6 +20,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 	classes = {Application.class},
 	properties = {
 		"spring.datasource.url=jdbc:h2:mem:dbr4b",
+		"spring.datasource.driver-class-name=org.h2.Driver",
+		"spring.jpa.properties.hibernate.dialect=ca.uhn.fhir.jpa.model.dialect.HapiFhirH2Dialect",
 		"hapi.fhir.enable_repository_validating_interceptor=true",
 		"spring.jpa.properties.hibernate.search.backend.directory.type=local-heap",
 		"hapi.fhir.fhir_version=r4b",

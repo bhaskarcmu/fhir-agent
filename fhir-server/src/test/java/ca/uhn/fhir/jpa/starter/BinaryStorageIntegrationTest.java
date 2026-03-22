@@ -150,6 +150,8 @@ abstract class BaseBinaryStorageIntegrationTest {
 	properties = {
 		BaseBinaryStorageIntegrationTest.COMMON_CONFIG_LOCATION,
 		"spring.datasource.url=jdbc:h2:mem:binary-storage-db;DB_CLOSE_DELAY=-1",
+		"spring.datasource.driver-class-name=org.h2.Driver",
+		"spring.jpa.properties.hibernate.dialect=ca.uhn.fhir.jpa.model.dialect.HapiFhirH2Dialect",
 		BaseBinaryStorageIntegrationTest.COMMON_H2_USERNAME,
 		BaseBinaryStorageIntegrationTest.COMMON_H2_PASSWORD,
 		BaseBinaryStorageIntegrationTest.COMMON_JPA_DDL,
@@ -221,6 +223,8 @@ class BinaryStorageDatabaseModeIT extends BaseBinaryStorageIntegrationTest {
 	properties = {
 		BaseBinaryStorageIntegrationTest.COMMON_CONFIG_LOCATION,
 		"spring.datasource.url=jdbc:h2:mem:binary-storage-fs-default;DB_CLOSE_DELAY=-1",
+		"spring.datasource.driver-class-name=org.h2.Driver",
+		"spring.jpa.properties.hibernate.dialect=ca.uhn.fhir.jpa.model.dialect.HapiFhirH2Dialect",
 		BaseBinaryStorageIntegrationTest.COMMON_H2_USERNAME,
 		BaseBinaryStorageIntegrationTest.COMMON_H2_PASSWORD,
 		BaseBinaryStorageIntegrationTest.COMMON_JPA_DDL,
@@ -277,6 +281,8 @@ class BinaryStorageFilesystemDefaultIT extends BaseBinaryStorageIntegrationTest 
 	properties = {
 		BaseBinaryStorageIntegrationTest.COMMON_CONFIG_LOCATION,
 		"spring.datasource.url=jdbc:h2:mem:binary-storage-fs-custom;DB_CLOSE_DELAY=-1",
+		"spring.datasource.driver-class-name=org.h2.Driver",
+		"spring.jpa.properties.hibernate.dialect=ca.uhn.fhir.jpa.model.dialect.HapiFhirH2Dialect",
 		BaseBinaryStorageIntegrationTest.COMMON_H2_USERNAME,
 		BaseBinaryStorageIntegrationTest.COMMON_H2_PASSWORD,
 		BaseBinaryStorageIntegrationTest.COMMON_JPA_DDL,

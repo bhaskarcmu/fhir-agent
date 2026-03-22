@@ -22,6 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
   {
      "hapi.fhir.fhir_version=dstu2",
      "spring.datasource.url=jdbc:h2:mem:dbr2",
+		"spring.datasource.driver-class-name=org.h2.Driver",
+		"spring.jpa.properties.hibernate.dialect=ca.uhn.fhir.jpa.model.dialect.HapiFhirH2Dialect",
 	  "hapi.fhir.cr_enabled=false",
 	  "spring.jpa.properties.hibernate.search.backend.directory.type=local-heap"
   })

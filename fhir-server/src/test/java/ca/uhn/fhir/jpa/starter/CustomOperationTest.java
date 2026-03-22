@@ -18,6 +18,8 @@ import org.springframework.test.context.ActiveProfiles;
 		"hapi.fhir.custom-bean-packages=some.custom.pkg1",
 		"hapi.fhir.custom-provider-classes=some.custom.pkg1.CustomOperationBean,some.custom.pkg1.CustomOperationPojo",
 		"spring.datasource.url=jdbc:h2:mem:dbr4",
+		"spring.datasource.driver-class-name=org.h2.Driver",
+		"spring.jpa.properties.hibernate.dialect=ca.uhn.fhir.jpa.model.dialect.HapiFhirH2Dialect",
 		"hapi.fhir.cr_enabled=false",
 		// "hapi.fhir.enable_repository_validating_interceptor=true",
 		"hapi.fhir.fhir_version=r4"

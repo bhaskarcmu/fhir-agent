@@ -31,6 +31,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = {Application.class}, properties =
 	{
 		"spring.datasource.url=jdbc:h2:mem:dbr5_dbpm",
+		"spring.datasource.driver-class-name=org.h2.Driver",
+		"spring.jpa.properties.hibernate.dialect=ca.uhn.fhir.jpa.model.dialect.HapiFhirH2Dialect",
 		"spring.jpa.properties.hibernate.search.backend.directory.type=local-heap",
 		"hapi.fhir.fhir_version=r5",
 		"hapi.fhir.partitioning.database_partition_mode_enabled=true",

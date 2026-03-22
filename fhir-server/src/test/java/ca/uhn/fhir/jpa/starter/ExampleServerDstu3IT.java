@@ -46,6 +46,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 	}, properties =
   {
      "spring.datasource.url=jdbc:h2:mem:dbr3",
+		"spring.datasource.driver-class-name=org.h2.Driver",
+		"spring.jpa.properties.hibernate.dialect=ca.uhn.fhir.jpa.model.dialect.HapiFhirH2Dialect",
      "hapi.fhir.fhir_version=dstu3",
 	  "hapi.fhir.cr_enabled=true",
      "hapi.fhir.subscription.websocket_enabled=true",
