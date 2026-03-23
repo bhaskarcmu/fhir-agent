@@ -1,0 +1,65 @@
+# Kong plugin definitions for the FHIR service API gateway.
+#
+# These are Kubernetes custom resources (KongPlugin) read by the Kong
+# Ingress Controller. Attaching them to an Ingress (via annotation) applies
+# them to every request that passes through that Ingress.
+#
+# Apply with: kubectl apply -f kong-plugins.yaml -n fhir
+
+---
+# ---------------------------------------------------------------------------
+# Plugin 1: fhir-key-auth
+# ---------------------------------------------------------------------------
+# Requires every incoming request to carry a valid API key in one of:
+#   - Header:      apikey: <key>
+#   - Query param: ?apikey=<key>
+#
+# Requests without a valid key receive HTTP 401 Unauthorized.
+# Keys are provisioned via KongConsumer + Secret (see kong-consumers.yaml)
+# or dynamically via the create-key.sh script.
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: fhir-key-auth
+  namespace: fhir
+plugin: key-auth
+config:
+  # Accept the key in the "apikey" header or query parameter.
+  key_names:
+    - apikey
+  # Do not expose the key to the upstream fhir-service — strip it from
+  # the forwarded request so Spring Boot never sees it.
+  hide_credentials: true
+
+---
+# ---------------------------------------------------------------------------
+# Plugin 2: fhir-rate-limit
+# ---------------------------------------------------------------------------
+# Enforces two independent limits:
+#
+#   second: 10   — max 10 requests per second (DoS / burst protection)
+#   day:    1000 — max 1000 requests per day  (usage quota)
+#
+# Both limits are tracked per consumer (identified by their API key).
+# A consumer that exceeds either limit receives HTTP 429 Too Many Requests
+# with a Retry-After header.
+#
+# policy: local — counters are stored in Kong's local memory.
+# This is accurate for a single Kong pod. If you scale Kong to multiple
+# replicas later, switch to policy: redis and add a Redis deployment.
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: fhir-rate-limit
+  namespace: fhir
+plugin: rate-limiting
+config:
+  second: 10
+  day: 1000
+  policy: local
+  # Return rate limit headers so clients can see their remaining quota:
+  #   X-RateLimit-Remaining-Second, X-RateLimit-Remaining-Day
+  hide_client_headers: false
+  # When the limit is exceeded, return 429 (not 503).
+  error_code: 429
+  error_message: "API rate limit exceeded. Retry after the indicated period."

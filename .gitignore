@@ -1,5 +1,8 @@
 # IDE / editor
 # .vscode/settings.json is tracked — contains shared Java runtime config
+
+# Kong database credentials — never commit the real secret
+gateway/kong/kong-db-secret.yaml
 .idea/
 *.swp
 *.swo
