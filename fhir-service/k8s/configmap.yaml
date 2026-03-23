@@ -1,0 +1,28 @@
+# Non-secret configuration for fhir-service.
+#
+# These values are safe to commit — they contain no credentials.
+# The Neon JDBC URL (which embeds the password) lives in fhir-service-secret
+# (see secret.yaml.example).
+#
+# Apply with: kubectl apply -f fhir-service/k8s/configmap.yaml -n fhir
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fhir-service-config
+  namespace: fhir
+data:
+  # Activate the Neon profile — overrides H2 datasource with PostgreSQL settings.
+  # See fhir-service/src/main/resources/application-neon.yaml for what this enables.
+  SPRING_PROFILES_ACTIVE: "neon"
+
+  # PostgreSQL JDBC driver. Spring Boot cannot auto-detect this from the URL
+  # when the driver class is set explicitly via env var.
+  SPRING_DATASOURCE_DRIVER_CLASS_NAME: "org.postgresql.Driver"
+
+  # HAPI FHIR's custom Hibernate dialect for PostgreSQL.
+  # Generates PostgreSQL-optimised DDL and SQL for HAPI FHIR's schema.
+  SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: "ca.uhn.fhir.jpa.model.dialect.HapiFhirPostgresDialect"
+
+  # Legacy fallback read by JpaHibernatePropertiesProvider. Set both until
+  # all HAPI FHIR code paths use SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT.
+  HIBERNATE_DIALECT: "ca.uhn.fhir.jpa.model.dialect.HapiFhirPostgresDialect"

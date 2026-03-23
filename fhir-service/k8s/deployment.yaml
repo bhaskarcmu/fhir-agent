@@ -1,0 +1,139 @@
+# Kubernetes Deployment for fhir-service.
+#
+# Before applying, substitute the image placeholder with your registry path:
+#
+#   GHCR (GitHub Container Registry):
+#     IMAGE=ghcr.io/<github-org>/fhir-service:latest
+#
+#   GCP Artifact Registry:
+#     IMAGE=<region>-docker.pkg.dev/<project-id>/fhir-agent/fhir-service:latest
+#
+#   sed -i "s|IMAGE_PLACEHOLDER|${IMAGE}|g" fhir-service/k8s/deployment.yaml
+#
+# Prerequisites (apply in order):
+#   kubectl apply -f fhir-service/k8s/namespace.yaml
+#   kubectl apply -f fhir-service/k8s/configmap.yaml -n fhir
+#   kubectl create secret generic fhir-service-secret --namespace fhir \
+#     --from-literal=SPRING_DATASOURCE_URL="jdbc:postgresql://..."
+#   kubectl apply -f fhir-service/k8s/service.yaml -n fhir
+#   kubectl apply -f fhir-service/k8s/deployment.yaml -n fhir
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fhir-service
+  namespace: fhir
+  labels:
+    app: fhir-service
+    app.kubernetes.io/name: fhir-service
+    app.kubernetes.io/component: fhir-server
+    app.kubernetes.io/part-of: fhir-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fhir-service
+  template:
+    metadata:
+      labels:
+        app: fhir-service
+    spec:
+      # Allow up to 60s for in-flight FHIR requests to complete before pod termination.
+      terminationGracePeriodSeconds: 60
+
+      containers:
+        - name: fhir-service
+          # Replace IMAGE_PLACEHOLDER before applying:
+          #   sed -i "s|IMAGE_PLACEHOLDER|<registry>/fhir-service:latest|g" fhir-service/k8s/deployment.yaml
+          # Do not commit the substituted value — IMAGE_PLACEHOLDER is the committed form.
+          image: IMAGE_PLACEHOLDER
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+
+          # Non-secret configuration from ConfigMap (profile, driver, dialect).
+          envFrom:
+            - configMapRef:
+                name: fhir-service-config
+
+          # Secret configuration: JDBC URL with embedded Neon password.
+          # Injected as a single env var rather than mounted as a file to match
+          # how Spring Boot reads SPRING_DATASOURCE_URL.
+          env:
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: fhir-service-secret
+                  key: SPRING_DATASOURCE_URL
+
+          # ---------------------------------------------------------------
+          # Health probes
+          # ---------------------------------------------------------------
+          # Spring Boot Actuator exposes /actuator/health/liveness and
+          # /actuator/health/readiness when management.endpoint.health.probes.enabled=true
+          # (already set in application.yaml).
+          #
+          # HAPI FHIR performs schema migration on first boot — this can take
+          # 60-90 seconds. initialDelaySeconds gives it time before Kubernetes
+          # starts checking. failureThreshold * periodSeconds = total tolerance.
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http   # references the named containerPort above — resilient to port changes
+            initialDelaySeconds: 90
+            periodSeconds: 15
+            failureThreshold: 4   # kill pod after 4 consecutive failures (60s)
+            timeoutSeconds: 5
+
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http   # references the named containerPort above — resilient to port changes
+            initialDelaySeconds: 90
+            periodSeconds: 10
+            failureThreshold: 6   # remove from Service endpoints after 60s unready
+            timeoutSeconds: 5
+
+          # ---------------------------------------------------------------
+          # Resource limits
+          # ---------------------------------------------------------------
+          # Sized for a single GKE e2-standard-2 node (2 vCPU, 8 GB).
+          # HAPI FHIR JPA is memory-intensive at startup (schema + Hibernate init).
+          # The Dockerfile sets -XX:MaxRAMPercentage=75.0, so the JVM heap is
+          # capped at 75% of the container memory limit (768Mi of 1Gi).
+          # Increase limits if you enable Elasticsearch or MDM.
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+
+          # ---------------------------------------------------------------
+          # Security context
+          # ---------------------------------------------------------------
+          securityContext:
+            # Matches the non-root 'fhir' user created in the Dockerfile.
+            runAsNonRoot: true
+            # Do not allow privilege escalation (e.g., sudo, setuid binaries).
+            allowPrivilegeEscalation: false
+            # Drop all Linux capabilities — Spring Boot + Tomcat needs none.
+            capabilities:
+              drop:
+                - ALL
+            # Read-only root filesystem. Spring Boot writes nothing to disk
+            # (H2 is in-memory; Neon profile uses remote DB; logs go to stdout).
+            readOnlyRootFilesystem: true
+
+          # Tomcat writes temp files to /tmp during WAR deployment (first boot, ~60s
+          # into startup, while HAPI FHIR runs Hibernate schema migrations).
+          # Without this emptyDir, readOnlyRootFilesystem: true causes a startup crash.
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+
+      volumes:
+        - name: tmp
+          emptyDir: {}
