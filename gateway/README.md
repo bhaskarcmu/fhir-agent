@@ -42,9 +42,10 @@ gateway/
 │   ├── kong-db-secret.yaml.example  ← Secret template (copy, fill, apply, delete)
 │   ├── kong-plugins.yaml            ← KongPlugin: key-auth + rate-limiting
 │   ├── kong-ingress.yaml            ← Ingress routing traffic to fhir-service
-│   └── kong-consumers.yaml          ← test-client consumer + API key
+│   └── kong-consumers.yaml          ← consumer provisioning guide (credentials applied dynamically)
 └── tools/
-    └── create-key.sh                ← dynamically provision new consumers/keys
+    ├── create-key.sh                ← dynamically provision new consumers/keys
+    └── rotate-key.sh                ← zero-downtime quarterly key rotation
 ```
 
 ---
@@ -120,15 +121,17 @@ kong-kong-init-migrations-* 0/1     Completed 0
 ## Step 3 — Apply Kong custom resources
 
 ```bash
-# Apply plugins (key-auth + rate-limiting)
+# Apply plugins (key-auth + rate-limiting + prometheus + structured logging)
 kubectl apply -f gateway/kong/kong-plugins.yaml -n fhir
 
 # Apply the Ingress (routes /fhir/* to fhir-service)
 kubectl apply -f gateway/kong/kong-ingress.yaml -n fhir
-
-# Apply the test consumer and API key
-kubectl apply -f gateway/kong/kong-consumers.yaml -n fhir
 ```
+
+> **Note:** `kong-consumers.yaml` contains provisioning instructions only —
+> no Kubernetes resources. Do not apply it. Use `create-key.sh` after
+> deployment to provision consumers dynamically (see "Provisioning new API
+> keys" below).
 
 ---
 
@@ -149,12 +152,17 @@ kubectl port-forward svc/kong-kong-admin 8001:8001 -n kong
 ### Test authentication
 
 ```bash
+# First, provision a test consumer and capture the generated key
+./gateway/tools/create-key.sh test-client
+# → prints: API Key: <your-generated-key>
+# Store it immediately — it is shown once only.
+
 # Without API key — expect HTTP 401
 curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/fhir/metadata
 # → 401
 
-# With the test-client key — expect HTTP 200
-curl -s -H "apikey: test-api-key-change-me" \
+# With a valid API key — expect HTTP 200
+curl -s -H "apikey: <your-generated-key>" \
   http://localhost:8000/fhir/metadata | jq .resourceType
 # → "CapabilityStatement"
 
@@ -170,7 +178,7 @@ curl -s -o /dev/null -w "%{http_code}" \
 # Send 15 rapid requests — the 11th+ in the same second should return 429
 for i in $(seq 1 15); do
   curl -s -o /dev/null -w "%{http_code}\n" \
-    -H "apikey: test-api-key-change-me" \
+    -H "apikey: <your-generated-key>" \
     http://localhost:8000/fhir/metadata
 done
 # → 200 200 200 ... 429 429 429
@@ -225,8 +233,11 @@ curl -s -X DELETE http://localhost:8001/consumers/mcp-agent/key-auth/<key-id>
 ## Upgrading Kong
 
 ```bash
+# Pin --version explicitly to avoid accidentally pulling a newer chart.
+# Review the Kong changelog before bumping the version.
 helm upgrade kong kong/kong \
   --namespace kong \
+  --version 3.1.0 \
   --values gateway/kong/kong-values.yaml
 ```
 
@@ -269,10 +280,17 @@ local machine, open `http://localhost:8002` in any browser.
 | Plugins | `key-auth`, `rate-limiting`, `file-log`, `prometheus` with configs |
 | Upstreams | Health status of fhir-service pods |
 
-**Note:** In Kong 3.x open-source, some edit operations in Manager are
-read-only. Kong Inc. pushes editing toward their Konnect SaaS product.
-All viewing and debugging functionality works fully. Use the Admin API
-or `create-key.sh` / `rotate-key.sh` for write operations.
+**Note:** In Kong 3.x open-source, Manager is primarily a read/debug UI.
+Kong Inc. pushes write operations toward their Konnect SaaS product.
+
+| Operation | Kong 3.x open-source Manager |
+|---|---|
+| View services, routes, plugins | ✅ |
+| View consumers and key IDs | ✅ |
+| View metrics and upstreams | ✅ |
+| Create / delete consumer | ❌ use `create-key.sh` or Admin API |
+| Create / edit plugin | ❌ use `kubectl apply` |
+| Rotate keys | ❌ use `rotate-key.sh` |
 
 ---
 
@@ -430,8 +448,9 @@ curl -s http://localhost:8001/consumers/mcp-agent/key-auth \
 - **No TLS on the proxy** — TLS termination is expected to be handled by a
   GKE Ingress or Cloud Load Balancer in front of Kong. Do not expose the
   ClusterIP proxy directly without TLS in production.
-- **Kong Manager editing is partially read-only** in Kong 3.x open-source.
-  Use Admin API or the provided scripts for write operations.
+- **Kong Manager is read-only for write operations** in Kong 3.x open-source
+  (create/edit plugins, consumers, keys). Use `kubectl apply`, `create-key.sh`,
+  or `rotate-key.sh`. See the Manager section above for the full operation table.
 - **Prometheus metrics are declared but not scraped** until Google Cloud
   Managed Prometheus is enabled in GKE. The `/metrics` endpoint works
   immediately for manual inspection.

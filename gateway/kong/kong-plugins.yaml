@@ -60,10 +60,10 @@ config:
   # This makes usage data visible via SQL in the Neon dashboard:
   #   SELECT identifier, period_type, value FROM ratelimiting_metrics ORDER BY value DESC;
   #
-  # Upgrade path: switch to policy: redis when Kong scales beyond 1 replica.
-  # With policy: local, counters are per-pod and not shared across replicas.
-  # With policy: cluster, Neon handles the shared state at the cost of one
-  # DB write per request — negligible at current scale.
+  # Upgrade path: switch to policy: redis when either condition is met:
+  #   - Kong is scaled to >1 replica (local counters are not shared across pods), OR
+  #   - Sustained RPS exceeds ~5000 (Neon write latency becomes a bottleneck)
+  # At current scale (single replica, low RPS), cluster policy is correct.
   policy: cluster
   # Return rate limit headers so clients can see their remaining quota:
   #   X-RateLimit-Remaining-Second, X-RateLimit-Remaining-Day

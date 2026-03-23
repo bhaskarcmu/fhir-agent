@@ -147,10 +147,13 @@ echo "  Active keys: ${REMAINING}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-# Remind when to rotate next
-NEXT_DATE=$(date -d "+90 days" "+%Y-%m-%d" 2>/dev/null \
-  || date -v+90d "+%Y-%m-%d" 2>/dev/null \
-  || echo "in 90 days")
+# Remind when to rotate next.
+# python3 is used for date arithmetic — more portable than `date -d` (Linux)
+# or `date -v` (macOS), both of which are unavailable in some environments.
+NEXT_DATE=$(python3 -c \
+  "from datetime import datetime, timedelta; \
+   print((datetime.now() + timedelta(days=90)).strftime('%Y-%m-%d'))" \
+  2>/dev/null || echo "in 90 days")
 echo "  Next rotation due: ${NEXT_DATE}"
 echo "  Add a calendar reminder now."
 echo ""
