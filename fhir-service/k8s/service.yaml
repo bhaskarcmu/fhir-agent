@@ -3,8 +3,8 @@
 # ClusterIP — reachable only within the cluster.
 # Kong Ingress Controller routes external traffic here via kong-ingress.yaml.
 #
-# The service name "fhir-service" must match the backend.service.name in
-# gateway/kong/kong-ingress.yaml exactly.
+# The service name "fhir-service" must match exactly:
+#   gateway/kong/kong-ingress.yaml → spec.rules[0].http.paths[0].backend.service.name
 #
 # Apply with: kubectl apply -f fhir-service/k8s/service.yaml -n fhir
 apiVersion: v1

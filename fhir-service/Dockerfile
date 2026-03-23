@@ -66,6 +66,13 @@ USER fhir
 # Spring Boot listens on 8080 by default (configured in application.yaml).
 EXPOSE 8080
 
+# Health check for local docker run / Docker Compose usage.
+# Kubernetes ignores this and uses the liveness/readiness probes in deployment.yaml instead.
+# start-period=90s matches initialDelaySeconds=90 in the Deployment — HAPI FHIR runs
+# Hibernate schema migrations on first boot which takes 60-90 seconds.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=3 \
+  CMD curl -sf http://localhost:8080/actuator/health/readiness || exit 1
+
 # JVM tuning for containers:
 #   -XX:+UseContainerSupport        — respect cgroup CPU/memory limits (default in JDK 11+, explicit here for clarity)
 #   -XX:MaxRAMPercentage=75.0       — use up to 75% of container memory for heap

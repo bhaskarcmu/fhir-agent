@@ -24,6 +24,9 @@ metadata:
   namespace: fhir
   labels:
     app: fhir-service
+    app.kubernetes.io/name: fhir-service
+    app.kubernetes.io/component: fhir-server
+    app.kubernetes.io/part-of: fhir-agent
 spec:
   replicas: 1
   selector:
@@ -39,6 +42,9 @@ spec:
 
       containers:
         - name: fhir-service
+          # Replace IMAGE_PLACEHOLDER before applying:
+          #   sed -i "s|IMAGE_PLACEHOLDER|<registry>/fhir-service:latest|g" fhir-service/k8s/deployment.yaml
+          # Do not commit the substituted value — IMAGE_PLACEHOLDER is the committed form.
           image: IMAGE_PLACEHOLDER
           imagePullPolicy: Always
           ports:
@@ -74,7 +80,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /actuator/health/liveness
-              port: 8080
+              port: http   # references the named containerPort above — resilient to port changes
             initialDelaySeconds: 90
             periodSeconds: 15
             failureThreshold: 4   # kill pod after 4 consecutive failures (60s)
@@ -83,7 +89,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
-              port: 8080
+              port: http   # references the named containerPort above — resilient to port changes
             initialDelaySeconds: 90
             periodSeconds: 10
             failureThreshold: 6   # remove from Service endpoints after 60s unready
@@ -121,8 +127,9 @@ spec:
             # (H2 is in-memory; Neon profile uses remote DB; logs go to stdout).
             readOnlyRootFilesystem: true
 
-          # Tomcat writes temp files to /tmp during WAR deployment.
-          # Mount an emptyDir so the read-only root filesystem doesn't block it.
+          # Tomcat writes temp files to /tmp during WAR deployment (first boot, ~60s
+          # into startup, while HAPI FHIR runs Hibernate schema migrations).
+          # Without this emptyDir, readOnlyRootFilesystem: true causes a startup crash.
           volumeMounts:
             - name: tmp
               mountPath: /tmp
