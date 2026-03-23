@@ -42,9 +42,10 @@ gateway/
 │   ├── kong-db-secret.yaml.example  ← Secret template (copy, fill, apply, delete)
 │   ├── kong-plugins.yaml            ← KongPlugin: key-auth + rate-limiting
 │   ├── kong-ingress.yaml            ← Ingress routing traffic to fhir-service
-│   └── kong-consumers.yaml          ← test-client consumer + API key
+│   └── kong-consumers.yaml          ← consumer provisioning guide (credentials applied dynamically)
 └── tools/
-    └── create-key.sh                ← dynamically provision new consumers/keys
+    ├── create-key.sh                ← dynamically provision new consumers/keys
+    └── rotate-key.sh                ← zero-downtime quarterly key rotation
 ```
 
 ---
@@ -120,15 +121,17 @@ kong-kong-init-migrations-* 0/1     Completed 0
 ## Step 3 — Apply Kong custom resources
 
 ```bash
-# Apply plugins (key-auth + rate-limiting)
+# Apply plugins (key-auth + rate-limiting + prometheus + structured logging)
 kubectl apply -f gateway/kong/kong-plugins.yaml -n fhir
 
 # Apply the Ingress (routes /fhir/* to fhir-service)
 kubectl apply -f gateway/kong/kong-ingress.yaml -n fhir
-
-# Apply the test consumer and API key
-kubectl apply -f gateway/kong/kong-consumers.yaml -n fhir
 ```
+
+> **Note:** `kong-consumers.yaml` contains provisioning instructions only —
+> no Kubernetes resources. Do not apply it. Use `create-key.sh` after
+> deployment to provision consumers dynamically (see "Provisioning new API
+> keys" below).
 
 ---
 
@@ -149,12 +152,17 @@ kubectl port-forward svc/kong-kong-admin 8001:8001 -n kong
 ### Test authentication
 
 ```bash
+# First, provision a test consumer and capture the generated key
+./gateway/tools/create-key.sh test-client
+# → prints: API Key: <your-generated-key>
+# Store it immediately — it is shown once only.
+
 # Without API key — expect HTTP 401
 curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/fhir/metadata
 # → 401
 
-# With the test-client key — expect HTTP 200
-curl -s -H "apikey: test-api-key-change-me" \
+# With a valid API key — expect HTTP 200
+curl -s -H "apikey: <your-generated-key>" \
   http://localhost:8000/fhir/metadata | jq .resourceType
 # → "CapabilityStatement"
 
@@ -170,7 +178,7 @@ curl -s -o /dev/null -w "%{http_code}" \
 # Send 15 rapid requests — the 11th+ in the same second should return 429
 for i in $(seq 1 15); do
   curl -s -o /dev/null -w "%{http_code}\n" \
-    -H "apikey: test-api-key-change-me" \
+    -H "apikey: <your-generated-key>" \
     http://localhost:8000/fhir/metadata
 done
 # → 200 200 200 ... 429 429 429
@@ -225,8 +233,11 @@ curl -s -X DELETE http://localhost:8001/consumers/mcp-agent/key-auth/<key-id>
 ## Upgrading Kong
 
 ```bash
+# Pin --version explicitly to avoid accidentally pulling a newer chart.
+# Review the Kong changelog before bumping the version.
 helm upgrade kong kong/kong \
   --namespace kong \
+  --version 3.1.0 \
   --values gateway/kong/kong-values.yaml
 ```
 
@@ -234,14 +245,212 @@ Migrations run automatically as a pre-upgrade Helm hook.
 
 ---
 
+---
+
+## Kong Manager (web UI)
+
+Kong Manager is a free web UI included in the open-source distribution.
+It lets you view consumers, keys, plugins, routes, services, and upstreams
+without memorising Admin API endpoints.
+
+**Cost:** Zero. Apache 2.0 open-source, no license required.
+
+**Access:**
+
+```bash
+kubectl port-forward svc/kong-kong-manager 8002:8002 -n kong
+```
+
+Then open in VS Code:
+1. Press `Ctrl+Shift+P`
+2. Type `Simple Browser: Show`
+3. Enter `http://localhost:8002`
+
+A browser panel opens inside VS Code. Alternatively, if working from your
+local machine, open `http://localhost:8002` in any browser.
+
+**What you can see in the UI:**
+
+| Section | What it shows |
+|---|---|
+| Services | `fhir-service` upstream, URL, health |
+| Routes | `/fhir` route, methods, plugins attached |
+| Consumers | All API clients, creation dates |
+| Credentials | Key IDs per consumer (not plaintext — by design) |
+| Plugins | `key-auth`, `rate-limiting`, `file-log`, `prometheus` with configs |
+| Upstreams | Health status of fhir-service pods |
+
+**Note:** In Kong 3.x open-source, Manager is primarily a read/debug UI.
+Kong Inc. pushes write operations toward their Konnect SaaS product.
+
+| Operation | Kong 3.x open-source Manager |
+|---|---|
+| View services, routes, plugins | ✅ |
+| View consumers and key IDs | ✅ |
+| View metrics and upstreams | ✅ |
+| Create / delete consumer | ❌ use `create-key.sh` or Admin API |
+| Create / edit plugin | ❌ use `kubectl apply` |
+| Rotate keys | ❌ use `rotate-key.sh` |
+
+---
+
+## Observability
+
+### Rate limit usage — Neon SQL
+
+Rate limit counters are written to `kongdb` on every request
+(`policy: cluster`). Query them in the Neon Dashboard SQL editor:
+
+```sql
+-- Requests per consumer across all time windows
+SELECT
+  identifier  AS consumer_id,
+  period_type AS window,
+  value       AS request_count
+FROM ratelimiting_metrics
+ORDER BY period_type, value DESC;
+
+-- Consumers approaching their daily quota (>80% of 1000)
+SELECT identifier, value AS requests_today
+FROM ratelimiting_metrics
+WHERE period_type = 'day'
+  AND value > 800
+ORDER BY value DESC;
+
+-- All consumers and their keys (for auditing)
+SELECT
+  c.username,
+  k.id        AS key_id,
+  k.created_at
+FROM keyauth_credentials k
+JOIN consumers c ON k.consumer_id = c.id
+ORDER BY k.created_at DESC;
+```
+
+### Request logs — GKE Cloud Logging
+
+The `fhir-request-log` plugin writes a JSON line to stdout for every
+request. GKE captures stdout as structured logs in Cloud Logging.
+
+Each log entry contains:
+```json
+{
+  "consumer": { "username": "mcp-agent" },
+  "request":  { "method": "GET", "uri": "/fhir/Patient/123", "size": 0 },
+  "response": { "status": 200, "size": 4821, "latency": 142 },
+  "started_at": 1711234567890
+}
+```
+
+Query in GKE Cloud Logging:
+```
+resource.type="k8s_container"
+resource.labels.container_name="proxy"
+jsonPayload.consumer.username="mcp-agent"
+jsonPayload.response.status=401
+```
+
+### Prometheus metrics
+
+Kong exposes `/metrics` on port 8100. View raw metrics at any time:
+
+```bash
+kubectl port-forward svc/kong-kong-metrics 8100:8100 -n kong
+curl http://localhost:8100/metrics | grep kong_http_requests
+```
+
+Key metrics:
+```
+kong_http_requests_total{consumer="mcp-agent",route="fhir",status="200"} 42
+kong_latency_ms_bucket{type="request",le="100"} 38
+kong_bandwidth_bytes{type="ingress",consumer="mcp-agent"} 18432
+```
+
+**Enabling Google Cloud Managed Prometheus (when ready):**
+1. GKE Console → your cluster → **Features** → enable **Managed Prometheus**
+2. That's it. The `ServiceMonitor` in `kong-values.yaml` is already declared
+   and will be discovered automatically. No further configuration needed.
+
+---
+
+## Key management
+
+### Provisioning a new consumer
+
+```bash
+# Port-forward Admin API (keep this terminal open)
+kubectl port-forward svc/kong-kong-admin 8001:8001 -n kong
+
+# Create consumer and generate key
+./gateway/tools/create-key.sh mcp-agent
+```
+
+**Immediately store the printed key in a password manager.**
+Kong stores only a hash — the plaintext is shown once and never again.
+
+Suggested consumers for this platform:
+
+| Consumer | Purpose |
+|---|---|
+| `mcp-agent` | LLM orchestration layer |
+| `triage-service` | Drug-allergy risk evaluation service |
+| `dev-local` | Local development and testing |
+
+### Quarterly key rotation
+
+```bash
+./gateway/tools/rotate-key.sh mcp-agent
+```
+
+The script:
+1. Lists existing keys with creation dates
+2. Generates a new key and prints it
+3. Pauses — give the new key to the client, wait for confirmation
+4. Deletes the old key on Enter
+5. Prints the next rotation due date (today + 90 days)
+
+Both keys are valid during the transition window — zero downtime.
+
+### Emergency key revocation
+
+```bash
+# Revoke a specific key by ID
+KEY_ID=$(curl -s http://localhost:8001/consumers/mcp-agent/key-auth \
+  | jq -r '.data[0].id')
+curl -s -X DELETE http://localhost:8001/consumers/mcp-agent/key-auth/$KEY_ID
+# → HTTP 204, key invalid immediately
+
+# Revoke ALL keys for a consumer (full lockout)
+curl -s -X DELETE http://localhost:8001/consumers/mcp-agent
+# → Consumer and all keys deleted atomically
+```
+
+### Listing all consumers and keys
+
+```bash
+# Via Admin API
+curl -s http://localhost:8001/consumers | jq '.data[] | {username, id}'
+curl -s http://localhost:8001/consumers/mcp-agent/key-auth \
+  | jq '.data[] | {id, created_at}'
+
+# Via Neon SQL (kongdb)
+-- SELECT c.username, k.id, k.created_at
+-- FROM keyauth_credentials k JOIN consumers c ON k.consumer_id = c.id;
+```
+
+---
+
 ## Known Limitations
 
-- **Rate limiting uses `local` policy** — counters are per-pod. If Kong is
-  scaled to multiple replicas, limits are not shared across pods. Add Redis
-  and switch to `policy: redis` when scaling.
+- **Rate limiting uses `cluster` policy** — one DB write to Neon per request.
+  Accurate across restarts and replicas. Upgrade to `policy: redis` only
+  when request volume makes Neon writes a bottleneck (thousands/sec).
 - **No TLS on the proxy** — TLS termination is expected to be handled by a
   GKE Ingress or Cloud Load Balancer in front of Kong. Do not expose the
   ClusterIP proxy directly without TLS in production.
-- **test-client key is a placeholder** — replace `test-api-key-change-me`
-  in `kong-consumers.yaml` with a strong random value before deploying:
-  `openssl rand -hex 32`
+- **Kong Manager is read-only for write operations** in Kong 3.x open-source
+  (create/edit plugins, consumers, keys). Use `kubectl apply`, `create-key.sh`,
+  or `rotate-key.sh`. See the Manager section above for the full operation table.
+- **Prometheus metrics are declared but not scraped** until Google Cloud
+  Managed Prometheus is enabled in GKE. The `/metrics` endpoint works
+  immediately for manual inspection.

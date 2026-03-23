@@ -151,7 +151,64 @@ admin:
     enabled: false
 
 # ---------------------------------------------------------------------------
-# 7. RESOURCE LIMITS
+# 7. PROMETHEUS METRICS
+# ---------------------------------------------------------------------------
+# The prometheus plugin makes Kong expose a /metrics endpoint on port 8100
+# in Prometheus exposition format. Metrics include:
+#   kong_http_requests_total    — requests by consumer, route, status code
+#   kong_latency_ms             — latency histogram (Kong + upstream)
+#   kong_bandwidth_bytes        — bytes in/out per consumer
+#   kong_upstream_health        — health status of fhir-service pods
+#
+# The /metrics endpoint is available immediately after deployment:
+#   kubectl port-forward svc/kong-kong-metrics 8100:8100 -n kong
+#   curl http://localhost:8100/metrics
+#
+# The serviceMonitor is a Prometheus Operator custom resource. If no
+# Prometheus Operator is running in the cluster, it is silently ignored —
+# no errors, no impact on Kong. When you enable Google Cloud Managed
+# Prometheus in GKE (one checkbox in the GKE console), it automatically
+# discovers this ServiceMonitor and begins scraping. No further config needed.
+# The prometheus plugin is a built-in Kong plugin — it does not need to be
+# declared here. It is enabled by applying a KongClusterPlugin resource
+# (see kong-plugins.yaml). The serviceMonitor below tells Prometheus Operator
+# where to scrape the /metrics endpoint Kong exposes on port 8100.
+serviceMonitor:
+  enabled: true
+  # Scrape interval — how often Prometheus polls /metrics
+  interval: 30s
+  namespace: kong
+  # Labels that GKE Managed Prometheus uses to discover ServiceMonitors
+  labels:
+    release: kong
+
+# ---------------------------------------------------------------------------
+# 8. KONG MANAGER (web UI)
+# ---------------------------------------------------------------------------
+# Kong Manager is the open-source web UI for viewing and managing Kong
+# configuration: consumers, keys, plugins, routes, services, upstreams.
+#
+# Cost: zero — included in the Apache 2.0 open-source distribution.
+#
+# Access after deployment:
+#   kubectl port-forward svc/kong-kong-manager 8002:8002 -n kong
+#   Then in VS Code: Ctrl+Shift+P → "Simple Browser: Show" → http://localhost:8002
+#
+# Note: In Kong 3.x open-source, some edit operations in Manager are
+# read-only (Kong Inc. pushes editing to their Konnect SaaS product).
+# All viewing and debugging functionality works fully.
+manager:
+  enabled: true
+  type: ClusterIP
+  http:
+    enabled: true
+    servicePort: 8002
+    containerPort: 8002
+  tls:
+    enabled: false
+
+# ---------------------------------------------------------------------------
+# 9. RESOURCE LIMITS
 # ---------------------------------------------------------------------------
 resources:
   requests:

@@ -136,6 +136,24 @@ See `CustomBeanTest`, `CustomInterceptorTest`, and `CustomOperationTest` for wor
 | `triage-service` | Future: Drug-allergy risk evaluation business logic |
 | `mcp-agent` | Future: LLM-powered orchestration using FHIR tools |
 
+## Kubernetes Deployment
+
+Kubernetes manifests for deploying `fhir-service` to GKE are planned for
+the containerization phase and will live in `fhir-service/k8s/`:
+
+```
+fhir-service/k8s/
+├── namespace.yaml      (fhir namespace)
+├── configmap.yaml      (Spring profiles, datasource config)
+├── service.yaml        (ClusterIP, name: fhir-service, port: 8080)
+└── deployment.yaml     (Spring Boot container, resource limits)
+```
+
+Once deployed, all traffic to `fhir-service` passes through the Kong API
+gateway (`gateway/`) which enforces authentication and rate limiting.
+See [`gateway/README.md`](../gateway/README.md) for the full gateway
+deployment and administration guide.
+
 ## Building and Testing
 
 ```bash

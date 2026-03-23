@@ -56,10 +56,87 @@ plugin: rate-limiting
 config:
   second: 10
   day: 1000
-  policy: local
+  # policy: cluster writes counters to kongdb (Neon) on every request.
+  # This makes usage data visible via SQL in the Neon dashboard:
+  #   SELECT identifier, period_type, value FROM ratelimiting_metrics ORDER BY value DESC;
+  #
+  # Upgrade path: switch to policy: redis when either condition is met:
+  #   - Kong is scaled to >1 replica (local counters are not shared across pods), OR
+  #   - Sustained RPS exceeds ~5000 (Neon write latency becomes a bottleneck)
+  # At current scale (single replica, low RPS), cluster policy is correct.
+  policy: cluster
   # Return rate limit headers so clients can see their remaining quota:
   #   X-RateLimit-Remaining-Second, X-RateLimit-Remaining-Day
   hide_client_headers: false
   # When the limit is exceeded, return 429 (not 503).
   error_code: 429
   error_message: "API rate limit exceeded. Retry after the indicated period."
+
+---
+# ---------------------------------------------------------------------------
+# Plugin 3: fhir-request-log (global)
+# ---------------------------------------------------------------------------
+# Writes a structured JSON log line to stdout for every request through Kong.
+# GKE captures stdout as structured logs in Cloud Logging automatically —
+# no additional log infrastructure needed.
+#
+# Each log entry contains:
+#   consumer.username  — which API client made the request
+#   request.method     — GET, POST, PUT, DELETE
+#   request.uri        — e.g. /fhir/Patient/123
+#   response.status    — 200, 401, 429, etc.
+#   response.latency   — total time including upstream fhir-service
+#   started_at         — Unix timestamp (ms)
+#
+# This is a KongClusterPlugin (cluster-scoped) rather than a KongPlugin
+# (namespace-scoped). It applies globally to ALL traffic through Kong —
+# not just the fhir-service Ingress. This means any future service added
+# behind Kong is automatically logged without additional configuration.
+#
+# Apply with: kubectl apply -f kong-plugins.yaml
+# (No namespace flag needed — ClusterPlugin is cluster-scoped)
+---
+# ---------------------------------------------------------------------------
+# Plugin 4: fhir-prometheus (global)
+# ---------------------------------------------------------------------------
+# Enables the built-in Prometheus metrics endpoint on Kong port 8100.
+# Exposes per-consumer, per-route, and per-service metrics in Prometheus
+# exposition format. No external dependency — built into Kong.
+#
+# Access manually:
+#   kubectl port-forward svc/kong-kong-metrics 8100:8100 -n kong
+#   curl http://localhost:8100/metrics
+#
+# Activated automatically by GKE Managed Prometheus via the ServiceMonitor
+# declared in kong-values.yaml (enable Managed Prometheus in GKE console).
+apiVersion: configuration.konghq.com/v1
+kind: KongClusterPlugin
+metadata:
+  name: fhir-prometheus
+  annotations:
+    kubernetes.io/ingress.class: "kong"
+  labels:
+    global: "true"
+plugin: prometheus
+config:
+  status_code_metrics: true
+  latency_metrics: true
+  bandwidth_metrics: true
+  upstream_health_metrics: true
+
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongClusterPlugin
+metadata:
+  name: fhir-request-log
+  # Global annotation makes this plugin apply to every request through Kong
+  # without needing to attach it to any specific Ingress.
+  annotations:
+    kubernetes.io/ingress.class: "kong"
+  labels:
+    global: "true"
+plugin: file-log
+config:
+  # Write to stdout — GKE captures this as structured Cloud Logging entries.
+  path: /dev/stdout
+  reopen: false
