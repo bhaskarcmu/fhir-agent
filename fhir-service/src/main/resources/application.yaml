@@ -45,7 +45,7 @@ spring:
   # Application Name
   # -------------------------------------------------------------------------------
   application:
-    name: "fhir-server"
+    name: "fhir-service"
 
   # -------------------------------------------------------------------------------
   # A. Spring AI — Model Context Protocol (MCP)

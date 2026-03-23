@@ -39,7 +39,7 @@
     </parent>
 
     <groupId>com.healthcare</groupId>
-    <artifactId>fhir-server</artifactId>
+    <artifactId>fhir-service</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>war</packaging>
 
