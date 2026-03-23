@@ -61,7 +61,7 @@ live in separate emulator modules (`epic-emulator/`, `athena-emulator/`).
 ## Running Locally (H2)
 
 ```bash
-cd fhir-server
+cd fhir-service
 ./mvnw spring-boot:run
 ```
 
@@ -130,7 +130,7 @@ See `CustomBeanTest`, `CustomInterceptorTest`, and `CustomOperationTest` for wor
 
 | Module | Role |
 |--------|------|
-| `fhir-server` (this) | Generic FHIR R4 data layer — no EHR-specific behaviour |
+| `fhir-service` (this) | Generic FHIR R4 data layer — no EHR-specific behaviour |
 | `epic-emulator` | Future: Epic-specific auth stubs, custom profiles, proprietary extensions |
 | `athena-emulator` | Future: Athena-specific customizations |
 | `triage-service` | Future: Drug-allergy risk evaluation business logic |
@@ -139,7 +139,7 @@ See `CustomBeanTest`, `CustomInterceptorTest`, and `CustomOperationTest` for wor
 ## Building and Testing
 
 ```bash
-cd fhir-server
+cd fhir-service
 ./mvnw clean verify        # build + all tests
 ./mvnw test                # tests only
 ./mvnw package -DskipTests # build only

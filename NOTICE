@@ -16,7 +16,7 @@ Version:   8.8.0 (HAPI FHIR library version)
 Licence:   Apache License, Version 2.0
            https://www.apache.org/licenses/LICENSE-2.0
 
-The fhir-server module is derived from the HAPI FHIR JPA Server Starter.
+The fhir-service module is derived from the HAPI FHIR JPA Server Starter.
 The following files were modified from the original:
 
   - src/main/java/ca/uhn/fhir/jpa/starter/util/JpaHibernatePropertiesProvider.java
@@ -107,4 +107,4 @@ The full text of the Apache License, Version 2.0 is available at:
   https://www.apache.org/licenses/LICENSE-2.0
 
 A copy is included at:
-  fhir-server/src/main/resources/META-INF/LICENSE-HAPI-FHIR
+  fhir-service/src/main/resources/META-INF/LICENSE-HAPI-FHIR

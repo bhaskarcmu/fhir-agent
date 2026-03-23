@@ -41,7 +41,7 @@ The platform is built as a collection of microservices, designed to be cloud-agn
 
 | Service | Purpose | Status |
 |---|---|---|
-| **fhir-server** | Generic FHIR R4 server (HAPI JPA). Used for local development and as the FHIR data source for the MCP agent. | ✅ Running (H2 local, Neon PostgreSQL cloud) |
+| **fhir-service** | Generic FHIR R4 server (HAPI JPA). Used for local development and as the FHIR data source for the MCP agent. | ✅ Running (H2 local, Neon PostgreSQL cloud) |
 | **epic-emulator** | Placeholder — will add Epic-specific customisations (auth stubs, custom profiles, proprietary extensions). | ⏳ Not yet implemented |
 | **athena-emulator** | Placeholder — will add Athena-specific customisations. | ⏳ Not yet implemented |
 | **triage-service** | Business logic for drug-allergy risk evaluation, interaction checking, and recommendation generation. | 🚧 Planned |
@@ -81,7 +81,7 @@ cd fhir-agent
 ### Run the FHIR server locally (H2)
 
 ```bash
-cd fhir-server
+cd fhir-service
 ./mvnw spring-boot:run
 ```
 
@@ -95,7 +95,7 @@ The server starts on `http://localhost:8080`. Visit `http://localhost:8080/fhir/
 4. Run:
 
 ```bash
-cd fhir-server
+cd fhir-service
 SPRING_DATASOURCE_URL="jdbc:postgresql://host/db?user=user&password=password&sslmode=require" \
 SPRING_DATASOURCE_DRIVER_CLASS_NAME="org.postgresql.Driver" \
 HIBERNATE_DIALECT="ca.uhn.fhir.jpa.model.dialect.HapiFhirPostgresDialect" \
@@ -120,7 +120,7 @@ The project uses a **devcontainer** to ensure a consistent environment across al
 ### Build and test before committing
 
 ```bash
-cd fhir-server
+cd fhir-service
 ./mvnw clean verify
 ```
 
@@ -160,7 +160,7 @@ cd fhir-server
 
 ## Next Steps (Phase 1)
 
-1. Add RestAssured integration tests to `fhir-server` (create, retrieve, and search `Patient` resources)
+1. Add RestAssured integration tests to `fhir-service` (create, retrieve, and search `Patient` resources)
 2. Build `triage-service` as a Spring Boot microservice that:
    - Queries the FHIR server for patient data
    - Evaluates drug-allergy conflicts and interactions
