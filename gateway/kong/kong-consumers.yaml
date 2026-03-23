@@ -1,0 +1,55 @@
+# Kong consumers for the FHIR service API gateway.
+#
+# A KongConsumer represents an API client (a person, service, or application).
+# Each consumer has one or more API keys stored in Kubernetes Secrets.
+# The key-auth plugin validates incoming requests against these keys.
+#
+# Apply with: kubectl apply -f kong-consumers.yaml -n fhir
+#
+# To add more consumers, either:
+#   a) Add another Secret + KongConsumer block to this file, or
+#   b) Use the create-key.sh script (calls Kong Admin API dynamically).
+#
+# IMPORTANT: Replace the key value below before deploying to production.
+# The value "test-api-key-change-me" is a placeholder — use a strong
+# random key: openssl rand -hex 32
+
+---
+# The API key for test-client is stored in this Secret.
+# Kong's key-auth plugin reads the "key" field from this Secret.
+# The Secret name is referenced in the KongConsumer below.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: test-client-api-key
+  namespace: fhir
+  # This label tells Kong Ingress Controller that this Secret holds
+  # a key-auth credential. Without it, KIC ignores the Secret.
+  labels:
+    konghq.com/credential: key-auth
+type: Opaque
+stringData:
+  # The actual API key value the client sends in the "apikey" header.
+  # Change this to a strong random value before production use:
+  #   openssl rand -hex 32
+  key: "test-api-key-change-me"
+
+---
+# KongConsumer ties the test-client identity to its API key Secret.
+# When a request arrives with apikey: test-api-key-change-me, Kong
+# identifies the caller as "test-client" and applies per-consumer
+# rate limits and quotas.
+apiVersion: configuration.konghq.com/v1
+kind: KongConsumer
+metadata:
+  name: test-client
+  namespace: fhir
+  # This annotation tells KIC which Kong instance to program.
+  annotations:
+    kubernetes.io/ingress.class: "kong"
+# The username is how this consumer appears in Kong's logs and metrics.
+username: test-client
+# Reference the Secret that holds this consumer's API key(s).
+# A consumer can have multiple credentials (multiple Secrets listed here).
+credentials:
+  - test-client-api-key

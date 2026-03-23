@@ -1,0 +1,162 @@
+# Kong Gateway Helm values
+# Chart: kong/kong v3.1.0  (Kong Gateway 3.9)
+# Deployed to namespace: kong
+#
+# Database: Neon serverless PostgreSQL (kongdb)
+# Connection credentials are NOT stored here — they are read from a
+# Kubernetes Secret named "kong-db-secret" that you create manually
+# before running helm install. See gateway/README.md.
+
+# ---------------------------------------------------------------------------
+# 1. DEPLOYMENT
+# ---------------------------------------------------------------------------
+# Run a single Kong pod. Scale up when traffic demands it.
+replicaCount: 1
+
+image:
+  repository: kong
+  tag: "3.9"
+  pullPolicy: IfNotPresent
+
+# ---------------------------------------------------------------------------
+# 2. DATABASE — Neon PostgreSQL (external)
+# ---------------------------------------------------------------------------
+# Disable the bundled Bitnami PostgreSQL subchart — we use Neon instead.
+postgresql:
+  enabled: false
+
+# Kong reads its configuration from the kongdb database on Neon.
+# All pg_* values are injected from the "kong-db-secret" Secret so that
+# credentials never appear in this file or in the repo.
+env:
+  database: postgres
+  router_flavor: traditional
+  nginx_worker_processes: "2"
+  proxy_access_log: /dev/stdout
+  proxy_error_log: /dev/stderr
+  admin_access_log: /dev/stdout
+  admin_error_log: /dev/stderr
+
+  # PostgreSQL connection — values come from the Secret, not hardcoded here.
+  # The Secret keys map to Kong environment variables via valueFrom.
+  pg_host:
+    valueFrom:
+      secretKeyRef:
+        name: kong-db-secret
+        key: pg_host
+  pg_port:
+    valueFrom:
+      secretKeyRef:
+        name: kong-db-secret
+        key: pg_port
+  pg_database:
+    valueFrom:
+      secretKeyRef:
+        name: kong-db-secret
+        key: pg_database
+  pg_user:
+    valueFrom:
+      secretKeyRef:
+        name: kong-db-secret
+        key: pg_user
+  pg_password:
+    valueFrom:
+      secretKeyRef:
+        name: kong-db-secret
+        key: pg_password
+  # Neon requires SSL. VERIFY_FULL validates the server certificate.
+  pg_ssl: "on"
+  pg_ssl_verify: "on"
+
+# ---------------------------------------------------------------------------
+# 3. DATABASE MIGRATION (kong migrations bootstrap / up)
+# ---------------------------------------------------------------------------
+# On first install, Kong must run "kong migrations bootstrap" to create its
+# schema in kongdb. The migrations job runs as a pre-install Helm hook.
+migrations:
+  preUpgrade: true
+  postUpgrade: true
+  # The migration job also needs the DB credentials.
+  env:
+    pg_host:
+      valueFrom:
+        secretKeyRef:
+          name: kong-db-secret
+          key: pg_host
+    pg_port:
+      valueFrom:
+        secretKeyRef:
+          name: kong-db-secret
+          key: pg_port
+    pg_database:
+      valueFrom:
+        secretKeyRef:
+          name: kong-db-secret
+          key: pg_database
+    pg_user:
+      valueFrom:
+        secretKeyRef:
+          name: kong-db-secret
+          key: pg_user
+    pg_password:
+      valueFrom:
+        secretKeyRef:
+          name: kong-db-secret
+          key: pg_password
+    pg_ssl: "on"
+    pg_ssl_verify: "on"
+
+# ---------------------------------------------------------------------------
+# 4. INGRESS CONTROLLER
+# ---------------------------------------------------------------------------
+# The Kong Ingress Controller (KIC) watches Kubernetes Ingress resources and
+# KongPlugin/KongConsumer custom resources, then programs Kong accordingly.
+# This is what makes "kubectl apply -f kong-ingress.yaml" work.
+ingressController:
+  enabled: true
+  # KIC needs to call Kong's Admin API to push configuration.
+  # installCRDs installs the KongPlugin, KongConsumer, etc. CRD definitions.
+  installCRDs: false   # managed separately via "helm install --set crds=skip"
+                       # or "kubectl apply -f crds/" — see README
+
+# ---------------------------------------------------------------------------
+# 5. PROXY SERVICE (incoming FHIR traffic)
+# ---------------------------------------------------------------------------
+# ClusterIP means the proxy is only reachable inside the cluster.
+# You access it via kubectl port-forward during development, and via
+# a GKE Ingress / LoadBalancer in production.
+proxy:
+  enabled: true
+  type: ClusterIP
+  http:
+    enabled: true
+    servicePort: 80
+    containerPort: 8000
+  tls:
+    enabled: false   # TLS termination handled by GKE Ingress in production
+
+# ---------------------------------------------------------------------------
+# 6. ADMIN API SERVICE (used by create-key.sh and KIC)
+# ---------------------------------------------------------------------------
+# ClusterIP — never exposed outside the cluster.
+# Access via: kubectl port-forward svc/kong-kong-admin 8001:8001 -n kong
+admin:
+  enabled: true
+  type: ClusterIP
+  http:
+    enabled: true
+    servicePort: 8001
+    containerPort: 8001
+  tls:
+    enabled: false
+
+# ---------------------------------------------------------------------------
+# 7. RESOURCE LIMITS
+# ---------------------------------------------------------------------------
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
