@@ -3,6 +3,9 @@
 
 # Kong database credentials — never commit the real secret
 gateway/kong/kong-db-secret.yaml
+
+# fhir-service Neon credentials — never commit the real secret
+fhir-service/k8s/secret.yaml
 .idea/
 *.swp
 *.swo

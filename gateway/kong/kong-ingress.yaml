@@ -33,10 +33,9 @@ metadata:
     # before rate-limiting counts them).
     konghq.com/plugins: "fhir-key-auth,fhir-rate-limit"
 
-    # Strip the /fhir prefix before forwarding to fhir-service, since
-    # Spring Boot's HAPI FHIR servlet is already mounted at /fhir internally.
-    # Remove this annotation if fhir-service expects the full path.
-    # konghq.com/strip-path: "true"
+    # strip-path is intentionally NOT set (defaults to false).
+    # Spring Boot's HAPI FHIR servlet is mounted at /fhir/* (see Application.java).
+    # Kong must forward the full path including /fhir — do not strip it.
 spec:
   rules:
     - http:

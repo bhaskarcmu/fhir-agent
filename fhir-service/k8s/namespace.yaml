@@ -1,0 +1,14 @@
+# Namespace for the FHIR service and its associated Kong plugins/ingress.
+#
+# Kong Ingress Controller watches resources in this namespace:
+#   - KongPlugin (fhir-key-auth, fhir-rate-limit) — gateway/kong/kong-plugins.yaml
+#   - Ingress (fhir-service-ingress)               — gateway/kong/kong-ingress.yaml
+#
+# Apply with: kubectl apply -f fhir-service/k8s/namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: fhir
+  labels:
+    # Label used by Kong Ingress Controller to discover resources in this namespace.
+    app.kubernetes.io/managed-by: kong
