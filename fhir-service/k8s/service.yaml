@@ -14,6 +14,12 @@ metadata:
   namespace: fhir
   labels:
     app: fhir-service
+  annotations:
+    # Kong upstream timeout settings (KIC v3+ — replaces KongIngress proxy field).
+    # HAPI FHIR can be slow on cold start and complex FHIR searches take time.
+    konghq.com/connect-timeout: "10000"
+    konghq.com/read-timeout: "60000"
+    konghq.com/write-timeout: "60000"
 spec:
   type: ClusterIP
   selector:

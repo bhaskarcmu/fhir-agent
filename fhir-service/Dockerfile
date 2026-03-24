@@ -68,9 +68,10 @@ EXPOSE 8080
 
 # Health check for local docker run / Docker Compose usage.
 # Kubernetes ignores this and uses the liveness/readiness probes in deployment.yaml instead.
-# start-period=90s matches initialDelaySeconds=90 in the Deployment — HAPI FHIR runs
-# Hibernate schema migrations on first boot which takes 60-90 seconds.
-HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=3 \
+# start-period=180s matches initialDelaySeconds=180 in the Deployment — HAPI FHIR
+# runs schema migrations and loads FHIR R4 structure definitions on first boot,
+# which takes ~3 minutes against a remote Neon database (validated on GKE).
+HEALTHCHECK --interval=30s --timeout=5s --start-period=180s --retries=3 \
   CMD curl -sf http://localhost:8080/actuator/health/readiness || exit 1
 
 # JVM tuning for containers:

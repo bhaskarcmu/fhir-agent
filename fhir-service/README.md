@@ -245,7 +245,7 @@ kubectl get pods -n fhir
 kubectl logs -f deployment/fhir-service -n fhir
 ```
 
-Expected pod status after ~90 seconds:
+Expected pod status after ~3 minutes:
 ```
 NAME                            READY   STATUS    RESTARTS
 fhir-service-<hash>             1/1     Running   0
@@ -277,19 +277,21 @@ and key management guide.
 | Liveness | `GET /actuator/health/liveness` | Restarts pod if unhealthy |
 | Readiness | `GET /actuator/health/readiness` | Removes pod from Service endpoints if unready |
 
-Both probes have `initialDelaySeconds: 90` — HAPI FHIR runs schema migrations
-on first boot which takes 60-90 seconds.
+Both probes have `initialDelaySeconds: 180` — HAPI FHIR runs schema migrations
+and loads all FHIR R4 structure definitions on first boot. Against a remote Neon
+database this takes approximately 3 minutes (validated on GKE).
 
 ### Resource sizing
 
 | | Request | Limit |
 |---|---|---|
-| CPU | 250m | 500m |
-| Memory | 512Mi | 1Gi |
+| CPU | 250m | 1000m |
+| Memory | 1Gi | 2Gi |
 
-The JVM heap is capped at 75% of the memory limit (768Mi) via
-`-XX:MaxRAMPercentage=75.0`. Increase limits if you enable Elasticsearch,
-MDM, or bulk import.
+The JVM heap is capped at 75% of the memory limit (1.5Gi of 2Gi) via
+`-XX:MaxRAMPercentage=75.0`. This is the validated minimum from actual GKE
+deployment — the pod was OOMKilled at 1Gi during startup. Increase limits
+if you enable Elasticsearch, MDM, or bulk import.
 
 ## Building and Testing
 

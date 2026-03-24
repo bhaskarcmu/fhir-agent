@@ -81,7 +81,7 @@ spec:
             httpGet:
               path: /actuator/health/liveness
               port: http   # references the named containerPort above — resilient to port changes
-            initialDelaySeconds: 90
+            initialDelaySeconds: 180
             periodSeconds: 15
             failureThreshold: 4   # kill pod after 4 consecutive failures (60s)
             timeoutSeconds: 5
@@ -90,7 +90,7 @@ spec:
             httpGet:
               path: /actuator/health/readiness
               port: http   # references the named containerPort above — resilient to port changes
-            initialDelaySeconds: 90
+            initialDelaySeconds: 180
             periodSeconds: 10
             failureThreshold: 6   # remove from Service endpoints after 60s unready
             timeoutSeconds: 5
@@ -99,24 +99,31 @@ spec:
           # Resource limits
           # ---------------------------------------------------------------
           # Sized for a single GKE e2-standard-2 node (2 vCPU, 8 GB).
-          # HAPI FHIR JPA is memory-intensive at startup (schema + Hibernate init).
+          # HAPI FHIR JPA is memory-intensive at startup (Neon schema migration +
+          # loading all FHIR R4 structure definitions into heap).
           # The Dockerfile sets -XX:MaxRAMPercentage=75.0, so the JVM heap is
-          # capped at 75% of the container memory limit (768Mi of 1Gi).
-          # Increase limits if you enable Elasticsearch or MDM.
+          # capped at 75% of the container memory limit (1.5Gi of 2Gi).
+          # 2Gi is the validated minimum from actual GKE deployment — the pod was
+          # OOMKilled (exit 137) at 1Gi. Increase if you enable Elasticsearch or MDM.
           resources:
             requests:
               cpu: 250m
-              memory: 512Mi
-            limits:
-              cpu: 500m
               memory: 1Gi
+            limits:
+              cpu: 1000m
+              memory: 2Gi
 
           # ---------------------------------------------------------------
           # Security context
           # ---------------------------------------------------------------
           securityContext:
             # Matches the non-root 'fhir' user created in the Dockerfile.
+            # runAsUser must be numeric — Kubernetes cannot verify non-root from
+            # a named user alone. System users created with useradd --system
+            # get UIDs starting at 999 counting down; 'fhir' gets UID 999.
             runAsNonRoot: true
+            runAsUser: 999
+            runAsGroup: 999
             # Do not allow privilege escalation (e.g., sudo, setuid binaries).
             allowPrivilegeEscalation: false
             # Drop all Linux capabilities — Spring Boot + Tomcat needs none.

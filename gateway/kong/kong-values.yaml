@@ -67,6 +67,12 @@ env:
   # Neon requires SSL. VERIFY_FULL validates the server certificate.
   pg_ssl: "on"
   pg_ssl_verify: "on"
+  # Neon SNI workaround: Kong 3.9 bundles an older libpq that doesn't send SNI.
+  # The pg_password secret must be prefixed with "endpoint=<endpoint-id>;"
+  # so Neon can route the connection correctly. See: https://neon.tech/sni
+  # The secret is created with: endpoint=ep-restless-resonance-amqcyrmq;<password>
+  # TODO: Remove this workaround when Kong upgrades its bundled libpq to v14+.
+  #       Monitor: https://github.com/Kong/kong/releases
 
 # ---------------------------------------------------------------------------
 # 3. DATABASE MIGRATION (kong migrations bootstrap / up)

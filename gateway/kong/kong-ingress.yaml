@@ -51,19 +51,14 @@ spec:
                   number: 8080
 
 ---
-# KongIngress — fine-tunes how Kong handles requests to fhir-service.
-# This is a Kong-specific extension to the standard Ingress resource.
+# KongIngress — fine-tunes upstream load balancing for fhir-service.
+# Note: the 'proxy' field (timeouts) is deprecated in KIC v3+.
+# Timeouts are now set via Service annotations on fhir-service/k8s/service.yaml.
 apiVersion: configuration.konghq.com/v1
 kind: KongIngress
 metadata:
   name: fhir-service-kong-ingress
   namespace: fhir
-proxy:
-  # Connect timeout to fhir-service (ms). HAPI FHIR can be slow on cold start.
-  connect_timeout: 10000
-  # Read/write timeout (ms). FHIR searches can take a few seconds.
-  read_timeout: 60000
-  write_timeout: 60000
 upstream:
   # Round-robin load balancing across fhir-service pods.
   algorithm: round-robin
