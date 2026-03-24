@@ -57,7 +57,14 @@ def request(path, key=None, method="GET", body=None):
         with urllib.request.urlopen(req, timeout=15) as resp:
             return resp.status, json.loads(resp.read())
     except urllib.error.HTTPError as e:
-        return e.code, {}
+        # Capture the response body — Kong error responses (e.g. "No API key found",
+        # "API rate limit exceeded") are in the body and help diagnose failures.
+        try:
+            body_text = e.read().decode("utf-8", errors="replace")
+            body = json.loads(body_text)
+        except Exception:
+            body = {"error": body_text if "body_text" in dir() else str(e)}
+        return e.code, body
     except Exception as e:
         return 0, {"error": str(e)}
 

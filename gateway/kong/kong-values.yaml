@@ -71,6 +71,8 @@ env:
   # The pg_password secret must be prefixed with "endpoint=<endpoint-id>;"
   # so Neon can route the connection correctly. See: https://neon.tech/sni
   # The secret is created with: endpoint=ep-restless-resonance-amqcyrmq;<password>
+  # TODO: Remove this workaround when Kong upgrades its bundled libpq to v14+.
+  #       Monitor: https://github.com/Kong/kong/releases
 
 # ---------------------------------------------------------------------------
 # 3. DATABASE MIGRATION (kong migrations bootstrap / up)

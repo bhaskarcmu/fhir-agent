@@ -99,10 +99,12 @@ spec:
           # Resource limits
           # ---------------------------------------------------------------
           # Sized for a single GKE e2-standard-2 node (2 vCPU, 8 GB).
-          # HAPI FHIR JPA is memory-intensive at startup (schema + Hibernate init).
+          # HAPI FHIR JPA is memory-intensive at startup (Neon schema migration +
+          # loading all FHIR R4 structure definitions into heap).
           # The Dockerfile sets -XX:MaxRAMPercentage=75.0, so the JVM heap is
-          # capped at 75% of the container memory limit (768Mi of 1Gi).
-          # Increase limits if you enable Elasticsearch or MDM.
+          # capped at 75% of the container memory limit (1.5Gi of 2Gi).
+          # 2Gi is the validated minimum from actual GKE deployment — the pod was
+          # OOMKilled (exit 137) at 1Gi. Increase if you enable Elasticsearch or MDM.
           resources:
             requests:
               cpu: 250m

@@ -29,12 +29,66 @@
 
 set -euo pipefail
 
+# ---------------------------------------------------------------------------
+# Pre-flight checks
+# ---------------------------------------------------------------------------
+echo "--- Pre-flight checks ---"
+
+kubectl cluster-info > /dev/null 2>&1 || {
+  echo "Error: kubectl is not configured or cluster is unreachable." >&2
+  echo "  Run: gcloud container clusters get-credentials fhir-agent --zone us-central1-a" >&2
+  exit 1
+}
+echo "  kubectl: cluster reachable"
+
+helm version > /dev/null 2>&1 || {
+  echo "Error: helm is not installed." >&2
+  echo "  Install: https://helm.sh/docs/intro/install/" >&2
+  exit 1
+}
+echo "  helm: installed"
+
+kubectl get secret kong-db-secret -n kong > /dev/null 2>&1 || {
+  echo "Error: Secret 'kong-db-secret' not found in namespace 'kong'." >&2
+  echo "  Create it first — see gateway/README.md Step 1." >&2
+  exit 1
+}
+echo "  kong-db-secret: present"
+
+kubectl get secret fhir-service-secret -n fhir > /dev/null 2>&1 || {
+  echo "Error: Secret 'fhir-service-secret' not found in namespace 'fhir'." >&2
+  echo "  Create it first — see fhir-service/README.md Step 4." >&2
+  exit 1
+}
+echo "  fhir-service-secret: present"
+
 IMAGE="${IMAGE:-}"
 if [[ -z "$IMAGE" ]]; then
   echo "Error: IMAGE environment variable is required." >&2
   echo "Usage: IMAGE=ghcr.io/<org>/fhir-service:latest ./deploy.sh" >&2
   exit 1
 fi
+echo "  IMAGE: ${IMAGE}"
+echo ""
+
+# ---------------------------------------------------------------------------
+# Failure handler — print diagnostics if any step exits non-zero
+# ---------------------------------------------------------------------------
+on_error() {
+  echo ""
+  echo "=== Deploy failed — diagnostic commands ==="
+  echo "  Kong pod logs:        kubectl logs -n kong deployment/kong-kong"
+  echo "  Kong migration logs:  kubectl logs -n kong job/kong-kong-init-migrations"
+  echo "  fhir-service logs:    kubectl logs -n fhir deployment/fhir-service"
+  echo "  Pod status:           kubectl get pods -n kong && kubectl get pods -n fhir"
+  echo ""
+  echo "  To tear down and retry:"
+  echo "    helm uninstall kong -n kong"
+  echo "    kubectl delete namespace fhir"
+  echo "    kubectl delete namespace kong"
+  echo "    # Recreate secrets, then re-run deploy.sh"
+}
+trap on_error ERR
 
 echo "=== fhir-agent deploy ==="
 echo "  Image: ${IMAGE}"
