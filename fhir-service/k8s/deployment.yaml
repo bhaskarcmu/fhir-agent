@@ -81,7 +81,7 @@ spec:
             httpGet:
               path: /actuator/health/liveness
               port: http   # references the named containerPort above — resilient to port changes
-            initialDelaySeconds: 90
+            initialDelaySeconds: 180
             periodSeconds: 15
             failureThreshold: 4   # kill pod after 4 consecutive failures (60s)
             timeoutSeconds: 5
@@ -90,7 +90,7 @@ spec:
             httpGet:
               path: /actuator/health/readiness
               port: http   # references the named containerPort above — resilient to port changes
-            initialDelaySeconds: 90
+            initialDelaySeconds: 180
             periodSeconds: 10
             failureThreshold: 6   # remove from Service endpoints after 60s unready
             timeoutSeconds: 5
@@ -106,17 +106,22 @@ spec:
           resources:
             requests:
               cpu: 250m
-              memory: 512Mi
-            limits:
-              cpu: 500m
               memory: 1Gi
+            limits:
+              cpu: 1000m
+              memory: 2Gi
 
           # ---------------------------------------------------------------
           # Security context
           # ---------------------------------------------------------------
           securityContext:
             # Matches the non-root 'fhir' user created in the Dockerfile.
+            # runAsUser must be numeric — Kubernetes cannot verify non-root from
+            # a named user alone. System users created with useradd --system
+            # get UIDs starting at 999 counting down; 'fhir' gets UID 999.
             runAsNonRoot: true
+            runAsUser: 999
+            runAsGroup: 999
             # Do not allow privilege escalation (e.g., sudo, setuid binaries).
             allowPrivilegeEscalation: false
             # Drop all Linux capabilities — Spring Boot + Tomcat needs none.
