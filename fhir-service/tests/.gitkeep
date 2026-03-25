@@ -1,0 +1,7 @@
+# The smoke test that previously lived here has moved to client/clinical/smoke_test.py.
+#
+# client/clinical/ is the canonical location for end-to-end tests of the deployed
+# stack. It uses the domain-abstracted FHIRClient and is maintained by clinical
+# application developers (Hat 2).
+#
+# Platform-level integration tests (no Kong, no API key) live in client/platform/.
