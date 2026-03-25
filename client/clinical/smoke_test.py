@@ -28,9 +28,10 @@ import sys
 import urllib.request
 import urllib.error
 
-# FHIRClient lives in the same directory — import directly.
-# When this becomes a proper package, this import path will be updated.
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+# client/ is a Python package (has __init__.py at each level).
+# Run from the repo root: python3 client/clinical/smoke_test.py
+# The import works without sys.path manipulation as long as the working
+# directory is the repo root (which is the standard for this project).
 from client.clinical.fhir_client import FHIRClient, AuthenticationError, FHIRClientError
 
 # ---------------------------------------------------------------------------

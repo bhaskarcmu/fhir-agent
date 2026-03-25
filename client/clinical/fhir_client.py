@@ -95,7 +95,18 @@ class FHIRClient:
                          "http://localhost:8000" or "https://api.example.com".
                          Do not include /fhir — the client appends it.
             api_key:     API key issued by the platform team via create-key.sh.
+
+        Raises:
+            ValueError if gateway_url or api_key is empty.
         """
+        if not gateway_url or not gateway_url.strip():
+            raise ValueError(
+                "gateway_url is required. Set FHIR_GATEWAY_URL to the Kong proxy URL."
+            )
+        if not api_key or not api_key.strip():
+            raise ValueError(
+                "api_key is required. Set FHIR_API_KEY to a key from create-key.sh."
+            )
         self._base = gateway_url.rstrip("/") + "/fhir"
         self._api_key = api_key
 
@@ -279,9 +290,10 @@ class FHIRClient:
         raw_date = resource.get("birthDate")
         if raw_date:
             try:
-                parts = raw_date.split("-")
-                birth_date = date(int(parts[0]), int(parts[1]), int(parts[2]))
-            except (ValueError, IndexError):
+                # date.fromisoformat() validates the full ISO 8601 date string,
+                # including bounds (e.g. "2021-02-30" raises ValueError correctly).
+                birth_date = date.fromisoformat(raw_date)
+            except ValueError:
                 birth_date = None  # malformed date — treat as absent
 
         return Patient(

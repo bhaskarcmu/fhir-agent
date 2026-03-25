@@ -189,6 +189,20 @@ except FHIRClientError as e:
 
 ---
 
+## Design notes
+
+### Why `urllib` instead of `requests` or `httpx`?
+
+`urllib` ships with every CPython installation, so a clinical developer can
+run `smoke_test.py` immediately after cloning the repo — no `pip install`, no
+virtualenv, no version conflicts. The FHIR calls made here are simple
+request/response interactions (no streaming, no async, no HTTP/2) that fit
+comfortably within `urllib`'s feature set. When Phase 2 introduces async
+workflows or OAuth token refresh, the client will migrate to `httpx`; the
+swap is isolated to `fhir_client.py` and invisible to callers.
+
+---
+
 ## What this client does NOT expose
 
 By design, the following FHIR concepts are hidden inside `fhir_client.py`
