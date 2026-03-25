@@ -303,3 +303,14 @@ cd fhir-service
 ```
 
 Requires Java 21 and Maven 3.8+ (or use the included `./mvnw` wrapper).
+
+### End-to-end and integration tests
+
+Unit and Spring context tests live in `fhir-service/src/test/` and run via Maven.
+
+For tests that run against a live service, see the `client/` directory:
+
+| Test | Location | Requires |
+|---|---|---|
+| Platform integration (no Kong, no GCP) | [`client/platform/`](../client/platform/) | Local running server |
+| Clinical smoke test (full deployed stack) | [`client/clinical/`](../client/clinical/) | GCP deployment + API key |

@@ -1,0 +1,8 @@
+# Clinical client dependencies
+#
+# Currently uses Python stdlib only (urllib, json, dataclasses, datetime).
+# No external packages are required to run fhir_client.py or smoke_test.py.
+#
+# Future additions (Phase 2):
+#   httpx        — async HTTP support for the MCP agent
+#   pydantic     — richer domain model validation if dataclasses become insufficient
