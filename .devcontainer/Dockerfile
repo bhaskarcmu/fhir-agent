@@ -18,7 +18,10 @@ RUN apt-get update && apt-get install -y \
 
 RUN python3 -m venv /opt/pyenv \
     && /opt/pyenv/bin/pip install --upgrade pip setuptools wheel \
-    && /opt/pyenv/bin/pip install fastapi uvicorn httpx pydantic
+    && /opt/pyenv/bin/pip install fastapi uvicorn httpx pydantic \
+    # Make the venv writable by the vscode user so postCreateCommand
+    # can register editable installs without sudo.
+    && chmod -R a+w /opt/pyenv/lib /opt/pyenv/bin
 
 ENV VIRTUAL_ENV=/opt/pyenv
 ENV PATH="/opt/pyenv/bin:${PATH}"
