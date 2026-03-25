@@ -10,6 +10,7 @@ This test uses FHIRClient exclusively. It reads like a clinical workflow,
 not an HTTP test. No FHIR mechanics appear here.
 
 Usage:
+    pip install -e client/clinical   # once
     export FHIR_GATEWAY_URL="http://localhost:8000"
     export FHIR_API_KEY="your-api-key"
     python3 client/clinical/smoke_test.py
@@ -28,11 +29,7 @@ import sys
 import urllib.request
 import urllib.error
 
-# client/ is a Python package (has __init__.py at each level).
-# Run from the repo root: python3 client/clinical/smoke_test.py
-# The import works without sys.path manipulation as long as the working
-# directory is the repo root (which is the standard for this project).
-from client.clinical.fhir_client import FHIRClient, AuthenticationError, FHIRClientError
+from fhir_clinical_client import FHIRClient, AuthenticationError, FHIRClientError
 
 # ---------------------------------------------------------------------------
 # Configuration

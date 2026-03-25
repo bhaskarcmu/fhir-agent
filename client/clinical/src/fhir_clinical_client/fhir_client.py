@@ -11,7 +11,7 @@ clinical domain terms — patients, medications, conditions — not FHIR bundles
 search parameters, or HTTP verbs. You do not need to understand FHIR to use it.
 
 Usage:
-    from client.clinical.fhir_client import FHIRClient
+    from fhir_clinical_client import FHIRClient
 
     client = FHIRClient(
         gateway_url=os.environ["FHIR_GATEWAY_URL"],

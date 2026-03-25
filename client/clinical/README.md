@@ -22,6 +22,17 @@ search parameters, or HTTP verbs.
 
 ---
 
+## Installation
+
+```bash
+# From the repo root — editable install, so changes to src/ are live immediately
+pip install -e client/clinical
+```
+
+No other dependencies. The package is stdlib-only.
+
+---
+
 ## Prerequisites
 
 ### 1. A running deployed stack
@@ -65,7 +76,7 @@ kubectl port-forward svc/kong-kong-proxy 8000:80 -n kong
 
 ```python
 import os
-from client.clinical.fhir_client import FHIRClient
+from fhir_clinical_client import FHIRClient
 
 client = FHIRClient(
     gateway_url=os.environ["FHIR_GATEWAY_URL"],
@@ -130,7 +141,7 @@ The smoke test validates the full stack end-to-end: authentication, server
 reachability, patient CRUD, and rate limiting.
 
 ```bash
-# From the repository root
+pip install -e client/clinical   # once
 FHIR_GATEWAY_URL=http://localhost:8000 \
 FHIR_API_KEY=<your-key> \
 python3 client/clinical/smoke_test.py
@@ -175,7 +186,7 @@ Clinical smoke test
 `FHIRClient` raises typed exceptions — never raw HTTP errors:
 
 ```python
-from client.clinical.fhir_client import FHIRClient, AuthenticationError, NotFoundError, FHIRClientError
+from fhir_clinical_client import FHIRClient, AuthenticationError, NotFoundError, FHIRClientError
 
 try:
     patient = client.get_patient("nonexistent-id")

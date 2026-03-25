@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fhir-clinical-client"
+version = "0.1.0"
+description = "Domain-abstracted FHIR client for clinical application developers"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+
+# stdlib only — no runtime dependencies
+dependencies = []
+
+[project.optional-dependencies]
+# Unlock when async workflows or OAuth token refresh are needed
+async = ["httpx>=0.27"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-dir]
+"" = "src"
