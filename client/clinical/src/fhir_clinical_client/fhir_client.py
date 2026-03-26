@@ -309,8 +309,12 @@ class FHIRClient:
         Raises:
             FHIRClientError on server errors.
         """
-        encoded = name.replace(" ", "+")
-        status, body = self._request(f"/Patient?name={encoded}&_count=20")
+        # HAPI FHIR does not support multi-token name search in a single
+        # name= parameter. Split on whitespace and issue one name= per token;
+        # HAPI ANDs multiple name= parameters, matching all tokens.
+        tokens = name.strip().split()
+        name_params = "&".join(f"name={t}" for t in tokens)
+        status, body = self._request(f"/Patient?{name_params}&_count=20")
         if status != 200:
             raise FHIRClientError(
                 f"Patient search failed (got {status}).", status, body
