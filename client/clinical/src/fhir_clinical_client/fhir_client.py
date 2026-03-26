@@ -53,6 +53,58 @@ class Patient:
     birth_date: Optional[date] = None   # FHIR birthDate is optional
 
 
+@dataclass
+class Medication:
+    """
+    An active medication request for a patient.
+
+    Derived from a FHIR MedicationRequest resource. Only active requests
+    are returned by get_medications() — stopped, cancelled, and draft
+    requests are excluded.
+    """
+    id: str
+    code: str               # RxNorm code (e.g. "997488")
+    display: str            # Human-readable name (e.g. "Fexofenadine hydrochloride 30 MG Oral Tablet")
+    status: str             # FHIR status: "active", "on-hold", etc.
+    authored_on: Optional[date] = None   # Date the prescription was written
+    dosage_text: Optional[str] = None    # Free-text dosage instruction if present
+
+
+@dataclass
+class Allergy:
+    """
+    An allergy or intolerance recorded for a patient.
+
+    Derived from a FHIR AllergyIntolerance resource. get_allergies() returns
+    all recorded allergies regardless of clinical status — callers filter by
+    the criticality or category fields if needed.
+    """
+    id: str
+    code: str               # SNOMED CT code (e.g. "419199007")
+    display: str            # Human-readable substance name
+    criticality: str        # "low", "high", or "unable-to-assess"
+    category: list[str]     # e.g. ["medication"], ["food"], ["environment"]
+    recorded_date: Optional[date] = None
+
+
+@dataclass
+class Condition:
+    """
+    A clinical condition or diagnosis recorded for a patient.
+
+    Derived from a FHIR Condition resource. get_conditions() returns
+    all conditions regardless of clinical status — callers filter by
+    the clinical_status field if needed.
+    """
+    id: str
+    code: str               # SNOMED CT code (e.g. "5689008")
+    display: str            # Human-readable condition name
+    clinical_status: str    # "active", "resolved", "inactive", "remission"
+    onset_date: Optional[date] = None       # When the condition began
+    abatement_date: Optional[date] = None   # When the condition resolved (None if ongoing)
+    recorded_date: Optional[date] = None
+
+
 # ---------------------------------------------------------------------------
 # Exceptions
 # ---------------------------------------------------------------------------
@@ -255,28 +307,123 @@ class FHIRClient:
         self._request(f"/Patient/{patient_id}", method="DELETE")
 
     # -----------------------------------------------------------------------
-    # Phase 2 — clinical data (not yet implemented)
+    # Clinical data
     # -----------------------------------------------------------------------
 
-    # TODO: Phase 2 — get_medications(patient_id: str) -> list[Medication]
-    #   Returns the patient's active medication requests.
-    #   Hides: GET /fhir/MedicationRequest?patient={id}, Bundle parsing.
+    def get_medications(self, patient_id: str) -> list[Medication]:
+        """
+        Return all medication requests for a patient.
 
-    # TODO: Phase 2 — get_conditions(patient_id: str) -> list[Condition]
-    #   Returns the patient's active conditions/diagnoses.
-    #   Hides: GET /fhir/Condition?patient={id}&clinical-status=active, Bundle parsing.
+        Queries active MedicationRequests only (status=active). Stopped,
+        cancelled, and draft prescriptions are excluded.
 
-    # TODO: Phase 2 — get_allergies(patient_id: str) -> list[Allergy]
-    #   Returns the patient's allergy intolerances.
-    #   Hides: GET /fhir/AllergyIntolerance?patient={id}, Bundle parsing.
+        Args:
+            patient_id: The ID returned by create_patient() or get_patient().
 
-    # TODO: Phase 2 — get_appointments(patient_id: str) -> list[Appointment]
+        Returns:
+            List of Medication domain objects, empty list if none recorded.
+
+        Raises:
+            FHIRClientError on server errors.
+        """
+        status, body = self._request(
+            f"/MedicationRequest?patient={patient_id}&status=active&_count=100"
+        )
+        if status != 200:
+            raise FHIRClientError(
+                f"Failed to retrieve medications for patient {patient_id} (got {status}).",
+                status, body,
+            )
+        return [
+            self._parse_medication(entry["resource"])
+            for entry in body.get("entry", [])
+            if entry.get("resource", {}).get("resourceType") == "MedicationRequest"
+        ]
+
+    def get_allergies(self, patient_id: str) -> list[Allergy]:
+        """
+        Return all allergy and intolerance records for a patient.
+
+        Returns all AllergyIntolerance resources regardless of clinical
+        status. Callers filter by the criticality or category fields if
+        needed. The triage service uses this to check drug-allergy conflicts.
+
+        Args:
+            patient_id: The ID returned by create_patient() or get_patient().
+
+        Returns:
+            List of Allergy domain objects, empty list if none recorded.
+
+        Raises:
+            FHIRClientError on server errors.
+        """
+        status, body = self._request(
+            f"/AllergyIntolerance?patient={patient_id}&_count=100"
+        )
+        if status != 200:
+            raise FHIRClientError(
+                f"Failed to retrieve allergies for patient {patient_id} (got {status}).",
+                status, body,
+            )
+        return [
+            self._parse_allergy(entry["resource"])
+            for entry in body.get("entry", [])
+            if entry.get("resource", {}).get("resourceType") == "AllergyIntolerance"
+        ]
+
+    def get_conditions(self, patient_id: str) -> list[Condition]:
+        """
+        Return all conditions recorded for a patient.
+
+        Returns all Condition resources regardless of clinical status
+        (active, resolved, inactive, remission). Callers filter by
+        the clinical_status field if they need only active conditions.
+
+        Args:
+            patient_id: The ID returned by create_patient() or get_patient().
+
+        Returns:
+            List of Condition domain objects, empty list if none recorded.
+
+        Raises:
+            FHIRClientError on server errors.
+        """
+        status, body = self._request(
+            f"/Condition?patient={patient_id}&_count=100"
+        )
+        if status != 200:
+            raise FHIRClientError(
+                f"Failed to retrieve conditions for patient {patient_id} (got {status}).",
+                status, body,
+            )
+        return [
+            self._parse_condition(entry["resource"])
+            for entry in body.get("entry", [])
+            if entry.get("resource", {}).get("resourceType") == "Condition"
+        ]
+
+    # -----------------------------------------------------------------------
+    # Future stubs
+    # -----------------------------------------------------------------------
+
+    # TODO: get_appointments(patient_id: str) -> list[Appointment]
     #   Returns upcoming appointments for the patient.
     #   Hides: GET /fhir/Appointment?patient={id}&date=ge{today}, Bundle parsing.
 
     # -----------------------------------------------------------------------
     # Internal parsers — FHIR mechanics stay here, never leak to callers
     # -----------------------------------------------------------------------
+
+    @staticmethod
+    def _parse_date(raw: str | None) -> Optional[date]:
+        """Parse an ISO 8601 date or datetime string into a date. Returns None on failure."""
+        if not raw:
+            return None
+        try:
+            # FHIR dates can be "YYYY-MM-DD" or full datetimes "YYYY-MM-DDTHH:MM:SS+00:00"
+            return date.fromisoformat(raw[:10])
+        except ValueError:
+            return None
 
     @staticmethod
     def _parse_patient(resource: dict) -> Patient:
@@ -302,4 +449,64 @@ class FHIRClient:
             given_name=given,
             gender=resource.get("gender", "unknown"),
             birth_date=birth_date,
+        )
+
+    @staticmethod
+    def _parse_medication(resource: dict) -> Medication:
+        """Parse a FHIR MedicationRequest resource into a domain Medication object."""
+        concept = resource.get("medicationCodeableConcept", {})
+        codings = concept.get("coding", [{}])
+        coding = codings[0] if codings else {}
+
+        dosage_instructions = resource.get("dosageInstruction", [])
+        dosage_text = dosage_instructions[0].get("text") if dosage_instructions else None
+
+        return Medication(
+            id=resource.get("id", ""),
+            code=coding.get("code", ""),
+            display=concept.get("text") or coding.get("display", ""),
+            status=resource.get("status", ""),
+            authored_on=FHIRClient._parse_date(resource.get("authoredOn")),
+            dosage_text=dosage_text,
+        )
+
+    @staticmethod
+    def _parse_allergy(resource: dict) -> Allergy:
+        """Parse a FHIR AllergyIntolerance resource into a domain Allergy object."""
+        code_concept = resource.get("code", {})
+        codings = code_concept.get("coding", [{}])
+        coding = codings[0] if codings else {}
+
+        return Allergy(
+            id=resource.get("id", ""),
+            code=coding.get("code", ""),
+            display=code_concept.get("text") or coding.get("display", ""),
+            criticality=resource.get("criticality", "unable-to-assess"),
+            category=resource.get("category", []),
+            recorded_date=FHIRClient._parse_date(resource.get("recordedDate")),
+        )
+
+    @staticmethod
+    def _parse_condition(resource: dict) -> Condition:
+        """Parse a FHIR Condition resource into a domain Condition object."""
+        code_concept = resource.get("code", {})
+        codings = code_concept.get("coding", [{}])
+        coding = codings[0] if codings else {}
+
+        clinical_status_codings = (
+            resource.get("clinicalStatus", {}).get("coding", [{}])
+        )
+        clinical_status = (
+            clinical_status_codings[0].get("code", "unknown")
+            if clinical_status_codings else "unknown"
+        )
+
+        return Condition(
+            id=resource.get("id", ""),
+            code=coding.get("code", ""),
+            display=code_concept.get("text") or coding.get("display", ""),
+            clinical_status=clinical_status,
+            onset_date=FHIRClient._parse_date(resource.get("onsetDateTime")),
+            abatement_date=FHIRClient._parse_date(resource.get("abatementDateTime")),
+            recorded_date=FHIRClient._parse_date(resource.get("recordedDate")),
         )

@@ -112,16 +112,17 @@ print(patient.gender)         # "female"
 | `get_patient(patient_id)` | `Patient` | Retrieve a patient by ID |
 | `delete_patient(patient_id)` | `None` | Delete a patient (primarily for test cleanup) |
 
-### Coming in Phase 2
+| `get_medications(patient_id)` | Returns `list[Medication]` — active prescriptions |
+| `get_allergies(patient_id)` | Returns `list[Allergy]` — all recorded allergy intolerances |
+| `get_conditions(patient_id)` | Returns `list[Condition]` — all conditions regardless of status |
+
+### Coming later
 
 | Method | Description |
 |---|---|
-| `get_medications(patient_id)` | Active medication requests |
-| `get_conditions(patient_id)` | Active diagnoses |
-| `get_allergies(patient_id)` | Allergy intolerances |
 | `get_appointments(patient_id)` | Upcoming appointments |
 
-### The Patient dataclass
+### Domain dataclasses
 
 ```python
 @dataclass
@@ -130,7 +131,35 @@ class Patient:
     family_name: str
     given_name: str
     gender: str
-    birth_date: Optional[date]   # None if not recorded
+    birth_date: Optional[date]      # None if not recorded
+
+@dataclass
+class Medication:
+    id: str
+    code: str                       # RxNorm code
+    display: str                    # Human-readable name
+    status: str                     # "active", "on-hold", etc.
+    authored_on: Optional[date]     # Date prescription was written
+    dosage_text: Optional[str]      # Free-text dosage instruction
+
+@dataclass
+class Allergy:
+    id: str
+    code: str                       # SNOMED CT code
+    display: str                    # Substance name
+    criticality: str                # "low", "high", "unable-to-assess"
+    category: list[str]             # e.g. ["medication"], ["food"], ["environment"]
+    recorded_date: Optional[date]
+
+@dataclass
+class Condition:
+    id: str
+    code: str                       # SNOMED CT code
+    display: str                    # Condition name
+    clinical_status: str            # "active", "resolved", "inactive", "remission"
+    onset_date: Optional[date]
+    abatement_date: Optional[date]  # None if condition is ongoing
+    recorded_date: Optional[date]
 ```
 
 ---
