@@ -11,6 +11,7 @@ Run:
   python3 -m pytest client/clinical/tests/test_parsers.py -v
 """
 
+import unittest
 from datetime import date
 
 import pytest
@@ -290,6 +291,100 @@ class TestParseCondition:
     def test_returns_condition_instance(self):
         cond = FHIRClient._parse_condition(self._synthea_condition_resolved())
         assert isinstance(cond, Condition)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# search_patients — URL encoding and response parsing
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestSearchPatients(unittest.TestCase):
+
+    def _mock_search_response(self, patients: list[dict]):
+        """Build a FHIR Bundle search response containing the given patient resources."""
+        return {
+            "resourceType": "Bundle",
+            "type": "searchset",
+            "total": len(patients),
+            "entry": [{"resource": p} for p in patients],
+        }
+
+    def _synthea_patient(self, pid="abc123", family="Mraz", given="Kristle"):
+        return {
+            "resourceType": "Patient",
+            "id": pid,
+            "name": [{"family": family, "given": [given]}],
+            "gender": "female",
+            "birthDate": "1974-03-12",
+        }
+
+    def _make_client(self):
+        return FHIRClient("http://localhost:8080/fhir", "test-key")
+
+    def _mock_request(self, client, status, response_body):
+        client._request = lambda path, method="GET", body=None: (status, response_body)
+
+    def test_returns_list_of_patients(self):
+        client = self._make_client()
+        self._mock_request(
+            client, 200,
+            self._mock_search_response([self._synthea_patient()])
+        )
+        results = client.search_patients("Kristle")
+        self.assertEqual(len(results), 1)
+        self.assertIsInstance(results[0], Patient)
+
+    def test_patient_fields_populated(self):
+        client = self._make_client()
+        self._mock_request(
+            client, 200,
+            self._mock_search_response([self._synthea_patient()])
+        )
+        p = client.search_patients("Mraz")[0]
+        self.assertEqual(p.id, "abc123")
+        self.assertEqual(p.family_name, "Mraz")
+        self.assertEqual(p.given_name, "Kristle")
+        self.assertEqual(p.gender, "female")
+        self.assertEqual(p.birth_date, date(1974, 3, 12))
+
+    def test_empty_results_returns_empty_list(self):
+        client = self._make_client()
+        self._mock_request(
+            client, 200,
+            {"resourceType": "Bundle", "type": "searchset", "total": 0}
+        )
+        results = client.search_patients("NoSuchPerson")
+        self.assertEqual(results, [])
+
+    def test_multiple_matches_all_returned(self):
+        client = self._make_client()
+        self._mock_request(
+            client, 200,
+            self._mock_search_response([
+                self._synthea_patient("id1", "Smith", "Alice"),
+                self._synthea_patient("id2", "Smith", "Bob"),
+            ])
+        )
+        results = client.search_patients("Smith")
+        self.assertEqual(len(results), 2)
+
+    def test_server_error_raises_fhir_client_error(self):
+        from fhir_clinical_client import FHIRClientError
+        client = self._make_client()
+        self._mock_request(client, 500, {"issue": []})
+        with self.assertRaises(FHIRClientError):
+            client.search_patients("anyone")
+
+    def test_spaces_encoded_in_name(self):
+        """Spaces in name must be encoded so the URL is valid."""
+        client = self._make_client()
+        captured = {}
+        def fake_request(path, method="GET", body=None):
+            captured["path"] = path
+            return (200, {"resourceType": "Bundle", "type": "searchset"})
+        client._request = fake_request
+        client.search_patients("Kristle Mraz")
+        self.assertIn("Kristle+Mraz", captured["path"])
+        self.assertNotIn(" ", captured["path"])
 
 
 # ─────────────────────────────────────────────────────────────────────────────

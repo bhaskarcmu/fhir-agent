@@ -1,0 +1,66 @@
+version: "3.9"
+
+# Local demo stack: HAPI FHIR + triage service + MCP agent
+#
+# Usage:
+#   cp .env.example .env          # set ANTHROPIC_API_KEY
+#   docker compose up --build -d fhir triage
+#   python3 data/scripts/seed_demo.py
+#   docker compose run --rm mcp-agent \
+#     python3 -m agent.agent --query "Check refill risk for Kristle Mraz"
+
+services:
+
+  # ── HAPI FHIR JPA server (R4) ─────────────────────────────────────────────
+  fhir:
+    image: hapiproject/hapi:v7.2.0
+    container_name: fhir-agent-fhir
+    ports:
+      - "8080:8080"
+    environment:
+      hapi.fhir.fhir_version: R4
+      hapi.fhir.allow_external_references: "true"
+      hapi.fhir.expunge_enabled: "true"
+      spring.datasource.url: jdbc:h2:mem:hapi
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/fhir/metadata"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  # ── Triage service ────────────────────────────────────────────────────────
+  triage:
+    build:
+      context: .
+      dockerfile: triage-service/Dockerfile
+    container_name: fhir-agent-triage
+    ports:
+      - "8001:8001"
+    environment:
+      FHIR_GATEWAY_URL: http://fhir:8080/fhir
+    depends_on:
+      fhir:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ── MCP agent (run-once CLI) ──────────────────────────────────────────────
+  mcp-agent:
+    build:
+      context: .
+      dockerfile: mcp-agent/Dockerfile
+    container_name: fhir-agent-mcp
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      FHIR_GATEWAY_URL: http://fhir:8080/fhir
+      TRIAGE_SERVICE_URL: http://triage:8001
+    depends_on:
+      triage:
+        condition: service_healthy
+    stdin_open: true
+    tty: true

@@ -290,6 +290,37 @@ class FHIRClient:
             )
         return self._parse_patient(body)
 
+    def search_patients(self, name: str) -> list[Patient]:
+        """
+        Search for patients by name (partial match).
+
+        Uses FHIR's name search parameter, which matches against any part
+        of the patient's name (family, given, prefix, suffix). Case-insensitive
+        on most FHIR servers including HAPI.
+
+        Args:
+            name: Full or partial patient name, e.g. "Kristle" or "Mraz".
+
+        Returns:
+            List of matching Patient objects. Empty list if no match.
+            If multiple patients match, all are returned — the caller
+            (or the agent) decides which one to use.
+
+        Raises:
+            FHIRClientError on server errors.
+        """
+        encoded = name.replace(" ", "+")
+        status, body = self._request(f"/Patient?name={encoded}&_count=20")
+        if status != 200:
+            raise FHIRClientError(
+                f"Patient search failed (got {status}).", status, body
+            )
+        return [
+            self._parse_patient(entry["resource"])
+            for entry in body.get("entry", [])
+            if entry.get("resource", {}).get("resourceType") == "Patient"
+        ]
+
     def delete_patient(self, patient_id: str) -> None:
         """
         Delete a patient record.
