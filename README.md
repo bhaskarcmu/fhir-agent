@@ -1,5 +1,33 @@
 # Agentic Healthcare Workflow Platform
 
+## Quick demo
+
+A clinician types a natural-language query. The agent fetches FHIR data, evaluates medication safety, and returns a structured recommendation — in one turn.
+
+```bash
+cp .env.example .env          # set ANTHROPIC_API_KEY
+docker compose up --build -d fhir triage
+python3 data/scripts/seed_demo.py
+docker compose run --rm mcp-agent \
+  python3 -m agent.agent --query "Check refill risk for Kristle Mraz"
+```
+
+Expected output:
+```
+🚨 HIGH RISK — Do not dispense without physician review
+   Patient: Kristle Mraz  |  RiskAssessment/...
+   Reason: Penicillin-class allergy conflicts with Amoxicillin prescription.
+```
+
+Demo patients loaded by `seed_demo.py`:
+
+| Patient | Scenario | Expected result |
+|---|---|---|
+| Kristle Mraz | Penicillin allergy + Amoxicillin Rx | HIGH risk |
+| John Doe | No allergies + Lisinopril Rx | LOW risk |
+
+---
+
 ## Overview
 
 This project builds a platform where clinicians can describe healthcare workflows in natural language, and an **agentic orchestration layer** (powered by LLMs and MCP) generates, deploys, and maintains FHIR-based automations. The goal is to replace traditional SaaS development with AI-driven orchestration, giving healthcare organisations custom tools without needing a full-time software development team.

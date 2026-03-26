@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fhir-mcp-agent"
+version = "0.1.0"
+description = "LLM-powered clinical workflow agent using Anthropic tool-use"
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=0.28",
+    "httpx>=0.27",
+    "fhir-clinical-client",   # installed via pip install -e client/clinical
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-dir]
+"" = "src"
