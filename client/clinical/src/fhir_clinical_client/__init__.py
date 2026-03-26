@@ -10,6 +10,9 @@ Domain-abstracted FHIR client for clinical application developers.
 from .fhir_client import (
     FHIRClient,
     Patient,
+    Medication,
+    Allergy,
+    Condition,
     FHIRClientError,
     AuthenticationError,
     NotFoundError,
@@ -18,6 +21,9 @@ from .fhir_client import (
 __all__ = [
     "FHIRClient",
     "Patient",
+    "Medication",
+    "Allergy",
+    "Condition",
     "FHIRClientError",
     "AuthenticationError",
     "NotFoundError",

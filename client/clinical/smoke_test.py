@@ -29,7 +29,10 @@ import sys
 import urllib.request
 import urllib.error
 
-from fhir_clinical_client import FHIRClient, AuthenticationError, FHIRClientError
+from fhir_clinical_client import (
+    FHIRClient, AuthenticationError, FHIRClientError,
+    Medication, Allergy, Condition,
+)
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -149,9 +152,127 @@ else:
         check(f"Retrieved patient has correct {name}", False, "skipped — no patient ID")
 
 # ---------------------------------------------------------------------------
-# Test 4: Rate limiting — Kong plugin is active
+# Test 4: Clinical data methods — typed return values, no errors
 # ---------------------------------------------------------------------------
-print("\n4. Rate limiting")
+# These tests run against the test patient created above, who has no
+# medications, allergies, or conditions. The goal is to verify:
+#   - The methods return lists (not errors) when no data exists
+#   - All items in the list are the correct domain type
+# A separate section below checks non-empty results against Synthea data.
+print("\n4. Clinical data methods (empty patient)")
+
+if _patient_id:
+    try:
+        meds = client.get_medications(_patient_id)
+        check("get_medications returns a list", isinstance(meds, list),
+              f"type={type(meds).__name__}")
+        check("get_medications items are Medication objects",
+              all(isinstance(m, Medication) for m in meds),
+              f"count={len(meds)}")
+    except FHIRClientError as e:
+        check("get_medications returns a list", False, str(e))
+        check("get_medications items are Medication objects", False, "skipped")
+
+    try:
+        allergies = client.get_allergies(_patient_id)
+        check("get_allergies returns a list", isinstance(allergies, list),
+              f"type={type(allergies).__name__}")
+        check("get_allergies items are Allergy objects",
+              all(isinstance(a, Allergy) for a in allergies),
+              f"count={len(allergies)}")
+    except FHIRClientError as e:
+        check("get_allergies returns a list", False, str(e))
+        check("get_allergies items are Allergy objects", False, "skipped")
+
+    try:
+        conditions = client.get_conditions(_patient_id)
+        check("get_conditions returns a list", isinstance(conditions, list),
+              f"type={type(conditions).__name__}")
+        check("get_conditions items are Condition objects",
+              all(isinstance(c, Condition) for c in conditions),
+              f"count={len(conditions)}")
+    except FHIRClientError as e:
+        check("get_conditions returns a list", False, str(e))
+        check("get_conditions items are Condition objects", False, "skipped")
+else:
+    for name in ["get_medications", "get_allergies", "get_conditions"]:
+        check(f"{name} returns a list", False, "skipped — no patient ID")
+        check(f"{name} items are correct type", False, "skipped")
+
+# ---------------------------------------------------------------------------
+# Test 5: Clinical data methods — non-empty results from Synthea population
+# ---------------------------------------------------------------------------
+# Requires Synthea data to be loaded (data/scripts/load.py).
+# Queries the first patient in the server and checks that at least one
+# resource type returns data. Skipped gracefully if no Synthea data exists.
+print("\n5. Clinical data methods (Synthea population)")
+
+try:
+    # Find any patient already in the server (not the one we just created)
+    status_code, search_body = client._request("/Patient?_count=200")
+    all_entries = search_body.get("entry", [])
+    # Exclude the test patient we created
+    synthea_entries = [
+        e for e in all_entries
+        if e.get("resource", {}).get("id") != _patient_id
+        and e.get("resource", {}).get("name", [{}])[0].get("family") != "ClinicalTest"
+    ]
+
+    if not synthea_entries:
+        check("Synthea population present", False,
+              "no Synthea data loaded — run data/scripts/load.py first")
+        check("get_medications returns data for Synthea patient", False, "skipped")
+        check("get_allergies returns data for Synthea patient", False, "skipped")
+        check("get_conditions returns data for Synthea patient", False, "skipped")
+    else:
+        check("Synthea population present", True,
+              f"{len(synthea_entries)} patient(s) found")
+
+        # Try up to 10 patients to find one with medications and allergies
+        found_meds = found_allergies = found_conditions = False
+        for entry in synthea_entries[:10]:
+            pid = entry["resource"]["id"]
+            if not found_meds:
+                meds = client.get_medications(pid)
+                if meds:
+                    found_meds = True
+                    check("get_medications returns data for Synthea patient", True,
+                          f"{len(meds)} medication(s), first: {meds[0].display[:50]}")
+            if not found_allergies:
+                allergies = client.get_allergies(pid)
+                if allergies:
+                    found_allergies = True
+                    check("get_allergies returns data for Synthea patient", True,
+                          f"{len(allergies)} allergy/ies, first: {allergies[0].display[:50]}")
+            if not found_conditions:
+                conditions = client.get_conditions(pid)
+                if conditions:
+                    found_conditions = True
+                    check("get_conditions returns data for Synthea patient", True,
+                          f"{len(conditions)} condition(s), first: {conditions[0].display[:50]}")
+            if found_meds and found_allergies and found_conditions:
+                break
+
+        if not found_meds:
+            check("get_medications returns data for Synthea patient", False,
+                  "no active medications found in first 10 patients")
+        if not found_allergies:
+            check("get_allergies returns data for Synthea patient", False,
+                  "no allergies found in first 10 patients")
+        if not found_conditions:
+            check("get_conditions returns data for Synthea patient", False,
+                  "no conditions found in first 10 patients")
+
+except FHIRClientError as e:
+    check("Synthea population present", False, str(e))
+    check("get_medications returns data for Synthea patient", False, "skipped")
+    check("get_allergies returns data for Synthea patient", False, "skipped")
+    check("get_conditions returns data for Synthea patient", False, "skipped")
+
+# ---------------------------------------------------------------------------
+# Test 6: Rate limiting — Kong plugin is active
+# ---------------------------------------------------------------------------
+print("\n6. Rate limiting")
 try:
     url = f"{GATEWAY_URL}/fhir/metadata"
     req = urllib.request.Request(url, headers={"apikey": API_KEY})
