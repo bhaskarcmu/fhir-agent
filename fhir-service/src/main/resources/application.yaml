@@ -311,7 +311,12 @@ hapi:
     # enforce_referential_integrity_on_delete: false
     # enforce_referential_integrity_on_write: false
     # etag_support_enabled: true
-    # expunge_enabled: true
+    expunge_enabled: true       # Enables POST /fhir/$expunge for full data wipe.
+                                # Used by data/scripts/expunge.sh to reset the server
+                                # before reloading a new Synthea dataset.
+                                # Safe for local H2 and dev/staging Neon.
+                                # Override to false in production via env var:
+                                #   HAPI_FHIR_EXPUNGE_ENABLED=false
     # fhirpath_interceptor_enabled: false
     # filter_search_enabled: true
     # graphql_enabled: true
