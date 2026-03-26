@@ -56,7 +56,9 @@ TOOL_DEFINITIONS = [
             "with risk level (HIGH/MODERATE/LOW), clinical rationale, and a "
             "FHIR RiskAssessment ID for audit purposes. "
             "Requires a patient_id — call get_patient_summary first if you only "
-            "have a name."
+            "have a name. "
+            "Optionally pass medication_id to evaluate a specific prescription; "
+            "omit it to evaluate all active medications."
         ),
         "input_schema": {
             "type": "object",
@@ -68,9 +70,8 @@ TOOL_DEFINITIONS = [
                 "medication_id": {
                     "type": "string",
                     "description": (
-                        "Optional: evaluate a specific medication by its FHIR "
-                        "MedicationRequest ID. If omitted, all active medications "
-                        "are evaluated."
+                        "FHIR MedicationRequest ID to evaluate a specific prescription. "
+                        "If omitted, all active medications are evaluated."
                     ),
                 },
             },

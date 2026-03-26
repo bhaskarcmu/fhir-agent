@@ -64,7 +64,9 @@ def _patient(family: str, given: str, birth_date: str, gender: str) -> dict:
     }
 
 
-def _allergy(patient_id: str, display: str, rxnorm_code: str, criticality: str) -> dict:
+def _allergy(patient_id: str, display: str, snomed_code: str, criticality: str) -> dict:
+    # Allergies use SNOMED CT, not RxNorm. RxNorm codes identify medications;
+    # SNOMED CT codes identify the substance the patient is allergic to.
     return {
         "resourceType": "AllergyIntolerance",
         "patient": {"reference": f"Patient/{patient_id}"},
@@ -83,8 +85,8 @@ def _allergy(patient_id: str, display: str, rxnorm_code: str, criticality: str) 
         "criticality": criticality,
         "code": {
             "coding": [{
-                "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
-                "code": rxnorm_code,
+                "system": "http://snomed.info/sct",
+                "code": snomed_code,
                 "display": display,
             }],
             "text": display,
@@ -123,7 +125,7 @@ def seed_kristle_mraz() -> None:
     _post("AllergyIntolerance", _allergy(
         patient_id=pid,
         display="Penicillin",
-        rxnorm_code="7980",
+        snomed_code="764146007",   # SNOMED CT: Penicillin
         criticality="high",
     ))
 

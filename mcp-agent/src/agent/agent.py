@@ -144,7 +144,9 @@ def _print_tool_call(name: str, inputs: dict) -> None:
     if name == "get_patient_summary":
         summary = f"searching for \"{inputs.get('name', '')}\"..."
     elif name == "assess_refill_risk":
-        summary = f"evaluating patient {inputs.get('patient_id', '')}..."
+        pid = inputs.get("patient_id", "")
+        mid = inputs.get("medication_id")
+        summary = f"evaluating patient {pid}" + (f", med {mid}" if mid else "") + "..."
     else:
         summary = str(inputs)
     print(tool_call_line(name, summary))
