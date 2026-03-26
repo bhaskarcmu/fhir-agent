@@ -87,18 +87,19 @@ TOOL_DEFINITIONS = [
 
 def _fhir_client() -> FHIRClient:
     gateway_url = os.environ.get("FHIR_GATEWAY_URL", "")
-    api_key = os.environ.get("FHIR_API_KEY", "local")
+    api_key = os.environ.get("FHIR_API_KEY", "")
     if not gateway_url:
         raise RuntimeError(
             "FHIR_GATEWAY_URL is not set. "
-            "Example: export FHIR_GATEWAY_URL=http://localhost:8080/fhir"
+            "Example: export FHIR_GATEWAY_URL=http://localhost:8000/fhir"
         )
-    # FHIRClient appends /fhir internally. Strip it from the env var if present
-    # so FHIR_GATEWAY_URL=http://host:8080/fhir and http://host:8080 both work.
-    base = gateway_url.rstrip("/")
-    if base.endswith("/fhir"):
-        base = base[: -len("/fhir")]
-    return FHIRClient(gateway_url=base, api_key=api_key)
+    if not api_key:
+        raise RuntimeError(
+            "FHIR_API_KEY is not set. "
+            "The clinical client always authenticates through Kong. "
+            "Run: bash gateway/tools/create-key.sh <name>"
+        )
+    return FHIRClient(gateway_url=gateway_url, api_key=api_key)
 
 
 def _triage_url() -> str:

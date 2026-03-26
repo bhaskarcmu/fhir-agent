@@ -66,14 +66,15 @@ def _get_client() -> FHIRClient:
     if not gateway_url:
         raise RuntimeError(
             "FHIR_GATEWAY_URL is not set. "
-            "Set it to the FHIR server base URL, e.g. http://localhost:8080/fhir"
+            "Set it to the Kong gateway URL, e.g. http://localhost:8000/fhir"
         )
-    # FHIRClient appends /fhir internally. Strip it from the env var if present
-    # so FHIR_GATEWAY_URL=http://host:8080/fhir and http://host:8080 both work.
-    base = gateway_url.rstrip("/")
-    if base.endswith("/fhir"):
-        base = base[: -len("/fhir")]
-    return FHIRClient(gateway_url=base, api_key=api_key or "local")
+    if not api_key:
+        raise RuntimeError(
+            "FHIR_API_KEY is not set. "
+            "The triage service is a clinical-hat consumer — it always authenticates "
+            "through Kong. Run: bash gateway/tools/create-key.sh <name>"
+        )
+    return FHIRClient(gateway_url=gateway_url, api_key=api_key)
 
 
 def _build_risk_assessment(

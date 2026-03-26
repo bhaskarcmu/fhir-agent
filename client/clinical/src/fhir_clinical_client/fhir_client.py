@@ -143,10 +143,13 @@ class FHIRClient:
     def __init__(self, gateway_url: str, api_key: str):
         """
         Args:
-            gateway_url: Base URL of the Kong gateway, e.g.
-                         "http://localhost:8000" or "https://api.example.com".
-                         Do not include /fhir — the client appends it.
+            gateway_url: Base URL of the Kong gateway. Both forms are accepted:
+                         "http://localhost:8000"       (without /fhir)
+                         "http://localhost:8000/fhir"  (with /fhir)
+                         The client normalises either form internally.
             api_key:     API key issued by the platform team via create-key.sh.
+                         Required — the clinical client always authenticates
+                         through Kong. There is no unauthenticated mode.
 
         Raises:
             ValueError if gateway_url or api_key is empty.
@@ -157,9 +160,17 @@ class FHIRClient:
             )
         if not api_key or not api_key.strip():
             raise ValueError(
-                "api_key is required. Set FHIR_API_KEY to a key from create-key.sh."
+                "api_key is required. Set FHIR_API_KEY to a key from create-key.sh.\n"
+                "The clinical client always authenticates through Kong — "
+                "there is no unauthenticated mode."
             )
-        self._base = gateway_url.rstrip("/") + "/fhir"
+        # Normalise: strip trailing /fhir if present, then append it once.
+        # This means FHIR_GATEWAY_URL=http://host:8000 and
+        # FHIR_GATEWAY_URL=http://host:8000/fhir both work correctly.
+        base = gateway_url.rstrip("/")
+        if base.endswith("/fhir"):
+            base = base[: -len("/fhir")]
+        self._base = base + "/fhir"
         self._api_key = api_key
 
     # -----------------------------------------------------------------------

@@ -32,6 +32,7 @@ services:
       start_period: 60s
 
   # ── Triage service ────────────────────────────────────────────────────────
+  # Clinical-hat consumer: authenticates through Kong, never talks to HAPI directly.
   triage:
     build:
       context: .
@@ -40,7 +41,8 @@ services:
     ports:
       - "8001:8001"
     environment:
-      FHIR_GATEWAY_URL: http://fhir:8080/fhir
+      FHIR_GATEWAY_URL: ${FHIR_GATEWAY_URL}   # Kong proxy URL, e.g. http://localhost:8000/fhir
+      FHIR_API_KEY: ${FHIR_API_KEY}            # Required — issued by create-key.sh
     depends_on:
       fhir:
         condition: service_healthy
@@ -52,6 +54,7 @@ services:
       start_period: 10s
 
   # ── MCP agent (run-once CLI) ──────────────────────────────────────────────
+  # Clinical-hat consumer: authenticates through Kong, never talks to HAPI directly.
   mcp-agent:
     build:
       context: .
@@ -59,7 +62,8 @@ services:
     container_name: fhir-agent-mcp
     environment:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
-      FHIR_GATEWAY_URL: http://fhir:8080/fhir
+      FHIR_GATEWAY_URL: ${FHIR_GATEWAY_URL}   # Kong proxy URL, e.g. http://localhost:8000/fhir
+      FHIR_API_KEY: ${FHIR_API_KEY}            # Required — issued by create-key.sh
       TRIAGE_SERVICE_URL: http://triage:8001
     depends_on:
       triage:
