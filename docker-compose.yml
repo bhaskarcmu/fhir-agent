@@ -22,12 +22,14 @@ services:
       hapi.fhir.allow_external_references: "true"
       hapi.fhir.expunge_enabled: "true"
       spring.datasource.url: jdbc:h2:mem:hapi
+    # HAPI is a distroless JVM image — no shell, no curl.
+    # Use java directly; the start_period covers the ~45s boot time.
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/fhir/metadata"]
-      interval: 15s
-      timeout: 10s
-      retries: 10
-      start_period: 30s
+      test: ["CMD", "java", "-version"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
 
   # ── Triage service ────────────────────────────────────────────────────────
   triage:
@@ -43,7 +45,7 @@ services:
       fhir:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
       interval: 10s
       timeout: 5s
       retries: 5
