@@ -1,0 +1,15 @@
+# Generated Synthea patient bundles — can be hundreds of MB for large populations.
+# Regenerate with data/scripts/generate.sh or download with data/scripts/download_sample.sh.
+sample/fhir/
+sample/fhir_stu3/
+sample/metadata/
+sample/practitioner_information/
+
+# Synthea JAR — downloaded on demand by generate.sh, ~100MB.
+synthea/*.jar
+
+# Synthea raw output directory when run outside the configured baseDirectory.
+synthea/output/
+
+# Scratch space for ad-hoc experiments.
+scratch/
