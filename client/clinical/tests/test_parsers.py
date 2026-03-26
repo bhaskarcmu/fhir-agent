@@ -375,7 +375,7 @@ class TestSearchPatients(unittest.TestCase):
             client.search_patients("anyone")
 
     def test_spaces_encoded_in_name(self):
-        """Spaces in name must be encoded so the URL is valid."""
+        """Multi-word names are split into separate name= parameters (no raw spaces)."""
         client = self._make_client()
         captured = {}
         def fake_request(path, method="GET", body=None):
@@ -383,8 +383,11 @@ class TestSearchPatients(unittest.TestCase):
             return (200, {"resourceType": "Bundle", "type": "searchset"})
         client._request = fake_request
         client.search_patients("Kristle Mraz")
-        self.assertIn("Kristle+Mraz", captured["path"])
+        # HAPI does not treat + as a space; each token must be a separate name= param
+        self.assertIn("name=Kristle", captured["path"])
+        self.assertIn("name=Mraz", captured["path"])
         self.assertNotIn(" ", captured["path"])
+        self.assertNotIn("Kristle+Mraz", captured["path"])
 
 
 # ─────────────────────────────────────────────────────────────────────────────

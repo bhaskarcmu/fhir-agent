@@ -93,7 +93,12 @@ def _fhir_client() -> FHIRClient:
             "FHIR_GATEWAY_URL is not set. "
             "Example: export FHIR_GATEWAY_URL=http://localhost:8080/fhir"
         )
-    return FHIRClient(gateway_url=gateway_url, api_key=api_key)
+    # FHIRClient appends /fhir internally. Strip it from the env var if present
+    # so FHIR_GATEWAY_URL=http://host:8080/fhir and http://host:8080 both work.
+    base = gateway_url.rstrip("/")
+    if base.endswith("/fhir"):
+        base = base[: -len("/fhir")]
+    return FHIRClient(gateway_url=base, api_key=api_key)
 
 
 def _triage_url() -> str:
