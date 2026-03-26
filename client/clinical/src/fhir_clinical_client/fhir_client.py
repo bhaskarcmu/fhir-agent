@@ -75,8 +75,9 @@ class Allergy:
     """
     An allergy or intolerance recorded for a patient.
 
-    Derived from a FHIR AllergyIntolerance resource. Only active,
-    confirmed allergies are returned by get_allergies().
+    Derived from a FHIR AllergyIntolerance resource. get_allergies() returns
+    all recorded allergies regardless of clinical status — callers filter by
+    the criticality or category fields if needed.
     """
     id: str
     code: str               # SNOMED CT code (e.g. "419199007")
