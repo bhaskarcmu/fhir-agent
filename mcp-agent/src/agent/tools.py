@@ -94,11 +94,7 @@ def _fhir_client() -> FHIRClient:
             "Example: export FHIR_GATEWAY_URL=http://localhost:8000/fhir"
         )
     if not api_key:
-        raise RuntimeError(
-            "FHIR_API_KEY is not set. "
-            "The clinical client always authenticates through Kong. "
-            "Run: bash gateway/tools/create-key.sh <name>"
-        )
+        return FHIRClient(gateway_url=gateway_url)
     return FHIRClient(gateway_url=gateway_url, api_key=api_key)
 
 

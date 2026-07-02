@@ -197,15 +197,6 @@ def _check_env() -> anthropic.Anthropic:
         ))
         sys.exit(1)
 
-    fhir_api_key = os.environ.get("FHIR_API_KEY", "")
-    if not fhir_api_key:
-        print(error_block(
-            "FHIR_API_KEY is not set.\n"
-            "The agent is a clinical-hat consumer — it always authenticates through Kong.\n"
-            "  bash gateway/tools/create-key.sh <name>"
-        ))
-        sys.exit(1)
-
     return anthropic.Anthropic(api_key=api_key)
 
 

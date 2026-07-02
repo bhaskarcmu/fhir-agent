@@ -69,11 +69,8 @@ def _get_client() -> FHIRClient:
             "Set it to the Kong gateway URL, e.g. http://localhost:8000/fhir"
         )
     if not api_key:
-        raise RuntimeError(
-            "FHIR_API_KEY is not set. "
-            "The triage service is a clinical-hat consumer — it always authenticates "
-            "through Kong. Run: bash gateway/tools/create-key.sh <name>"
-        )
+        log.info("FHIR_API_KEY not set; using local-dev fallback without auth headers")
+        return FHIRClient(gateway_url=gateway_url)
     return FHIRClient(gateway_url=gateway_url, api_key=api_key)
 
 

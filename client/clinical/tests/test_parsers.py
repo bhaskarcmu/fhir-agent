@@ -20,6 +20,14 @@ from fhir_clinical_client import Allergy, Condition, Medication, Patient
 from fhir_clinical_client.fhir_client import FHIRClient
 
 
+class TestClientInitialization:
+
+    def test_allows_missing_api_key_for_local_dev(self):
+        client = FHIRClient(gateway_url="http://localhost:8080/fhir")
+        assert client._base == "http://localhost:8080/fhir"
+        assert client._api_key is None
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # _parse_date
 # ─────────────────────────────────────────────────────────────────────────────

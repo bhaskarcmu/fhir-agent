@@ -140,29 +140,23 @@ class FHIRClient:
     They never return raw FHIR JSON.
     """
 
-    def __init__(self, gateway_url: str, api_key: str):
+    def __init__(self, gateway_url: str, api_key: Optional[str] = None):
         """
         Args:
             gateway_url: Base URL of the Kong gateway. Both forms are accepted:
                          "http://localhost:8000"       (without /fhir)
                          "http://localhost:8000/fhir"  (with /fhir)
                          The client normalises either form internally.
-            api_key:     API key issued by the platform team via create-key.sh.
-                         Required — the clinical client always authenticates
-                         through Kong. There is no unauthenticated mode.
+            api_key:     Optional API key issued by the platform team via
+                         create-key.sh. When omitted, the client uses a local-dev
+                         fallback without authentication headers.
 
         Raises:
-            ValueError if gateway_url or api_key is empty.
+            ValueError if gateway_url is empty.
         """
         if not gateway_url or not gateway_url.strip():
             raise ValueError(
                 "gateway_url is required. Set FHIR_GATEWAY_URL to the Kong proxy URL."
-            )
-        if not api_key or not api_key.strip():
-            raise ValueError(
-                "api_key is required. Set FHIR_API_KEY to a key from create-key.sh.\n"
-                "The clinical client always authenticates through Kong — "
-                "there is no unauthenticated mode."
             )
         # Normalise: strip trailing /fhir if present, then append it once.
         # This means FHIR_GATEWAY_URL=http://host:8000 and
@@ -171,7 +165,7 @@ class FHIRClient:
         if base.endswith("/fhir"):
             base = base[: -len("/fhir")]
         self._base = base + "/fhir"
-        self._api_key = api_key
+        self._api_key = api_key.strip() if api_key and api_key.strip() else None
 
     # -----------------------------------------------------------------------
     # Internal HTTP helper
@@ -183,8 +177,9 @@ class FHIRClient:
         headers = {
             "Content-Type": "application/fhir+json",
             "Accept":       "application/fhir+json",
-            "apikey":       self._api_key,
         }
+        if self._api_key:
+            headers["apikey"] = self._api_key
         data = json.dumps(body).encode() if body else None
         req = urllib.request.Request(url, data=data, headers=headers, method=method)
         try:
