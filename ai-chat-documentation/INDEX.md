@@ -1,16 +1,16 @@
 # Cline Conversation Archive
 
-This page is generated automatically. Select a conversation below to read it directly in GitHub.
+Open a conversation below to see the original prompt and Claude's final response. Execution details are collapsed by default.
 
 **Archived conversations:** 1
 
-| Date | Conversation | Messages |
-|---|---|---:|
-| 12 Jul 2026, 18:44 UTC | [Cline task 1783881894942](markdown/2026/07/1783881894942-cline-task-1783881894942.md) | 6 |
+| Date | Conversation |
+|---|---|
+| 12 Jul 2026, 18:44 UTC | [Analyze the architecture this repo is based on and summarize in 10 bullets](markdown/2026/07/1783881894942-analyze-the-architecture-this-repo-is-based-on-and-summarize-in-10-bul.md) |
 
 ## Archive notes
 
 - `markdown/` contains the readable GitHub versions.
-- `raw/` contains the original Cline JSON files.
-- Model thinking blocks are intentionally not reproduced in Markdown.
-- Tool calls and tool results may still contain project-sensitive data.
+- `raw/` contains the complete original Cline records.
+- Execution details are collapsed in each readable document.
+- Internal tool results are not repeated in the readable document.

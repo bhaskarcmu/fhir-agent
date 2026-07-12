@@ -38,73 +38,6 @@ def contains_obvious_secret(value: str) -> bool:
     return any(pattern.search(value) for pattern in SENSITIVE_PATTERNS)
 
 
-def stringify_content(content: Any) -> str:
-    if isinstance(content, str):
-        return content.strip()
-
-    if not isinstance(content, list):
-        return json.dumps(content, ensure_ascii=False, indent=2)
-
-    sections: list[str] = []
-
-    for block in content:
-        if isinstance(block, str):
-            sections.append(block)
-            continue
-
-        if not isinstance(block, dict):
-            sections.append(json.dumps(block, ensure_ascii=False, indent=2))
-            continue
-
-        block_type = str(block.get("type", "")).lower()
-
-        if block_type == "text":
-            text = block.get("text", "")
-            if text:
-                sections.append(str(text))
-
-        elif block_type == "thinking":
-            # Deliberately omit private model reasoning from the readable export.
-            sections.append("*[Model thinking block omitted]*")
-
-        elif block_type == "tool_use":
-            name = block.get("name", "tool")
-            tool_input = block.get("input", {})
-            sections.append(
-                f"**Tool call: `{name}`**\n\n"
-                f"```json\n{json.dumps(tool_input, ensure_ascii=False, indent=2)}\n```"
-            )
-
-        elif block_type == "tool_result":
-            result = block.get("content", "")
-            if isinstance(result, (dict, list)):
-                result = json.dumps(result, ensure_ascii=False, indent=2)
-            sections.append(f"**Tool result**\n\n```\n{result}\n```")
-
-        else:
-            sections.append(
-                f"```json\n{json.dumps(block, ensure_ascii=False, indent=2)}\n```"
-            )
-
-    return "\n\n".join(section for section in sections if section).strip()
-
-
-def metadata_title(metadata: Any, task_id: str) -> str:
-    if isinstance(metadata, dict):
-        for key in ("name", "title", "task", "description"):
-            value = metadata.get(key)
-            if isinstance(value, str) and value.strip():
-                return value.strip().splitlines()[0][:120]
-    return f"Cline task {task_id}"
-
-
-def safe_filename(value: str) -> str:
-    value = value.strip().lower()
-    value = re.sub(r"[^a-z0-9]+", "-", value)
-    value = value.strip("-")
-    return value[:70] or "cline-task"
-
-
 def timestamp_from_task_id(task_id: str) -> dt.datetime | None:
     try:
         raw = int(task_id)
@@ -115,8 +48,242 @@ def timestamp_from_task_id(task_id: str) -> dt.datetime | None:
         return None
 
 
-def markdown_escape_heading(value: str) -> str:
-    return value.replace("\n", " ").replace("\r", " ").strip()
+def safe_filename(value: str) -> str:
+    value = value.strip().lower()
+    value = re.sub(r"[^a-z0-9]+", "-", value)
+    return value.strip("-")[:70] or "cline-task"
+
+
+def normalise_text(value: Any) -> str:
+    if isinstance(value, str):
+        return value.strip()
+
+    if isinstance(value, (dict, list)):
+        return json.dumps(value, ensure_ascii=False, indent=2)
+
+    if value is None:
+        return ""
+
+    return str(value).strip()
+
+
+def strip_cline_wrappers(text: str) -> str:
+    """
+    Remove Cline-specific wrappers and automatically injected context from a
+    human-authored prompt.
+    """
+    text = text.strip()
+
+    task_match = re.search(r"<task>\s*(.*?)\s*</task>", text, re.DOTALL)
+    if task_match:
+        return task_match.group(1).strip()
+
+    cut_markers = (
+        "\n# task_progress RECOMMENDED",
+        "\n<environment_details>",
+    )
+
+    for marker in cut_markers:
+        if marker in text:
+            text = text.split(marker, 1)[0].rstrip()
+
+    return text
+
+
+def first_human_prompt(messages: list[Any]) -> str:
+    for message in messages:
+        if not isinstance(message, dict):
+            continue
+
+        if str(message.get("role", "")).lower() != "user":
+            continue
+
+        content = message.get("content", "")
+
+        if isinstance(content, str):
+            candidate = strip_cline_wrappers(content)
+            if candidate and not candidate.startswith("["):
+                return candidate
+
+        if isinstance(content, list):
+            for block in content:
+                if not isinstance(block, dict):
+                    continue
+                if block.get("type") != "text":
+                    continue
+
+                candidate = strip_cline_wrappers(
+                    normalise_text(block.get("text", ""))
+                )
+                if candidate and not candidate.startswith("["):
+                    return candidate
+
+    return "Cline development task"
+
+
+def prompt_title(prompt: str, task_id: str) -> str:
+    first_line = prompt.strip().splitlines()[0] if prompt.strip() else ""
+    first_line = re.sub(r"\s+", " ", first_line).strip()
+
+    if not first_line:
+        return f"Cline task {task_id}"
+
+    return first_line[:120]
+
+
+def extract_tool_calls(messages: list[Any]) -> list[dict[str, Any]]:
+    calls: list[dict[str, Any]] = []
+
+    for message in messages:
+        if not isinstance(message, dict):
+            continue
+
+        content = message.get("content")
+        if not isinstance(content, list):
+            continue
+
+        for block in content:
+            if not isinstance(block, dict):
+                continue
+
+            if block.get("type") != "tool_use":
+                continue
+
+            calls.append(
+                {
+                    "name": str(block.get("name", "tool")),
+                    "input": block.get("input", {}),
+                }
+            )
+
+    return calls
+
+
+def extract_final_response(messages: list[Any]) -> str:
+    """
+    Prefer Cline's attempt_completion result. Fall back to the last meaningful
+    assistant text block.
+    """
+    fallback_texts: list[str] = []
+
+    for message in messages:
+        if not isinstance(message, dict):
+            continue
+
+        if str(message.get("role", "")).lower() != "assistant":
+            continue
+
+        content = message.get("content", "")
+
+        if isinstance(content, str):
+            text = content.strip()
+            if text:
+                fallback_texts.append(text)
+            continue
+
+        if not isinstance(content, list):
+            continue
+
+        for block in content:
+            if not isinstance(block, dict):
+                continue
+
+            block_type = str(block.get("type", "")).lower()
+
+            if block_type == "text":
+                text = normalise_text(block.get("text", ""))
+                if text:
+                    fallback_texts.append(text)
+
+            if block_type == "tool_use":
+                name = str(block.get("name", ""))
+                tool_input = block.get("input", {})
+
+                if name == "attempt_completion" and isinstance(tool_input, dict):
+                    result = normalise_text(tool_input.get("result", ""))
+                    if result:
+                        return result
+
+    return fallback_texts[-1] if fallback_texts else "*No final response found.*"
+
+
+def files_inspected(tool_calls: list[dict[str, Any]]) -> list[str]:
+    paths: list[str] = []
+
+    for call in tool_calls:
+        name = call["name"]
+        tool_input = call["input"]
+
+        if name not in {"read_file", "list_files", "search_files"}:
+            continue
+
+        if not isinstance(tool_input, dict):
+            continue
+
+        path = tool_input.get("path")
+        if isinstance(path, str) and path not in paths:
+            paths.append(path)
+
+    return paths
+
+
+def render_tool_details(tool_calls: list[dict[str, Any]]) -> str:
+    visible_calls = [
+        call for call in tool_calls
+        if call["name"] != "attempt_completion"
+    ]
+
+    if not visible_calls:
+        return ""
+
+    inspected = files_inspected(visible_calls)
+
+    lines = [
+        "<details>",
+        f"<summary>Execution details — {len(visible_calls)} tool call(s)</summary>",
+        "",
+    ]
+
+    if inspected:
+        lines.extend(
+            [
+                "### Files inspected",
+                "",
+            ]
+        )
+        lines.extend(f"- `{path}`" for path in inspected)
+        lines.append("")
+
+    lines.extend(
+        [
+            "### Tool activity",
+            "",
+        ]
+    )
+
+    for index, call in enumerate(visible_calls, start=1):
+        name = call["name"]
+        tool_input = call["input"]
+
+        lines.extend(
+            [
+                f"#### {index}. `{name}`",
+                "",
+                "```json",
+                json.dumps(tool_input, ensure_ascii=False, indent=2),
+                "```",
+                "",
+            ]
+        )
+
+    lines.extend(
+        [
+            "</details>",
+            "",
+        ]
+    )
+
+    return "\n".join(lines)
 
 
 def export_task(
@@ -132,83 +299,88 @@ def export_task(
     if not api_file.exists():
         return None
 
-    # Loading first avoids archiving a file while Cline is part-way through writing it.
     try:
         messages = read_json(api_file)
     except (json.JSONDecodeError, OSError) as error:
-        print(f"Skipping active or invalid task {task_id}: {error}", file=sys.stderr)
+        print(
+            f"Skipping active or invalid task {task_id}: {error}",
+            file=sys.stderr,
+        )
         return None
 
     if not isinstance(messages, list):
-        print(f"Skipping task {task_id}: API history is not a list", file=sys.stderr)
+        print(
+            f"Skipping task {task_id}: API history is not a list",
+            file=sys.stderr,
+        )
         return None
 
-    metadata: Any = {}
-    if metadata_file.exists():
-        try:
-            metadata = read_json(metadata_file)
-        except (json.JSONDecodeError, OSError):
-            metadata = {}
-
-    title = metadata_title(metadata, task_id)
     created = timestamp_from_task_id(task_id)
     year = str(created.year) if created else "unknown-year"
     month = f"{created.month:02d}" if created else "unknown-month"
 
     raw_destination = raw_root / year / month / task_id
+
     for source in (api_file, ui_file, metadata_file):
         if source.exists():
             atomic_copy(source, raw_destination / source.name)
+
+    prompt = first_human_prompt(messages)
+    title = prompt_title(prompt, task_id)
+    final_response = extract_final_response(messages)
+    tool_calls = extract_tool_calls(messages)
 
     filename = f"{task_id}-{safe_filename(title)}.md"
     markdown_destination = markdown_root / year / month / filename
     markdown_destination.parent.mkdir(parents=True, exist_ok=True)
 
-    output: list[str] = [
-        f"# {markdown_escape_heading(title)}",
+    output = [
+        f"# {title}",
         "",
-        f"- **Cline task ID:** `{task_id}`",
+        "## Prompt",
+        "",
+        prompt,
+        "",
+        "## Final response",
+        "",
+        final_response,
+        "",
     ]
+
+    tool_details = render_tool_details(tool_calls)
+    if tool_details:
+        output.append(tool_details.rstrip())
+        output.append("")
+
+    output.extend(
+        [
+            "---",
+            "",
+            "## Archive metadata",
+            "",
+            f"- **Cline task ID:** `{task_id}`",
+        ]
+    )
 
     if created:
         output.append(
-            f"- **Approximate creation time:** "
+            "- **Approximate creation time:** "
             f"{created.strftime('%d %B %Y, %H:%M UTC')}"
         )
 
     output.extend(
         [
-            f"- **Messages:** {len(messages)}",
+            f"- **Stored API messages:** {len(messages)}",
+            f"- **Recorded tool calls:** "
+            f"{len([c for c in tool_calls if c['name'] != 'attempt_completion'])}",
             "",
-            "---",
+            (
+                "The complete original Cline records are retained in the "
+                "corresponding `raw/` directory."
+            ),
             "",
         ]
     )
-
-    for number, message in enumerate(messages, start=1):
-        if not isinstance(message, dict):
-            continue
-
-        role = str(message.get("role", "unknown")).lower()
-        heading = {
-            "user": "User",
-            "assistant": "Cline",
-            "system": "System",
-        }.get(role, role.title() or "Message")
-
-        content = stringify_content(message.get("content", ""))
-
-        if not content:
-            continue
-
-        output.extend(
-            [
-                f"## {number}. {heading}",
-                "",
-                content,
-                "",
-            ]
-        )
 
     rendered = "\n".join(output).rstrip() + "\n"
 
@@ -222,6 +394,7 @@ def export_task(
     os.replace(temporary, markdown_destination)
 
     relative = markdown_destination.relative_to(markdown_root.parent)
+
     return {
         "task_id": task_id,
         "title": title,
@@ -240,25 +413,27 @@ def build_index(records: list[dict[str, str]], archive_root: Path) -> None:
     lines = [
         "# Cline Conversation Archive",
         "",
-        "This page is generated automatically. Select a conversation below to read "
-        "it directly in GitHub.",
+        (
+            "Open a conversation below to see the original prompt and Claude's "
+            "final response. Execution details are collapsed by default."
+        ),
         "",
         f"**Archived conversations:** {len(records)}",
         "",
-        "| Date | Conversation | Messages |",
-        "|---|---|---:|",
+        "| Date | Conversation |",
+        "|---|---|",
     ]
 
     for record in records:
         date_text = "Unknown"
+
         if record["created"]:
             parsed = dt.datetime.fromisoformat(record["created"])
             date_text = parsed.strftime("%d %b %Y, %H:%M UTC")
 
         title = html.escape(record["title"]).replace("|", "\\|")
         lines.append(
-            f"| {date_text} | [{title}]({record['path']}) | "
-            f"{record['messages']} |"
+            f"| {date_text} | [{title}]({record['path']}) |"
         )
 
     lines.extend(
@@ -267,9 +442,9 @@ def build_index(records: list[dict[str, str]], archive_root: Path) -> None:
             "## Archive notes",
             "",
             "- `markdown/` contains the readable GitHub versions.",
-            "- `raw/` contains the original Cline JSON files.",
-            "- Model thinking blocks are intentionally not reproduced in Markdown.",
-            "- Tool calls and tool results may still contain project-sensitive data.",
+            "- `raw/` contains the complete original Cline records.",
+            "- Execution details are collapsed in each readable document.",
+            "- Internal tool results are not repeated in the readable document.",
             "",
         ]
     )
@@ -287,11 +462,15 @@ def main() -> int:
     args = parser.parse_args()
 
     if not args.cline_tasks.is_dir():
-        print(f"Cline tasks directory not found: {args.cline_tasks}", file=sys.stderr)
+        print(
+            f"Cline tasks directory not found: {args.cline_tasks}",
+            file=sys.stderr,
+        )
         return 2
 
     raw_root = args.archive_root / "raw"
     markdown_root = args.archive_root / "markdown"
+
     raw_root.mkdir(parents=True, exist_ok=True)
     markdown_root.mkdir(parents=True, exist_ok=True)
 
