@@ -47,6 +47,30 @@
       "cline_read_date": 1783881900442,
       "cline_edit_date": null,
       "user_edit_date": 1783886100836
+    },
+    {
+      "path": "NOTICE",
+      "record_state": "active",
+      "record_source": "read_tool",
+      "cline_read_date": 1783891192327,
+      "cline_edit_date": null,
+      "user_edit_date": null
+    },
+    {
+      "path": "fhir-service/pom.xml",
+      "record_state": "active",
+      "record_source": "read_tool",
+      "cline_read_date": 1783891192452,
+      "cline_edit_date": null,
+      "user_edit_date": null
+    },
+    {
+      "path": "mcp-agent/pyproject.toml",
+      "record_state": "active",
+      "record_source": "read_tool",
+      "cline_read_date": 1783891192656,
+      "cline_edit_date": null,
+      "user_edit_date": null
     }
   ],
   "model_usage": [
