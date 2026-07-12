@@ -78,6 +78,10 @@ def strip_cline_wrappers(text: str) -> str:
     if task_match:
         return task_match.group(1).strip()
 
+    feedback_match = re.search(r"<feedback>\s*(.*?)\s*</feedback>", text, re.DOTALL)
+    if feedback_match:
+        return feedback_match.group(1).strip()
+
     cut_markers = (
         "\n# task_progress RECOMMENDED",
         "\n<environment_details>",
@@ -90,35 +94,98 @@ def strip_cline_wrappers(text: str) -> str:
     return text
 
 
-def first_human_prompt(messages: list[Any]) -> str:
-    for message in messages:
-        if not isinstance(message, dict):
+# ---------------------------------------------------------------------------
+# Cline-generated noise filtering
+#
+# A single "user" turn in api_conversation_history.json often bundles several
+# text blocks together: the genuine human-authored prompt (wrapped in
+# <task>...</task> or <feedback>...</feedback>, or given as ordinary text),
+# plus Cline-injected context such as tool results, the task_progress
+# reminder, and <environment_details>. The helpers below isolate only the
+# genuine human-authored text.
+# ---------------------------------------------------------------------------
+
+_FEEDBACK_NOTICE_PREFIX = "The user has provided feedback"
+
+
+def _is_tool_result_text(text: str) -> bool:
+    # Cline renders tool/command output as text blocks like:
+    #   "[read_file for 'x'] Result: ..."
+    #   "[attempt_completion] Result: Done"
+    #   "[execute_command for '...'] Result: ..."
+    return text.strip().startswith("[")
+
+
+def _is_environment_details_text(text: str) -> bool:
+    return text.strip().startswith("<environment_details>")
+
+
+def _is_task_progress_notice_text(text: str) -> bool:
+    return "task_progress RECOMMENDED" in text
+
+
+def _is_feedback_transition_notice_text(text: str) -> bool:
+    return text.strip().startswith(_FEEDBACK_NOTICE_PREFIX)
+
+
+def extract_human_prompt_from_message(message: dict[str, Any]) -> str | None:
+    """
+    Return the genuine human-authored prompt text carried by a single "user"
+    message, or None if the message contains no genuine prompt (e.g. it is
+    purely a tool result, environment details, or a task_progress reminder).
+    """
+    content = message.get("content", "")
+
+    texts: list[str] = []
+
+    if isinstance(content, str):
+        texts = [content]
+    elif isinstance(content, list):
+        for block in content:
+            if not isinstance(block, dict):
+                continue
+            # tool_result blocks (as used by some agent conversation formats)
+            # are never genuine human prompts.
+            if block.get("type") == "tool_result":
+                continue
+            if block.get("type") != "text":
+                continue
+            texts.append(normalise_text(block.get("text", "")))
+    else:
+        return None
+
+    combined = "\n".join(texts)
+
+    task_match = re.search(r"<task>\s*(.*?)\s*</task>", combined, re.DOTALL)
+    if task_match:
+        candidate = task_match.group(1).strip()
+        if candidate:
+            return candidate
+
+    feedback_match = re.search(r"<feedback>\s*(.*?)\s*</feedback>", combined, re.DOTALL)
+    if feedback_match:
+        candidate = feedback_match.group(1).strip()
+        if candidate:
+            return candidate
+
+    for text in texts:
+        candidate = text.strip()
+        if not candidate:
+            continue
+        if _is_tool_result_text(candidate):
+            continue
+        if _is_environment_details_text(candidate):
+            continue
+        if _is_task_progress_notice_text(candidate):
+            continue
+        if _is_feedback_transition_notice_text(candidate):
             continue
 
-        if str(message.get("role", "")).lower() != "user":
-            continue
+        candidate = strip_cline_wrappers(candidate)
+        if candidate and not _is_tool_result_text(candidate):
+            return candidate
 
-        content = message.get("content", "")
-
-        if isinstance(content, str):
-            candidate = strip_cline_wrappers(content)
-            if candidate and not candidate.startswith("["):
-                return candidate
-
-        if isinstance(content, list):
-            for block in content:
-                if not isinstance(block, dict):
-                    continue
-                if block.get("type") != "text":
-                    continue
-
-                candidate = strip_cline_wrappers(
-                    normalise_text(block.get("text", ""))
-                )
-                if candidate and not candidate.startswith("["):
-                    return candidate
-
-    return "Cline development task"
+    return None
 
 
 def prompt_title(prompt: str, task_id: str) -> str:
@@ -159,52 +226,83 @@ def extract_tool_calls(messages: list[Any]) -> list[dict[str, Any]]:
     return calls
 
 
-def extract_final_response(messages: list[Any]) -> str:
+def build_turns(messages: list[Any]) -> list[dict[str, str | None]]:
     """
-    Prefer Cline's attempt_completion result. Fall back to the last meaningful
-    assistant text block.
+    Walk the conversation in chronological order, extracting every genuine
+    human prompt and pairing it with the next attempt_completion result that
+    follows it. If a prompt has no attempt_completion response yet, its
+    "response" is None.
     """
-    fallback_texts: list[str] = []
+    turns: list[dict[str, str | None]] = []
 
     for message in messages:
         if not isinstance(message, dict):
             continue
 
-        if str(message.get("role", "")).lower() != "assistant":
+        role = str(message.get("role", "")).lower()
+
+        if role == "user":
+            prompt = extract_human_prompt_from_message(message)
+            if prompt:
+                turns.append({"prompt": prompt, "response": None})
             continue
 
-        content = message.get("content", "")
-
-        if isinstance(content, str):
-            text = content.strip()
-            if text:
-                fallback_texts.append(text)
-            continue
-
-        if not isinstance(content, list):
-            continue
-
-        for block in content:
-            if not isinstance(block, dict):
+        if role == "assistant":
+            content = message.get("content")
+            if not isinstance(content, list):
                 continue
 
-            block_type = str(block.get("type", "")).lower()
+            for block in content:
+                if not isinstance(block, dict):
+                    continue
+                if block.get("type") != "tool_use":
+                    continue
+                if block.get("name") != "attempt_completion":
+                    continue
 
-            if block_type == "text":
-                text = normalise_text(block.get("text", ""))
-                if text:
-                    fallback_texts.append(text)
-
-            if block_type == "tool_use":
-                name = str(block.get("name", ""))
                 tool_input = block.get("input", {})
+                if not isinstance(tool_input, dict):
+                    continue
 
-                if name == "attempt_completion" and isinstance(tool_input, dict):
-                    result = normalise_text(tool_input.get("result", ""))
-                    if result:
-                        return result
+                result = normalise_text(tool_input.get("result", ""))
+                if not result:
+                    continue
 
-    return fallback_texts[-1] if fallback_texts else "*No final response found.*"
+                # Pair with the earliest turn that has no response yet.
+                for turn in turns:
+                    if turn["response"] is None:
+                        turn["response"] = result
+                        break
+
+    return turns
+
+
+def render_turns(turns: list[dict[str, str | None]]) -> str:
+    lines: list[str] = []
+
+    for index, turn in enumerate(turns, start=1):
+        lines.extend(
+            [
+                f"## Turn {index}",
+                "",
+                "### Prompt",
+                "",
+                str(turn["prompt"]),
+                "",
+                "### Cline response",
+                "",
+            ]
+        )
+
+        response = turn["response"]
+        if response:
+            lines.append(str(response))
+        else:
+            lines.append("*[Cline has not completed this turn yet.]*")
+
+        lines.append("")
+
+    return "\n".join(lines)
 
 
 def files_inspected(tool_calls: list[dict[str, Any]]) -> list[str]:
@@ -325,9 +423,9 @@ def export_task(
         if source.exists():
             atomic_copy(source, raw_destination / source.name)
 
-    prompt = first_human_prompt(messages)
-    title = prompt_title(prompt, task_id)
-    final_response = extract_final_response(messages)
+    turns = build_turns(messages)
+    first_prompt = turns[0]["prompt"] if turns else "Cline development task"
+    title = prompt_title(str(first_prompt), task_id)
     tool_calls = extract_tool_calls(messages)
 
     filename = f"{task_id}-{safe_filename(title)}.md"
@@ -337,15 +435,18 @@ def export_task(
     output = [
         f"# {title}",
         "",
-        "## Prompt",
-        "",
-        prompt,
-        "",
-        "## Final response",
-        "",
-        final_response,
-        "",
     ]
+
+    if turns:
+        output.append(render_turns(turns).rstrip())
+        output.append("")
+    else:
+        output.extend(
+            [
+                "*No readable human/Cline turns were found in this task.*",
+                "",
+            ]
+        )
 
     tool_details = render_tool_details(tool_calls)
     if tool_details:
@@ -414,8 +515,9 @@ def build_index(records: list[dict[str, str]], archive_root: Path) -> None:
         "# Cline Conversation Archive",
         "",
         (
-            "Open a conversation below to see the original prompt and Claude's "
-            "final response. Execution details are collapsed by default."
+            "Open a conversation below to see every prompt and Cline's "
+            "corresponding final response, in order. Execution details are "
+            "collapsed by default."
         ),
         "",
         f"**Archived conversations:** {len(records)}",
