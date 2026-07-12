@@ -10,9 +10,25 @@
     },
     {
       "path": "/workspaces/.ai-chat-history/ai-chat-documentation/markdown/2026/07/1783881894942-analyze-the-architecture-this-repo-is-based-on-and-summarize-in-10-bul.md",
-      "record_state": "active",
+      "record_state": "stale",
       "record_source": "read_tool",
       "cline_read_date": 1783898821883,
+      "cline_edit_date": null,
+      "user_edit_date": null
+    },
+    {
+      "path": "/workspaces/.ai-chat-history/ai-chat-documentation/markdown/2026/07/1783881894942-analyze-the-architecture-this-repo-is-based-on-and-summarize-in-10-bul.md",
+      "record_state": "active",
+      "record_source": "user_edited",
+      "cline_read_date": 1783898821883,
+      "cline_edit_date": null,
+      "user_edit_date": 1783898848162
+    },
+    {
+      "path": "/workspaces/.ai-chat-history/ai-chat-documentation/raw/2026/07/1783881894942/api_conversation_history.json",
+      "record_state": "active",
+      "record_source": "read_tool",
+      "cline_read_date": 1783898861614,
       "cline_edit_date": null,
       "user_edit_date": null
     }
