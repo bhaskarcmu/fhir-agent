@@ -1,10 +1,36 @@
 tasks:
+  installDependencies:
+    name: Install dependencies
+    description: >
+      Installs the Python packages in editable mode and warms Maven
+      dependencies for the FHIR service.
+    command: |
+      python -m pip install --upgrade pip
+      python -m pip install -e client/clinical -e triage-service -e mcp-agent
+      cd fhir-service
+      ./mvnw -DskipTests dependency:go-offline
+    triggeredBy:
+      - manual
+      - postDevcontainerStart
+      - prebuild
+
+  buildFhirService:
+    name: Build FHIR service
+    description: Builds the Java FHIR service without running tests.
+    command: |
+      cd fhir-service
+      ./mvnw -DskipTests package
+    dependsOn:
+      - installDependencies
+    triggeredBy:
+      - manual
+
   setupCredentials:
     name: Setup AI tool credentials
     description: >
       Installs Google Cloud CLI, Claude Code CLI, and configures credentials
       for all AI tools: Claude Code, Continue.dev, Roo Code, and GitHub Copilot CLI.
-      Runs automatically after the devcontainer starts.
+      Run manually when those tools are needed.
     command: |
       # Install Google Cloud CLI (moved here from devcontainer features to keep
       # the image build fast — gcloud is ~500MB and was causing build timeouts)
@@ -27,4 +53,17 @@ tasks:
       # Configure credentials for all AI tools
       bash /workspaces/fhir-agent/.devcontainer/scripts/setup-credentials.sh 2>&1 | tee -a /workspaces/setup.log
     triggeredBy:
-      - postDevcontainerStart
+      - manual
+
+services:
+  fhirServer:
+    name: FHIR server
+    description: Starts the local HAPI FHIR server from Docker Compose.
+    commands:
+      start: |
+        gitpod environment port open 8080 --dont-wait --admission creator_only --name fhir-server --protocol http || true
+        docker compose up --build fhir
+      ready: curl -sf http://localhost:8080/fhir/metadata > /dev/null
+    triggeredBy:
+      - manual
+      - postEnvironmentStart
