@@ -1678,8 +1678,10 @@ Exclusion validated (nothing under `scripts/` or `logs/` would be staged). Now c
 
 The daemon **already auto-committed and pushed my `publisher.py` edit** before I could — which is the exact "weird" behavior you flagged, happening live. Both source fixes are now on `origin/ai-chat-history`. Let me confirm both are in HEAD:
 
+Both fixes are confirmed in HEAD and pushed. Everything code-side is done; the only remaining action is the **watcher restart**, which is yours to run. Here's the full picture.
+
 <details>
-<summary>Execution details — 180 tool events</summary>
+<summary>Execution details — 181 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2094,6 +2096,7 @@ The publisher sta…`
 - **Bash** `cd /workspaces/.ai-chat-history
 echo "=== publisher.py in HEAD has the exclusion? ==="; git show HEAD:ai-chat-documentation/scripts/archive_ai/publisher.py | grep -c "exclude" 
 echo "=== redactor.py i…`
+- **TodoWrite** `{"todos": [{"content": "Refactor setup-credentials.sh (no secret file writes) — main/PR#23", "status": "completed", "activeForm": "Refactoring setup-credentials.sh"}, {"content": "Add gitleaks CI — ma…`
 
 </details>
 
@@ -2104,6 +2107,6 @@ echo "=== redactor.py i…`
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 19:17 UTC
+- **Last updated:** 13 July 2026, 19:18 UTC
 - **Turns:** 26
 - **Status:** Complete
