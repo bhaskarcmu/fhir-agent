@@ -2,93 +2,46 @@
 # Configures AI tool credentials after the devcontainer starts.
 # Runs as the postDevcontainerStart automation via .ona/automations.yaml.
 # Logs all steps to /workspaces/setup.log. Never exits with error.
+#
+# SECURITY POLICY: this script never writes secret VALUES into files.
+# The Claude key comes from the single Ona secret CLAUDE_API_KEY and is
+# injected into the environment by .devcontainer/devcontainer.json:
+#     "CLAUDE_API_KEY":    "${localEnv:CLAUDE_API_KEY}"
+#     "ANTHROPIC_API_KEY": "${localEnv:CLAUDE_API_KEY}"
+# so both names are available in the environment (RAM), not on disk. Tools that
+# read the key from the environment (Claude Code CLI, the mcp-agent — which
+# accepts ANTHROPIC_API_KEY or CLAUDE_API_KEY) need no per-tool config file.
 
 LOG_FILE="/workspaces/setup.log"
-REPO_DIR="/workspaces/fhir-agent"
 
 echo "=== AI tool setup starting at $(date) ===" >> "$LOG_FILE"
 
-# 1. Claude Code
-# Claude Code reads ANTHROPIC_API_KEY from the environment — it does NOT use
-# ~/.claude/config.json. Ensure the variable is exported for interactive shells
-# by writing it to ~/.bashrc and ~/.profile as a fallback in case the
-# devcontainer containerEnv mapping doesn't propagate to all shell sessions.
+# 1. Claude Code — reads ANTHROPIC_API_KEY from the environment.
+# No file writes: devcontainer.json injects ANTHROPIC_API_KEY (and CLAUDE_API_KEY)
+# from the CLAUDE_API_KEY Ona secret. If a shell does not see the value, rebuild
+# the environment so containerEnv is re-applied — do NOT persist it to dotfiles.
 if command -v claude &> /dev/null; then
-    echo "Claude Code: found at $(which claude)" >> "$LOG_FILE"
-    if [ -n "$CLAUDE_API_KEY" ]; then
-        # /etc/environment is read before shell profiles and may contain a stale
-        # empty value from the devcontainer containerEnv mapping. Fix it first.
-        if grep -q "^ANTHROPIC_API_KEY=" /etc/environment 2>/dev/null; then
-            sudo sed -i "s|^ANTHROPIC_API_KEY=.*|ANTHROPIC_API_KEY=$CLAUDE_API_KEY|" /etc/environment
-        else
-            echo "ANTHROPIC_API_KEY=$CLAUDE_API_KEY" | sudo tee -a /etc/environment > /dev/null
-        fi
-
-        # Write to all shell profiles so interactive terminals pick it up
-        for profile in ~/.bashrc ~/.profile ~/.zshrc ~/.zprofile; do
-            touch "$profile"
-            if ! grep -q "ANTHROPIC_API_KEY" "$profile" 2>/dev/null; then
-                echo "export ANTHROPIC_API_KEY=\"$CLAUDE_API_KEY\"" >> "$profile"
-            fi
-        done
-        # Also export for the current session
-        export ANTHROPIC_API_KEY="$CLAUDE_API_KEY"
-        echo "Claude Code: ANTHROPIC_API_KEY set in /etc/environment and shell profiles" >> "$LOG_FILE"
+    if [ -n "$CLAUDE_API_KEY" ] || [ -n "$ANTHROPIC_API_KEY" ]; then
+        echo "Claude Code: key present in environment (no file written)" >> "$LOG_FILE"
     else
-        echo "Claude Code: no CLAUDE_API_KEY set, will prompt on first use" >> "$LOG_FILE"
+        echo "Claude Code: no key in environment; check the CLAUDE_API_KEY Ona secret" >> "$LOG_FILE"
     fi
 else
     echo "Claude Code: binary not found" >> "$LOG_FILE"
 fi
 
-# 2. Continue.dev — written into the repo's .vscode directory
-# Unquoted heredoc delimiter so shell variables expand correctly
-if [ -n "$CLAUDE_API_KEY" ]; then
-    mkdir -p "$REPO_DIR/.vscode"
-    cat > "$REPO_DIR/.vscode/settings.json" << EOF
-{
-    "continue.models": [
-        {
-            "title": "Claude 3.5 Sonnet",
-            "provider": "anthropic",
-            "model": "claude-3-5-sonnet-20241022",
-            "apiKey": "$CLAUDE_API_KEY"
-        }
-    ],
-    "continue.tabAutocompleteModel": {
-        "title": "Claude 3.5 Sonnet",
-        "provider": "anthropic",
-        "model": "claude-3-5-sonnet-20241022",
-        "apiKey": "$CLAUDE_API_KEY"
-    }
-}
-EOF
-    echo "Continue.dev: settings written to $REPO_DIR/.vscode/settings.json" >> "$LOG_FILE"
-else
-    echo "Continue.dev: no CLAUDE_API_KEY set, skipping" >> "$LOG_FILE"
-fi
+# 2. Continue.dev / Roo Code — GUI extensions.
+# We deliberately do NOT write the key into any config file (previously this
+# wrote it into the tracked .vscode/settings.json and ~/.roo-cline/settings.json).
+# Configure these once via their in-editor UI, or point them at the
+# ANTHROPIC_API_KEY environment variable. No secret is persisted to disk here.
+echo "Continue.dev / Roo Code: skipping on-disk key write (configure via UI / env)" >> "$LOG_FILE"
 
-# 3. Roo Code
-if [ -n "$CLAUDE_API_KEY" ]; then
-    mkdir -p ~/.roo-cline
-    cat > ~/.roo-cline/settings.json << EOF
-{
-    "apiKey": "$CLAUDE_API_KEY",
-    "provider": "anthropic",
-    "model": "claude-3-5-sonnet-20241022",
-    "maxTokens": 4096,
-    "temperature": 0.7
-}
-EOF
-    echo "Roo Code: settings written" >> "$LOG_FILE"
-else
-    echo "Roo Code: no CLAUDE_API_KEY set, skipping" >> "$LOG_FILE"
-fi
-
-# 4. GitHub CLI auth (repo access)
+# 3. GitHub CLI auth (repo access)
 # GITHUB_TOKEN_REPO is a classic PAT with repo scope, used for gh CLI commands
 # (gh pr, gh issue, etc.) and git operations. Kept separate from GH_TOKEN to
-# avoid interfering with Copilot's fine-grained PAT requirements.
+# avoid interfering with Copilot's fine-grained PAT requirements. The token is
+# handed to gh's own credential store, not written to the repo or dotfiles.
 if command -v gh &> /dev/null; then
     if [ -n "$GITHUB_TOKEN_REPO" ]; then
         echo "$GITHUB_TOKEN_REPO" | gh auth login --with-token 2>> "$LOG_FILE" \
@@ -101,10 +54,10 @@ else
     echo "GitHub CLI: gh not found" >> "$LOG_FILE"
 fi
 
-# 5. GitHub Copilot CLI extension
+# 4. GitHub Copilot CLI extension
 # GH_TOKEN (fine-grained PAT with Copilot read permission) is scoped to the
 # extension install command only — never passed to 'gh auth login', so it
-# cannot overwrite the repo credentials configured in step 4 above.
+# cannot overwrite the repo credentials configured in step 3 above.
 if command -v gh &> /dev/null; then
     if gh extension list 2>/dev/null | grep -q "github/gh-copilot"; then
         echo "GitHub Copilot CLI: already installed" >> "$LOG_FILE"
