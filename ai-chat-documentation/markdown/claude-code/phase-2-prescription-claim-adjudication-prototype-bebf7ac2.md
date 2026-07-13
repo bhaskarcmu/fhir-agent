@@ -312,6 +312,8 @@ Both readers are running. While they work, let me read the two most decision-cri
 
 The triage engine is now crystal clear — first-match-wins `evaluate(medications, allergies) -> RuleResult`, rules registered in a `RULES` list, clinical code sets as constants. Phase 2 clinical safety (drug-allergy/dup-therapy) reuses this via its HTTP API. Let me check `.clinerules` (no agent is covering it) since CLAUDE.md says to keep them in sync.
 
+I've directly confirmed the two most critical things (the triage rules engine internals and that `.clinerules`/`CLAUDE.md` are semantically-equivalent mirrors that must stay in sync). Two background readers are analyzing the remaining service and infra documentation. I'll draft the plan once they report — waiting on their findings so the plan is grounded, not guessed.
+
 <details>
 <summary>Execution details — 12 tool events</summary>
 
