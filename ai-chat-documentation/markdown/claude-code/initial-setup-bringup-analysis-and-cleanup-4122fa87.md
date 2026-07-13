@@ -801,10 +801,29 @@ Okay go to Phase 2. Tell me what is Phase 2 right here before you begin, cause I
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+## Phase 2 — Bring up & validate the FHIR data layer
+
+Here's exactly what Phase 2 is, so you have it in front of you:
+
+**Goal:** stand up and prove the foundation that everything else depends on — the FHIR server — and confirm real data flows in and back out. Local only; no GCP, no Neon, Kong bypassed.
+
+Per your two earlier instructions ("test **both** FHIR servers" and "**simpler tests first**"), Phase 2 runs in this order:
+
+1. **Health check** the already-running HAPI server (upstream `hapiproject/hapi` image, `:8080`) — confirm it returns a valid FHIR `CapabilityStatement`.
+2. **Simpler test — live CRUD against that server:**
+   - `client/clinical/smoke_test.py` (Hat 2 — via the domain client library)
+   - `client/platform/integration_test.py` (Hat 1 — direct FHIR protocol-level)
+3. **Seed deterministic demo data** — `data/scripts/seed_demo.py` creates the two canonical patients (Kristle Mraz → penicillin allergy + amoxicillin; John Doe → lisinopril, no allergy) and I'll verify they landed.
+4. **More complex FHIR server — the repo's OWN Java service:** `cd fhir-service && ./mvnw verify` (HAPI JPA starter, ~39 tests, uses Testcontainers). This validates the *actual repo code* (MCP bridge, versioned-URL validation fallback) — distinct from the upstream image in step 1. This is the slow one, saved for last.
+
+**What Phase 2 does NOT include:** triage service (Phase 3), the agent (Phase 4), full Compose integration (Phase 5).
+
+---
+
+Now beginning. **Step 1 — health check**, and reading the two integration tests so I can explain them before running:
 
 <details>
-<summary>Execution details — 55 tool events</summary>
+<summary>Execution details — 57 tool events</summary>
 
 ### Turn 1 activity
 
@@ -914,6 +933,13 @@ echo "=== does .gitignore cover .env? ==="; grep -nE '(^|/)\.env' .gitignore || 
 - **Bash** `python3 -m pytest triage-service/src/triage/tests/test_rules.py -v 2>&1 | tail -35`
 - **Bash** `python3 -m pytest data/scripts/test_load.py -v 2>&1 | tail -40`
 
+### Turn 14 activity
+
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== container status ==="; docker ps --filter name=fhir-agent-fhir --format '{{.Names}} | {{.Status}}'
+echo "=== CapabilityStatement ==="; curl -s http://localhost:8080…`
+- **Read** `/workspaces/fhir-agent/client/clinical/smoke_test.py`
+
 </details>
 
 ---
@@ -923,6 +949,6 @@ echo "=== does .gitignore cover .env? ==="; grep -nE '(^|/)\.env' .gitignore || 
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 17:07 UTC
+- **Last updated:** 13 July 2026, 17:08 UTC
 - **Turns:** 14
-- **Status:** Incomplete
+- **Status:** Complete
