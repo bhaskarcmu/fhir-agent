@@ -1374,8 +1374,12 @@ Finally, the `mcp-agent/README.md` is just a one-line stub — filling it in to 
 
 All edits done. Now let me verify nothing broke — reinstall with the new `[dev]` extras (validates the pyproject changes), then run the full Python suite:
 
+Good catch by the test run — pointing `pytest` at whole package dirs also collects the **script-style** files (`smoke_test.py`, `integration_test.py`) which self-`exit` at import. My documented command would hit exactly this. Let me fix it properly so it's genuinely smooth: (a) pin `testpaths` in the two packages that lack it, and (b) document explicit test paths. First, confirm the explicit-paths command is clean:
+
+Let me see the actual collection error on the e2e file:
+
 <details>
-<summary>Execution details — 122 tool events</summary>
+<summary>Execution details — 124 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1649,6 +1653,10 @@ python -m pip install -q -e "client/clinical[dev]" -e "triage-service[dev]" -e "
 echo "=== install exit: $? ==="`
 - **Bash** `cd /workspaces/fhir-agent
 python -m pytest client/clinical triage-service mcp-agent data/scripts -q 2>&1 | tail -15`
+- **Bash** `cd /workspaces/fhir-agent
+python -m pytest client/clinical/tests triage-service/src/triage/tests mcp-agent/tests data/scripts/test_load.py -q 2>&1 | tail -8`
+- **Bash** `cd /workspaces/fhir-agent
+python -m pytest client/clinical/tests triage-service/src/triage/tests mcp-agent/tests data/scripts/test_load.py 2>&1 | grep -A18 "ERROR collecting\|errors during collection\…`
 
 </details>
 
@@ -1659,6 +1667,6 @@ python -m pytest client/clinical triage-service mcp-agent data/scripts -q 2>&1 |
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 17:58 UTC
+- **Last updated:** 13 July 2026, 17:59 UTC
 - **Turns:** 23
 - **Status:** Complete
