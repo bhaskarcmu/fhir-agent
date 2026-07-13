@@ -1575,8 +1575,10 @@ There's a `publisher.py` that auto-commits+pushes — which is the *designed* ar
 
 Let me read the CLI to see exactly what `sync` does (regenerate only, or also publish), and what `subdir` the publisher stages:
 
+`sync` regenerates (with the now-hardened redactor, loaded fresh) **and** publishes (commits + pushes the archive subdir) — which is the sanctioned ai-chat-history workflow. Let me confirm the subdir includes my code changes, and note there's a **running watcher daemon** that has the old redactor in memory (it'll need a restart). Checking config:
+
 <details>
-<summary>Execution details — 164 tool events</summary>
+<summary>Execution details — 165 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1954,6 +1956,9 @@ echo "=== publisher stage scope ==="; grep -nE "add|stage|_g…`
 - **Bash** `cd /workspaces/.ai-chat-history/ai-chat-documentation/scripts
 echo "=== cli.py ==="; sed -n '1,120p' archive_ai/cli.py 2>/dev/null
 echo "=== subdir / config ==="; grep -rnE "subdir|Publisher\(|publish…`
+- **Bash** `cd /workspaces/.ai-chat-history/ai-chat-documentation/scripts
+echo "=== archive_subdir default ==="; grep -nE "archive_subdir|archive_worktree|subdir|branch|remote" archive_ai/config.py | head
+echo; e…`
 
 </details>
 
@@ -1964,6 +1969,6 @@ echo "=== subdir / config ==="; grep -rnE "subdir|Publisher\(|publish…`
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 19:04 UTC
+- **Last updated:** 13 July 2026, 19:05 UTC
 - **Turns:** 25
 - **Status:** Complete
