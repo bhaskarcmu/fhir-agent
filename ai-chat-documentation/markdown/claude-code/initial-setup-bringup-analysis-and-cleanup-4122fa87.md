@@ -1551,8 +1551,10 @@ Now the gap is precise and important:
 
 Let me read the redactor and pipeline to fix it correctly (this is the actual leak vector):
 
+The redactor *does* have a `url-credentials` pattern that should catch `postgresql://user:‹redacted:url-credentials›`, yet the secret persisted — so the real question is whether the pipeline actually applies redaction to the **raw** capture. Let me check where `redact()` is called:
+
 <details>
-<summary>Execution details — 149 tool events</summary>
+<summary>Execution details — 150 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1898,6 +1900,8 @@ echo; echo "=== ai-chat-documentation tree (dirs + scripts) ==="; find ai-chat-�
 echo "=== redactor module location ==="; find ai-chat-documentation/scripts -name "*redact*" -o -name "*.py" | grep -iE "redact|pipeline" | head
 e…`
 - **Read** `/workspaces/.ai-chat-history/ai-chat-documentation/scripts/archive_ai/redactor.py`
+- **Bash** `cd /workspaces/.ai-chat-history/ai-chat-documentation/scripts 2>/dev/null || exit 0
+echo "=== where redact() is called in pipeline.py ==="; grep -nE "redact|raw|jsonl|write|dump|json\." archive_ai/pip…`
 
 </details>
 
