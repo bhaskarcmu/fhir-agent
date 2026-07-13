@@ -2041,8 +2041,36 @@ Now updating the PR title and description so they match the actual diff (bringup
 
 Let me confirm CI is green on the latest commit and give you the final readiness verdict:
 
+**PR #23 is ready for your review.** ✅
+
+Updating the tracker and summarizing:
+
+## PR #23 — ready for review
+
+**Nothing remains to do — it's review-ready.** Final state:
+
+- **Title/description** now accurately cover all three commits.
+- **3 commits:** bringup smoothing (`3fbaf59`) → secret-hygiene (`dd2729c`) → `.vscode` whitelist (`df4bb66`).
+- **CI:** gitleaks **pass** on the latest commit.
+- **Mergeable: CLEAN**, up to date with `main`.
+- **Tests:** 105 passing.
+
+**What's in it:**
+1. *Bringup smoothness* — `pytest` "just works" (root `pytest.ini` + `[dev]` extras), `CLAUDE_API_KEY` accepted by the agent, Compose works out-of-the-box, docs corrected.
+2. *Secret hygiene* — `setup-credentials.sh` no longer writes the key to any file (env-only via devcontainer), gitleaks CI added.
+3. *`.vscode`* — kept **tracked** per the researched best practice, with a whitelist `.gitignore` so only curated shared files are trackable and personal files can't slip in.
+
+👉 Review it here: https://github.com/bhaskarcmu/fhir-agent/pull/23
+
+**Non-blocking leftovers (not part of the PR, your call anytime):**
+- The `core` dump (~5 GB, untracked) is still in the working tree — delete when convenient.
+- A one-line benign `python-envs.defaultEnvManager` tweak sits uncommitted in `.vscode/settings.json` — deliberately left out of this PR; commit or discard as you prefer.
+- Optional Neon **new-value** check (you deferred it) — the security-critical part is done: the old credential is confirmed dead.
+
+Per your rules I won't merge it — that's yours. Once you merge, I'll ask about deleting the `feature/bringup-smoothing` branch (remote + local).
+
 <details>
-<summary>Execution details — 205 tool events</summary>
+<summary>Execution details — 206 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2542,6 +2570,7 @@ Makes the full stack run with minimal friction, brings docs current, and closes�
 sleep 15
 echo "=== PR #23 state ==="; gh pr view 23 --json state,mergeable,mergeStateStatus,title -q '{title,state,mergeable,mergeStateStatus}' 2>/dev/null
 echo "=== CI check…`
+- **TodoWrite** `{"todos": [{"content": "setup-credentials.sh (no secret file writes), gitleaks CI, .vscode whitelist — PR#23", "status": "completed", "activeForm": "Finalizing PR #23 security changes"}, {"content": "…`
 
 </details>
 
@@ -2552,6 +2581,6 @@ echo "=== CI check…`
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 20:14 UTC
+- **Last updated:** 13 July 2026, 20:15 UTC
 - **Turns:** 32
 - **Status:** Complete
