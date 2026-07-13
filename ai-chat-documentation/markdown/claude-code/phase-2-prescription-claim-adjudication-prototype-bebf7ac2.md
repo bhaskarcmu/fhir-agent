@@ -651,8 +651,16 @@ On the branch. Writing three focused documents under `docs/phase2/`: an index, t
 
 I introduced a numbering collision (two `R7`s). Let me fix the non-functional section numbering and the README anchor.
 
+Now the plan document:
+
+Let me add a pointer from the top-level `docs/README.md` (currently just a stub) to the new Phase 2 set, then review the final diff.
+
+Only `docs/` changed — no application code, as required. Committing on the feature branch (message ends with the required trailer):
+
+Committed on `feature/phase2-planning`. Per CLAUDE.md (proactively branch → push → PR, never merge), pushing and opening a PR for review:
+
 <details>
-<summary>Execution details — 21 tool events</summary>
+<summary>Execution details — 28 tool events</summary>
 
 ### Turn 1 activity
 
@@ -708,6 +716,26 @@ echo "=== docs/ currently ==="; ls -la docs/`
 - **Edit** `/workspaces/fhir-agent/docs/phase2/requirements.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase2/requirements.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase2/README.md`
+- **Write** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Read** `/workspaces/fhir-agent/docs/README.md`
+- **Write** `/workspaces/fhir-agent/docs/README.md`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== status ==="; git status --short
+echo; echo "=== files added under docs/ ==="; ls -la docs/ docs/phase2/
+echo; echo "=== sanity: only docs touched, no code ==="; git…`
+- **Bash** `cd /workspaces/fhir-agent
+git add docs/
+git commit -q -F - <<'EOF'
+docs(phase2): add Phase 2 requirements and implementation plan
+
+Planning-only. Captures the requirements we actually agreed to implem…`
+- **Bash** `cd /workspaces/fhir-agent
+git push -u origin feature/phase2-planning 2>&1 | tail -5`
+- **Bash** `cd /workspaces/fhir-agent
+gh pr create --base main --head feature/phase2-planning \
+  --title "docs(phase2): Phase 2 requirements & implementation plan (planning only)" \
+  --body "$(cat <<'EOF'
+## Wh…`
 
 </details>
 
@@ -718,6 +746,6 @@ echo "=== docs/ currently ==="; ls -la docs/`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 13 July 2026, 22:58 UTC
+- **Last updated:** 13 July 2026, 23:00 UTC
 - **Turns:** 7
 - **Status:** Complete
