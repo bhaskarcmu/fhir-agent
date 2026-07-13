@@ -700,8 +700,62 @@ First, confirming `.env` is safe to create (gitignored) and creating a local-dev
 
 `.env` is gitignored — safe. Creating the local-dev config (Kong bypassed: FHIR points straight at the running HAPI, no API key):
 
+**Phase 0 done.** `.env` created with local-dev values; Kong bypassed (FHIR → `localhost:8080` directly, no key); Anthropic key deferred to Phase 4 as you asked. Python packages were already installed editable, Java 21 + Docker present. Nothing else needed.
+
+---
+
+## Phase 1 — Offline unit tests
+
+These three suites need **no running services** — they test pure logic in isolation. That's deliberate and it's a good interview point: the risky, reusable logic (FHIR parsing + clinical rules) is decoupled from I/O, so it can be verified fast and deterministically.
+
+### Piece 1 of 3 — `client/clinical` FHIR parsers
+
+**What it is:** the shared "clinical" client library — the one seam both the triage service and the agent depend on. **How it's built:** it converts raw FHIR JSON (nested `coding`/`codeableConcept` structures Synthea produces) into flat domain dataclasses (`Patient`, `Medication`, `Allergy`, `Condition`), so callers never touch FHIR mechanics. **Why it matters:** it's the anti-corruption layer — FHIR ugliness is quarantined here; everything upstream speaks plain clinical terms. The tests use *real Synthea resource shapes* and check the tricky bits: date coercion (`2004-04-27T23:32:28+00:00` → `date(2004,4,27)`), display fall-backs, missing fields defaulting safely, and multi-word name search being split into separate `name=` params (a real HAPI quirk).
+
+`pytest` isn't installed in this environment. That's a Phase 0 gap — installing it (plus `pytest-asyncio`, which the triage dev extras need later):
+
+pytest installed. Now re-running the parser tests:
+
+**35/35 passed in 0.07s.** Note how `search_patients` is tested without a network call — the test swaps `client._request` for a lambda returning canned FHIR bundles. That confirms the "no server needed" claim and isolates *parsing* from *transport*.
+
+### Piece 2 of 3 — triage rule engine
+
+**What it is:** the actual clinical brain of the platform — the drug-allergy rules. **How it's built:** priority-ordered rules, first-match-wins, each a pure function `(medications, allergies) → RuleResult | None`; `evaluate()` walks them and falls back to LOW. **Why it matters:** this is *the* interview centerpiece — it's where clinical logic lives, and by design it lives **only** here (not in the agent). It's pure/in-memory, so it's fully testable without FHIR or an LLM. The suite proves the three rules independently *and* the priority ordering: a patient with both a penicillin conflict AND duplicate antihistamines must return **HIGH** (penicillin wins), never MODERATE.
+
+**25/25 passed.** The key test — `test_penicillin_conflict_takes_priority_over_duplicate_class` — is your safety guarantee: when multiple rules could fire, the most dangerous one wins. Also note rules match on **both** RxNorm code *and* display-text (`test_display_match_triggers_conflict`), so a penicillin drug is caught even if its code isn't in the known set — defensive against incomplete coding.
+
+### Piece 3 of 3 — Synthea data loader
+
+**What it is:** [load.py](data/scripts/load.py), the ingestion script that pushes Synthea-generated FHIR transaction bundles into the server. **How it's built:** it POSTs bundles *through* fhir-service (never to the DB directly), so the server does validation, reference resolution, and search-index population — H2 vs Neon is invisible to the script. **Why it matters:** it's how real, realistic patient data gets in. The tests here mock all HTTP, verifying only the server-independent logic: bundle validation, the `FHIR_BASE_URL` required / `FHIR_API_KEY` optional contract, transaction-response counting, and whether the `apikey` header is attached — i.e., the Kong-vs-local auth branch.
+
+**19/19 passed.** Note `test_posts_to_base_url_not_resource_endpoint` — it enforces that transaction bundles POST to the base `/fhir` (not `/fhir/Patient`), which is exactly how FHIR transaction bundles work. Small detail, but it's the difference between the loader working and silently 404-ing.
+
+---
+
+## Phase 0 + Phase 1 — Summary
+
+| Component | What it proves | Result |
+|---|---|---|
+| `.env` (Phase 0) | Local-dev config, Kong bypassed, no secrets committed | ✅ created |
+| pytest tooling (Phase 0) | Test runner was missing; now installed | ✅ pytest 9.1.1 |
+| **clinical parsers** | FHIR JSON → clean domain objects; transport isolated from parsing | ✅ 35/35 |
+| **triage rules** | Clinical logic correct + priority ordering (HIGH beats MODERATE) | ✅ 25/25 |
+| **data loader** | Ingestion logic + local/Kong auth branch | ✅ 19/19 |
+| | **Total** | **✅ 79/79, ~0.16s** |
+
+### The one-sentence story for your interview
+> *"The whole platform is layered so the valuable, reusable logic — FHIR parsing and clinical risk rules — is pure and I/O-free, and I verify it in isolation (79 tests, no server, no LLM, sub-second). Everything that touches the network or the model sits in thin outer layers I test separately."*
+
+That layering is the thing to emphasize: **the agent holds no clinical logic, the clinical client hides all FHIR mechanics, and the rules are pure functions** — which is precisely why Phase 1 can run with nothing else turned on.
+
+Two housekeeping notes:
+- `pytest`/`pytest-asyncio` weren't in the environment; I installed them (needed for Phase 3's `test_api.py` too). These aren't in any `requirements` file — worth mentioning if asked about reproducibility.
+- Nothing was committed; `.env` is gitignored. FHIR server on :8080 is still up and untouched.
+
+Ready for Phase 2 whenever you are.
+
 <details>
-<summary>Execution details — 50 tool events</summary>
+<summary>Execution details — 55 tool events</summary>
 
 ### Turn 1 activity
 
@@ -805,6 +859,11 @@ echo "=== ANTHROPIC_API_KEY in env? ==="; [ -n "$ANTHROPIC_API_KEY" ] && echo "s
 - **Bash** `cd /workspaces/fhir-agent
 echo "=== does .gitignore cover .env? ==="; grep -nE '(^|/)\.env' .gitignore || echo "WARNING: .env not gitignored"`
 - **Write** `/workspaces/fhir-agent/.env`
+- **Bash** `python3 -m pytest client/clinical/tests/test_parsers.py -v 2>&1 | tail -45`
+- **Bash** `python3 -m pip install -q pytest pytest-asyncio 2>&1 | tail -5; echo "---"; python3 -m pytest --version`
+- **Bash** `python3 -m pytest client/clinical/tests/test_parsers.py -v 2>&1 | tail -50`
+- **Bash** `python3 -m pytest triage-service/src/triage/tests/test_rules.py -v 2>&1 | tail -35`
+- **Bash** `python3 -m pytest data/scripts/test_load.py -v 2>&1 | tail -40`
 
 </details>
 
@@ -815,6 +874,6 @@ echo "=== does .gitignore cover .env? ==="; grep -nE '(^|/)\.env' .gitignore || 
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 16:56 UTC
+- **Last updated:** 13 July 2026, 16:57 UTC
 - **Turns:** 12
 - **Status:** Complete
