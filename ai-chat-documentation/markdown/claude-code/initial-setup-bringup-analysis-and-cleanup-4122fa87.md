@@ -1553,8 +1553,10 @@ Let me read the redactor and pipeline to fix it correctly (this is the actual le
 
 The redactor *does* have a `url-credentials` pattern that should catch `postgresql://user:‹redacted:url-credentials›`, yet the secret persisted — so the real question is whether the pipeline actually applies redaction to the **raw** capture. Let me check where `redact()` is called:
 
+Now it's clear — `pipeline.py:78-80` **does** redact both raw and markdown when it runs. So the committed secret means either the live watcher writes raw *before/around* the pipeline, or this in-flight session predates a redaction pass. Let me confirm how the raw capture is produced (one check), then I'll implement the fixes:
+
 <details>
-<summary>Execution details — 150 tool events</summary>
+<summary>Execution details — 151 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1902,6 +1904,8 @@ e…`
 - **Read** `/workspaces/.ai-chat-history/ai-chat-documentation/scripts/archive_ai/redactor.py`
 - **Bash** `cd /workspaces/.ai-chat-history/ai-chat-documentation/scripts 2>/dev/null || exit 0
 echo "=== where redact() is called in pipeline.py ==="; grep -nE "redact|raw|jsonl|write|dump|json\." archive_ai/pip…`
+- **Bash** `cd /workspaces/.ai-chat-history/ai-chat-documentation/scripts 2>/dev/null || exit 0
+echo "=== how does the watcher produce raw? (cp/rsync/redact?) ==="; grep -nE "cp |rsync|raw|redact|pipeline|python|…`
 
 </details>
 
@@ -1912,6 +1916,6 @@ echo "=== where redact() is called in pipeline.py ==="; grep -nE "redact|raw|jso
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 18:58 UTC
+- **Last updated:** 13 July 2026, 18:59 UTC
 - **Turns:** 25
 - **Status:** Complete
