@@ -39,6 +39,9 @@ All Phase 2 work is *additive*. A known-good snapshot is tagged `phase1-v1`
   out-of-scope, and deviations from the PRD.
 - **[`plan.md`](./plan.md)** — architecture, service topology, gateway/parity
   design, workstreams, sequencing, and open questions.
+- **[`source-prd.md`](./source-prd.md)** — the archived source DRAFT PRD that
+  seeded this work (the **input**, not the contract; deviations captured in
+  `requirements.md`).
 
 ## Provenance
 

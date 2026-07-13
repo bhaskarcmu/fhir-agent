@@ -3,7 +3,8 @@
 > This is the **contract for what we build**, not a restatement of the PRD.
 > It records what we agreed to implement, what we deliberately cut, and where we
 > **deviated from the PRD**. Source PRD: *Prescription Claim Adjudication
-> Modernization Platform — Phase 2 Scope (DRAFT)*.
+> Modernization Platform — Phase 2 Scope (DRAFT)*, archived verbatim at
+> [`source-prd.md`](./source-prd.md).
 
 ## Goal
 
