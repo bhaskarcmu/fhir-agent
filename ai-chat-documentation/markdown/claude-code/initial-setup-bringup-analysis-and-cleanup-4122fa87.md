@@ -1593,6 +1593,63 @@ Key finding: the daemon commits every ~1 min and **already committed my hardened
 
 I have the full picture now, including the exact mechanism. Let me update the tracker and give you a precise status.
 
+Here's where everything stands. I'll answer your three questions directly.
+
+## 1. CLAUDE_API_KEY as the only secret name — ✅ done
+
+- The devcontainer **already** maps the single `CLAUDE_API_KEY` Ona secret to both names *in the environment* ([devcontainer.json:57-58](.devcontainer/devcontainer.json#L57-L58)) — `CLAUDE_API_KEY` and `ANTHROPIC_API_KEY`, both from the one secret, as references (no values in files). That's the "duplicate safely to another name" case, done the right way.
+- `setup-credentials.sh` refactored to **never write the key to disk** (it used to write it into 6 files); it now relies on that in-env mapping.
+- The agent already accepts either name.
+
+So: one Ona secret, name unchanged. Committed + pushed to **PR #23** (commit `dd2729c`).
+
+## 2. Prevent future leakage — ⚠️ *90% done, one step needs you*
+
+What I completed and pushed:
+- **`setup-credentials.sh`**: no more secret-to-file writes (PR #23).
+- **gitleaks CI** (`.github/workflows/secret-scan.yml`) blocks secrets reaching `main` (PR #23).
+- **Hardened the archive redactor** on `ai-chat-history`: it now masks DB passwords in *all* the forms that leaked — `postgres://user:‹redacted:url-credentials›`, JDBC `?…&password=…`, and bare `npg_…` tokens. **12 redactor tests pass**, and the daemon already auto-committed + pushed the new `redactor.py` to `origin/ai-chat-history`.
+
+**The one remaining step I'm blocked on — you need to restart the watcher:**
+
+The archive watcher is a *running daemon* (PID 2616304) that still has the **old** redactor loaded in memory. It commits every ~60 s, so it's **actively re-emitting `npg_` into the archive on each burst** (still in 4 files) even though the fixed code is now on disk. I tried to restart it and the safety classifier correctly blocked me from killing a supervised service I didn't start.
+
+Per [automations.yaml:76](.ona/automations.yaml#L76), **Ona supervises this service and auto-restarts it if it stops**, and on start it runs a catch-up `sync` with the **new** redactor — which will both scrub the current `npg_` from the tip *and* redact all future captures. So restarting is the activation switch.
+
+**To finish prevention, do one of these** (or tell me to):
+- **Ona UI:** Services → `AI chat archive watcher` → Restart, **or**
+- **Terminal:** `kill 2616304` (Ona will respawn it with the new code), **or**
+- Reply "restart it" and I'll attempt it via the Ona service commands.
+
+Once it restarts, I'll verify `npg_` is gone from the tip and then tell you **prevention is fully done**. Only *then* rotate (next section) — that ordering is what you asked for.
+
+## 3. Neon rotation (do after the watcher restart)
+
+Quick recap of the manual steps (you do these in Neon):
+1. Neon Console → your project → **Roles** → `neondb_owner` → **Reset password** → copy the new one.
+2. Update the **`NEON_DB_URL`** and **`SPRING_DATASOURCE_URL`** Ona secrets with the new password (both are secrets already; just update values).
+3. Rotation makes the value already in the old archive git history worthless.
+
+I'll give the exact connection-string formats when you're ready.
+
+## What else is missing before PR #23 is "ready" — the honest checklist
+
+**Inside PR #23 (main) — I believe it's complete, pending:**
+- ✅ bringup smoothing (tests, key naming, compose defaults, docs) — commit `3fbaf59`
+- ✅ security: no secret file-writes + gitleaks — commit `dd2729c`
+- ⚠️ **CI will actually run now** — this repo had *no* `.github/workflows` before; the gitleaks action runs on the PR. **Watch that check** — if gitleaks flags the historical `.vscode`/other matches, we may need a small `.gitleaks.toml` allowlist. First real signal comes when the PR CI runs.
+- 🔲 **Decision for you:** `.vscode/settings.json` is still *tracked* (now safe, since nothing writes secrets to it). Keep it tracked for shared Java config, or gitignore it? Your call — not blocking.
+- 🔲 The `core` dump (~5 GB, untracked) is still in the working tree — harmless to the PR, delete when convenient.
+
+**Outside PR #23 (separate, `ai-chat-history` branch) — not part of the PR:**
+- ⏳ Watcher restart (above).
+- 🔲 Optional: purge the old `npg_` from `ai-chat-history` git *history* (filter-repo/BFG). Destructive rewrite — I'd want explicit sign-off. Rotation makes it lower-priority.
+
+**Manual (you):**
+- 🔲 Neon rotation.
+
+So the single thing standing between you and "future leakage prevented" is **restarting that watcher.** Want me to attempt the restart, or will you do it in the Ona UI?
+
 <details>
 <summary>Execution details — 170 tool events</summary>
 
