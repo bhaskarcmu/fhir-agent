@@ -483,6 +483,161 @@ Rich confirmation. Key planning locks from this analysis:
 
 Waiting on the infra/data reader before drafting — it covers the k8s pattern, seeding conventions, and the emulator-README question I need to resolve.
 
+## Turn 7
+
+### Prompt
+
+<task-notification>
+<task-id>a28c8232258e86620</task-id>
+<tool-use-id>toolu_01Q4qc133NNqCa7dKGBT11pt</tool-use-id>
+<output-file>/tmp/claude-1000/-workspaces-fhir-agent/bebf7ac2-4f1b-4a70-8685-440da76db7e1/tasks/a28c8232258e86620.output</output-file>
+<status>completed</status>
+<summary>Agent "Analyze infra &amp; data docs" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>I have everything needed. Here is the structured summary.
+
+---
+
+# fhir-agent Phase 1 — Structured Summary for Phase 2 Planning
+
+## Repo layout (Phase 1 components)
+Services: `fhir-service/` (Java/Spring Boot, HAPI FHIR JPA 8.8.0), `triage-service/` (Python FastAPI), `mcp-agent/` (Python, Anthropic tool-use), `gateway/` (Kong), `client/` (integration + clinical smoke tests), `data/` (Synthea seeding), `epic-emulator/` + `athena-emulator/` (empty placeholders), `docs/` (empty placeholder). Orchestration: `docker-compose.yml`, `deploy.sh`, `.devcontainer/`, `.ona/automations.yaml`.
+
+---
+
+## 1. How Phase 1 is built, run, tested, deployed
+
+### Build
+- FHIR service (Java 21, Maven): `cd fhir-service &amp;&amp; ./mvnw clean verify` (build+test), `./mvnw package -DskipTests` (build only). Container: `docker build -t fhir-service:latest fhir-service/` (~5 min first run).
+- Python packages (editable): `python -m pip install -e "client/clinical[dev]" -e "triage-service[dev]" -e "mcp-agent[dev]"`.
+
+### Run locally — two paths
+
+Path A — native (FHIR only):
+```bash
+cd fhir-service
+./mvnw spring-boot:run                # H2 in-memory, port 8080
+# Neon profile:
+SPRING_PROFILES_ACTIVE=neon ./mvnw spring-boot:run   # + SPRING_DATASOURCE_URL etc.
+```
+
+Path B — Docker Compose (full demo stack):
+```bash
+cp .env.example .env          # set ANTHROPIC_API_KEY (or CLAUDE_API_KEY)
+docker compose up --build -d fhir triage
+python3 data/scripts/seed_demo.py
+docker compose run --rm mcp-agent --query "Check refill risk for Kristle Mraz"
+```
+Compose services (`docker-compose.yml`): `fhir` (image `hapiproject/hapi:v7.2.0`, H2 in-mem, port 8080, Java-based healthcheck on `/fhir/metadata`), `triage` (built from `triage-service/Dockerfile`, port 8001, `depends_on: fhir healthy`), `mcp-agent` (built from `mcp-agent/Dockerfile`, run-once CLI, `depends_on: triage healthy`, `TRIAGE_SERVICE_URL=http://triage:8001`). 
+
+Note: Compose uses the upstream `hapiproject/hapi:v7.2.0` image for the `fhir` service, NOT the locally-built `fhir-service:latest` (which is HAPI 8.8.0 and used only for k8s). Also a minor doc inconsistency: root README invokes `docker compose run --rm mcp-agent --query ...` while the compose-file header comment shows `... mcp-agent python3 -m agent.agent --query ...`.
+
+### Test
+```bash
+pytest                                 # all Python suites (config in pytest.ini): 105 tests
+cd fhir-service &amp;&amp; ./mvnw clean verify  # 39 Java tests
+```
+Important: unset `SPRING_DATASOURCE_URL` / `NEON_*` before Java tests so H2 default is used (otherwise `MdmTest` boots against a live DB and fails on auth). Live-service tests live in `client/platform/` (local server) and `client/clinical/` (deployed stack + API key).
+
+### Deploy to GKE
+Single entrypoint `./deploy.sh` (requires `IMAGE` env var, `kubectl`, `helm` v3+):
+```bash
+IMAGE=ghcr.io/bhaskarcmu/fhir-service:latest ./deploy.sh
+```
+Ordered steps: (1) namespaces `fhir` + `kong`; (2) Kong via Helm (`kong/kong` chart v3.1.0, values `gateway/kong/kong-values.yaml`); (3) wait for Kong migrations/pod; (4) fhir-service — applies `configmap.yaml`, `service.yaml`, then `sed "s|IMAGE_PLACEHOLDER|${IMAGE}|g" deployment.yaml | kubectl apply -f -` (in-memory substitution, never edits the committed file); (5) `kubectl wait ... pod -l app=fhir-service --timeout=360s`; (6) Kong plugins + ingress (`gateway/kong/kong-plugins.yaml`, `kong-ingress.yaml`). Pre-flight requires secrets `kong-db-secret` (ns kong) and `fhir-service-secret` (ns fhir) to already exist. Image push options: GHCR or GCP Artifact Registry (`us-central1-docker.pkg.dev/&lt;project&gt;/fhir-agent/...`).
+
+---
+
+## 2. Devcontainer / .ona automation
+
+`.devcontainer/Dockerfile`: base `mcr.microsoft.com/devcontainers/base:ubuntu-24.04`; installs `openjdk-21-jdk`, `maven`, `python3`/`pip`/`venv`, `jq`, `unzip`. Creates a venv at `/opt/pyenv` (world-writable so `vscode` user can do editable installs without sudo), pre-installs `fastapi uvicorn httpx pydantic`, sets `VIRTUAL_ENV`/`PATH`.
+
+`.devcontainer/devcontainer.json`: features add docker-outside-of-docker, github-cli, node 20, terraform, kubectl+helm (minikube none). Many VS Code extensions (Java pack, Spring Boot, Python, Cloud Code, Terraform, Kubernetes, Roo/Cline). `containerEnv` maps `CLAUDE_API_KEY` → both `CLAUDE_API_KEY` and `ANTHROPIC_API_KEY`, plus `GH_TOKEN`, `JAVA_HOME`. `remoteUser: vscode`. gcloud is deliberately NOT in the image (too large; installed later by the setupCredentials task).
+
+`.devcontainer/scripts/setup-credentials.sh` exists (configures AI tools; invoked by the setupCredentials task).
+
+`.ona/automations.yaml` tasks:
+- `installDependencies` — runs on `postDevcontainerStart`, `prebuild`, manual. Does `pip install -e` for the three Python packages, then `./mvnw -DskipTests dependency:go-offline` to warm Maven cache. This is the automatic dependency install.
+- `buildFhirService` — manual; `./mvnw -DskipTests package`; `dependsOn installDependencies`.
+- `setupCredentials` — manual only; installs gcloud CLI + `@anthropic-ai/claude-code`, runs setup-credentials.sh.
+
+`.ona/automations.yaml` services:
+- `fhirServer` — `postEnvironmentStart` + manual; opens port 8080 then `docker compose up --build fhir`; ready when `/fhir/metadata` responds.
+- `aiChatArchiveWatcher` — `postEnvironmentStart` + manual; archives Claude Code chats (unrelated to app).
+
+Summary of what runs automatically: on devcontainer start → `installDependencies`; on environment start → `fhirServer` service + chat watcher. Builds/tests/credentials are manual.
+
+---
+
+## 3. Data seeding
+
+Two loaders with different purposes:
+
+`data/scripts/seed_demo.py` — minimal deterministic demo. Uses `httpx`, POSTs individual resources to `${FHIR_GATEWAY_URL:-http://localhost:8080/fhir}` (optional `FHIR_API_KEY` → `apikey` header). Creates exactly two patients:
+- Kristle Mraz (female, 1985-04-12): Penicillin `AllergyIntolerance` (SNOMED `764146007`, criticality high) + Amoxicillin `MedicationRequest` (RxNorm `723`) → HIGH risk.
+- John Doe (male, 1970-01-15): Lisinopril `MedicationRequest` (RxNorm `29046`), no allergy → LOW risk.
+
+Key conventions a new seed script should mirror:
+- Env: `FHIR_GATEWAY_URL` (default local 8080) + optional `FHIR_API_KEY`; header `Content-Type: application/fhir+json`, `apikey` only when key present (local needs none).
+- Allergies use SNOMED CT (`http://snomed.info/sct`); medications use RxNorm (`http://www.nlm.nih.gov/research/umls/rxnorm`). Reference patients via `Patient/{id}` returned from the create POST.
+- Exit nonzero and print diagnostics on any non-200/201.
+- Deterministic, human-named patients tied to a documented expected agent result.
+
+`data/scripts/load.py` — bulk Synthea loader (stdlib `urllib` only, no deps). Env `FHIR_BASE_URL` (required) + optional `FHIR_API_KEY`; optional `BUNDLE_DIR` (default `data/sample/fhir`). Reads `*.json`, validates each is a `Bundle` of `type: transaction` with entries, checks server via GET `/metadata` (expects CapabilityStatement), POSTs each bundle to the base URL (not a resource path — transaction semantics), parses the transaction-response for per-entry status, prints per-bundle OK/WARN/FAIL/SKIP and a resource-count summary; exits nonzero if any bundle failed/skipped.
+
+Data always flows through fhir-service, never directly to the DB. Bundles come from `download_sample.sh` (pulls synthetichealth/synthea-sample-data master zip, extracts `output/fhir/` R4 only) or `generate.sh` (downloads pinned Synthea 3.3.0 jar, runs it with `-p/-g/-m/-s` options, config `data/synthea/synthea.properties` where `exporter.fhir.transaction_bundle=true` is required). Wipe via `expunge.sh` (HAPI `$expunge`). Generated bundles, jars, and output are gitignored.
+
+`FHIR_GATEWAY_URL` vs `FHIR_BASE_URL`: note the inconsistency — seed_demo.py reads `FHIR_GATEWAY_URL`, load.py reads `FHIR_BASE_URL`. A new claims seed script should pick deliberately (agent/triage code and seed_demo use `FHIR_GATEWAY_URL`).
+
+---
+
+## 4. k8s deployment pattern (mirror this per new service)
+
+All manifests in `fhir-service/k8s/`. Files: `namespace.yaml`, `configmap.yaml`, `secret.yaml.example`, `service.yaml`, `deployment.yaml`.
+
+- Namespace `fhir` with label `app.kubernetes.io/managed-by: kong` (so Kong Ingress Controller discovers KongPlugin/Ingress in it). New services likely share this namespace or need the same label to be Kong-routable.
+- ConfigMap `fhir-service-config` — non-secret env only (`SPRING_PROFILES_ACTIVE=neon`, driver class, Hibernate dialect). Consumed via `envFrom.configMapRef`.
+- Secret `fhir-service-secret` — created imperatively (never committed): `kubectl create secret generic fhir-service-secret -n fhir --from-literal=SPRING_DATASOURCE_URL="jdbc:postgresql://...&amp;password=...&amp;sslmode=require"`. Injected via `env.valueFrom.secretKeyRef`. Only `secret.yaml.example` is committed.
+- Service `fhir-service` — `type: ClusterIP`, selector `app: fhir-service`, port 8080→8080 named `http`. Name must match the Kong ingress backend and pod labels exactly. Kong upstream timeouts via annotations (`konghq.com/connect-timeout`, `read-timeout`, `write-timeout`).
+- Deployment `fhir-service` — labels `app.kubernetes.io/{name,component,part-of}`; `replicas: 1`; `terminationGracePeriodSeconds: 60`; `image: IMAGE_PLACEHOLDER` (`imagePullPolicy: Always`, substituted at deploy time only); liveness `/actuator/health/liveness` + readiness `/actuator/health/readiness` both `initialDelaySeconds: 180` (HAPI cold start ~3 min on Neon); resources req `250m`/`1Gi`, limit `1000m`/`2Gi` (2Gi is validated minimum — OOMKilled at 1Gi); hardened `securityContext` (`runAsNonRoot`, `runAsUser/Group: 999`, `allowPrivilegeEscalation: false`, drop ALL caps, `readOnlyRootFilesystem: true`) with an `emptyDir` volume mounted at `/tmp` for Tomcat temp files. Spring Boot actuator health probes must be enabled (`management.endpoint.health.probes.enabled=true`).
+
+Apply order (also encoded in deploy.sh): namespace → configmap → secret (imperative) → service (before deployment so Kong resolves it) → deployment → Kong plugins/ingress.
+
+For a new Java/Spring Boot service (claims-service, RxClaim emulator) copy this whole set, changing name/labels/ports, and tune resources/probes to that service's startup profile (they won't need the 180s HAPI delay unless they also run HAPI).
+
+---
+
+## 5. Emulator READMEs — placeholder status and concept fit
+
+`epic-emulator/README.md` and `athena-emulator/README.md` are true one-line stubs (`# Epic Emulator`, `# Athena Emulator`) — no content. `docs/README.md` is likewise just `# Docs`. The emulator directories contain only the README (no code).
+
+The emulator concept is defined in README.md and fhir-service/README.md, not in the stubs. Status table marks both epic-emulator and athena-emulator as "Placeholder — Not yet implemented." Purpose stated: the FHIR server is intentionally generic (standard FHIR R4); the emulators will later add EHR-specific behavior — "auth stubs, custom profiles, proprietary extensions" for Epic/Athena. So the existing emulator concept = "EHR-vendor FHIR sandboxes that layer vendor quirks on top of the generic FHIR R4 layer."
+
+Fit/conflict for a "legacy IBM i / RxClaim adjudication emulator": It does NOT conflict but it is conceptually a different category. The existing epic/athena emulators are FHIR/EHR-vendor emulators. A RxClaim/IBM i adjudication emulator is a legacy claims-adjudication backend (non-FHIR, transactional pharmacy-claims domain), not an EHR FHIR sandbox. Recommendation: give it its own top-level module (e.g. `rxclaim-emulator/` or under a `claims/` grouping) rather than placing it in epic-/athena-emulator, to avoid muddying the "EHR FHIR emulator" meaning. It parallels the emulator idea (a stand-in for a proprietary external system) but sits in the claims-adjudication plane, so it aligns as a sibling concept rather than a member of the existing EHR-emulator set.
+
+---
+
+## 6. What you must NOT change to keep Phase 1 independently runnable + cloud-deployable
+
+- `docker-compose.yml` service graph and defaults: `fhir` (port 8080, `hapiproject/hapi:v7.2.0`, H2), `triage` (8001), `mcp-agent`, and the `depends_on` healthcheck chain. The README quick-demo commands depend on these exact names/ports. Add new services as additional compose services; do not repurpose or renumber existing ones. Keep `FHIR_GATEWAY_URL` defaulting to `http://fhir:8080/fhir` and API key optional.
+- `deploy.sh` ordering and its two required secrets (`kong-db-secret`, `fhir-service-secret`). If you extend it, append new steps; don't reorder Kong-before-fhir-service or the wait conditions.
+- The `IMAGE_PLACEHOLDER` convention in `fhir-service/k8s/deployment.yaml` — it must stay committed as `IMAGE_PLACEHOLDER` (substituted only in-memory). Don't commit a substituted image tag.
+- The `fhir-service` k8s Service name/labels/port (8080, selector `app: fhir-service`) — Kong ingress backend and pod selector match on these exactly.
+- The `fhir` namespace label `app.kubernetes.io/managed-by: kong` and the namespace itself.
+- `data/synthea/synthea.properties` `exporter.fhir.transaction_bundle = true` (load.py rejects non-transaction bundles).
+- The seed/load env-var contracts (`FHIR_GATEWAY_URL` for seed_demo/agent/triage; `FHIR_BASE_URL` for load.py; `FHIR_API_KEY` optional) and the SNOMED-for-allergy / RxNorm-for-med coding convention that the triage rule engine relies on.
+- fhir-service test invariant: Java tests must run against H2 (unset `SPRING_DATASOURCE_URL`/`NEON_*`).
+- `.ona/automations.yaml` `installDependencies` editable-install list and Maven warm-up, and the `fhirServer` service — the auto-start environment depends on them. Add your new Python packages to the `pip install -e` list rather than replacing it; add new build tasks with `dependsOn: installDependencies`.
+- pytest config (`pytest.ini`) currently scoped to the existing suites — extend, don't narrow.
+
+Everything Phase-2 (claims-service façade, RxClaim emulator, claims agent) should be additive: new modules, new compose services, new k8s manifest sets mirroring `fhir-service/k8s/`, new `pip install -e` targets, and optionally new `.ona` tasks — leaving the Phase 1 files above untouched so Phase 1 stays independently runnable and deployable.</result>
+<usage><subagent_tokens>53238</subagent_tokens><tool_uses>24</tool_uses><duration_ms>106726</duration_ms></usage>
+</task-notification>
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 12 tool events</summary>
 
@@ -535,6 +690,6 @@ diff <(grep -E '^#|^##' CLAUDE.md) <(grep -E '^#|^##' .clinerules) && echo "HEAD
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 13 July 2026, 22:54 UTC
-- **Turns:** 6
-- **Status:** Complete
+- **Last updated:** 13 July 2026, 22:55 UTC
+- **Turns:** 7
+- **Status:** Incomplete
