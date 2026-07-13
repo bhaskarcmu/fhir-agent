@@ -1077,10 +1077,22 @@ I don't want to worry about dupication now, I have to prep for the interview so 
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Understood, and thank you for the clear call. Three things back:
+
+1. **Your risk decision noted and accepted** — it's yours to make as the owner: the value only ever appeared in that one terminal, you're deleting that instance, so no rotation. I won't keep raising it.
+2. **Dedup parked** for after the interview.
+3. **My mistake, owned.** I should have redacted rather than run `env`/`grep` in a way that printed the value. Going forward: I'll read secret values when a task needs them but **never echo them** — redacting in any command output, never `cat`-ing files that contain them, and piping config greps through a mask. "I have access but can't show it" is exactly how I'll operate.
+
+Let me save that as durable guidance so it survives future sessions:
+
+Saved as durable feedback so it holds across sessions.
+
+Back to the interview prep — we're through Phase 0, 1, and 2. **Phase 3 is the triage service**: launch it on `:8001` against the running FHIR server, run its API tests, and hit `/triage/refill-risk` for Kristle Mraz (expect HIGH) and John Doe (expect LOW) — the first time the rule engine runs against *live* seeded data over HTTP.
+
+Want me to kick off Phase 3, or would it help more right now to do an interview-focused recap of what Phases 0–2 prove (the architecture story, the "two hats," the pure-logic-vs-I/O layering, the config/secrets talking points)?
 
 <details>
-<summary>Execution details — 78 tool events</summary>
+<summary>Execution details — 80 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1246,6 +1258,11 @@ echo "=== Where is SPRING_DATASOURCE_URL referenced/constructed? (repo + dotfile
 grep -rniE "SPRING_DATASOURCE_URL|NEON_DB_URL" \
   .ona .devcontainer docker…`
 
+### Turn 18 activity
+
+- **Write** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/secret-values-never-print.md`
+- **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/MEMORY.md`
+
 </details>
 
 ---
@@ -1255,6 +1272,6 @@ grep -rniE "SPRING_DATASOURCE_URL|NEON_DB_URL" \
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 17:31 UTC
+- **Last updated:** 13 July 2026, 17:32 UTC
 - **Turns:** 18
-- **Status:** Incomplete
+- **Status:** Complete
