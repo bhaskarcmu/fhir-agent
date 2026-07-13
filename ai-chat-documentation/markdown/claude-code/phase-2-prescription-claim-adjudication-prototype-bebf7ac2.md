@@ -659,6 +659,39 @@ Only `docs/` changed — no application code, as required. Committing on the fea
 
 Committed on `feature/phase2-planning`. Per CLAUDE.md (proactively branch → push → PR, never merge), pushing and opening a PR for review:
 
+Done. Everything is saved, reviewable, and Phase 1 is protected.
+
+## What I did
+
+**1. Tag pushed** — `phase1-v1` → `origin`, pointing at `d4cd4be` (your tested, known-good Phase 1 snapshot).
+
+**2. Documentation analyzed** — read every README, the triage rules engine, clients, agent, infra, seeding, k8s, and `.ona`/devcontainer config (two parallel readers + direct reads). This surfaced concrete facts that shaped the plan and caught issues:
+- Drug-allergy + duplicate-therapy **already exist** in Python triage → reuse `POST /triage/refill-risk` unchanged (no rebuild, keeps Phase 1 independent).
+- The existing `epic-`/`athena-emulator` are **EHR FHIR sandboxes** — a legacy RxClaim core is a different category, so it gets its **own** top-level module.
+- Documented the exact Phase-1 files that must stay untouched, plus two pre-existing doc drifts to fix later (compose HAPI `v7.2.0` vs built `8.8.0`; `FHIR_GATEWAY_URL` vs `FHIR_BASE_URL`).
+
+**3. Plan + requirements written** under `docs/phase2/`:
+- [README.md](docs/phase2/README.md) — index + the four locked decisions.
+- [requirements.md](docs/phase2/requirements.md) — R1–R13 plus a **Deviations from the PRD** table (D1–D8) capturing exactly where we agreed to differ.
+- [plan.md](docs/phase2/plan.md) — architecture diagram, two-plane gateway placement, local↔cloud parity, isolation strategy, milestones M0–M8.
+
+## Validation
+- Working tree check confirmed **only `docs/` changed — zero application code**.
+- Numbering collision (duplicate `R7`) caught and fixed; README anchor updated to match.
+
+## Result
+- **Branch:** `feature/phase2-planning`
+- **Commit:** `169f0f7`
+- **PR:** [#24](https://github.com/bhaskarcmu/fhir-agent/pull/24) (open for review, not merged — per your Git rules)
+- **Tag:** `phase1-v1` (pushed)
+
+## Known limitations / notes
+- These are **planning docs only** — no implementation, as requested.
+- Phase 2 **cloud** deploy is deliberately deferred (M8); this phase is local-first so Phase 1's proven cloud path stays untouched.
+- The KIC-vs-`kong.yml` config-dialect drift is documented as a tracked risk with a mitigation, not solved.
+
+One optional follow-up: I can save a short **project memory** noting the current state (Phase 2 in planning, PR #24 awaiting review, `phase1-v1` tagged, no code yet) so a future session picks up instantly. I held off since the details now live in-repo — say the word if you'd like it.
+
 <details>
 <summary>Execution details — 28 tool events</summary>
 
