@@ -1332,10 +1332,20 @@ Next steps:
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+On it. This is main-branch work touching code, config, and docs, so it goes on a feature branch → PR (proactively, per your rules). Let me do it in order.
+
+### Step 1 — Gracefully shut down the stack
+
+Stack is down cleanly — only the devcontainer (`gallant_ptolemy`) remains, ports free.
+
+### Steps 2 & 3 — Create branch, then read the docs I need to update
+
+Stating per rules: worktree `/workspaces/fhir-agent`, branch `main`, target new feature branch.
+
+mcp-agent's README is just a stub. Let me scan all docs for the specific stale patterns (the wrong run command, "planned" statuses) so I know exactly what to fix:
 
 <details>
-<summary>Execution details — 98 tool events</summary>
+<summary>Execution details — 102 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1573,6 +1583,18 @@ for q in "Check refill risk for Kristle Mraz" "Check refill risk for John Doe"; 
   echo "════════════════ QUERY: $q ════════════════"
   ANTHROPIC_API_KEY=‹redacted:env-secret›
 
+### Turn 23 activity
+
+- **Bash** `cd /workspaces/fhir-agent
+docker compose down --remove-orphans 2>&1 | tail -15
+echo "=== remaining containers ==="; docker ps --format '{{.Names}} | {{.Status}}'
+echo "=== ports 8001/8080 ==="; (curl…`
+- **Bash** `git checkout -b feature/bringup-smoothing && git branch --show-current`
+- **Read** `/workspaces/fhir-agent/mcp-agent/README.md`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== stale compose run command pattern ==="; grep -rn "mcp-agent python3 -m agent.agent\|mcp-agent .*python3 -m agent" --include=*.md . | grep -v node_modules
+echo; echo…`
+
 </details>
 
 ---
@@ -1582,6 +1604,6 @@ for q in "Check refill risk for Kristle Mraz" "Check refill risk for John Doe"; 
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 17:52 UTC
+- **Last updated:** 13 July 2026, 17:54 UTC
 - **Turns:** 23
-- **Status:** Incomplete
+- **Status:** Complete
