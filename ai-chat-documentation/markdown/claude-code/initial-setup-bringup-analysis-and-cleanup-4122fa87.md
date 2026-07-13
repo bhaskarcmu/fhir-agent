@@ -1448,6 +1448,76 @@ Now the important one — scanning the **AI-chat archive worktree**, since it ma
 
 **This is an important finding.** The AI-chat archive has captured secrets — including the Neon password. Let me refine to distinguish real keys from placeholders (still redacted, counts only), because it changes the risk picture:
 
+I have the full picture now, and the scan surfaced something that changes the risk assessment. Let me give you the findings, the standards, and a concrete plan — no changes made.
+
+## 🔴 Most important finding first (revisit the rotation decision)
+
+The AI-chat archive **did** capture the Neon password. The scan found the `npg_…` password prefix in:
+- `ai-chat-documentation/raw/claude-code/4122fa87-…jsonl` — **this session's archive**, on branch `ai-chat-history`, which is **in sync with `origin/ai-chat-history`** (last commit "2026-07-13 18:13 UTC").
+
+So the earlier assumption — "the leak didn't go beyond that terminal" — turned out not to hold: the archive watcher persisted the terminal output to a file that is **committed and pushed to GitHub**. Given that, my honest recommendation is to **rotate the Neon password after all**. The good news from the same scan: **no real Anthropic key leaked** — the 5 `sk-ant-` hits are all the `sk-ant-...` placeholder from `.env.example` shown in chats; **zero** real-shaped keys. And `.vscode/settings.json` currently contains **no** key (working *and* committed).
+
+This is exactly why the "never print secrets" rule matters: an always-on chat archiver turns any printed secret into a committed artifact.
+
+---
+
+## Request 1 — `.vscode/settings.json`
+
+**What's true here:** it *is* tracked, and `.gitignore` line 2 is a comment explaining why ("shared Java runtime config"). Separately, [setup-credentials.sh:48](.devcontainer/scripts/setup-credentials.sh#L48) does `cat > "$REPO_DIR/.vscode/settings.json"` and writes the **Continue.dev `apiKey`** into it. So the file has **two masters**: a committed shared Java config, and a script that overwrites it with a secret-bearing config. That collision is the whole problem.
+
+**Industry standard:**
+- Teams commonly commit `.vscode/extensions.json` and a *minimal, non-secret* `.vscode/settings.json` (formatters, SDK paths). Many gitignore `.vscode/` entirely and ship `.vscode/settings.json.sample`.
+- The hard rule regardless of tracking: **no secret ever goes in a file inside the repo tree.** Gitignoring is not a safeguard — one `git add -f`, a teammate's different ignore rules, or a tool that auto-commits, and it's in history.
+
+**Recommendation:**
+- Keep `.vscode/settings.json` tracked, but *only* for shared non-secret settings. Stop any script from writing secrets into it.
+- For Continue/editor config that needs a key, use **env-var interpolation** (e.g. reference `${env:ANTHROPIC_API_KEY}`) so the committed file holds a *reference*, not a value — or write that tool's config to a **non-repo, user-scoped path** (`~/.continue/…`), never `$REPO_DIR/.vscode`.
+- **Belongs in PR #23** (it's main-branch/devcontainer scope).
+
+---
+
+## Request 2 — never write secrets into files
+
+**The principle:** a secret should live in exactly one place you don't control on disk — the process environment, injected at runtime by the secret manager (Ona secrets → env var). It stays in RAM for the process lifetime. Config files that need it should hold an **env-var reference**, not the literal. Never copy a securely-managed secret into persistent plaintext files.
+
+**Malpractice found in [setup-credentials.sh](.devcontainer/scripts/setup-credentials.sh)** — it takes the Ona-managed `CLAUDE_API_KEY` (which arrives safely as an env var) and writes plaintext copies into **six** on-disk locations:
+1. `/etc/environment` (line 22–24)
+2. `~/.bashrc`, `~/.profile`, `~/.zshrc`, `~/.zprofile` (line 31)
+3. `$REPO_DIR/.vscode/settings.json` — **inside the tracked repo** (line 48–62) ← most dangerous
+4. `~/.roo-cline/settings.json` (line 74–76)
+
+The script's own rationale is "Claude Code reads `ANTHROPIC_API_KEY` from the env, and the containerEnv mapping may not reach all shells" — a real propagation problem, but solved the wrong way.
+
+**Recommendation (env-only):**
+- Have **Ona inject the key as an env var under the needed name(s)** — either add a second secret named `ANTHROPIC_API_KEY`, or use devcontainer `remoteEnv` to map `ANTHROPIC_API_KEY=${CLAUDE_API_KEY}`. That reaches shells without any script writing dotfiles. Then the `/etc/environment` + profile writes can be **deleted**.
+- For Continue/Roo, switch their configs to env-var references, or generate them at a non-repo path treated as ephemeral. Never into the repo.
+- Since the agent now accepts `CLAUDE_API_KEY` (PR #23), the app side already needs no mapping.
+- **Add a secret-scanning pre-commit / CI hook** (gitleaks or detect-secrets) as defense-in-depth.
+- **Belongs in PR #23** (setup-credentials.sh + a scanning hook are main-branch scope).
+
+**Second malpractice — the archive watcher** (the `npg_` finding): the "archive every AI chat" design will persist *any* secret ever shown in a terminal into a committed file. Mitigation:
+- Add a **redaction/scrubbing step** to the archive pipeline (strip `sk-ant-…`, `npg_…`, JDBC/`postgres://…:‹redacted:url-credentials›`, JWTs, etc.) before commit, and/or exclude raw terminal captures.
+- ⚠️ **This does NOT belong in PR #23.** It lives in the `/workspaces/.ai-chat-history` worktree on the `ai-chat-history` branch, which per your CLAUDE.md rules is committed **directly, never via PR**, and kept isolated from main. So it's a *separate* piece of work on that branch.
+
+---
+
+## How this maps to your PR plan
+
+| Change | Where it goes |
+|---|---|
+| Stop writing keys into `.vscode/settings.json`; keep it non-secret | **PR #23** (main) |
+| Refactor `setup-credentials.sh` to env-only (delete file-writes); rely on Ona/devcontainer env injection | **PR #23** (main) |
+| Add gitleaks/detect-secrets pre-commit or CI | **PR #23** (main) |
+| Redaction step in the chat-archive pipeline | **Separate — `ai-chat-history` branch, direct commit, no PR** |
+| **Rotate the Neon password** (now that it's in a pushed archive) | **Manual, do this soon** — your Neon console |
+| Consider scrubbing the already-pushed `npg_` from the archive history | **Separate — `ai-chat-history` branch** (history rewrite; think carefully) |
+
+**Two things worth deciding before I implement anything:**
+1. **Rotation** — do you agree it's warranted now, given it's in a pushed archive? (I'd recommend yes.)
+2. For the env-injection fix, do you want to **add an `ANTHROPIC_API_KEY` Ona secret** (simplest, cleanest) or **map it via devcontainer `remoteEnv`** from `CLAUDE_API_KEY`? That choice determines exactly what the `setup-credentials.sh` refactor looks like.
+
+Want me to draft the PR #23 additions (items 1–3) once you've weighed in, and separately outline the `ai-chat-history` archive-scrubbing change?
+
 <details>
 <summary>Execution details — 142 tool events</summary>
 
@@ -1789,6 +1859,6 @@ echo "  placeholder 'sk-ant-...' : $(grep -rlIE 'sk-ant-\.\.\.' .…`
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 18:13 UTC
+- **Last updated:** 13 July 2026, 18:15 UTC
 - **Turns:** 24
 - **Status:** Complete
