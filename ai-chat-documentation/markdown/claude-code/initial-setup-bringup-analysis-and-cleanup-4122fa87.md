@@ -1739,6 +1739,45 @@ Let me examine this precisely — the "not CLEAN" result needs interpretation, a
 
 This is actually **good news** — the sync log reveals the fix worked. Let me confirm the one thing that matters (is the *real* secret masked, vs. just the word "npg_" appearing):
 
+Confirmed. **Nothing actually went wrong — the fix worked, and the "not CLEAN" output was a false alarm from a too-broad grep.** Here's the full read of your screenshot.
+
+## The restart succeeded and the real secret is masked
+
+The `sync.log` is the proof. The catch-up sync ran with the **hardened** redactor and reported:
+> `Redactions: … neon-password=9, … url-query-password=42, url-credentials=55`
+
+Those two new categories (`neon-password`, `url-query-password`) are exactly the patterns I added — they fired **51 times**, then it `Committed and pushed 96ff693d`. And my definitive check just now:
+- **Real-secret-shaped tokens (`npg_` + 8+ chars) remaining in the archive output: `0`.** The actual password is gone from the tip.
+- Benign `npg_` mentions remaining: **66** — the *word/prefix*, not the secret.
+
+## Why the verification still printed 4 files (all false positives)
+
+The `grep "npg_"` matches the literal substring anywhere, so it flagged:
+
+| File | Why it matched | Secret? |
+|---|---|---|
+| `scripts/archive_ai/redactor.py` | Contains my redaction **pattern** `npg_[A-Za-z0-9]{8,}` | ❌ no — it's the code that *does* the masking |
+| `scripts/tests/test_redactor.py` | Contains **fake** test tokens (`npg_ABCdef…`) | ❌ no — test fixtures |
+| `raw/…4122fa87.jsonl` + `markdown/…4122fa87.md` | This conversation's archive, full of us *discussing* "npg_" (the word, the pattern) | ❌ no — 66 prose mentions; the real token is masked |
+
+So the redactor masks the **secret**, not the English string "npg\_". My verify command was the weak link — it should have (a) excluded `scripts/` and (b) matched the token *shape*, not the bare prefix. The correct check is what I ran: `npg_[A-Za-z0-9]{8,}` → **0**.
+
+There's a mild irony worth naming: by discussing the leak and embedding the pattern in source, we've permanently sprinkled the harmless word "npg_" through the archive. A naive `grep npg_` will forever flag it — the right signal is the shape check, which is clean.
+
+## Other things the image reveals
+
+1. **Manual restart worked** — new watcher `pid 3837388` is running with the hardened redactor *and* the fixed publisher. Ona didn't auto-respawn, which — as you said — is the fresh-session quirk and fine to live with.
+2. **Your shell cwd is `…/archive-dryrun/ai-chat-documentation/markdown/claude-code`.** That's the one thing I'd flag: what is **`archive-dryrun`**? Your commands all used absolute `/workspaces/.ai-chat-history/…` paths, so they targeted the *live* archive correctly regardless of cwd. But if `archive-dryrun` is a **separate copy** of the archive (a test/dry-run tree), it's a *second* place the old unredacted captures might live — worth checking it isn't also tracked/pushed anywhere. If it's just a scratch dir, ignore.
+
+## Net status
+
+- ✅ Redactor hardened + publisher fixed, both live (watcher reloaded).
+- ✅ Real Neon secret **masked in the archive tip** (0 real-shaped tokens), commit `96ff693d` pushed.
+- ✅ Source `.py` files will no longer auto-commit (publisher now excludes `scripts/` + `logs/`).
+- ⚠️ Old **git history** (pre-restart commits) still contains the real token — that's what **rotation** neutralizes. Nothing else is broken.
+
+**"Prevention is fully done"** — future captures are redacted, and the tip is scrubbed. You're clear to **rotate the Neon password** now. Want the exact connection-string formats for updating the two Ona secrets, and should I take a quick look at what `archive-dryrun` is?
+
 <details>
 <summary>Execution details — 183 tool events</summary>
 
@@ -2172,6 +2211,6 @@ echo "   count of matching…`
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 19:32 UTC
+- **Last updated:** 13 July 2026, 19:33 UTC
 - **Turns:** 26
 - **Status:** Complete
