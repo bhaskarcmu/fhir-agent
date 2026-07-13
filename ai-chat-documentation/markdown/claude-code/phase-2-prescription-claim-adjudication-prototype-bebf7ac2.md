@@ -1307,8 +1307,14 @@ Synthea validated as our claims synthesizer — it emits **Claim (657), Explanat
 
 Let me guard the heavy outputs from ever being committed, then I'll wait for the two research agents to finish enriching the source list.
 
+Both research agents delivered verified, no-auth source maps. Highlights: the **CMS Part D Formulary PUF** (real per-NDC tier/PA/step-therapy/quantity-limit flags), **CMS NCD/LCD exports**, and **HL7 Da Vinci PAS example bundles** (canonical `Claim`/`ClaimResponse` shapes). Let me pull the small high-value ones now and size the big ones.
+
+NCD data extracted (`ncd.mdb` + CSV), openFDA works, and the formulary PUF is 2.4GB (too big to pull now — I'll document the exact URL). Let me grab the Da Vinci PAS example `Claim`/`ClaimResponse` bundles from GitHub (small, canonical shapes).
+
+The GitHub tree API isn't surfacing them (large/truncated tree). Let me pull directly from the rendered IG instead — the agent confirmed these instance names exist.
+
 <details>
-<summary>Execution details — 48 tool events</summary>
+<summary>Execution details — 52 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1454,6 +1460,20 @@ cat > data/synthea/.gitignore <<'EOF'
 output/
 EOF
 echo "=== disk used by da…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== CMS NCD export (medical-necessity rules, ~1.2MB) ==="
+curl -sL --max-time 60 -o data/reference/cms-ncd/ncd.zip "https://downloads.cms.gov/medicare-coverage-database…`
+- **Bash** `cd /workspaces/fhir-agent
+mkdir -p data/reference/davinci-pas
+echo "=== locate PAS example files in HL7/davinci-pas ==="
+curl -s --max-time 30 "https://api.github.com/repos/HL7/davinci-pas/git/trees/m…`
+- **Bash** `cd /workspaces/fhir-agent
+for br in master main; do
+  echo "=== branch: $br — example-ish json paths ==="
+  curl -s --max-time 30 "https://api.github.com/repos/HL7/davinci-pas/git/trees/$br?recursive=…`
+- **Bash** `cd /workspaces/fhir-agent
+base="https://build.fhir.org/ig/HL7/davinci-pas"
+for ex in Bundle-PASRequestBundleExample1 Bundle-PASResponseBundleExample1 Claim-ClaimExample ClaimResponse-ClaimResponseExam…`
 
 </details>
 
@@ -1464,6 +1484,6 @@ echo "=== disk used by da…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 13 July 2026, 23:20 UTC
+- **Last updated:** 13 July 2026, 23:21 UTC
 - **Turns:** 10
 - **Status:** Complete
