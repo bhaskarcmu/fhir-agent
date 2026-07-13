@@ -1315,8 +1315,10 @@ The GitHub tree API isn't surfacing them (large/truncated tree). Let me pull dir
 
 PAS example filenames are versioned/404 — not worth chasing since our Synthea run already produced **657 real `Claim` + 657 `ExplanationOfBenefit`** resources. Let me extract a pharmacy claim + its EOB as a local canonical reference, then write the data-engineering inventory.
 
+Real pharmacy `Claim` + `ExplanationOfBenefit` samples extracted (`type=pharmacy`, with `insurance`/`item`/`prescription`; EOB carries `outcome`/`adjudication`). That gives us concrete canonical shapes locally. Now let me write the data-engineering inventory and refine the gitignore so only small public-domain derivatives are tracked (never the 188MB jar / 2.4GB formulary).
+
 <details>
-<summary>Execution details — 53 tool events</summary>
+<summary>Execution details — 54 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1481,6 +1483,10 @@ rmdir data/reference/davinci-pas 2>/dev/null
 mkdir -p data/reference/samples
 # Extract one pharmacy Claim and one EOB from the Synthea output as real reference shapes.
 f=$(ls…`
+- **Bash** `cd /workspaces/fhir-agent
+cat > data/reference/.gitignore <<'EOF'
+# Reference-data area. Never commit large or license-gated RAW downloads.
+# Small, public-domain, curated text derivatives (CSV/JSON)…`
 
 </details>
 
@@ -1491,6 +1497,6 @@ f=$(ls…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 13 July 2026, 23:21 UTC
+- **Last updated:** 13 July 2026, 23:22 UTC
 - **Turns:** 10
 - **Status:** Complete
