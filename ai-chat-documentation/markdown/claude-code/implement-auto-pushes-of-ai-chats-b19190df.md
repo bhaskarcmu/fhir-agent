@@ -2516,6 +2516,45 @@ It's registered and `STOPPED` — no reload needed. Starting the supervised watc
 
 Let me verify it's actually up — service phase, lock, and logs:
 
+🎉 **You're live.** Both steps done and verified:
+
+## Status: running
+- **Ona service `aiChatArchiveWatcher`: `SERVICE_PHASE_RUNNING`** (supervised).
+- **`archive-ai status`: Watcher: running**; inotify process alive (PID watching the Claude Code projects dir); lock held.
+- **Back-catalog published**: your manual sync pushed `9004ade2`; the service's own startup catch-up then pushed `7ce39b6` (this conversation had grown in between), then settled into `publish=noop` and is now watching.
+
+So everything that existed is on GitHub, and new activity flows automatically.
+
+## What's happening now (the mental model)
+1. You (or I) do anything in a Claude Code session → Claude Code appends to `~/.claude/projects/-workspaces-fhir-agent/<id>.jsonl`.
+2. **inotify** sees the write → **15s debounce** waits for the burst to settle.
+3. Pipeline regenerates Markdown/raw/manifest/INDEX (redacted) → **commit → pull --rebase → push** to `origin/ai-chat-history`.
+4. Ona **supervises** the service: if it crashes it restarts, and it **auto-starts on every future environment start** (so you never touch it again).
+
+Right now, **this very conversation is being archived live** — each exchange will get pushed within ~15s of a pause.
+
+## How to operate it (your cheat-sheet)
+```bash
+# Is it running?
+gitpod automations service list | grep aiChatArchiveWatcher
+cd /workspaces/.ai-chat-history/ai-chat-documentation/scripts && PYTHONPATH=. python3 -m archive_ai status
+
+# Watch it work / troubleshoot
+tail -f /workspaces/.ai-chat-history/ai-chat-documentation/logs/watcher.log
+
+# Pause / resume
+gitpod automations service stop  aiChatArchiveWatcher
+gitpod automations service start aiChatArchiveWatcher
+```
+**View on GitHub:** repo → branch dropdown → `ai-chat-history` → `ai-chat-documentation/INDEX.md`.
+
+## Two things to keep in mind
+- **Public + privacy:** everything (redacted for structured tokens only) goes to the public branch. To keep a specific conversation off GitHub, add its session id to `ai-chat-documentation/config/exclusions.txt` — it's purged on the next run.
+- **Let the watcher own the archive worktree:** now that it auto-commits in `/workspaces/.ai-chat-history`, avoid making manual commits there to prevent rebase races. Edit the *tooling* on a fresh checkout if needed.
+
+## One observation (not blocking)
+The `watcher.log` also shows older `"Exported 1 Cline task(s)."` lines — that's the **legacy Cline exporter** still active from before. It archives Cline (Roo) tasks, a different source, so the two coexist. If you'd like, I can check whether that old watcher is still running and retire it so there's a single archiver — just say the word.
+
 <details>
 <summary>Execution details — 144 tool events</summary>
 
@@ -2823,6 +2862,6 @@ cd /workspaces/.ai-chat-history/ai-chat-documentation/sc…`
 - **Source:** Claude Code
 - **Session ID:** `b19190df-fadc-43a7-a3b8-8ef78a5d944c`
 - **Created:** 13 July 2026, 12:36 UTC
-- **Last updated:** 13 July 2026, 15:07 UTC
+- **Last updated:** 13 July 2026, 15:08 UTC
 - **Turns:** 21
 - **Status:** Incomplete
