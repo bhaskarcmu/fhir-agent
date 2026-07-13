@@ -1,5 +1,11 @@
-# IDE / editor
-# .vscode/settings.json is tracked — contains shared Java runtime config
+# IDE / editor — track only curated, non-secret shared VS Code config;
+# ignore all other (personal / machine-specific) files under .vscode/.
+# Never commit secrets into any of these.
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
 
 # Kong database credentials — never commit the real secret
 gateway/kong/kong-db-secret.yaml
