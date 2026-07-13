@@ -314,6 +314,169 @@ The triage engine is now crystal clear — first-match-wins `evaluate(medication
 
 I've directly confirmed the two most critical things (the triage rules engine internals and that `.clinerules`/`CLAUDE.md` are semantically-equivalent mirrors that must stay in sync). Two background readers are analyzing the remaining service and infra documentation. I'll draft the plan once they report — waiting on their findings so the plan is grounded, not guessed.
 
+## Turn 6
+
+### Prompt
+
+<task-notification>
+<task-id>a4286564f3165196d</task-id>
+<tool-use-id>toolu_018sUF9rvwGZ2tcB1sTeWsE1</tool-use-id>
+<output-file>/tmp/claude-1000/-workspaces-fhir-agent/bebf7ac2-4f1b-4a70-8685-440da76db7e1/tasks/a4286564f3165196d.output</output-file>
+<status>completed</status>
+<summary>Agent "Analyze service READMEs &amp; rules" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>I've read all the files. Here is the structured summary for your Phase 2 (prescription claim adjudication) planning.
+
+---
+
+# Repo overview
+
+Four cooperating components, strictly layered:
+
+`fhir-service` (Java/HAPI, not read) → `client/platform` (protocol tests) and `client/clinical` (domain client) → `triage-service` (rule engine, FastAPI) → `mcp-agent` (LLM orchestrator). Each layer only knows about the one below it. Clinical logic lives ONLY in `triage-service`; the agent orchestrates and narrates but holds no clinical logic.
+
+---
+
+# 1. What each component does + public interface
+
+## `client/clinical` — `fhir_clinical_client` package
+File: `/workspaces/fhir-agent/client/clinical/src/fhir_clinical_client/fhir_client.py`
+
+The domain-abstraction layer. Hides all FHIR mechanics (bundles, search params, HTTP, JSON) behind clinical-domain methods. This is the foundation both the triage service and the agent build on.
+
+Public interface (exported in `__init__.py`, `__version__ = "0.1.0"`):
+- `FHIRClient(gateway_url: str, api_key: Optional[str] = None)` — normalizes `gateway_url` (accepts with/without trailing `/fhir`).
+- Methods:
+  - `get_server_status() -&gt; dict`
+  - `create_patient(family, given, gender, birth_date=None) -&gt; str`
+  - `get_patient(patient_id) -&gt; Patient`
+  - `search_patients(name) -&gt; list[Patient]` (splits name on whitespace, ANDs `name=` params, `_count=20`)
+  - `delete_patient(patient_id) -&gt; None`
+  - `get_medications(patient_id) -&gt; list[Medication]` (queries `MedicationRequest?patient=...&amp;status=active&amp;_count=100` — active only)
+  - `get_allergies(patient_id) -&gt; list[Allergy]` (all statuses)
+  - `get_conditions(patient_id) -&gt; list[Condition]` (all statuses)
+- Domain dataclasses: `Patient`, `Medication` (`code`=RxNorm, `display`, `status`, `authored_on`, `dosage_text`), `Allergy` (`code`=SNOMED, `display`, `criticality`, `category: list[str]`, `recorded_date`), `Condition`.
+- Exceptions: `FHIRClientError(message, status_code=0, body=None)`, and subclasses `AuthenticationError` (401), `NotFoundError` (404).
+
+Domain vocabulary exposed: patients, medications (RxNorm), allergies (SNOMED, criticality low/high/unable-to-assess, category medication/food/environment), conditions (SNOMED, clinical_status). NO coverage/claim/formulary vocabulary exists.
+
+## `client/platform`
+File: `/workspaces/fhir-agent/client/platform/README.md` — only an `integration_test.py` for platform engineers testing the raw FHIR server (no Kong/API key). Not a client library. Different audience ("Hat 1"). Not relevant to building clinical workflows.
+
+## `triage-service` — FastAPI rule engine
+Files: `/workspaces/fhir-agent/triage-service/src/triage/{main.py,rules.py,models.py}`
+
+Stateless microservice. `POST /triage/refill-risk` (body `{patient_id, medication_id?}`) fetches meds+allergies via `FHIRClient`, runs `rules.evaluate()`, returns a FHIR `RiskAssessment` resource. `GET /health` returns `{status, version}`. `VERSION = "0.1.0"`.
+
+Response model = FHIR `RiskAssessment` (`models.py`): `RiskAssessmentResponse` with `resourceType`, `id` (`risk-{uuid8}`), `status`, `subject`, `prediction: list[PredictionModel]`, `note: list[AnnotationModel]`, `basis: list[ReferenceModel]`. Supporting models: `CodingModel`, `CodeableConceptModel`, `PredictionModel`, `AnnotationModel`, `ReferenceModel`.
+
+## `mcp-agent` — LLM orchestrator
+Files: `/workspaces/fhir-agent/mcp-agent/src/agent/{agent.py,tools.py,format.py}`
+
+Raw Anthropic tool-use loop (no framework). `MODEL = "claude-sonnet-4-5"`, `MAX_TOKENS = 1024`. `run_query(client, user_input, messages=None, verbose=True) -&gt; (final_text, messages)` runs the tool loop. Two tools in `tools.py` `TOOL_DEFINITIONS`: `get_patient_summary(name)` and `assess_refill_risk(patient_id, medication_id?)` (the latter HTTP-POSTs to `TRIAGE_SERVICE_URL/triage/refill-risk` via `httpx`). Dispatcher `execute_tool(name, inputs) -&gt; str` (JSON string). `format.py` handles terminal output with `RISK_ICONS`/`RISK_LABELS` keyed on HIGH/MODERATE/LOW.
+
+---
+
+# 2. Conventions you must follow for adjacent code
+
+**Layering (most important):** Never let FHIR mechanics leak upward. All FHIR resource parsing stays in `fhir_client.py` static parsers (`_parse_*`). Clinical logic stays in `triage-service`. The agent gets no new clinical logic — it only orchestrates. For claim adjudication you'd likely add: new `FHIRClient` methods (e.g. `get_coverage`, `get_medication_dispenses`), new domain dataclasses, a new triage-style rule engine/endpoint, and a new agent tool.
+
+**Naming/structure:**
+- Client methods: `get_&lt;domain&gt;(patient_id) -&gt; list[&lt;Dataclass&gt;]`; each has a private static `_parse_&lt;domain&gt;(resource) -&gt; Dataclass`; filter Bundle entries by `resourceType`.
+- Domain models are `@dataclass` with domain field names (not FHIR names), `Optional[date]` for dates parsed via `FHIRClient._parse_date`.
+- Triage rules use dataclasses; risk levels are the `Literal["HIGH","MODERATE","LOW"]` `RiskLevel` type.
+- Section-header comment style (`─────`) is used throughout.
+
+**Error handling:**
+- Client raises typed `FHIRClientError`/`AuthenticationError`/`NotFoundError` — never raw HTTP.
+- Service catches `NotFoundError` → HTTP 404, `FHIRClientError` → HTTP 502.
+- Agent tools catch exceptions and return `{"error": ...}` dicts (never raise into the loop); httpx errors mapped to friendly messages.
+
+**Config:** `FHIR_GATEWAY_URL` (required), `FHIR_API_KEY` (optional, local-dev fallback with no auth), `TRIAGE_SERVICE_URL` (default `http://localhost:8001`), `ANTHROPIC_API_KEY` (with `CLAUDE_API_KEY` fallback). Build clients via the `_get_client()`/`_fhir_client()` env pattern. Everything is currently `version 0.1.0`.
+
+**FHIR read/write:** reads via `_request(path, method="GET")` returning `(status, body)`; writes via POST returning 201 and reading `body["id"]`. `_request` sets `Content-Type/Accept: application/fhir+json` and `apikey` header. Client uses stdlib `urllib` deliberately (README design note says Phase 2 async/OAuth would migrate to `httpx`, isolated to `fhir_client.py`).
+
+---
+
+# 3. Claims-adjudication concepts that already exist
+
+**Nothing about insurance/claim adjudication proper exists** — no eligibility, no formulary, no prior-authorization, no Coverage/Claim/ClaimResponse resources anywhere. The clinical client has NO `Coverage`/`Claim` methods. So Phase 2 adjudication (eligibility, formulary, prior-auth, coverage) is greenfield and won't duplicate anything.
+
+**BUT two clinical checks you listed already exist in the triage rule engine** (`rules.py`) — drug-allergy and duplicate-therapy. Do not re-implement these; reuse or call them.
+
+Rule structure (quote):
+```python
+RiskLevel = Literal["HIGH", "MODERATE", "LOW"]
+
+@dataclass
+class RuleResult:
+    risk_level: RiskLevel
+    rule_id: str
+    note: str
+    basis_medication_ids: list[str] = field(default_factory=list)
+    basis_allergy_ids: list[str] = field(default_factory=list)
+
+@dataclass
+class Rule:
+    id: str
+    name: str
+    evaluate: Callable[[list[Medication], list[Allergy]], RuleResult | None]
+```
+
+An `evaluate` function returns a `RuleResult` on match or `None` on no-match. The engine iterates the registry, **first match wins**, else a default LOW:
+```python
+def evaluate(medications, allergies) -&gt; RuleResult:
+    for rule in RULES:
+        result = rule.evaluate(medications, allergies)
+        if result is not None:
+            return result
+    return _DEFAULT_LOW
+```
+
+**Drug-allergy** = `_rule_penicillin_conflict` (rule_id `"penicillin-conflict"`, HIGH) plus `_rule_high_criticality_allergy` (rule_id `"high-criticality-allergy"`, MODERATE). Penicillin detection uses `PENICILLIN_RXNORM_CODES`, `PENICILLIN_DISPLAY_FRAGMENTS`, `PENICILLIN_ALLERGY_SNOMED_CODES` and helpers `_is_penicillin_medication`, `_is_penicillin_allergy`.
+
+**Duplicate-therapy** = `_rule_duplicate_therapeutic_class` (rule_id `"duplicate-therapeutic-class"`, MODERATE). Uses the `THERAPEUTIC_CLASSES: dict[str, set[str]]` map (antihistamine, statin, ace_inhibitor, arb, ssri, ppi) and helper `_therapeutic_class(med)`.
+
+**How to add a new rule** (per the module docstring and README: "Adding a new rule is adding one item to RULES"):
+1. Write `def _rule_&lt;name&gt;(medications, allergies) -&gt; RuleResult | None:` returning a `RuleResult` (populate `risk_level`, `rule_id`, `note`, `basis_medication_ids`/`basis_allergy_ids`) or `None`.
+2. Append a `Rule(id=..., name=..., evaluate=_rule_&lt;name&gt;)` to the `RULES` list, positioned by priority (first match wins — order matters).
+
+Registry today:
+```python
+RULES: list[Rule] = [
+    Rule(id="penicillin-conflict", name="Penicillin family drug-allergy conflict", evaluate=_rule_penicillin_conflict),
+    Rule(id="duplicate-therapeutic-class", name="Duplicate therapeutic class", evaluate=_rule_duplicate_therapeutic_class),
+    Rule(id="high-criticality-allergy", name="High-criticality allergy on record", evaluate=_rule_high_criticality_allergy),
+]
+```
+
+Caveat: the current `Rule.evaluate` signature is fixed at `Callable[[list[Medication], list[Allergy]], RuleResult | None]`. Adjudication rules needing coverage/formulary/dispense data won't fit this signature — see extension notes below.
+
+---
+
+# 4. Extension points to reuse vs. things NOT to modify
+
+**Reuse / extend:**
+- `FHIRClient` — add new read methods (`get_coverage`, `get_medication_dispenses`, etc.) and new dataclasses following the `_parse_*` pattern. This is the sanctioned extension point; the client README explicitly anticipates Phase 2 (async/OAuth migration note, `get_appointments` stub at line ~450 in `fhir_client.py`).
+- The rule-engine pattern in `rules.py` — mirror `Rule`/`RuleResult`/`evaluate` for an adjudication engine.
+- `RiskAssessmentResponse` model pattern — for adjudication you'd likely emit a FHIR `ClaimResponse`/`CoverageEligibilityResponse` in the same "return a FHIR resource so it's audit-storable" style.
+- The agent tool pattern (`TOOL_DEFINITIONS` + `execute_tool` dispatcher + `_fhir_client()`/`_triage_url()` factories) — add a new tool + a new service URL env var.
+- `format.py` `RISK_ICONS`/`RISK_LABELS`/`DIVIDER` conventions for any new terminal output.
+
+**Do NOT modify (to keep Phase 1 independent):**
+- Existing rule functions and the `RULES` registry semantics — don't change signatures/priority ordering of `penicillin-conflict`, `duplicate-therapeutic-class`, `high-criticality-allergy`, or the first-match-wins contract. Adding a Phase-2 adjudication rule set that needs Coverage data means creating a NEW engine/endpoint rather than widening `Rule.evaluate`'s signature (which would ripple through Phase 1).
+- The `POST /triage/refill-risk` contract and `RiskAssessmentResponse` shape — the agent and its tests depend on it. Add a new endpoint (e.g. `POST /adjudication/...`) rather than overloading this one.
+- `client/platform/` and `fhir-service/` — the top-level `client/README.md` states audiences must not modify each other's folders; clinical/Phase-2 developers stay out of `client/platform/` and `fhir-service/`.
+- The `mcp-agent` "no clinical logic" rule — put adjudication decisions in a service, not in the agent or its tools.
+
+One correctness note if you touch `rules.py`: `PENICILLIN_ALLERGY_SNOMED_CODES` contains intentional duplicate literals (`"372687004"` thrice) — harmless in a set, but don't "clean it up" expecting behavior change.</result>
+<usage><subagent_tokens>41854</subagent_tokens><tool_uses>13</tool_uses><duration_ms>68174</duration_ms></usage>
+</task-notification>
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 12 tool events</summary>
 
@@ -366,6 +529,6 @@ diff <(grep -E '^#|^##' CLAUDE.md) <(grep -E '^#|^##' .clinerules) && echo "HEAD
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 13 July 2026, 22:53 UTC
-- **Turns:** 5
-- **Status:** Complete
+- **Last updated:** 13 July 2026, 22:54 UTC
+- **Turns:** 6
+- **Status:** Incomplete
