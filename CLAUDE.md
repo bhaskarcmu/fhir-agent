@@ -67,6 +67,9 @@ worktree is ambiguous.
   Only skip the branch/PR if I explicitly say to.
 - Never merge branches yourself. Prepare work for GitHub review; keep the PR
   up to date as work continues.
+- After a PR is merged, **always ask to delete the feature branch** — both the
+  `origin` remote branch and the local branch. Delete only after I confirm, and
+  never delete `main` or `ai-chat-history`.
 
 **AI archive (`/workspaces/.ai-chat-history`)**
 - Work only on `ai-chat-history`.
