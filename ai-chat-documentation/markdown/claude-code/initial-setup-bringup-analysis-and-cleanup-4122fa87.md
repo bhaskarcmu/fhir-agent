@@ -1798,6 +1798,55 @@ One last check — the *source* Claude logs, which are the one place the real se
 
 More stray copies surfaced in `/tmp` — this is the real answer to "what else is problematic." Let me get the definitive picture: which `/tmp` copies contain the actual secret, and whether any can push:
 
+Complete picture now. Here's what `archive-dryrun` is and everything similar.
+
+## What `/tmp/archive-dryrun` is
+
+A **stale dry-run scratch copy** of the archive, made while the auto-push feature was being developed. It's a **plain directory** (no `.git`, **no remote → cannot push anywhere**), sitting in ephemeral `/tmp`, last touched 14:07 today, and it contains **0** real secrets. Harmless.
+
+## The similar folders (there are several — all in `/tmp`, all harmless)
+
+My broader sweep found **five** stray archive/test copies:
+
+| Folder | Real secrets | Git remote? | Notes |
+|---|---|---|---|
+| `/tmp/archive-dryrun` | **0** | plain dir, none | dry-run scratch |
+| `/tmp/archive-verify` | **0** | plain dir, none | verification scratch |
+| `/tmp/archive-dryrun2` | **0** | plain dir, none | 2nd dry-run |
+| `/tmp/tmpqzobj94o/work` | **0** | plain dir, none | pytest temp (test fixtures `sess-secret.jsonl`) |
+| `/tmp/tmp96h8lq1g/work` | **0** | plain dir, none | pytest temp |
+
+**The definitive check — `grep` for real-secret-shaped tokens across all of `/tmp`: none.** All five are plaintext copies of chat archives, but they hold **no real secret**, they're **not git repos** (so nothing can be pushed from them), and they're in `/tmp` (wiped on reboot). They exist because the archive project's tests and dry-runs write to temp dirs. Recommend deleting them purely for tidiness.
+
+## What I checked that turned out CLEAN
+
+- Dotfiles + `/etc/environment` + `.vscode/settings.json` + Roo/Continue configs → **0** literal Anthropic keys. The old `setup-credentials.sh` writes aren't present (that automation is manual-triggered and didn't run), and my refactor prevents future writes.
+- `/workspaces/setup.log` → doesn't exist.
+- `gh` token store → not at the standard path.
+
+## The one place the real secret genuinely still lives locally
+
+**`~/.claude/projects/…4122fa87….jsonl`** — Claude Code's own session log — still contains the real Neon token (**1** match). This is the *original source* the whole leak came from and that the archive pipeline reads. It's:
+- local only, uncommitted, **not in any git repo**, cannot push;
+- inherent to Claude Code (it records every session here) — you can't avoid it;
+- neutralized by **rotation**.
+
+## Bottom line on leak surfaces
+
+| Surface | Status |
+|---|---|
+| Live archive tip (`.ai-chat-history`) | ✅ scrubbed (0 real tokens), pushed |
+| `/tmp/*` copies (×5) | ✅ no secrets, no remotes, ephemeral |
+| dotfiles / env / editor configs | ✅ clean |
+| `~/.claude/projects` source log | ⚠️ holds the value (local only, no remote) → **rotation handles it** |
+| Old `ai-chat-history` git *history* | ⚠️ holds the value → **rotation handles it** |
+
+**Nothing anywhere can push the secret to a remote anymore.** The only residual copies are local (`~/.claude` source) and past git history — both made worthless the moment you rotate.
+
+Two quick offers:
+1. **Delete the five `/tmp` scratch copies** for hygiene? `rm -rf /tmp/archive-dryrun /tmp/archive-verify /tmp/archive-dryrun2 /tmp/tmpqzobj94o /tmp/tmp96h8lq1g` — say the word and I'll do it.
+2. Ready to give you the **exact Neon rotation + secret-update steps** whenever you want to proceed.
+
 <details>
 <summary>Execution details — 188 tool events</summary>
 
@@ -2248,6 +2297,6 @@ echo "=== per stra…`
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 19:39 UTC
+- **Last updated:** 13 July 2026, 19:40 UTC
 - **Turns:** 27
 - **Status:** Complete
