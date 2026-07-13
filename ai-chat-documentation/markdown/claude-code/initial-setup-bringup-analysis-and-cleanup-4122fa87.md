@@ -965,7 +965,7 @@ Let me check what the Ona CLI can do for secrets/env, so I give you exact comman
 Now I have the exact tooling. Let me discover your project ID and the **names** of the existing secrets (I will NOT run `secret get`, which would print values — only `list`, which shows names):
 
 <details>
-<summary>Execution details — 76 tool events</summary>
+<summary>Execution details — 77 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1121,6 +1121,8 @@ echo; echo "=== ona env/secret subcommands? ==="; ona environment --help 2>&1 | 
 echo; echo "=== gitpod project secret create ==="; gitpod project secret create --help 2>&1 | head -45`
 - **Bash** `echo "=== projects ==="; gitpod project list 2>&1 | head -20
 echo; echo "=== whoami ==="; ona whoami 2>&1 | head -10`
+- **Bash** `echo "=== user secrets (names only) ==="; gitpod user secret list 2>&1 | head -20
+echo; echo "=== can this env principal see project secrets? ==="; gitpod project secret list 2>&1 | head -5`
 
 </details>
 
