@@ -1676,8 +1676,10 @@ Let me validate the exclusion syntax works (dry-run, changes nothing) before com
 
 Exclusion validated (nothing under `scripts/` or `logs/` would be staged). Now committing the publisher fix deliberately to `ai-chat-history` — stating: worktree `/workspaces/.ai-chat-history`, branch `ai-chat-history`, target `origin/ai-chat-history` (direct commit, sanctioned for the archive):
 
+The daemon **already auto-committed and pushed my `publisher.py` edit** before I could — which is the exact "weird" behavior you flagged, happening live. Both source fixes are now on `origin/ai-chat-history`. Let me confirm both are in HEAD:
+
 <details>
-<summary>Execution details — 179 tool events</summary>
+<summary>Execution details — 180 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2089,6 +2091,9 @@ git commit -m "$(cat <<'EOF'
 archive: stage generated output only, never source or logs
 
 The publisher sta…`
+- **Bash** `cd /workspaces/.ai-chat-history
+echo "=== publisher.py in HEAD has the exclusion? ==="; git show HEAD:ai-chat-documentation/scripts/archive_ai/publisher.py | grep -c "exclude" 
+echo "=== redactor.py i…`
 
 </details>
 
