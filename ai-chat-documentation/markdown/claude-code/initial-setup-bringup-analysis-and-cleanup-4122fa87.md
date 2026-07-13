@@ -1861,6 +1861,58 @@ The five are deleted — but this revealed the bigger picture: there are **~150 
 
 **`/tmp` fully cleaned — 152 stray archive trees removed, and confirmed zero real secrets remain anywhere in `/tmp`.** Updating the tracker and giving you the rotation steps:
 
+## Neon password rotation — exact steps
+
+Your non-secret connection details (already known; only the password changes):
+- **host:** `ep-restless-resonance-amqcyrmq-pooler.c-5.us-east-1.aws.neon.tech`
+- **database:** `fhirdb` · **role:** `neondb_owner`
+
+### Step 1 — Reset the password (Neon Console)
+1. https://console.neon.tech → your project.
+2. **Branches → your branch → Roles** (or **Settings → Roles**).
+3. Select **`neondb_owner`** → **Reset password** → **copy the new value** (shown once).
+
+### Step 2 — Build the two connection strings
+Substitute the new password for `<NEW_PW>` (don't type these into a terminal here — see the ⚠️ note):
+
+**`NEON_DB_URL`** (postgres URI form):
+```
+postgresql://neondb_owner:‹redacted:url-credentials›ep-restless-resonance-amqcyrmq-pooler.c-5.us-east-1.aws.neon.tech/fhirdb?sslmode=require&channel_binding=require
+```
+
+**`SPRING_DATASOURCE_URL`** (JDBC form):
+```
+jdbc:postgresql://ep-restless-resonance-amqcyrmq-pooler.c-5.us-east-1.aws.neon.tech/fhirdb?user=neondb_owner&password=<NEW_PW>&sslmode=require
+```
+
+> If the new password contains URL-special characters (`@ : / ? & % +`), percent-encode them (e.g. `@`→`%40`). Easiest is to have Neon generate an alphanumeric password to avoid encoding issues.
+
+### Step 3 — Update **both** Ona secrets
+Both `NEON_DB_URL` and `SPRING_DATASOURCE_URL` are existing Ona secrets — just update their **values** (they hold the same password in two formats, the duplication we deferred). Do it in the **Ona dashboard** (Organization → Settings → Environment Variables / Secrets), or from your **laptop** via `ona login` then `gitpod project secret update … --value-from-file`. *(Not from the in-workspace CLI — that principal can't manage secrets.)*
+
+### Step 4 — Pick up the new secrets
+Restart the environment (or the relevant services) so the new secret values are injected. Secrets are read at process start, so the FHIR service / anything using the DB must restart.
+
+### Step 5 — Verify (I can do this for you)
+Once you've rotated and restarted, tell me and I'll confirm the DB connection works — e.g., run the exact test that failed earlier (`MdmTest`, which boots the app against the live datasource). Green = new credential good, old one dead.
+
+> ⚠️ **Don't paste the new password into a terminal in this workspace** — the archive watcher captures terminal I/O. The hardened redactor would now mask it, but the clean path is to enter it only in the Neon Console and the Ona secrets UI, never echoed here.
+
+---
+
+## Where everything stands
+
+| Item | Status |
+|---|---|
+| Redactor hardened, publisher fixed, watcher restarted | ✅ live |
+| Archive tip scrubbed (real secret masked) | ✅ verified (0 real tokens) |
+| `/tmp` stray copies (157 total) | ✅ deleted, 0 secrets remain |
+| Dotfiles / env / editor configs | ✅ clean |
+| Secret still in `~/.claude` source log + old git history | ⏳ **neutralized by rotation (Step 1)** |
+| PR #23 (main) | ⏸️ on hold per your earlier call |
+
+Rotation is the last action to fully close this out. Ping me after Step 4 and I'll verify the connection.
+
 <details>
 <summary>Execution details — 191 tool events</summary>
 
@@ -2321,6 +2373,6 @@ find /tmp -maxd…`
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 19:43 UTC
+- **Last updated:** 13 July 2026, 19:44 UTC
 - **Turns:** 28
 - **Status:** Complete
