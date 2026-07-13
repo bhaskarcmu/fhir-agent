@@ -1,9 +1,12 @@
 """Git publishing: auto-commit and auto-push to the archive branch.
 
 Strictly scoped: all git runs through ``git -C <archive worktree>`` and stage
-only the archive subdir. Structurally incapable of opening a PR or touching
-another branch. On push failure the local commit is kept for retry; never
-force-pushes.
+only *generated archive output* within the archive subdir. The tool's own
+source (``<subdir>/scripts``) and runtime logs (``<subdir>/logs``) are excluded,
+so editing archive code or writing logs never auto-commits/pushes — source
+changes must be committed deliberately. Structurally incapable of opening a PR
+or touching another branch. On push failure the local commit is kept for retry;
+never force-pushes.
 """
 
 from __future__ import annotations
@@ -58,7 +61,13 @@ class Publisher:
                 f"Refusing to publish: on branch '{actual}', expected '{self.branch}'."
             )
 
-        self._git("add", "--", self.subdir)
+        # Stage generated output only — exclude the tool's own source and logs
+        # so archive bursts never auto-commit code or logs.
+        self._git(
+            "add", "--", self.subdir,
+            f":(exclude){self.subdir}/scripts",
+            f":(exclude){self.subdir}/logs",
+        )
         if self._staged_empty():
             return PublishResult(status="noop", detail="no changes to commit")
 

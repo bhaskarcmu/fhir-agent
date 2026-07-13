@@ -1668,8 +1668,14 @@ Now I have the mechanism. Let me confirm the documented intent and get the exact
 
 Investigation complete — I have clear answers to both of your concerns. Let me read `autostart.sh` so my restart instructions are exact, then I'll implement the source-push fix:
 
+I now have everything. Let me implement the fix for the source-file-push bug, then give you exact restart instructions.
+
+**Root cause of the source-push (confirmed):** the publisher stages the *entire* `ai-chat-documentation` subdir ([publisher.py:61](/workspaces/.ai-chat-history/ai-chat-documentation/scripts/archive_ai/publisher.py#L61)) — and the archive's own source code lives *under* that subdir (`ai-chat-documentation/scripts/`). So any edit to a script (like my `redactor.py` change) gets swept into the auto-commit. Fixing it to stage generated output only:
+
+Let me validate the exclusion syntax works (dry-run, changes nothing) before committing:
+
 <details>
-<summary>Execution details — 175 tool events</summary>
+<summary>Execution details — 178 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2070,6 +2076,11 @@ echo; echo "=== is my redactor hardening in HEAD? (loo…`
 - **Bash** `cd /workspaces/.ai-chat-history/ai-chat-documentation 2>/dev/null || exit 0
 echo "=== DESIGN.md: event-driven & commit intent ==="; grep -niE "event.driven|inotify|debounce|per (turn|prompt|message)|c…`
 - **Read** `/workspaces/.ai-chat-history/ai-chat-documentation/scripts/autostart.sh`
+- **Edit** `/workspaces/.ai-chat-history/ai-chat-documentation/scripts/archive_ai/publisher.py`
+- **Edit** `/workspaces/.ai-chat-history/ai-chat-documentation/scripts/archive_ai/publisher.py`
+- **Bash** `cd /workspaces/.ai-chat-history
+echo "=== dry-run: what WOULD be staged with the exclusion (should show NO scripts/ or logs/) ==="
+git add --dry-run -- ai-chat-documentation ':(exclude)ai-chat-documen…`
 
 </details>
 
@@ -2080,6 +2091,6 @@ echo "=== DESIGN.md: event-driven & commit intent ==="; grep -niE "event.driven|
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 19:16 UTC
+- **Last updated:** 13 July 2026, 19:17 UTC
 - **Turns:** 26
 - **Status:** Complete
