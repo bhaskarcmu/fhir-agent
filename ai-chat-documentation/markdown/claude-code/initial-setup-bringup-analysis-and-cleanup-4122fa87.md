@@ -1790,8 +1790,10 @@ Let me locate `archive-dryrun` and any other copies of the chat archive or stray
 
 `archive-dryrun` doesn't exist now, and there's only the one live archive tree + two known worktrees. Let me search more broadly and figure out what it *was* — plus check the *other* likely leak surface: on-disk secret copies the **old** `setup-credentials.sh` wrote before my fix (which the refactor stops going forward but doesn't retroactively clean).
 
+Found it: **`/tmp/archive-dryrun`**. And good news on the other front — **zero** stale literal-key copies in the dotfiles/`/etc/environment`/`.vscode` (the old `setup-credentials.sh` writes aren't present; that automation is manual-triggered and evidently didn't run this session). Now let me inspect `/tmp/archive-dryrun` — the real question is whether it holds unredacted secrets and whether it has a remote it could push to:
+
 <details>
-<summary>Execution details — 185 tool events</summary>
+<summary>Execution details — 186 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2221,6 +2223,9 @@ echo; echo "=== all ai-chat-documentation trees on disk ==="; find /wor…`
 - **Bash** `echo "=== broader search for archive-dryrun (any root) ==="
 find /workspaces /tmp /home /root /var/tmp -type d -name "archive-dryrun" 2>/dev/null | head
 echo "=== how was it created / used? (shell his…`
+- **Bash** `echo "=== overview ==="; ls -la /tmp/archive-dryrun 2>/dev/null | head
+echo; echo "=== git repo? remote? branch? (a remote = it could push somewhere) ==="
+if git -C /tmp/archive-dryrun rev-parse --is-…`
 
 </details>
 
@@ -2231,6 +2236,6 @@ echo "=== how was it created / used? (shell his…`
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 19:37 UTC
+- **Last updated:** 13 July 2026, 19:38 UTC
 - **Turns:** 27
 - **Status:** Complete
