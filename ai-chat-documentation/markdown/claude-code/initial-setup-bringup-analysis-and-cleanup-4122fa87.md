@@ -1583,8 +1583,12 @@ Per CLAUDE.md archive rules — stating: worktree `/workspaces/.ai-chat-history`
 
 First, stop the stale-code watcher and check for any unexpected uncommitted files:
 
+The classifier blocked killing the daemon — that's correct, I shouldn't unilaterally terminate a background service I didn't start. Restarting it is your call. I'll do the part I safely can now (commit the code fix), then hand you the restart + rotation steps.
+
+Let me check the worktree status (read-only), then commit just the redactor hardening:
+
 <details>
-<summary>Execution details — 166 tool events</summary>
+<summary>Execution details — 167 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1969,6 +1973,8 @@ echo; e…`
 sleep 1
 pgrep -af "archive_ai" | grep -v pgrep || echo "confirmed: no archive_ai process running"
 ech…`
+- **Bash** `git -C /workspaces/.ai-chat-history status --short -- ai-chat-documentation/scripts/archive_ai/redactor.py ai-chat-documentation/scripts/tests/test_redactor.py
+echo "=== current branch (must be ai-cha…`
 
 </details>
 
@@ -1979,6 +1985,6 @@ ech…`
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 19:05 UTC
+- **Last updated:** 13 July 2026, 19:06 UTC
 - **Turns:** 25
 - **Status:** Complete
