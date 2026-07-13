@@ -1591,8 +1591,10 @@ Interesting — git sees no diff on those files. The running daemon likely alrea
 
 Key finding: the daemon commits every ~1 min and **already committed my hardened `redactor.py` to HEAD (pushed, in sync with origin)** — so the *code fix is live on the branch*. But the **running daemon still has the old patterns in memory**, so it keeps re-emitting `npg_` on each burst (still in 4 files). It must be **restarted** to load the new code — which I'm blocked from doing. Let me get the exact service/restart mechanism to hand you:
 
+I have the full picture now, including the exact mechanism. Let me update the tracker and give you a precise status.
+
 <details>
-<summary>Execution details — 169 tool events</summary>
+<summary>Execution details — 170 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1983,6 +1985,7 @@ echo "=== current branch (must be ai-cha…`
 echo "=== recent archive commits ==="; git -C /workspaces/.ai-chat-history log --oneline -5
 echo; echo "=== is my redactor hardening in HEAD? (loo…`
 - **Read** `/workspaces/.ai-chat-history/.ona/automations.yaml`
+- **TodoWrite** `{"todos": [{"content": "Refactor setup-credentials.sh to stop writing the Claude key into files — main/PR#23", "status": "completed", "activeForm": "Refactoring setup-credentials.sh"}, {"content": "Ad…`
 
 </details>
 
@@ -1993,6 +1996,6 @@ echo; echo "=== is my redactor hardening in HEAD? (loo…`
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 19:07 UTC
+- **Last updated:** 13 July 2026, 19:08 UTC
 - **Turns:** 25
 - **Status:** Complete
