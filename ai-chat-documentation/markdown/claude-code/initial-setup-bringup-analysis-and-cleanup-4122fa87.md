@@ -1388,8 +1388,16 @@ Now fix the README's test command to the simple `pytest` (which the root `pytest
 
 Both work — bare `pytest` (105) from root, and `cd client/clinical && pytest` (35, smoke_test excluded). Now validate the two remaining changes safely: the compose default renders correctly (with secrets unset so nothing leaks), and the agent's key fallback works (using a **fake** key, not the real secret):
 
+The compose config revealed a real gap: it rendered `FHIR_GATEWAY_URL: http://localhost:8080/fhir` — because Compose reads the repo `.env`, and `.env.example` (what new users copy) sets it to a `localhost` URL that's **wrong inside a container**. So the quick-demo wouldn't work out-of-the-box. Also, the `ANTHROPIC_API_KEY=sk-ant-...` placeholder would *shadow* the `CLAUDE_API_KEY` fallback after `cp`. Let me fix `.env.example` so the demo works with zero edits:
+
+Now validate that a fresh copy of `.env.example` yields the correct in-container FHIR URL (rendering with secrets unset so nothing leaks):
+
+The compose demo now resolves to `http://fhir:8080/fhir` out-of-the-box. All changes validated. Let me review exactly what will be committed and stage only the intended files (excluding `.env`, the secret-bearing `.vscode/settings.json`, and the `core` dump):
+
+Staging only the intended files — deliberately excluding `.vscode/settings.json` (contains a key) and `core`:
+
 <details>
-<summary>Execution details — 130 tool events</summary>
+<summary>Execution details — 135 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1678,6 +1686,19 @@ echo; echo "=== cd client/clinical && pytest ==="; (cd client/clinical && python
 - **Bash** `cd /workspaces/fhir-agent
 echo "=== compose: FHIR_GATEWAY_URL default renders (secrets unset for safety) ==="
 env -u CLAUDE_API_KEY -u ANTHROPIC_API_KEY -u FHIR_GATEWAY_URL docker compose config 2>/de…`
+- **Edit** `/workspaces/fhir-agent/.env.example`
+- **Edit** `/workspaces/fhir-agent/.env.example`
+- **Bash** `cd /workspaces/fhir-agent
+env -u CLAUDE_API_KEY -u ANTHROPIC_API_KEY -u FHIR_GATEWAY_URL -u FHIR_API_KEY \
+  docker compose --env-file .env.example config 2>/dev/null \
+  | grep -E "FHIR_GATEWAY_URL|T…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== full status ==="; git status --short
+echo; echo "=== diff stat (tracked changes) ==="; git diff --stat`
+- **Bash** `cd /workspaces/fhir-agent
+git add .env.example .ona/automations.yaml CLAUDE.md README.md \
+  client/clinical/pyproject.toml docker-compose.yml \
+  mcp-agent/README.md mcp-agent/pyproject.toml mcp-agen…`
 
 </details>
 
@@ -1688,6 +1709,6 @@ env -u CLAUDE_API_KEY -u ANTHROPIC_API_KEY -u FHIR_GATEWAY_URL docker compose co
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 18:01 UTC
+- **Last updated:** 13 July 2026, 18:03 UTC
 - **Turns:** 23
 - **Status:** Complete
