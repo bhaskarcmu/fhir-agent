@@ -133,7 +133,51 @@ Answers (caveated by questions):
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Short answer to your worry: **no — your daily dev loop never touches Kong.** Both decisions are designed specifically so you never have to *set up* anything.
+
+## Your normal inner loop is unchanged
+
+```bash
+docker compose up -d          # exactly like today: no Kong, direct calls, no API keys
+```
+
+This stays the default. No gateway container, no keys, no config. Same speed, same muscle memory. Fronting triage "with Kong" only means *there exists a routed path* through Kong in the gated topology — it does **not** make Kong mandatory locally. When you run the plain command, claims→triage and agent→triage go direct, same as claims→fhir.
+
+## The gateway profile is opt-in and zero-setup
+
+```bash
+docker compose --profile gateway up -d    # only when you WANT to test the gated path
+```
+
+The key point that removes the burden: this Kong runs **DB-less (declarative)**, which means none of the ceremony from the cloud setup applies —
+
+| Cloud Kong (what you're picturing) | Local DB-less Kong (what this is) |
+|---|---|
+| Helm install, migrations | ❌ none — just a container image |
+| Neon `kongdb` database | ❌ none — config is a file, in memory |
+| `create-key.sh` to provision consumers | ❌ none — a fixed dev key is pre-baked in `kong.yml` |
+| Admin API port-forward, key storage | ❌ none |
+
+So even "parity mode" is a single `docker compose` command with **zero manual steps**. The one committed dev key (local-only, non-secret) lives in the declarative config, so requests just work.
+
+## When you'd actually use it (rarely)
+
+- A quick sanity check that routes/auth/path-handling behave before pushing to GKE.
+- Running the demo's "gated" story.
+- CI can run it automatically so gateway regressions get caught without you thinking about it.
+
+That's it. If you never type `--profile gateway`, you'll never notice Kong exists locally.
+
+## Locked decisions
+
+1. ✅ Triage fronted by Kong **in the gated/cloud topology**; direct locally by default.
+2. ✅ DB-less Kong compose profile added, **opt-in**, no setup — default stays Kong-less.
+
+Both fold cleanly into the plan (the "gateway parity" workstream in §6 of my last message) with **no new burden on your dev loop**.
+
+I now have everything I need: hybrid stack · fully-runnable e2e demo · convincing legacy shape · Da Vinci-aware · one Kong gateway fronting claims+fhir+triage on the edge, legacy emulator strictly private · opt-in local parity.
+
+Want me to now write this up as a consolidated Phase 2 plan document (e.g. `docs/phase2-plan.md`) — still no application code, just the plan/architecture committed on a feature branch — or keep iterating here first? I can also save the locked decisions to project memory so they survive across sessions.
 
 <details>
 <summary>Execution details — 4 tool events</summary>
@@ -164,4 +208,4 @@ echo; echo "===== k8s kinds/services ==…`
 - **Created:** 13 July 2026, 22:16 UTC
 - **Last updated:** 13 July 2026, 22:42 UTC
 - **Turns:** 2
-- **Status:** Incomplete
+- **Status:** Complete
