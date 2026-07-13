@@ -951,10 +951,10 @@ Help me rotate the Neon credential, then also help me save it in Ona as a secret
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Rotating a live database credential is security-sensitive and the actual rotation happens in your Neon account (I can't and shouldn't reach into that) — so my role is to **guide you precisely, handle the parts I safely can, and verify the result without ever seeing the secret.** Let me first learn how this repo/Ona already handles secrets so my guidance is exact, not generic.
 
 <details>
-<summary>Execution details — 71 tool events</summary>
+<summary>Execution details — 73 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1097,6 +1097,14 @@ echo; echo…`
 env -u SPRING_DATASOURCE_URL -u SPRING_DATASOURCE_DRIVER_CLASS_NAME -u HIBERNATE_DIALECT -u NEON_DB_URL \
   ./mvnw test -Dtest=MdmTest -DfailIfNoTests=false 2>&1…`
 
+### Turn 16 activity
+
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== setup-credentials.sh (how secrets are consumed) ==="; sed -n '1,80p' .devcontainer/scripts/setup-credentials.sh 2>/dev/null
+echo; echo "=== .ona/automations.yaml —…`
+- **Bash** `echo "=== Ona / Gitpod / Neon CLIs available? ==="; for c in ona gitpod gp neonctl neon psql; do printf "%-10s " "$c"; command -v "$c" 2>/dev/null || echo "(not found)"; done
+echo; echo "=== where is…`
+
 </details>
 
 ---
@@ -1108,4 +1116,4 @@ env -u SPRING_DATASOURCE_URL -u SPRING_DATASOURCE_DRIVER_CLASS_NAME -u HIBERNATE
 - **Created:** 13 July 2026, 11:36 UTC
 - **Last updated:** 13 July 2026, 17:20 UTC
 - **Turns:** 16
-- **Status:** Incomplete
+- **Status:** Complete
