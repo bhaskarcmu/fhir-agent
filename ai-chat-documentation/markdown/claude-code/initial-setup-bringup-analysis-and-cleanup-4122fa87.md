@@ -1035,6 +1035,16 @@ After you've rotated + updated the secret + restarted, I'll re-run the exact tes
 
 If you pick the CLI path, I can right now write you a tiny local helper that prompts you to paste the new password, builds both correctly-formatted strings into temp files for `--value-from-file`, and never echoes them — so you don't hand-assemble the JDBC/pooler URL. Want that?
 
+## Turn 17
+
+### Prompt
+
+I see that there is a "NEON_DB_URL" secret already in Ona dashboard. Did you miss that? Does that not satisfy most of the things you are talking about?
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 77 tool events</summary>
 
@@ -1204,6 +1214,6 @@ echo; echo "=== can this env principal see project secrets? ==="; gitpod project
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 17:22 UTC
-- **Turns:** 16
-- **Status:** Complete
+- **Last updated:** 13 July 2026, 17:26 UTC
+- **Turns:** 17
+- **Status:** Incomplete
