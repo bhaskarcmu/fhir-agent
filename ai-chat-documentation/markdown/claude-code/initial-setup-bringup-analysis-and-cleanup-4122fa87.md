@@ -1043,10 +1043,14 @@ I see that there is a "NEON_DB_URL" secret already in Ona dashboard. Did you mis
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Good push — let me be accurate rather than defensive. I did *see* `NEON_DB_URL` (I referenced it), so I didn't miss its existence. But your question is the right one: **if `NEON_DB_URL` is already a proper Ona secret, what's actually left to do?** Two things need untangling, and one of them I should verify rather than assume.
+
+**1. Storage vs. rotation are different problems.** A secret store holds whatever value you put in it — it doesn't un-leak a value that already leaked. `NEON_DB_URL`'s *password* was echoed into this terminal, so regardless of it being a proper secret, the value inside it is compromised and still needs rotating in Neon + updating. "It's a secret" ✅ solves *storage*; it does **not** solve *this password is now burned*.
+
+**2. Is `SPRING_DATASOURCE_URL` a second secret, or derived from `NEON_DB_URL`?** This is the part I shouldn't guess at. If it's *derived* at startup from `NEON_DB_URL`, then you already have the single-source-of-truth pattern I was recommending, and my "duplication smell" was wrong. Let me actually check:
 
 <details>
-<summary>Execution details — 77 tool events</summary>
+<summary>Execution details — 78 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1205,6 +1209,13 @@ echo; echo "=== whoami ==="; ona whoami 2>&1 | head -10`
 - **Bash** `echo "=== user secrets (names only) ==="; gitpod user secret list 2>&1 | head -20
 echo; echo "=== can this env principal see project secrets? ==="; gitpod project secret list 2>&1 | head -5`
 
+### Turn 17 activity
+
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== Where is SPRING_DATASOURCE_URL referenced/constructed? (repo + dotfiles + scripts) ==="
+grep -rniE "SPRING_DATASOURCE_URL|NEON_DB_URL" \
+  .ona .devcontainer docker…`
+
 </details>
 
 ---
@@ -1216,4 +1227,4 @@ echo; echo "=== can this env principal see project secrets? ==="; gitpod project
 - **Created:** 13 July 2026, 11:36 UTC
 - **Last updated:** 13 July 2026, 17:26 UTC
 - **Turns:** 17
-- **Status:** Incomplete
+- **Status:** Complete
