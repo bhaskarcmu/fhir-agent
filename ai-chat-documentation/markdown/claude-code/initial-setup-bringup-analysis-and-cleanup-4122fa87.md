@@ -1792,8 +1792,12 @@ Let me locate `archive-dryrun` and any other copies of the chat archive or stray
 
 Found it: **`/tmp/archive-dryrun`**. And good news on the other front — **zero** stale literal-key copies in the dotfiles/`/etc/environment`/`.vscode` (the old `setup-credentials.sh` writes aren't present; that automation is manual-triggered and evidently didn't run this session). Now let me inspect `/tmp/archive-dryrun` — the real question is whether it holds unredacted secrets and whether it has a remote it could push to:
 
+Clear verdict on `/tmp/archive-dryrun`: it's a **stale scratch copy, and it's safe** — a plain directory (no `.git`, **no remote → it can't push anywhere**), 2 MB, last touched 14:07 today, referenced by no process, and containing **0** real-secret-shaped tokens. It was almost certainly a dry-run made while building the archive auto-push feature. Harmless, but worth deleting for tidiness (it's a stray copy of chat archives).
+
+One last check — the *source* Claude logs, which are the one place the real secret genuinely still lives locally:
+
 <details>
-<summary>Execution details — 186 tool events</summary>
+<summary>Execution details — 187 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2226,6 +2230,8 @@ echo "=== how was it created / used? (shell his…`
 - **Bash** `echo "=== overview ==="; ls -la /tmp/archive-dryrun 2>/dev/null | head
 echo; echo "=== git repo? remote? branch? (a remote = it could push somewhere) ==="
 if git -C /tmp/archive-dryrun rev-parse --is-…`
+- **Bash** `echo "=== source Claude session logs (~/.claude/projects) — do they still hold the real secret? (count only) ==="
+grep -rIE "npg_[A-Za-z0-9]{8,}" "$HOME/.claude/projects" 2>/dev/null | grep -vc "npg_A…`
 
 </details>
 
