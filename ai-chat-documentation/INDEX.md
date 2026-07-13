@@ -1,18 +1,9 @@
-# Cline Conversation Archive
+# AI Conversation Index
 
-Open a conversation below to see every prompt and Cline's corresponding final response, in order. Execution details are collapsed by default.
+3 archived conversation(s), newest first.
 
-**Archived conversations:** 3
-
-| Date | Conversation |
-|---|---|
-| 13 Jul 2026, 01:04 UTC | [The current conversation exporter is still incorrect.](markdown/2026/07/1783904663678-the-current-conversation-exporter-is-still-incorrect.md) |
-| 12 Jul 2026, 23:26 UTC | [Fix the Cline conversation archive exporter located at:](markdown/2026/07/1783898796080-fix-the-cline-conversation-archive-exporter-located-at.md) |
-| 12 Jul 2026, 18:44 UTC | [Analyze the architecture this repo is based on and summarize in 10 bullets](markdown/2026/07/1783881894942-analyze-the-architecture-this-repo-is-based-on-and-summarize-in-10-bul.md) |
-
-## Archive notes
-
-- `markdown/` contains the readable GitHub versions.
-- `raw/` contains the complete original Cline records.
-- Execution details are collapsed in each readable document.
-- Internal tool results are not repeated in the readable document.
+| Updated | Assistant | Conversation | Turns | Status |
+|---|---|---|---:|---|
+| 13 July 2026, 15:07 UTC | Claude Code | [Implement auto pushes of AI chats](markdown/claude-code/implement-auto-pushes-of-ai-chats-b19190df.md) | 21 | Incomplete |
+| 13 July 2026, 12:24 UTC | Claude Code | [Initial setup and cleanup](markdown/claude-code/initial-setup-and-cleanup-4122fa87.md) | 9 | Complete |
+| 13 July 2026, 11:29 UTC | Claude Code | [Inspect repository status and branches](markdown/claude-code/inspect-repository-status-and-branches-275938f5.md) | 4 | Complete |
