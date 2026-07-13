@@ -1577,8 +1577,14 @@ Let me read the CLI to see exactly what `sync` does (regenerate only, or also pu
 
 `sync` regenerates (with the now-hardened redactor, loaded fresh) **and** publishes (commits + pushes the archive subdir) — which is the sanctioned ai-chat-history workflow. Let me confirm the subdir includes my code changes, and note there's a **running watcher daemon** that has the old redactor in memory (it'll need a restart). Checking config:
 
+Confirmed: `archive_subdir = ai-chat-documentation` (so one `sync` commit will include my redactor hardening + the re-redacted archive), and a **watcher daemon (PID 2616304) is running with the old redactor**. 
+
+Per CLAUDE.md archive rules — stating: worktree `/workspaces/.ai-chat-history`, branch `ai-chat-history`, target `origin/ai-chat-history` (direct commit+push, no PR, which is the sanctioned archive workflow).
+
+First, stop the stale-code watcher and check for any unexpected uncommitted files:
+
 <details>
-<summary>Execution details — 165 tool events</summary>
+<summary>Execution details — 166 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1959,6 +1965,10 @@ echo "=== subdir / config ==="; grep -rnE "subdir|Publisher\(|publish…`
 - **Bash** `cd /workspaces/.ai-chat-history/ai-chat-documentation/scripts
 echo "=== archive_subdir default ==="; grep -nE "archive_subdir|archive_worktree|subdir|branch|remote" archive_ai/config.py | head
 echo; e…`
+- **Bash** `kill 2616304 2>/dev/null && echo "watcher stopped" || echo "watcher not running / already stopped"
+sleep 1
+pgrep -af "archive_ai" | grep -v pgrep || echo "confirmed: no archive_ai process running"
+ech…`
 
 </details>
 
