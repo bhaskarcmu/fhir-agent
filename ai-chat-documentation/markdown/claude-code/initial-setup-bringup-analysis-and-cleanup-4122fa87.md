@@ -822,8 +822,30 @@ Per your two earlier instructions ("test **both** FHIR servers" and "**simpler t
 
 Now beginning. **Step 1 — health check**, and reading the two integration tests so I can explain them before running:
 
+Server confirmed healthy: **HAPI FHIR 7.2.0, FHIR R4 (4.0.1)**, returning a valid `CapabilityStatement`.
+
+But reading `smoke_test.py` surfaced an important finding I want to flag before running anything:
+
+⚠️ **`client/clinical/smoke_test.py` is a Kong-gateway test, not a local-HAPI test.** It hard-requires an API key ([smoke_test.py:64](client/clinical/smoke_test.py#L64)), asserts that a keyless request returns **401** (line 83), and checks for Kong **rate-limit headers** (line 281). None of those exist when we bypass Kong and hit HAPI directly. So against `localhost:8080` it would *fail by design* — it belongs to the deployed/GCP path (effectively Phase 5-ish), **out of scope for local Phase 2.** Good interview point: this is the "Hat 2, deployed-stack" smoke test; the *local* equivalent is the platform integration test. Let me read that one:
+
+This is the right local test — Hat 1, direct to HAPI, no key, defaults to `localhost:8080/fhir`.
+
+### Step 2 — Live CRUD against the running server (`client/platform/integration_test.py`)
+
+**What it is:** the platform-engineer integration test. **How it's built:** raw FHIR HTTP (no client library, no auth) — it deliberately works at the protocol level. **Why it matters:** it proves the server actually *works* end-to-end for real writes/reads, not just that it boots: it checks the CapabilityStatement, then does a full `POST → GET → verify → DELETE` cycle on a `Patient`. It cleans up after itself. Running it:
+
+**7/7 passed.** Note the created patient got `id=1` — meaning the H2 database is empty (in-memory, fresh). That confirms two things for your interview: the server uses **in-memory H2** (data doesn't survive a restart), and there's **no seeded data yet**. Which is exactly what Step 3 fixes.
+
+### Step 3 — Seed deterministic demo data (`seed_demo.py`)
+
+Let me read the rest of it so I can explain precisely what it builds:
+
+**What it is:** the deterministic demo seeder. **How it's built:** it POSTs hand-crafted FHIR resources — a `Patient`, an `AllergyIntolerance` (SNOMED-coded), and a `MedicationRequest` (RxNorm-coded) — for two patients designed to hit opposite ends of the rule engine. **Why it matters (great interview detail):** notice the coding systems are correct and intentional — allergies use **SNOMED CT** (the *substance*: Penicillin `764146007`), medications use **RxNorm** (the *drug*: Amoxicillin `723`). That's exactly the pairing your penicillin rule keys on, so the seeded data is the ground truth that makes the HIGH/LOW demo reproducible. Running it:
+
+Seeded cleanly: **Kristle Mraz = Patient/2**, **John Doe = Patient/5**. Let me verify the data is retrievable *through the domain client* — this ties Phase 1's parsers to live data and pre-proves the exact retrieval path the triage service will use in Phase 3:
+
 <details>
-<summary>Execution details — 57 tool events</summary>
+<summary>Execution details — 62 tool events</summary>
 
 ### Turn 1 activity
 
@@ -939,6 +961,16 @@ echo "=== does .gitignore cover .env? ==="; grep -nE '(^|/)\.env' .gitignore || 
 echo "=== container status ==="; docker ps --filter name=fhir-agent-fhir --format '{{.Names}} | {{.Status}}'
 echo "=== CapabilityStatement ==="; curl -s http://localhost:8080…`
 - **Read** `/workspaces/fhir-agent/client/clinical/smoke_test.py`
+- **Read** `/workspaces/fhir-agent/client/platform/integration_test.py`
+- **Bash** `FHIR_BASE_URL=http://localhost:8080/fhir python3 client/platform/integration_test.py 2>&1`
+- **Read** `/workspaces/fhir-agent/data/scripts/seed_demo.py`
+- **Bash** `FHIR_GATEWAY_URL=http://localhost:8080/fhir python3 data/scripts/seed_demo.py 2>&1`
+- **Bash** `cd /workspaces/fhir-agent
+FHIR_GATEWAY_URL=http://localhost:8080/fhir python3 - <<'PY'
+from fhir_clinical_client import FHIRClient
+c = FHIRClient(gateway_url="http://localhost:8080/fhir")
+
+for name in…`
 
 </details>
 
@@ -949,6 +981,6 @@ echo "=== CapabilityStatement ==="; curl -s http://localhost:8080…`
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 17:08 UTC
+- **Last updated:** 13 July 2026, 17:09 UTC
 - **Turns:** 14
 - **Status:** Complete
