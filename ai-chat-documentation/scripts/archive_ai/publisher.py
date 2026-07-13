@@ -65,18 +65,14 @@ class Publisher:
         self._git("commit", "-m", commit_message)
         commit = self._git("rev-parse", "HEAD").stdout.strip()
 
-        # Converge with remote AFTER committing: rebase requires a clean tree,
-        # and the pipeline has already written the regenerated files. This
-        # replays our archive commit onto the latest upstream so we never push
-        # diverged history; on genuine conflict, abort and keep the local commit
-        # for manual resolution / next-run retry.
+        # Converge with remote before pushing (handles restarts / other machines).
         if self._has_upstream():
             rebase = self._git("pull", "--rebase", self.remote, self.branch, check=False)
             if rebase.returncode != 0:
                 self._git("rebase", "--abort", check=False)
                 raise PublishError(
                     f"Rebase conflict while pulling {self.remote}/{self.branch}; "
-                    f"local commit {commit[:8]} kept. Resolve manually before publishing."
+                    f"local commit {commit[:8]} kept. Resolve manually."
                 )
 
         push = self._git("push", self.remote, self.branch, check=False)
