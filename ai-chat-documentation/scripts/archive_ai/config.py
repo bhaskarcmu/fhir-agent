@@ -72,6 +72,10 @@ class Config:
         return self.archive_root / "INDEX.md"
 
     @property
+    def manifest_path(self) -> Path:
+        return self.archive_root / "manifests" / f"{SOURCE_NAME}.json"
+
+    @property
     def config_dir(self) -> Path:
         return self.archive_root / "config"
 

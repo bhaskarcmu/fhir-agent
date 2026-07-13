@@ -25,10 +25,11 @@ software — once installed it does not depend on any AI assistant to run.
         ▼
    Redactor (regex; redact-and-continue) ── applied to ALL output below
         ▼
-   Writer:  raw/claude-code/<id>.jsonl   (redacted copy, source of truth)
-            markdown/claude-code/<id>.md (derived, regenerated each run)
-            INDEX.md                     (regenerated)
-        │  (tmp file + atomic rename)
+   Writer:  raw/claude-code/<id>.jsonl                 (redacted, stable name)
+            markdown/claude-code/<title-slug>-<id8>.md (derived, renamable)
+            manifests/claude-code.json                 (identity + retention state)
+            INDEX.md                                    (from manifest; incl. archived)
+        │  (tmp file + atomic rename; rename cleanup; retention)
         ▼
    Publisher:  git -C <archive worktree>
                stage ai-chat-documentation/ → commit if non-empty
@@ -42,8 +43,10 @@ software — once installed it does not depend on any AI assistant to run.
 | `discovery` | Resolve the source project dir (`CLAUDE_CONVERSATION_DIR` override; exclude self). |
 | `parser` | JSONL → normalised `Conversation`/`Turn`/`ToolEvent`; tolerate partial last line. |
 | `redactor` | Apply built-in + user regex patterns; redact-and-continue; count matches. |
-| `renderer` | `Conversation` → Markdown; regenerate `INDEX.md`. Renderer never reads raw JSONL. |
-| `writer` | Atomic writes (tmp + rename) of raw copy, Markdown, index. |
+| `renderer` | `Conversation` → Markdown; slug filenames; `INDEX.md` from the manifest. Never reads raw JSONL. |
+| `manifest` | Load/save committed per-session state (filename, metadata, `present`) for rename cleanup + retention. |
+| `pipeline` | Orchestrates parse→redact→render→write; rename cleanup, deletion retention, exclusion purge. |
+| `writer` | Atomic writes (tmp + rename) of raw copy, Markdown, manifest, index. |
 | `publisher` | Branch/worktree guard, rebase, stage-scoped commit, auto-push, retry-on-fail. |
 | `watcher` | inotify loop + debounce + lock; calls the pipeline per burst. |
 | `cli` | `watch` / `sync` / `status`. |
@@ -57,10 +60,15 @@ software — once installed it does not depend on any AI assistant to run.
 - **Separate parse → model → render.** The renderer only sees the normalised
   model, so parser defects can't masquerade as rendering defects and future
   importers can reuse the renderer unchanged.
-- **Full regeneration + empty-diff check instead of an incremental manifest.**
-  Each run re-derives everything; the publisher commits only when the staged
-  diff is non-empty. This is idempotent and far simpler than content-hash
-  tracking, at negligible cost for this data volume.
+- **Full regeneration + empty-diff check, plus a small state manifest.** Each
+  run re-derives all content; the publisher commits only when the staged diff is
+  non-empty (idempotent). The manifest is *not* a content-hash cache — it tracks
+  identity (previous filename per session) and retention (`present` flag) so
+  renames move files and source-deleted sessions are kept and still indexed.
+- **Rename vs delete vs exclude.** A live session whose title changed → remove
+  old file, write new (git rename). A session gone from source → retained
+  (files kept, flagged archived in INDEX). A session in `exclusions.txt` →
+  purged (privacy overrides retention).
 - **inotify + debounce.** One user interaction writes several file events;
   `modify` is watched because the active file is appended to without closing.
   The debounce collapses a burst into a single commit. No polling → negligible

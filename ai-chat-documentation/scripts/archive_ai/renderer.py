@@ -1,16 +1,34 @@
-"""Render the normalised model to readable Markdown and the index.
+"""Render the normalised model to readable Markdown, plus filename/index helpers.
 
-Ordering guarantee: title -> per-turn prompt/response -> collapsed tool detail
--> metadata. Large tool output never precedes the response.
+Ordering guarantee for a conversation: title -> per-turn prompt/response ->
+collapsed tool detail -> metadata. Markdown filenames are a slug of the
+(effective, redacted) title plus a short session-id suffix for uniqueness and
+rename tracking. INDEX.md is built from the manifest so it includes retained
+(source-deleted) sessions.
 """
 
 from __future__ import annotations
 
-from datetime import datetime
+import re
+from datetime import datetime, timezone
 
-from .model import Conversation
+from .model import Conversation, parse_ts
 
 INCOMPLETE = "*[Claude has not completed this turn yet.]*"
+ARCHIVED_NOTE = "archived (source deleted)"
+_MIN = datetime.min.replace(tzinfo=timezone.utc)
+
+
+def slugify(text: str, maxlen: int = 60) -> str:
+    s = re.sub(r"[^a-z0-9]+", "-", (text or "").strip().lower()).strip("-")
+    if len(s) > maxlen:
+        s = s[:maxlen].rstrip("-")
+    return s or "untitled"
+
+
+def markdown_filename(session_id: str, title: str) -> str:
+    """``<title-slug>-<short-id>.md`` — readable and collision-proof."""
+    return f"{slugify(title)}-{session_id[:8]}.md"
 
 
 def _fmt(dt: datetime | None) -> str:
@@ -57,27 +75,30 @@ def render_markdown(conv: Conversation) -> str:
     return "\n".join(lines)
 
 
-def render_index(conversations: list[Conversation], markdown_subpath: str) -> str:
-    """Render INDEX.md. ``markdown_subpath`` is the dir prefix for links."""
-    ordered = sorted(
-        conversations,
-        key=lambda c: c.updated_at or datetime.min.replace(tzinfo=None),
+def render_index(manifest: dict, markdown_subpath: str) -> str:
+    """Render INDEX.md from the manifest (newest first, retained sessions kept)."""
+    entries = sorted(
+        manifest.values(),
+        key=lambda e: parse_ts(e.get("updated_at")) or _MIN,
         reverse=True,
     )
     lines = [
         "# AI Conversation Index",
         "",
-        f"{len(ordered)} archived conversation(s), newest first.",
+        f"{len(entries)} archived conversation(s), newest first.",
         "",
         "| Updated | Assistant | Conversation | Turns | Status |",
         "|---|---|---|---:|---|",
     ]
-    for conv in ordered:
-        link = f"{markdown_subpath}/{conv.id}.md"
-        title = conv.title.replace("|", "\\|")
+    for e in entries:
+        link = f"{markdown_subpath}/{e.get('md_filename', '')}"
+        title = str(e.get("title", "")).replace("|", "\\|")
+        status = str(e.get("status", "")).capitalize()
+        if not e.get("present", True):
+            status = f"{status} · {ARCHIVED_NOTE}"
         lines.append(
-            f"| {_fmt(conv.updated_at)} | Claude Code | [{title}]({link}) "
-            f"| {len(conv.turns)} | {conv.status.capitalize()} |"
+            f"| {_fmt(parse_ts(e.get('updated_at')))} | Claude Code | [{title}]({link}) "
+            f"| {e.get('turns', 0)} | {status} |"
         )
     lines.append("")
     return "\n".join(lines)

@@ -19,7 +19,9 @@ def cmd_sync(config: Config) -> int:
     result = pipeline.run(config)
     print(
         f"Processed {result.sessions_processed} session(s) "
-        f"({result.sessions_excluded} excluded), wrote {result.files_written} file(s)."
+        f"({result.sessions_excluded} excluded, {result.sessions_retained} retained/archived, "
+        f"{result.sessions_healed} healed, {result.sessions_dropped} dropped), "
+        f"wrote {result.files_written} file(s)."
     )
     if result.redactions:
         summary = ", ".join(f"{k}={v}" for k, v in sorted(result.redactions.items()))

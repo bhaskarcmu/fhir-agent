@@ -70,13 +70,34 @@ manual step** during normal use.
   Markdown is fully regenerated from it each run.
 
 ### 4.4 Markdown + index
-- One file per session: `markdown/claude-code/<session-id>.md` containing, in
-  order: title → per-turn **Prompt** / **Response** → collapsed `<details>`
-  block of tool activity → archive metadata (session id, timestamps, turn
-  count, status).
-- Large tool output must never appear before the response.
-- Regenerate `INDEX.md`: newest first, one row per conversation (updated time,
-  assistant, title link, turn count, status).
+- One file per session named `markdown/claude-code/<title-slug>-<short-id>.md`
+  (slug of the effective, redacted title + first 8 chars of the session id),
+  e.g. `implement-auto-pushes-of-ai-chats-b19190df.md`. The short id keeps names
+  unique and lets renames be tracked.
+- Content order: title → per-turn **Prompt** / **Response** → collapsed
+  `<details>` tool activity → archive metadata. Large tool output must never
+  appear before the response.
+- The effective title is re-read every run (custom title > auto `ai-title` >
+  first prompt line). Since a manual rename is written as a `custom-title`
+  record appended to the watched `.jsonl`, renames are detected event-driven and
+  the filename + INDEX update in real time.
+- Regenerate `INDEX.md` every run from the manifest (§4.4a): newest first, one
+  row per conversation (updated time, assistant, title link, turns, status);
+  retained/deleted sessions are listed and flagged "archived (source deleted)".
+
+### 4.4a State manifest, renames, retention
+- `manifests/claude-code.json` (committed) records per session: title, current
+  markdown filename, raw filename, timestamps, turns, status, `present`, and
+  `archived_at`. It is identity/retention state — not a content cache.
+- **Rename:** when a live session's title changes, the previous markdown file is
+  removed and the new-named file written (git records a rename); raw is
+  unaffected (stable id).
+- **Delete (retention):** a session removed from the Claude Code source is
+  **kept forever** — its markdown and raw files are retained and it stays in
+  INDEX, marked archived. Raw retention is automatic (only ever written for live
+  sessions). This is a deliberate override of any "prune stale files" behaviour.
+- **Exclude:** a session in `exclusions.txt` is never archived, and any prior
+  archive of it is purged — privacy overrides retention.
 
 ### 4.5 Event-driven watcher (inotify — no polling)
 - Watch the source project dir with Linux **inotify** for `create`,
