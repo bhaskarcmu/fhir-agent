@@ -1221,6 +1221,31 @@ The **entire stack just worked end-to-end with a live LLM.** The agent resolved 
 
 ### Live agent run — John Doe (expect LOW, the contrast case)
 
+Both live runs are correct: **Kristle → HIGH (do not dispense)**, **John → LOW (safe to dispense)**. The full platform is now proven working together.
+
+## Phase 4 — Complete
+
+| Step | What it proves | Result |
+|---|---|---|
+| 1. `test_e2e_demo_flow.py` | Agent tool chain (patient lookup + risk) + edge cases, mocked | ✅ 11/11 |
+| 2. Key wiring | Ona `CLAUDE_API_KEY` secret → mapped to `ANTHROPIC_API_KEY`, no value exposed | ✅ |
+| 3. Live agent — Kristle Mraz | Full LLM → FHIR → triage → narrative | ✅ HIGH |
+| 4. Live agent — John Doe | Contrast case, same pipeline | ✅ LOW |
+
+### The interview story for Phase 4
+> *"The agent is a thin orchestrator built directly on the Anthropic tool-use API — no framework. Given a natural-language query, the LLM decides to call `get_patient_summary` to resolve the name to a FHIR ID, then `assess_refill_risk`, then writes the clinician-facing summary. It holds zero clinical logic: every risk fact comes from the deterministic rule engine via the triage service, and the RiskAssessment audit ID is carried straight through to the final answer. The model can present a decision, but it can't invent or override one."*
+
+**Three things to emphasize:**
+1. **Separation held under real conditions** — the LLM chose *which* tools and *what order*; the *verdict* (HIGH/LOW) came entirely from the rule engine. That's the safety architecture working live, not just in theory.
+2. **Same two scenarios, validated four ways now** — pure rules (Phase 1), triage API (Phase 3), agent tools mocked (Phase 4 e2e), and full live LLM (Phase 4). Consistent HIGH/LOW throughout.
+3. **Secrets discipline** — the key lives as an Ona secret; I mapped `CLAUDE_API_KEY`→`ANTHROPIC_API_KEY` at process level without ever printing it.
+
+**State:** everything is up — FHIR (`:8080`), triage (`:8001`), agent CLI verified. Two patients seeded. Nothing committed.
+
+Only **Phase 5** remains: the full `docker compose up --build` integration run (builds the triage + agent images and runs the intended topology). Note: the local triage on `:8001` will collide with Compose's triage port, so I'll stop the local one first when we start Phase 5.
+
+Want to proceed to Phase 5, or pause here for interview prep?
+
 <details>
 <summary>Execution details — 91 tool events</summary>
 
@@ -1443,6 +1468,6 @@ python3 -m agent.agent --query "C…`
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 17:41 UTC
+- **Last updated:** 13 July 2026, 17:42 UTC
 - **Turns:** 21
 - **Status:** Complete
