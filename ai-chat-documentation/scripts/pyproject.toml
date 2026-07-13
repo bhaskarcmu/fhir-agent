@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "archive-ai"
+version = "0.1.0"
+description = "Automatically archive Claude Code conversations to the ai-chat-history branch"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+archive-ai = "archive_ai.cli:main"
+
+[tool.setuptools]
+packages = ["archive_ai"]

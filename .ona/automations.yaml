@@ -67,3 +67,16 @@ services:
     triggeredBy:
       - manual
       - postEnvironmentStart
+
+  aiChatArchiveWatcher:
+    name: AI chat archive watcher
+    description: >
+      Event-driven watcher that archives Claude Code conversations to the
+      ai-chat-history branch. Runs a startup catch-up sync, then watches via
+      inotify. Ona supervises this service and restarts it if it stops.
+    commands:
+      start: bash /workspaces/.ai-chat-history/ai-chat-documentation/scripts/autostart.sh
+      ready: test -f /workspaces/.ai-chat-history/ai-chat-documentation/logs/watcher.lock
+    triggeredBy:
+      - manual
+      - postEnvironmentStart

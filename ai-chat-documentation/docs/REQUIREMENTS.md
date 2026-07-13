@@ -91,7 +91,8 @@ manual step** during normal use.
 ### 4.6 Publishing (automatic, unconditional)
 - Always operate via `git -C /workspaces/.ai-chat-history`; stage only
   `ai-chat-documentation/`.
-- `git pull --rebase` → commit if the staged diff is non-empty → **push to
+- Stage `ai-chat-documentation/` → commit if the staged diff is non-empty →
+  `git pull --rebase` (requires a clean tree, hence after commit) → **push to
   `origin/ai-chat-history` automatically**.
 - Commit message: `Archive Claude Code conversations: <UTC timestamp>`.
 - Refuse to run if the branch is not `ai-chat-history` or the worktree is
@@ -105,9 +106,11 @@ manual step** during normal use.
   startup catch-up and by tests).
 - `archive-ai status` — watcher state, source dir, last pushed commit,
   redaction counts, last error.
-- **Auto-start** via devcontainer `postStartCommand` (Ona lifecycle): run a
-  `sync` to catch anything missed while down, then launch `watch` in the
-  background, guarded against duplicate watchers. No manual terminal required.
+- **Auto-start** via an Ona automations **service** (`aiChatArchiveWatcher`,
+  triggered `postEnvironmentStart`): runs `scripts/autostart.sh`, which does a
+  `sync` catch-up then `exec`s the foreground `watch`. Ona supervises the
+  service and restarts it on crash; the watcher lock prevents duplicates. No
+  manual terminal required.
 
 ## 5. Non-goals (v1)
 Hosted web UI; replacing Claude Code's local history; real-time token

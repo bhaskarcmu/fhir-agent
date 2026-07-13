@@ -31,8 +31,8 @@ software — once installed it does not depend on any AI assistant to run.
         │  (tmp file + atomic rename)
         ▼
    Publisher:  git -C <archive worktree>
-               pull --rebase → stage ai-chat-documentation/
-               → commit if non-empty → push origin/ai-chat-history
+               stage ai-chat-documentation/ → commit if non-empty
+               → pull --rebase (clean tree) → push origin/ai-chat-history
 ```
 
 ## Components

@@ -14,6 +14,11 @@ secret-scan-report.txt
 local-config.env
 .env
 
+# Python build/cache artifacts
+__pycache__/
+*.pyc
+*.egg-info/
+
 # Common operating-system files
 .DS_Store
 Thumbs.db
