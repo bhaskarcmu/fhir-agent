@@ -18,7 +18,7 @@
     },
     {
       "path": "../.ai-chat-history/ai-chat-documentation/markdown/2026/07/1783898796080-fix-the-cline-conversation-archive-exporter-located-at.md",
-      "record_state": "active",
+      "record_state": "stale",
       "record_source": "read_tool",
       "cline_read_date": 1783904676559,
       "cline_edit_date": null,
@@ -31,6 +31,14 @@
       "cline_read_date": 1783904676864,
       "cline_edit_date": null,
       "user_edit_date": null
+    },
+    {
+      "path": "../.ai-chat-history/ai-chat-documentation/markdown/2026/07/1783898796080-fix-the-cline-conversation-archive-exporter-located-at.md",
+      "record_state": "active",
+      "record_source": "user_edited",
+      "cline_read_date": 1783904676559,
+      "cline_edit_date": null,
+      "user_edit_date": 1783904734873
     }
   ],
   "model_usage": [

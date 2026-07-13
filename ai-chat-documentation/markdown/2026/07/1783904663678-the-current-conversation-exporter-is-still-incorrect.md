@@ -90,7 +90,7 @@ Explain what you plan to do and what you understood - do not make any modificati
 *[Cline has not completed this turn yet.]*
 
 <details>
-<summary>Execution details — 6 tool call(s)</summary>
+<summary>Execution details — 7 tool call(s)</summary>
 
 ### Files inspected
 
@@ -153,6 +153,15 @@ Explain what you plan to do and what you understood - do not make any modificati
 }
 ```
 
+#### 7. `ask_followup_question`
+
+```json
+{
+  "question": "Good suggestion — I'll add it. Specifically: the parser will produce, for every raw content block encountered (in order), a classification record like {message_index, block_index, role, classification: one of HUMAN_PROMPT | TOOL_RESULT | ENVIRONMENT_DETAILS | TASK_PROGRESS_REMINDER | TASK_RESUMPTION_NOTICE | ATTEMPT_COMPLETION | ASSISTANT_TEXT | TOOL_USE, snippet}. I'll add a --debug-trace flag (or always write it to a sibling .trace.md/.trace.json next to each exported markdown file, or only in a scratch/dev mode) that dumps this full classification list per task, so any misclassification is immediately visible and attributable to parser vs renderer. Where would you like this trace written: (a) always alongside the archive as e.g. markdown/.../<task>.trace.md for every export (visible in git), (b) only generated on-demand via a separate CLI script/flag for debugging (not committed to the archive), or (c) only produced during test runs (not part of normal sync_cline.sh runs)?",
+  "options": "[\"(a) Always alongside the archive, committed\", \"(b) On-demand via a debug flag/script, not part of normal archive output\", \"(c) Only during test runs, never in production sync\"]"
+}
+```
+
 </details>
 
 ---
@@ -161,7 +170,7 @@ Explain what you plan to do and what you understood - do not make any modificati
 
 - **Cline task ID:** `1783904663678`
 - **Approximate creation time:** 13 July 2026, 01:04 UTC
-- **Stored API messages:** 10
-- **Recorded tool calls:** 6
+- **Stored API messages:** 12
+- **Recorded tool calls:** 7
 
 The complete original Cline records are retained in the corresponding `raw/` directory.
