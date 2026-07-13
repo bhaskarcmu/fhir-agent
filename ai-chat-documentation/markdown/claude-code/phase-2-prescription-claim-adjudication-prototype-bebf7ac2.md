@@ -1283,8 +1283,10 @@ This is a meaty three-part request. Let me handle it in the right order and with
 
 Let me start with environment recon — what tools, network, disk, and gitignore rules I actually have to work with — and load the web tools for research.
 
+All tools present, 58G free. Note: downloaded reference data must not enter the docs PR, so I'll isolate the data work on a **separate branch off `main`** (`dataeng/phase2-prework`) and gitignore the heavy/licensed downloads there — the docs PR stays pristine. But first, let me test what network access this sandbox actually has, since many sources are account-gated.
+
 <details>
-<summary>Execution details — 35 tool events</summary>
+<summary>Execution details — 36 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1383,6 +1385,10 @@ Add docs/phase2/source-prd.md — a faithful, verbatim-content reconstruction…
 - **Bash** `cd /workspaces/fhir-agent
 echo "=== branch ==="; git rev-parse --abbrev-ref HEAD
 echo "=== tools ==="; for t in curl wget jq unzip python3 java mvn docker; do printf "%-8s " "$t"; command -v $t || ech…`
+- **Bash** `cd /workspaces/fhir-agent
+probe() { code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 -L "$1" 2>/dev/null); echo "[$code] $2  ->  $1"; }
+echo "=== Network reachability probes ==="
+probe "htt…`
 
 </details>
 
