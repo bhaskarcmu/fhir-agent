@@ -1370,8 +1370,12 @@ A few of these are real forks that would revise the requirements/plan, so let me
 
 Decisions locked: **Cloud Run + always-on HAPI · DB-less Kong everywhere · Postgres-behind-repository for rules · FHIR Provenance now (BigQuery deferred).** These meaningfully sharpen the plan, and since you want this settled *before merging the documentation*, I'll fold them into the docs PR now. Let me switch to the docs branch and re-read the sections I'll edit.
 
+Now I'll add the security/observability/deployability/scalability NFRs and update out-of-scope in requirements.md:
+
+Now plan.md. Let me read the parity-friction note (§3), the k8s section (§5), risks (§8), and the M8 milestone so I can update them precisely and add a cloud/scalability section.
+
 <details>
-<summary>Execution details — 60 tool events</summary>
+<summary>Execution details — 64 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1556,6 +1560,10 @@ git switch feature/phase2-planning >/dev/null 2>&1
 echo "on: $(git rev-parse --abbrev-ref HEAD)"
 echo "=== requirements.md NFR section tail ==="; grep -n "### R13\|## Out of…`
 - **Read** `/workspaces/fhir-agent/docs/phase2/requirements.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/requirements.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/requirements.md`
+- **Read** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
 
 </details>
 
@@ -1566,6 +1574,6 @@ echo "=== requirements.md NFR section tail ==="; grep -n "### R13\|## Out of…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 13 July 2026, 23:38 UTC
+- **Last updated:** 13 July 2026, 23:39 UTC
 - **Turns:** 10
 - **Status:** Complete
