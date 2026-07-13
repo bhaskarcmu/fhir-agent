@@ -1737,8 +1737,10 @@ Once you've confirmed `CLEAN`, rotate: Neon Console → **Roles** → `neondb_ow
 
 Let me examine this precisely — the "not CLEAN" result needs interpretation, and I can verify the real question (is the *actual secret* masked?) myself without printing it. First, what the restart actually did and whether the catch-up sync ran:
 
+This is actually **good news** — the sync log reveals the fix worked. Let me confirm the one thing that matters (is the *real* secret masked, vs. just the word "npg_" appearing):
+
 <details>
-<summary>Execution details — 182 tool events</summary>
+<summary>Execution details — 183 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2157,6 +2159,9 @@ echo "=== redactor.py i…`
 - **Bash** `cd /workspaces/.ai-chat-history/ai-chat-documentation 2>/dev/null || exit 0
 echo "=== new watcher running? ==="; pgrep -af "archive_ai watch" | grep -v pgrep
 echo; echo "=== did the catch-up sync run/…`
+- **Bash** `cd /workspaces/.ai-chat-history/ai-chat-documentation 2>/dev/null || exit 0
+echo "=== real-SECRET-shaped tokens (npg_ + 8+ alnum) still in archive OUTPUT (raw+markdown) ==="
+echo "   count of matching…`
 
 </details>
 
@@ -2167,6 +2172,6 @@ echo; echo "=== did the catch-up sync run/…`
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 19:31 UTC
+- **Last updated:** 13 July 2026, 19:32 UTC
 - **Turns:** 26
 - **Status:** Complete
