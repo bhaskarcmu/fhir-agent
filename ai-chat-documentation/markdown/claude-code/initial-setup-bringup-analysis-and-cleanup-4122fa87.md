@@ -2081,8 +2081,27 @@ Before committing, let me read the full file to confirm it's secret-free and des
 
 Confirmed clean — the file is all shared, non-secret editor config: Java 21 runtime paths, Continue.dev **model selection** (`provider`/`model` only, **no `apiKey`**), and the Python env-manager setting. Safe to commit. Doing it now:
 
+Committed (`6748a98`) and pushed — working tree is now clean except the untracked `core` dump. Adding a PR comment documenting what went into `settings.json` (as you asked), and confirming CI:
+
+Done.
+
+**What I did with `.vscode/settings.json`:**
+- Committed it to PR #23 (commit `6748a98`, pushed) so the curated, non-secret editor config is versioned alongside the whitelist `.gitignore` rule.
+- **Verified secret-free** before committing — it contains only: Java 21 runtime paths, Continue.dev **model selection** (`provider`/`model`, no `apiKey`), and the Python env-manager setting.
+- Documented the contents and safety rationale both in the **commit message** and a **PR comment** ([link](https://github.com/bhaskarcmu/fhir-agent/pull/23#issuecomment-4962291488)).
+
+**PR #23 status — still ready for review:**
+- 4 commits now: bringup (`3fbaf59`) → security (`dd2729c`) → `.gitignore` whitelist (`df4bb66`) → shared VS Code settings (`6748a98`).
+- **gitleaks CI: pass** on the latest commit.
+- **Mergeable: CLEAN.**
+- Working tree is clean except the untracked `core` dump (not part of the PR).
+
+The `.vscode/settings.json` + whitelist combination now fully realizes the best-practice pattern: the shared file is tracked and documented, personal/machine-specific `.vscode` files are ignored, and no secret can land in any of it.
+
+Ready for your review and merge. Once merged, I'll ask about deleting the `feature/bringup-smoothing` branch.
+
 <details>
-<summary>Execution details — 208 tool events</summary>
+<summary>Execution details — 209 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2593,6 +2612,9 @@ git commit -m "$(cat <<'EOF'
 Commit shared VS Code settings (non-secret)
 
 Track the curated .vscode/settings.json content that the whitelist git…`
+- **Bash** `cd /workspaces/fhir-agent
+gh pr comment 23 --body "$(cat <<'EOF'
+Committed the curated `.vscode/settings.json` (commit 6748a98) so the shared, non-secret editor config is versioned alongside the white…`
 
 </details>
 
@@ -2603,6 +2625,6 @@ Track the curated .vscode/settings.json content that the whitelist git…`
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 20:17 UTC
+- **Last updated:** 13 July 2026, 20:18 UTC
 - **Turns:** 33
 - **Status:** Complete
