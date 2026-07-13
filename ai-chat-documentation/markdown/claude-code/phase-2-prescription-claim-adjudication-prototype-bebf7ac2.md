@@ -1313,8 +1313,10 @@ NCD data extracted (`ncd.mdb` + CSV), openFDA works, and the formulary PUF is 2.
 
 The GitHub tree API isn't surfacing them (large/truncated tree). Let me pull directly from the rendered IG instead — the agent confirmed these instance names exist.
 
+PAS example filenames are versioned/404 — not worth chasing since our Synthea run already produced **657 real `Claim` + 657 `ExplanationOfBenefit`** resources. Let me extract a pharmacy claim + its EOB as a local canonical reference, then write the data-engineering inventory.
+
 <details>
-<summary>Execution details — 52 tool events</summary>
+<summary>Execution details — 53 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1474,6 +1476,11 @@ for br in master main; do
 - **Bash** `cd /workspaces/fhir-agent
 base="https://build.fhir.org/ig/HL7/davinci-pas"
 for ex in Bundle-PASRequestBundleExample1 Bundle-PASResponseBundleExample1 Claim-ClaimExample ClaimResponse-ClaimResponseExam…`
+- **Bash** `cd /workspaces/fhir-agent
+rmdir data/reference/davinci-pas 2>/dev/null
+mkdir -p data/reference/samples
+# Extract one pharmacy Claim and one EOB from the Synthea output as real reference shapes.
+f=$(ls…`
 
 </details>
 
