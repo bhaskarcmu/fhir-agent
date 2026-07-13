@@ -1972,8 +1972,10 @@ I'll worry about the new secret value's accuracy later.  Let us get back tp PR #
 
 Let me get back to PR #23 and assess exactly what remains. Checking the branch state, CI status, and mergeability:
 
+PR #23 is in **good shape**: both commits present, branch up to date with `main`, **mergeable (CLEAN)**, and — importantly — the new **gitleaks CI check passed** (6s, no secrets flagged). Let me check the remaining details: does the PR description still match the diff, is the tree clean, and do tests still pass?
+
 <details>
-<summary>Execution details — 194 tool events</summary>
+<summary>Execution details — 195 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2442,6 +2444,10 @@ if not url:
 echo "=== current branch ==="; git branch --show-current
 git fetch origin -q 2>&1 | tail -1
 echo "=== commits in PR #23 (origin/main..branch) ==="; git log --oneline origin/m…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== final test run (branch state) ==="; python3 -m pytest -q 2>&1 | tail -2
+echo; echo "=== working tree (anything stray for the PR?) ==="; git status --short
+echo; ech…`
 
 </details>
 
