@@ -1446,8 +1446,10 @@ Reassuring so far: `.vscode/settings.json` currently holds **no** key (count 0, 
 
 Now the important one — scanning the **AI-chat archive worktree**, since it may have captured terminals where secrets were printed (e.g., the Neon password). Redacted, filenames/counts only:
 
+**This is an important finding.** The AI-chat archive has captured secrets — including the Neon password. Let me refine to distinguish real keys from placeholders (still redacted, counts only), because it changes the risk picture:
+
 <details>
-<summary>Execution details — 141 tool events</summary>
+<summary>Execution details — 142 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1774,6 +1776,9 @@ echo "=== does the COMMIT…`
 - **Bash** `cd /workspaces/.ai-chat-history 2>/dev/null || { echo "worktree not found"; exit 0; }
 echo "=== worktree branch (read-only, not modifying) ==="; git branch --show-current
 echo; echo "=== files in arch…`
+- **Bash** `cd /workspaces/.ai-chat-history 2>/dev/null || exit 0
+echo "=== 'sk-ant-' matches: placeholder vs real-looking (FILE COUNTS ONLY) ==="
+echo "  placeholder 'sk-ant-...' : $(grep -rlIE 'sk-ant-\.\.\.' .…`
 
 </details>
 
@@ -1784,6 +1789,6 @@ echo; echo "=== files in arch…`
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 18:12 UTC
+- **Last updated:** 13 July 2026, 18:13 UTC
 - **Turns:** 24
 - **Status:** Complete
