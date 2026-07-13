@@ -247,6 +247,45 @@ Both make sense. The separate claims agent is the more consistent choice — I'l
 
 Clean tree, on `main` at `d4cd4be`, no existing tags. Creating the annotated tag:
 
+✅ Annotated tag `phase1-v1` created locally on `d4cd4be` (current `main` HEAD). It's **local only** so far — pushing to `origin` is an outward-facing step, so I'll hold unless you confirm. Say "push the tag" and I'll run `git push origin phase1-v1`.
+
+## Separate claims agent — agreed, it's the more consistent choice
+
+Yes, a standalone claims agent beats bolting onto the existing one. It falls straight out of the isolation rule we just set:
+
+**Why it's better here:**
+- **Zero coupling.** The Phase 1 refill agent stays byte-for-byte untouched — no feature flags, no conditional tool registration, no risk that a claims change breaks the refill demo. Isolation becomes structural, not disciplined-by-convention.
+- **Different job, different tools.** The refill agent's tools are patient/medication/allergy + triage. The claims agent's are claim-submission + adjudication-explanation over the new `/claims` façade. Forcing both into one tool catalog muddies each. Two focused agents read more clearly.
+- **Matches the PRD narrative.** The doc frames the MCP layer as an *explanation/orchestration* layer over the claims façade — a distinct deliverable ("MCP Explanation Agent," slice 3). A separate service maps 1:1 to that.
+- **Fits the profile model.** It's a new compose service under `profiles: [phase2]`, so `docker compose up` (Phase 1) never starts it.
+
+**The tradeoff to manage (cheaply):** two agents will share plumbing — the Anthropic client setup, tool-loop scaffolding, output formatting, the `ANTHROPIC_API_KEY`/`CLAUDE_API_KEY` handling. To avoid copy-paste drift, I'd factor the genuinely-shared, **non-clinical** bits into a small shared module both agents import, while each keeps its own tools and prompt. That keeps CLAUDE.md's "agent holds no clinical logic" intact and avoids duplicating the boilerplate. If the shared surface turns out to be tiny, a little duplication is fine too — I'll decide once I see how much `mcp-agent/src/agent/` actually shares.
+
+**Structure I'd propose:**
+```
+mcp-agent/          # Phase 1, unchanged — refill risk agent
+claims-agent/       # Phase 2, new — claims explanation/orchestration agent
+                    #   reuses shared Anthropic/tool-loop plumbing, its own tools + prompt
+```
+
+---
+
+## Where we are
+
+All Phase 2 decisions are now locked:
+- Hybrid stack (Java façade + legacy emulator + ACL; reuse Python triage for CDS)
+- Fully-runnable e2e demo · convincing legacy shape · Da Vinci-aware, generic resources
+- One Kong gateway on the edge (claims + fhir + triage), legacy emulator strictly private; opt-in local `--profile gateway`, zero setup
+- **Phase 1 stays fully independent** (additive-only, profiles, cloud deploy untouched, `phase1-v1` tagged)
+- **Separate claims agent**, sharing only non-clinical plumbing
+
+Next step options:
+1. **Write the consolidated Phase 2 plan** to `docs/phase2-plan.md` on a feature branch (`feature/phase2-planning`) — plan/architecture only, no app code — and open it for review.
+2. **Save the locked decisions to project memory** so they persist across sessions.
+3. **Push `phase1-v1`** to origin.
+
+Want all three? I'd do the memory write, push the tag (on your OK), then draft the plan doc on a branch.
+
 <details>
 <summary>Execution details — 6 tool events</summary>
 
