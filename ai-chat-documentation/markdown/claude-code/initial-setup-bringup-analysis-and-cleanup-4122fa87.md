@@ -1282,6 +1282,44 @@ Close — the image built and ran, but the invocation was wrong: the container's
 
 Confirmed — `ENTRYPOINT` is `python3 -m agent.agent`, so I pass only `--query`. (The README's `docker compose run … python3 -m agent.agent --query` example is stale — worth fixing later.) Re-running correctly for both patients (image already built, no rebuild):
 
+Both scenarios pass in the **fully containerized topology** — HIGH for Kristle, LOW for John, audit IDs carried through. That's the whole platform running as it's meant to deploy.
+
+## Phase 5 — Complete
+
+| Step | What it proves | Result |
+|---|---|---|
+| 1. Stop local triage, validate compose | Clean handoff to containers | ✅ |
+| 2. Build + start `triage` container | Image builds; triage→fhir over Compose DNS | ✅ HIGH/LOW correct |
+| 3. Build + run `mcp-agent` container | Full LLM→triage→fhir, all in-network | ✅ HIGH/LOW correct |
+
+### Interview story for Phase 5
+> *"Phase 5 runs the real topology: three containers on a Docker network, discovering each other by service name — the agent calls `triage:8001`, triage calls `fhir:8080`, no `localhost`. Same two scenarios, same verdicts as every earlier layer. The only config change from local is the FHIR URL, because inside a container `localhost` is the container itself."*
+
+**Two stale-doc findings worth a quick PR later:**
+1. **README run command is wrong** — it says `docker compose run --rm mcp-agent python3 -m agent.agent --query …`, but the image `ENTRYPOINT` already runs the agent, so the correct form is `docker compose run --rm mcp-agent --query "…"`.
+2. **README still lists triage-service and mcp-agent as "planned"** — they're fully built and working, as we just proved.
+
+---
+
+## Whole-platform bringup — done (Phases 0–5)
+
+| Phase | Layer | Headline result |
+|---|---|---|
+| 1 | Pure logic (parsers, rules, loader) | ✅ 79/79 unit tests |
+| 2 | FHIR data layer (2 servers) | ✅ live CRUD + seed; Java 38/39 (1 env-only failure, green on H2) |
+| 3 | Triage service | ✅ 15/15 + live HIGH/LOW over HTTP |
+| 4 | LLM agent | ✅ 11/11 + live LLM HIGH/LOW |
+| 5 | Full Docker Compose | ✅ containerized end-to-end HIGH/LOW |
+
+**The one-line pitch:** *the same two clinical scenarios produce the same HIGH/LOW verdict at every layer — pure rules, live triage, live agent, and fully containerized — because clinical logic lives in one deterministic place and everything else just orchestrates around it.*
+
+**Current state:** `fhir` + `triage` containers are up (agent runs were `--rm`, so cleaned up automatically). Two patients seeded. Nothing committed; no GCP touched.
+
+Your call on next steps:
+- **Leave the stack up** for a live interview demo (recommended), or tear it down.
+- **Fix the two stale-doc issues** via a quick feature-branch PR.
+- **A consolidated interview cheat-sheet** across all phases.
+
 <details>
 <summary>Execution details — 98 tool events</summary>
 
@@ -1530,6 +1568,6 @@ for q in "Check refill risk for Kristle Mraz" "Check refill risk for John Doe"; 
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 17:47 UTC
+- **Last updated:** 13 July 2026, 17:48 UTC
 - **Turns:** 22
 - **Status:** Complete
