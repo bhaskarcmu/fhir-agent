@@ -1059,7 +1059,7 @@ That check settles it. You're **half right, and it's a fair callout** — let me
 
 2. **There is a *second* independent copy, and it's not derived.** I grepped for any transform that builds `SPRING_DATASOURCE_URL` from `NEON_DB_URL` — **there is none.** Both sit in `/etc/environment` as separate values, each with the password embedded:
    - `NEON_DB_URL` → `postgresql://…` (Neon/psql format) — your dashboard secret ✅
-   - `SPRING_DATASOURCE_URL` → `jdbc:postgresql://…?password=…` (Spring Boot needs JDBC format)
+   - `SPRING_DATASOURCE_URL` → `jdbc:postgresql://…?password=‹redacted:url-query-password› (Spring Boot needs JDBC format)
 
    They legitimately need two *formats* (different consumers), but right now the *password* lives in **two places** with no single source of truth. So:
    - After rotating, you must update **both**, not just `NEON_DB_URL`.
@@ -1565,7 +1565,7 @@ Committing these two main-branch fixes to PR #23's branch. Verifying branch and 
 
 Tasks 1 & 2 are pushed to PR #23. Updating tracker and moving to the archive redactor (ai-chat-history worktree). Let me read its test file to match style before hardening:
 
-Now I'll harden the redactor. The `url-credentials` pattern catches `postgres://user:‹redacted:url-credentials›`, but **not** the JDBC query form (`?…&password=npg_…`) or a bare `npg_…` token — that's the gap. Adding both, plus tests using the exact leaked forms:
+Now I'll harden the redactor. The `url-credentials` pattern catches `postgres://user:‹redacted:url-credentials›`, but **not** the JDBC query form (`?…&password=‹redacted:url-query-password› or a bare `npg_…` token — that's the gap. Adding both, plus tests using the exact leaked forms:
 
 Now running the redactor tests to prove the hardened patterns catch the leaked forms:
 
@@ -1608,7 +1608,7 @@ So: one Ona secret, name unchanged. Committed + pushed to **PR #23** (commit `dd
 What I completed and pushed:
 - **`setup-credentials.sh`**: no more secret-to-file writes (PR #23).
 - **gitleaks CI** (`.github/workflows/secret-scan.yml`) blocks secrets reaching `main` (PR #23).
-- **Hardened the archive redactor** on `ai-chat-history`: it now masks DB passwords in *all* the forms that leaked — `postgres://user:‹redacted:url-credentials›`, JDBC `?…&password=…`, and bare `npg_…` tokens. **12 redactor tests pass**, and the daemon already auto-committed + pushed the new `redactor.py` to `origin/ai-chat-history`.
+- **Hardened the archive redactor** on `ai-chat-history`: it now masks DB passwords in *all* the forms that leaked — `postgres://user:‹redacted:url-credentials›`, JDBC `?…&password=‹redacted:url-query-password› and bare `npg_…` tokens. **12 redactor tests pass**, and the daemon already auto-committed + pushed the new `redactor.py` to `origin/ai-chat-history`.
 
 **The one remaining step I'm blocked on — you need to restart the watcher:**
 
@@ -1693,7 +1693,7 @@ The publisher staged the *entire* `ai-chat-documentation/` subdir — and the ar
 
 | Fix | Status |
 |---|---|
-| Redactor hardened (masks `npg_`, `postgres://user:‹redacted:url-credentials›`, JDBC `?password=`) — 12 tests pass | ✅ committed + pushed |
+| Redactor hardened (masks `npg_`, `postgres://user:‹redacted:url-credentials›`, JDBC `?password=‹redacted:url-query-password› — 12 tests pass | ✅ committed + pushed |
 | Publisher no longer auto-commits source/logs | ✅ committed + pushed |
 | **Both take effect only after the watcher reloads** | ⚠️ **running daemon still has OLD code in memory** |
 
