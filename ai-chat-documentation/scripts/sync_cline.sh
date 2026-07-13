@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# --- RETIRED: legacy Cline archiver -----------------------------------------
+# Superseded by the archive_ai watcher (aiChatArchiveWatcher Ona service).
+# This will not run unless explicitly re-enabled with CLINE_ARCHIVER_ENABLED=1.
+if [ "${CLINE_ARCHIVER_ENABLED:-0}" != "1" ]; then
+    echo "Legacy Cline archiver is retired. Set CLINE_ARCHIVER_ENABLED=1 to run." >&2
+    exit 0
+fi
+# ----------------------------------------------------------------------------
+
 ARCHIVE_WORKTREE="/workspaces/.ai-chat-history"
 ARCHIVE_ROOT="$ARCHIVE_WORKTREE/ai-chat-documentation"
 LOG_DIR="$ARCHIVE_ROOT/logs"
