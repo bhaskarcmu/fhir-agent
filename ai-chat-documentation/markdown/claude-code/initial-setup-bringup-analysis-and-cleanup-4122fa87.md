@@ -1442,8 +1442,12 @@ Let me gather the facts first.
 
 Now the critical checks — whether a key is currently sitting in the tracked file, whether any secret is already committed, and the AI-chat archive (redacted; filenames/counts only, never values):
 
+Reassuring so far: `.vscode/settings.json` currently holds **no** key (count 0, working and committed) — so nothing is leaked *yet*; the risk is the *design*. The other matches are false positives (header names like `apikey`, placeholder `password=PASS` in templates, the `mvnw` base64 blob) — not real committed secrets.
+
+Now the important one — scanning the **AI-chat archive worktree**, since it may have captured terminals where secrets were printed (e.g., the Neon password). Redacted, filenames/counts only:
+
 <details>
-<summary>Execution details — 140 tool events</summary>
+<summary>Execution details — 141 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1767,6 +1771,9 @@ echo; echo "=== is .vscode/settings.json…`
 echo "=== does working .vscode/settings.json contain an apiKey field? (count only) ==="
 grep -c "apiKey" .vscode/settings.json 2>/dev/null || echo 0
 echo "=== does the COMMIT…`
+- **Bash** `cd /workspaces/.ai-chat-history 2>/dev/null || { echo "worktree not found"; exit 0; }
+echo "=== worktree branch (read-only, not modifying) ==="; git branch --show-current
+echo; echo "=== files in arch…`
 
 </details>
 
