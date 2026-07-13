@@ -1,4 +1,4 @@
-# Initial setup and cleanup
+# Initial setup, bringup, analysis, and cleanup
 
 ## Turn 1
 

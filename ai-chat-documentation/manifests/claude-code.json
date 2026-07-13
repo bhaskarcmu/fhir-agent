@@ -14,12 +14,12 @@
   "4122fa87-767c-455f-9397-ab0d1fff4f85": {
     "archived_at": "2026-07-13T15:07:16.770377+00:00",
     "created_at": "2026-07-13T11:36:02.630000+00:00",
-    "md_filename": "initial-setup-and-cleanup-4122fa87.md",
+    "md_filename": "initial-setup-bringup-analysis-and-cleanup-4122fa87.md",
     "present": true,
     "raw_filename": "4122fa87-767c-455f-9397-ab0d1fff4f85.jsonl",
     "source_deleted_at": null,
     "status": "complete",
-    "title": "Initial setup and cleanup",
+    "title": "Initial setup, bringup, analysis, and cleanup",
     "turns": 9,
     "updated_at": "2026-07-13T12:24:59.673000+00:00"
   },
