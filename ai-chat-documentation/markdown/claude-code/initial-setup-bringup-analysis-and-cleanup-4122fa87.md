@@ -609,8 +609,10 @@ I'll analyze the repo to understand every runnable component, then lay out a loc
 
 Let me check the current runtime environment — what's installed, what's running, and the test/data scripts and Dockerfiles.
 
+Let me clarify a couple of current-state details that affect the plan (read-only).
+
 <details>
-<summary>Execution details — 42 tool events</summary>
+<summary>Execution details — 43 tool events</summary>
 
 ### Turn 1 activity
 
@@ -700,6 +702,9 @@ echo "=== python ==="; python3 --version; pip show fhir-clinical-client fhir-tri
 - **Bash** `cd /workspaces/fhir-agent
 echo "=== test files ==="; find . -path ./fhir-service -prune -o -name 'test_*.py' -print -o -name '*_test.py' -print 2>/dev/null | grep -v ai-chat-history
 echo "=== data scr…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== .env present? ==="; ls -la .env 2>&1 | head -1
+echo "=== ANTHROPIC_API_KEY in env? ==="; [ -n "$ANTHROPIC_API_KEY" ] && echo "set (len ${#ANTHROPIC_API_KEY})" || ec…`
 
 </details>
 
