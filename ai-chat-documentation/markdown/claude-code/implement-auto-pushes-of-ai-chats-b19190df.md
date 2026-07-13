@@ -2565,8 +2565,12 @@ YEs, go ahead and retire that old watcher from everywhere so that it does not ru
 
 On it — but first I'll find *where* the legacy Cline watcher lives and how it's triggered, so I can retire it everywhere (running process + any auto-start), not just kill it once. Read-only investigation:
 
+Findings: the legacy Cline watcher is **not currently running** and **not auto-started anywhere** — no cron (unavailable), no Ona service/task, no shell-rc hook. The "cline" process matches are just the VS Code `roo-cline` extension. The old log lines were historical manual runs. I also spotted an **orphaned `inotifywait` on `/tmp/tmpxr6sfro2`** (a leak from my earlier live-watcher test) to clean up.
+
+Let me read the legacy scripts and see how they were historically launched before I neutralize them:
+
 <details>
-<summary>Execution details — 145 tool events</summary>
+<summary>Execution details — 146 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2867,6 +2871,10 @@ cd /workspaces/.ai-chat-history/ai-chat-documentation/sc…`
 
 - **Bash** `echo "=== 1. running cline-related processes ==="; pgrep -af "cline|export_cline|watch_cline" 2>/dev/null | grep -v pgrep || echo "(none)"
 echo; echo "=== 2. all inotifywait processes (which dirs?) ==…`
+- **Bash** `cd /workspaces/.ai-chat-history/ai-chat-documentation/scripts
+echo "=== watch_cline.sh ==="; cat watch_cline.sh
+echo; echo "=== watch_cline_events.sh ==="; cat watch_cline_events.sh
+echo; echo "=== sy…`
 
 </details>
 
@@ -2877,6 +2885,6 @@ echo; echo "=== 2. all inotifywait processes (which dirs?) ==…`
 - **Source:** Claude Code
 - **Session ID:** `b19190df-fadc-43a7-a3b8-8ef78a5d944c`
 - **Created:** 13 July 2026, 12:36 UTC
-- **Last updated:** 13 July 2026, 15:14 UTC
+- **Last updated:** 13 July 2026, 15:15 UTC
 - **Turns:** 22
 - **Status:** Incomplete
