@@ -1380,8 +1380,14 @@ Let me see the actual collection error on the e2e file:
 
 That's the classic pytest pitfall: three separate `tests/` packages (each with `__init__.py`) collide under the default import mode when collected together — which is why they pass individually but not combined. The clean fix is `--import-mode=importlib`. Let me confirm that resolves it:
 
+**105 passed** with importlib mode. To make this "just work" without anyone needing to remember flags, I'll add a small root `pytest.ini` so a bare `pytest` from the repo root runs all suites correctly and skips the script-style files:
+
+Now make `cd client/clinical && pytest` safe too (it's the one package dir containing a script-style test), by pinning its testpaths:
+
+Now fix the README's test command to the simple `pytest` (which the root `pytest.ini` now makes work), and verify both invocations:
+
 <details>
-<summary>Execution details — 125 tool events</summary>
+<summary>Execution details — 129 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1661,6 +1667,12 @@ python -m pytest client/clinical/tests triage-service/src/triage/tests mcp-agent
 python -m pytest client/clinical/tests triage-service/src/triage/tests mcp-agent/tests data/scripts/test_load.py 2>&1 | grep -A18 "ERROR collecting\|errors during collection\…`
 - **Bash** `cd /workspaces/fhir-agent
 python -m pytest --import-mode=importlib client/clinical/tests triage-service/src/triage/tests mcp-agent/tests data/scripts/test_load.py -q 2>&1 | tail -6`
+- **Write** `/workspaces/fhir-agent/pytest.ini`
+- **Edit** `/workspaces/fhir-agent/client/clinical/pyproject.toml`
+- **Edit** `/workspaces/fhir-agent/README.md`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== bare 'pytest' from repo root ==="; python -m pytest -q 2>&1 | tail -3
+echo; echo "=== cd client/clinical && pytest ==="; (cd client/clinical && python -m pytest -q…`
 
 </details>
 
@@ -1671,6 +1683,6 @@ python -m pytest --import-mode=importlib client/clinical/tests triage-service/sr
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 18:00 UTC
+- **Last updated:** 13 July 2026, 18:01 UTC
 - **Turns:** 23
 - **Status:** Complete
