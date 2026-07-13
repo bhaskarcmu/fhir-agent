@@ -1,0 +1,120 @@
+# Cline Project Rules
+
+## Repository Overview
+
+This repository uses two separate Git worktrees.
+
+Main development worktree
+Location:
+/workspaces/fhir-agent
+
+Purpose:
+- Application source code
+- Feature branches
+- Pull Requests
+- Code reviews
+
+AI archive worktree
+Location:
+/workspaces/.ai-chat-history
+
+Branch:
+ai-chat-history
+
+Purpose:
+- AI conversation archive
+- Export scripts
+- Archive tooling
+- Human-readable conversation history
+
+Treat these as two independent development environments.
+
+---
+
+## Terminal Execution
+
+- Execute only one logical shell operation per execute_command call.
+- Never combine inspection, modification, testing, committing and pushing into one shell command.
+- Avoid chaining commands with && or semicolons.
+- Avoid interactive commands.
+- Use non-interactive Git flags whenever possible.
+- After every execute_command, inspect the result before continuing.
+- If the UI marks any command as "Skipped", stop immediately.
+- Never assume a skipped command executed successfully.
+- Report the skipped command and wait for me to reload Cline.
+
+---
+
+## Git Rules — Application Code
+
+Applies only to:
+
+/workspaces/fhir-agent
+
+- Never commit directly to main.
+- Always work on a feature branch.
+- Push the branch to origin.
+- Never merge yourself.
+- Create or update a Pull Request when requested.
+- Summarise files changed and tests executed before asking for review.
+
+---
+
+## Git Rules — AI Archive
+
+Applies only to:
+
+/workspaces/.ai-chat-history
+
+- Never create a Pull Request.
+- Never merge ai-chat-history into main.
+- Never ask me to review archive-tooling changes through GitHub PRs.
+- Commit directly to the ai-chat-history branch after testing.
+- Push directly to origin/ai-chat-history.
+- Archive commits should remain isolated from application development.
+
+---
+
+## Testing
+
+- Run tests before proposing a commit.
+- Never claim tests passed unless they were executed.
+- Report failures immediately.
+
+---
+
+## Safety
+
+- Ask before destructive operations.
+- Never delete files unless requested.
+- Never overwrite important files without understanding their purpose.
+
+---
+
+## Large Tasks
+
+- Break large work into small milestones.
+- Report progress after each milestone.
+- Stop if confidence becomes low.
+- Ask for clarification rather than guessing.
+
+---
+
+## Communication
+
+- Briefly explain your implementation plan before making major changes.
+- When finished, provide:
+  - files changed
+  - tests run
+  - commit hashes
+  - branch name
+  - any limitations
+
+## Repository Awareness
+
+Before executing any Git command:
+
+- Determine which worktree is active.
+- Confirm which branch is currently checked out.
+- State which repository and branch will be modified.
+- Refuse to run Git commands if the intended worktree is ambiguous.  
