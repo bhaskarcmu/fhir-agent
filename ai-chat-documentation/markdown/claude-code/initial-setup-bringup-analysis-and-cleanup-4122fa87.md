@@ -2019,8 +2019,18 @@ Aded credit. Try again
 
 Let me research the current best-practice consensus before answering.
 
+## Recommendation: **keep `.vscode/settings.json` tracked** (with one hardening tweak)
+
+The research consensus is clear, and it points to *keep it tracked* for your specific case:
+
+- **Commit `.vscode/settings.json` when it holds team-wide, project-specific, non-secret settings** — formatters, language-server/SDK config, build/debug setup. Your file holds *shared Java runtime config*, which is exactly the category best practice says **should** be committed so every contributor gets a consistent setup ([Earthly](https://earthly.dev/blog/vscode-git/), [bobbyhadz](https://bobbyhadz.com/blog/what-is-vscode-folder)).
+- **The only reason to *not* commit it is secrets or machine-specific noise** — and your original problem (the setup script writing an API key into it) is already fixed in this PR, so that reason is gone.
+- **The widely-recommended hardening** isn't "gitignore the whole thing" — it's *ignore `.vscode/*` then un-ignore the curated shared files* (`settings.json`, `extensions.json`, `launch.json`, `tasks.json`). That keeps the shared config tracked while preventing *personal/machine-specific* `.vscode` files from ever slipping in ([DEV: gitignore rules for VS Code](https://dev.to/thebuzzsaw/why-are-these-the-gitignore-rules-for-vs-code-3p03), [DEV: sharing recommended settings](https://dev.to/receter/sharing-recommended-vscode-settings-in-your-project-repository-2l74)).
+
+So: **keep tracked, and add the whitelist-style ignore pattern** as defense-in-depth. That fits neatly into PR #23's security theme. Let me apply it and check what's currently tracked first:
+
 <details>
-<summary>Execution details — 197 tool events</summary>
+<summary>Execution details — 198 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2498,6 +2508,9 @@ echo; ech…`
 
 - **ToolSearch** `select:WebSearch,WebFetch`
 - **WebSearch** `should you commit .vscode/settings.json to git best practice`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== currently tracked .vscode files ==="; git ls-files .vscode/
+echo "=== current .gitignore .vscode lines ==="; grep -nE "vscode" .gitignore || echo "(none — only the…`
 
 </details>
 
@@ -2508,6 +2521,6 @@ echo; ech…`
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 20:11 UTC
+- **Last updated:** 13 July 2026, 20:12 UTC
 - **Turns:** 32
 - **Status:** Complete
