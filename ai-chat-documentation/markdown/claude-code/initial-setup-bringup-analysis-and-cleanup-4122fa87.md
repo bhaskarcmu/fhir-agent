@@ -1587,8 +1587,10 @@ The classifier blocked killing the daemon — that's correct, I shouldn't unilat
 
 Let me check the worktree status (read-only), then commit just the redactor hardening:
 
+Interesting — git sees no diff on those files. The running daemon likely already committed them on a burst. Let me check the recent archive commits and whether the secret is still present:
+
 <details>
-<summary>Execution details — 167 tool events</summary>
+<summary>Execution details — 168 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1975,6 +1977,9 @@ pgrep -af "archive_ai" | grep -v pgrep || echo "confirmed: no archive_ai process
 ech…`
 - **Bash** `git -C /workspaces/.ai-chat-history status --short -- ai-chat-documentation/scripts/archive_ai/redactor.py ai-chat-documentation/scripts/tests/test_redactor.py
 echo "=== current branch (must be ai-cha…`
+- **Bash** `cd /workspaces/.ai-chat-history 2>/dev/null || exit 0
+echo "=== recent archive commits ==="; git -C /workspaces/.ai-chat-history log --oneline -5
+echo; echo "=== is my redactor hardening in HEAD? (loo…`
 
 </details>
 
