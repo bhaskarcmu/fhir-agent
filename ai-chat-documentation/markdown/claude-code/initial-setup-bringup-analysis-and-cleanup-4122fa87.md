@@ -1378,8 +1378,10 @@ Good catch by the test run — pointing `pytest` at whole package dirs also coll
 
 Let me see the actual collection error on the e2e file:
 
+That's the classic pytest pitfall: three separate `tests/` packages (each with `__init__.py`) collide under the default import mode when collected together — which is why they pass individually but not combined. The clean fix is `--import-mode=importlib`. Let me confirm that resolves it:
+
 <details>
-<summary>Execution details — 124 tool events</summary>
+<summary>Execution details — 125 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1657,6 +1659,8 @@ python -m pytest client/clinical triage-service mcp-agent data/scripts -q 2>&1 |
 python -m pytest client/clinical/tests triage-service/src/triage/tests mcp-agent/tests data/scripts/test_load.py -q 2>&1 | tail -8`
 - **Bash** `cd /workspaces/fhir-agent
 python -m pytest client/clinical/tests triage-service/src/triage/tests mcp-agent/tests data/scripts/test_load.py 2>&1 | grep -A18 "ERROR collecting\|errors during collection\…`
+- **Bash** `cd /workspaces/fhir-agent
+python -m pytest --import-mode=importlib client/clinical/tests triage-service/src/triage/tests mcp-agent/tests data/scripts/test_load.py -q 2>&1 | tail -6`
 
 </details>
 
@@ -1667,6 +1671,6 @@ python -m pytest client/clinical/tests triage-service/src/triage/tests mcp-agent
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 17:59 UTC
+- **Last updated:** 13 July 2026, 18:00 UTC
 - **Turns:** 23
 - **Status:** Complete
