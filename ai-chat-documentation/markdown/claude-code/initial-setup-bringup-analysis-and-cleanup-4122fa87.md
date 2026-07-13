@@ -1161,6 +1161,35 @@ Service is **live and healthy** on `:8001`. Now the real payoff:
 
 This is the first time the rule engine runs on **real FHIR data over HTTP**: the triage service fetches meds + allergies from HAPI itself, runs the rules, and returns a FHIR `RiskAssessment`. Calling it for both seeded patients:
 
+Both patients evaluate **exactly as designed, on live data**:
+
+| Patient | Risk | Audit trail (`basis`) | 
+|---|---|---|
+| Kristle Mraz (Patient/2) | 🔴 **HIGH** | `MedicationRequest/4` + `AllergyIntolerance/3` — the exact seeded amoxicillin & penicillin allergy |
+| John Doe (Patient/5) | 🟢 **LOW** | empty — "safe to dispense" |
+
+---
+
+## Phase 3 — Complete
+
+| Step | What it proves | Result |
+|---|---|---|
+| 1. `test_api.py` | HTTP layer + rule engine + FHIR serialization + error codes (mocked) | ✅ 15/15 |
+| 2. Launch `uvicorn` on `:8001` | Service boots, `/health` returns ok | ✅ live |
+| 3. Live `/triage/refill-risk` | Rule engine on **real FHIR data over HTTP** | ✅ HIGH / LOW correct |
+
+### The interview story for Phase 3
+> *"The triage service is a stateless FastAPI microservice: it fetches a patient's meds and allergies from the FHIR server, runs the same rule engine my unit tests cover, and returns a standard FHIR `RiskAssessment` — not just a label. The output carries a `basis` field that references the exact MedicationRequest and AllergyIntolerance that triggered the decision, so every recommendation is auditable back to source data."*
+
+**Three things to emphasize:**
+1. **Same logic, two proofs** — the mocked API tests and the live calls produce identical HIGH/LOW verdicts; the rule engine behaves the same in isolation and against a real server.
+2. **Auditability is the differentiator** — `basis: [MedicationRequest/4, AllergyIntolerance/3]` means a clinician (or regulator) can trace *why* it said HIGH.
+3. **Stateless by design** — it owns no database; FHIR is the source of truth. That's what makes it horizontally scalable and EHR-portable.
+
+**State:** I've **left the triage service running on `:8001`** because Phase 4 (the agent) needs it. FHIR server still up, two patients seeded, nothing committed.
+
+Ready for Phase 4 — the LLM agent — when you are. Heads up: that's the one that needs the `ANTHROPIC_API_KEY`; we'll find out then whether the Ona secret is wired through.
+
 <details>
 <summary>Execution details — 85 tool events</summary>
 
@@ -1361,6 +1390,6 @@ for pid in 2 5; do
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 17:36 UTC
+- **Last updated:** 13 July 2026, 17:37 UTC
 - **Turns:** 20
 - **Status:** Complete
