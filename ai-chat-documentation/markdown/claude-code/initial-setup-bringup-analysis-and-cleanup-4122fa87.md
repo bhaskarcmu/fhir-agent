@@ -611,6 +611,65 @@ Let me check the current runtime environment — what's installed, what's runnin
 
 Let me clarify a couple of current-state details that affect the plan (read-only).
 
+I've finished analyzing the repo and the live environment (read-only only — I haven't executed or tested anything). Here's what I found and what I plan to do.
+
+## Current state of the environment
+
+| Thing | State |
+|---|---|
+| Python 3.12 + editable packages (`fhir-clinical-client`, `fhir-triage-service`, `fhir-mcp-agent`) | ✅ installed |
+| Java 21, Docker 29, Docker Compose v5 | ✅ present |
+| **HAPI FHIR server** (`fhir-agent-fhir`, upstream `hapiproject/hapi:v7.2.0`) | ✅ **already running & healthy on :8080**, `/fhir/metadata` returns 200 |
+| `gallant_ptolemy` container | This is the Ona/Gitpod devcontainer runner itself — **not ours, leave alone** |
+| triage / mcp-agent Docker images | ❌ not built yet |
+| `.env` file | ❌ does not exist |
+| `ANTHROPIC_API_KEY` | ❌ not set in shell (needed for the live agent) |
+
+## What is explicitly OUT of scope (per your constraints)
+
+- **`.ai-chat-history` worktree** — untouched, not investigated.
+- **GCP / Kubernetes deploy** — `deploy.sh`, all of `gateway/kong/*` (Helm/k8s), Neon PostgreSQL, `create-key.sh`/`rotate-key.sh`. **Kong only runs on GKE**, so locally we simply *bypass it*: point `FHIR_GATEWAY_URL` directly at HAPI with no API key (the code and `.env.example` explicitly support this "Hat 1 / local dev, no auth" path).
+- **`epic-emulator/` and `athena-emulator/`** — empty placeholders, nothing to run.
+
+## Runnable components inventory + how I plan to exercise each (local only)
+
+I'd run it in layers, cheapest/most-isolated first so failures localize cleanly:
+
+**Phase 0 — Prep**
+- Create `.env` from `.env.example` with local-dev values: `FHIR_GATEWAY_URL=http://localhost:8080/fhir`, `FHIR_API_KEY=` (blank), `TRIAGE_SERVICE_URL=http://localhost:8001`, plus your `ANTHROPIC_API_KEY`.
+
+**Phase 1 — Offline unit tests (no services needed)**
+- `client/clinical` parsers → `pytest client/clinical/tests/test_parsers.py`
+- Triage rule engine (pure logic) → `pytest triage-service/src/triage/tests/test_rules.py`
+- Data loader → `pytest data/scripts/test_load.py`
+
+**Phase 2 — FHIR data layer**
+- Confirm the running HAPI on :8080 (or restart via `docker compose up -d fhir`).
+- `client/platform/integration_test.py` (Hat 1 — talks to HAPI directly).
+- `client/clinical/smoke_test.py` (Hat 2 — via the domain client).
+- Seed demo data → `python3 data/scripts/seed_demo.py` (Kristle Mraz → HIGH, John Doe → LOW).
+
+**Phase 3 — Triage service**
+- Launch `uvicorn triage.main:app --port 8001` pointing at local HAPI.
+- `pytest triage-service/src/triage/tests/test_api.py`.
+- Manual hits: `GET /health`, `POST /triage/refill-risk` for both seeded patients → expect HIGH / LOW.
+
+**Phase 4 — MCP agent (end-to-end)**
+- `pytest mcp-agent/tests/test_e2e_demo_flow.py`.
+- Live CLI: `python3 -m agent.agent --query "Check refill risk for Kristle Mraz"` (and John Doe) → needs the Anthropic key + Phases 2–3 up.
+
+**Phase 5 — Integration / faithful-build checks (heavier, optional)**
+- Full `docker compose up --build` (builds triage + mcp-agent images, runs the intended topology).
+- The repo's **own** Java FHIR service via `cd fhir-service && ./mvnw verify` (~39 tests, uses Testcontainers → needs Docker). Note: this is distinct from the upstream image currently running.
+
+## Decisions I need from you before executing
+
+1. **Which FHIR server do we treat as "the component"?** The container running now is the *upstream* HAPI image. The repo also contains its **own** customized `fhir-service` (Java, with an MCP bridge + validation fallbacks). Do you want me to (a) just use the running upstream image for the integration chain, (b) also build/verify the repo's own Java service via Maven at least once, or (c) both? *(Recommend: c — but Maven build is the slowest step.)*
+2. **Anthropic key** — you said credit's added. Do you want to put the key in `.env` (I'll never commit it; `.env` is gitignored), or export it in the shell?
+3. **How to run the services** — lightweight local processes (uvicorn/CLI, fast iteration) for Phases 2–4, or Docker Compose to match the deployed topology? *(Recommend: local processes first, then one Compose run in Phase 5 as the integration check.)*
+
+Nothing has been changed or executed. Tell me your answers (or just "go with your recommendations") and which phase to start with, and I'll proceed step by step.
+
 <details>
 <summary>Execution details — 43 tool events</summary>
 
@@ -715,6 +774,6 @@ echo "=== ANTHROPIC_API_KEY in env? ==="; [ -n "$ANTHROPIC_API_KEY" ] && echo "s
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 16:47 UTC
+- **Last updated:** 13 July 2026, 16:48 UTC
 - **Turns:** 11
 - **Status:** Complete
