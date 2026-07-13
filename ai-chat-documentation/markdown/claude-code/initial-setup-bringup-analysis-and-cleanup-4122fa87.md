@@ -762,7 +762,36 @@ Is the agent layered onm top of the triage service, or is it sitting beside it r
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Both, depending on which axis you mean — and that distinction is exactly the interview-worthy point.
+
+**At runtime (call/dependency direction): the agent sits *on top of* the triage service.** The agent is a *client* of triage. In [tools.py](mcp-agent/src/agent/tools.py:177), the `assess_refill_risk` tool does an HTTP `POST` to `{TRIAGE_SERVICE_URL}/triage/refill-risk`. The dependency is one-directional: the agent knows about triage; triage has no idea the agent exists.
+
+**At deployment (lifecycle): they're independent, side-by-side processes.** They're separate containers in [docker-compose.yml](docker-compose.yml) (agent on nothing, triage on `:8001`), separately buildable and runnable. You can `curl` the triage service directly with no agent involved, and the triage service starts, health-checks, and serves regardless of the agent. They are *not* one program — the agent does **not** import triage's code.
+
+So the precise phrasing: **loosely coupled over an HTTP/JSON contract, not code-linked.** The agent depends on triage functionally but not at the process level.
+
+One important refinement to the question's framing: **the agent doesn't sit only on top of triage — it orchestrates two backends.**
+
+```
+                 ┌─────────────────────────────┐
+                 │   mcp-agent (orchestrator)   │
+                 │   - LLM tool-use loop        │
+                 │   - NO clinical logic        │
+                 └───────┬──────────────┬───────┘
+       get_patient_summary│              │assess_refill_risk
+        (fhir_clinical_client)          │(HTTP POST)
+                 ▼                       ▼
+        ┌─────────────────┐   ┌────────────────────┐
+        │  fhir-service   │◄──│   triage-service   │
+        │  (HAPI, :8080)  │   │  (rules, :8001)    │
+        └─────────────────┘   └────────────────────┘
+              ▲ triage also calls FHIR itself
+```
+
+- For **patient lookup**, the agent calls the FHIR server *directly* via the `fhir_clinical_client` library (it imports that library — the one code dependency it has).
+- For **risk assessment**, it delegates to the triage service over HTTP, which *itself* independently calls the FHIR server for meds/allergies.
+
+**Why this design matters (say this in the interview):** the agent is deliberately a thin orchestrator with **zero clinical logic** — all rules live in triage ([rules.py](triage-service/src/triage/rules.py)). That separation means (a) you can validate clinical correctness without an LLM or API key (your Phase 1 rule tests), (b) triage is reusable by *any* caller — a web UI, a batch job, `curl` — not just the agent, and (c) the LLM can never invent or override a clinical decision; it can only present what the deterministic rule engine returned.
 
 <details>
 <summary>Execution details — 55 tool events</summary>
@@ -886,4 +915,4 @@ echo "=== does .gitignore cover .env? ==="; grep -nE '(^|/)\.env' .gitignore || 
 - **Created:** 13 July 2026, 11:36 UTC
 - **Last updated:** 13 July 2026, 17:04 UTC
 - **Turns:** 13
-- **Status:** Incomplete
+- **Status:** Complete
