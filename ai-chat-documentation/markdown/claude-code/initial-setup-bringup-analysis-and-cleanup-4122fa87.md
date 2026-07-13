@@ -1674,8 +1674,10 @@ I now have everything. Let me implement the fix for the source-file-push bug, th
 
 Let me validate the exclusion syntax works (dry-run, changes nothing) before committing:
 
+Exclusion validated (nothing under `scripts/` or `logs/` would be staged). Now committing the publisher fix deliberately to `ai-chat-history` — stating: worktree `/workspaces/.ai-chat-history`, branch `ai-chat-history`, target `origin/ai-chat-history` (direct commit, sanctioned for the archive):
+
 <details>
-<summary>Execution details — 178 tool events</summary>
+<summary>Execution details — 179 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2081,6 +2083,12 @@ echo "=== DESIGN.md: event-driven & commit intent ==="; grep -niE "event.driven|
 - **Bash** `cd /workspaces/.ai-chat-history
 echo "=== dry-run: what WOULD be staged with the exclusion (should show NO scripts/ or logs/) ==="
 git add --dry-run -- ai-chat-documentation ':(exclude)ai-chat-documen…`
+- **Bash** `cd /workspaces/.ai-chat-history
+git add ai-chat-documentation/scripts/archive_ai/publisher.py
+git commit -m "$(cat <<'EOF'
+archive: stage generated output only, never source or logs
+
+The publisher sta…`
 
 </details>
 
