@@ -1929,8 +1929,12 @@ First, a key point about Step 4: **nothing in *this* workspace actively uses Neo
 
 Let me check what verification tools we have without touching the environment (no secrets printed):
 
+Clear picture: no local process uses Neon (H2 locally), and this session still has the **old** values. So Step 4 needs **no environment restart** — please don't restart; there's nothing local to update, and the deployed service picks up the new secret on its next deploy.
+
+For Step 5, I can verify meaningfully without a restart. Let me install a lightweight pure-Python postgres driver and **confirm the OLD password is now rejected** (which proves your rotation took effect) — reading from the env, never printing any value:
+
 <details>
-<summary>Execution details — 192 tool events</summary>
+<summary>Execution details — 193 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2385,6 +2389,13 @@ find /tmp -maxd…`
 - **Bash** `echo "=== postgres clients / python drivers available? ==="
 command -v psql >/dev/null 2>&1 && echo "psql: yes" || echo "psql: no"
 for m in psycopg2 psycopg pg8000; do python3 -c "import $m" 2>/dev/nu…`
+- **Bash** `python3 -m pip install -q pg8000 2>&1 | tail -1
+python3 - <<'PY'
+import os, ssl, sys
+from urllib.parse import urlsplit, unquote
+url = os.environ.get("NEON_DB_URL", "")
+if not url:
+    print("NEON_DB_U…`
 
 </details>
 
