@@ -1974,6 +1974,31 @@ Let me get back to PR #23 and assess exactly what remains. Checking the branch s
 
 PR #23 is in **good shape**: both commits present, branch up to date with `main`, **mergeable (CLEAN)**, and — importantly — the new **gitleaks CI check passed** (6s, no secrets flagged). Let me check the remaining details: does the PR description still match the diff, is the tree clean, and do tests still pass?
 
+Good news — PR #23 is essentially **ready**. Here's the assessment:
+
+**Already green:**
+- ✅ Tests pass on the branch: **105 passed**
+- ✅ **gitleaks CI passed** (no secrets flagged)
+- ✅ Branch up to date with `main`, **mergeable (CLEAN)**
+- ✅ Both commits present (bringup + security)
+
+**The one substantive gap — the PR description is now stale/self-contradictory.** The PR title still says only *"Smooth out local bringup…"*, and the body lists the `.vscode`/`setup-credentials` secret issue under **"out of scope / not included"** — but the PR now actually **includes the fix** (commit `dd2729c`: stop writing secrets to files + gitleaks). A reviewer would see the body contradict the diff. That needs updating before review.
+
+**Your decisions (not blocking, but reviewer may ask):**
+1. **`.vscode/settings.json`** — now safe (nothing writes secrets to it). Keep it tracked for shared Java config, or gitignore it? Either is fine; worth a one-line answer so the PR is self-consistent.
+2. **Scope** — keep bringup + security in this one PR (simplest, CI green), or split security into its own PR? I'd keep them together and just fix the title/description.
+
+**Housekeeping (not part of the PR):**
+- Working tree has an uncommitted, benign 3-line change to `.vscode/settings.json` (no secret — `apiKey` count 0) and the untracked `core` dump. Neither is in the PR; I'll leave them unless you want them handled.
+
+So the remaining *work* is really just: **update the PR title + description to accurately cover both commits.** I can do that right now — proposed new title:
+
+> **"Smooth local bringup + stop writing secrets to files"**
+
+...with a body that documents both the bringup changes and the security hardening (no more secret-to-file writes, gitleaks CI), and moves the `.vscode` item from "out of scope" to "fixed / decision pending."
+
+Want me to update the PR title and description now? And what's your call on `.vscode/settings.json` — **keep tracked** or **gitignore**?
+
 <details>
 <summary>Execution details — 195 tool events</summary>
 
@@ -2458,6 +2483,6 @@ echo; ech…`
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 20:05 UTC
+- **Last updated:** 13 July 2026, 20:06 UTC
 - **Turns:** 30
 - **Status:** Complete
