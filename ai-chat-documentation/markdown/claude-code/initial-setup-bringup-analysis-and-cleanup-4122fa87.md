@@ -915,6 +915,34 @@ While inspecting env vars I found a **live Neon database password sitting in pla
 
 To prove it's purely environmental, I'll re-run *just* `MdmTest` with those Neon vars unset so it uses the H2 default — it should pass:
 
+**Confirmed: BUILD SUCCESS, MdmTest passes 1/1 against H2.** Diagnosis proven — the failure is 100% environmental (the ambient Neon datasource vars with a bad password), not a defect in your code. Run as designed against H2, the Java service is effectively **39/39**. (I re-ran only the one failing test to prove causation, not the whole suite again — so I'm claiming "the failing test passes on H2," not "I re-ran all 39.")
+
+---
+
+## Phase 2 — Complete. Final summary
+
+**Both FHIR servers tested, simpler → complex, as you asked:**
+
+| # | Component | What it proves | Result |
+|---|---|---|---|
+| 1 | Upstream HAPI (`:8080`, running) | Live, FHIR R4, valid CapabilityStatement | ✅ |
+| 2 | `platform/integration_test.py` | Live Patient CRUD, protocol-level, self-cleaning | ✅ 7/7 |
+| — | `clinical/smoke_test.py` | Kong-gateway test → out of local scope | ⏭️ deferred to GCP |
+| 3 | `seed_demo.py` + client read-back | Demo patients created & retrievable via domain client | ✅ |
+| 4 | Java `fhir-service` `./mvnw verify` | The repo's *own* deployable server (custom code) | ⚠️ 38/39 (1 env failure) |
+| 4b | `MdmTest` on H2 (Neon vars unset) | The 1 failure is environmental, not code | ✅ 1/1 |
+
+### The interview narrative for Phase 2
+> *"I run against two FHIR servers: a stock HAPI image for fast local iteration, and my own Spring Boot service built on the HAPI JPA starter for what actually deploys. The data layer takes FHIR data in and hands clean domain objects back — I proved that end-to-end with live CRUD and a deterministic two-patient seed. My Java suite is 39 tests; locally one MDM test errors only because the workspace has Neon datasource env vars overriding the H2 default and the DB password fails auth — unset them and it's green. That's a config/secrets issue, not a logic bug."*
+
+**Two takeaways worth raising proactively in the interview:**
+1. **Config precedence** — `SPRING_DATASOURCE_URL` env var silently overrides `application.yaml`. That's standard Spring behavior but it's why "works on my machine" can differ; good to name it.
+2. **Secrets hygiene** — the Neon password is a plaintext env var (now exposed in this session). Rotating it + moving to masked secrets is the right follow-up.
+
+Nothing was committed. FHIR server still up with the two seeded patients (Kristle = Patient/2, John = Patient/5), ready for Phase 3 (triage service) when you are.
+
+Want me to (a) proceed to Phase 3 on your next prompt, and/or (b) help rotate the Neon credential now?
+
 <details>
 <summary>Execution details — 71 tool events</summary>
 
@@ -1068,6 +1096,6 @@ env -u SPRING_DATASOURCE_URL -u SPRING_DATASOURCE_DRIVER_CLASS_NAME -u HIBERNATE
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 17:13 UTC
+- **Last updated:** 13 July 2026, 17:14 UTC
 - **Turns:** 15
 - **Status:** Complete
