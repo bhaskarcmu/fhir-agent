@@ -1398,6 +1398,29 @@ Staging only the intended files — deliberately excluding `.vscode/settings.jso
 
 Correct — 10 intended files staged; `.vscode/settings.json` and `core` left out. Committing and opening the PR:
 
+All three tasks are done.
+
+## Summary
+
+**1. Stack shut down gracefully** — `docker compose down` removed the `fhir` and `triage` containers and the network. Nothing of ours is running; only the Ona devcontainer remains. Ports free.
+
+**2. Bringup smoothed** (minimal changes, no clinical-logic touched):
+- **Tests just work now:** `[dev]` extras add pytest (+ installed via automations); a root `pytest.ini` makes a bare **`pytest`** run all **105** Python tests and skip the script-style files that were crashing collection.
+- **Key naming fixed:** the agent accepts `CLAUDE_API_KEY` (your Ona secret) as a fallback; Compose passes it through — so no manual `ANTHROPIC_API_KEY` mapping next time.
+- **Compose demo works with zero edits:** `FHIR_GATEWAY_URL` defaults to `http://fhir:8080/fhir`, and `.env.example` no longer forces a broken `localhost` value or a placeholder key that shadowed the fallback.
+
+**3. Docs brought current:** README quick-demo run command fixed (the stale `python3 -m agent.agent` form), triage + agent marked as built, roadmap/test instructions updated, Neon-env caveat documented; CLAUDE.md synced; mcp-agent README written.
+
+**Verified before committing:** `pytest` → 105 passed; `cd client/clinical && pytest` → 35 passed; compose renders the `fhir:8080` default; key fallback works (tested with a fake key, no secret printed).
+
+**PR:** https://github.com/bhaskarcmu/fhir-agent/pull/23 (branch `feature/bringup-smoothing`, commit `3fbaf59`).
+
+**Two things I deliberately left for you** (flagged in the PR, not committed):
+- ⚠️ `.vscode/settings.json` is tracked and `setup-credentials.sh` writes the API key into it — a real leak risk. I kept it out of the commit; worth gitignoring or redirecting that config.
+- The `core` dump reappeared (untracked, ~5 GB) — left it out; delete it when convenient.
+
+When PR #23 is merged, per your policy I'll ask about deleting the `feature/bringup-smoothing` branch (remote + local).
+
 <details>
 <summary>Execution details — 138 tool events</summary>
 
@@ -1723,6 +1746,6 @@ Makes th…`
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 18:03 UTC
+- **Last updated:** 13 July 2026, 18:04 UTC
 - **Turns:** 23
 - **Status:** Complete
