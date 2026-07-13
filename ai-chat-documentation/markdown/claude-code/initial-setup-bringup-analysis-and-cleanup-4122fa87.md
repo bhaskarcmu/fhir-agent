@@ -1127,8 +1127,42 @@ Recap just Phase 2. I lost track with all this noise you created
 
 **State right now:** FHIR server still up, two patients seeded, nothing committed. Ready for Phase 3 (triage service) when you are.
 
+## Turn 20
+
+### Prompt
+
+Proceed to Phase 3
+
+### Claude response
+
+## Phase 3 — Triage service
+
+**Goal:** bring up the FastAPI triage microservice on `:8001`, run its tests, then call `/triage/refill-risk` against the *live* seeded patients — the first time the rule engine (Phase 1) runs on real FHIR data (Phase 2) over HTTP. Expect **HIGH** for Kristle Mraz, **LOW** for John Doe.
+
+Let me read the API test first so I can explain what it covers and whether it needs a live server:
+
+This test uses FastAPI's `TestClient` with the FHIRClient **mocked** — so it validates the HTTP layer + rule engine + FHIR serialization in-process, no live server needed. It's the contract the agent depends on.
+
+### Step 1 — Triage API tests
+
+**Why it matters:** it proves the service turns a `RuleResult` into a valid FHIR **`RiskAssessment`** (correct `resourceType`, `prediction` coding, and — key for audit — `basis` references back to the exact MedicationRequest/AllergyIntolerance), and that errors map to correct HTTP codes (422 missing input, 404 patient not found, 502 upstream FHIR error).
+
+**15/15 passed.** (One harmless deprecation warning about Starlette's TestClient — cosmetic, not a failure.) The mocked HIGH/MODERATE/LOW cases confirm the rule engine is correctly wired into the HTTP layer and the FHIR `RiskAssessment` output.
+
+### Step 2 — Launch the triage service live (`:8001`)
+
+Now the real thing: start the FastAPI service pointing at the running FHIR server. Launching in the background:
+
+Waiting for startup, then health-checking:
+
+Service is **live and healthy** on `:8001`. Now the real payoff:
+
+### Step 3 — Live triage against the seeded patients
+
+This is the first time the rule engine runs on **real FHIR data over HTTP**: the triage service fetches meds + allergies from HAPI itself, runs the rules, and returns a FHIR `RiskAssessment`. Calling it for both seeded patients:
+
 <details>
-<summary>Execution details — 80 tool events</summary>
+<summary>Execution details — 85 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1299,6 +1333,25 @@ grep -rniE "SPRING_DATASOURCE_URL|NEON_DB_URL" \
 - **Write** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/secret-values-never-print.md`
 - **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/MEMORY.md`
 
+### Turn 20 activity
+
+- **Read** `/workspaces/fhir-agent/triage-service/src/triage/tests/test_api.py`
+- **Bash** `python3 -m pytest triage-service/src/triage/tests/test_api.py -v 2>&1 | tail -30`
+- **Bash** `cd /workspaces/fhir-agent
+FHIR_GATEWAY_URL=http://localhost:8080/fhir FHIR_API_KEY= \
+  python3 -m uvicorn triage.main:app --host 0.0.0.0 --port 8001 --log-level info`
+- **Bash** `cd /workspaces/fhir-agent
+for i in $(seq 1 15); do
+  if curl -sf http://localhost:8001/health >/dev/null 2>&1; then break; fi
+  sleep 1
+done
+echo "=== /health ==="; curl -s http://localhost:8001/healt…`
+- **Bash** `cd /workspaces/fhir-agent
+for pid in 2 5; do
+  echo "═══ POST /triage/refill-risk  {patient_id: $pid} ═══"
+  curl -s -X POST http://localhost:8001/triage/refill-risk \
+    -H "Content-Type: applicatio…`
+
 </details>
 
 ---
@@ -1308,6 +1361,6 @@ grep -rniE "SPRING_DATASOURCE_URL|NEON_DB_URL" \
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 17:34 UTC
-- **Turns:** 19
+- **Last updated:** 13 July 2026, 17:36 UTC
+- **Turns:** 20
 - **Status:** Complete
