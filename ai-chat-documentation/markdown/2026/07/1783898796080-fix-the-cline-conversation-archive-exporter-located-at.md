@@ -49,7 +49,33 @@ Verified:
 
 ### Cline response
 
-*[Cline has not completed this turn yet.]*
+The exporter fix was itself a change to the AI archive system (`ai-chat-documentation/scripts/export_cline.py`), so per your instructions it belongs on the dedicated `ai-chat-history` branch/worktree (`/workspaces/.ai-chat-history`), not on a feature branch in `fhir-agent`. It has already been committed and pushed there directly (no PR review step applies to this branch, as it's the automated archive, not application code).
+
+**Branch:** `ai-chat-history` (worktree: `/workspaces/.ai-chat-history`)
+
+**Commit hash:** `3c609e50f8fa9f831e3c4efc39bb546e7e9370b6` — "Fix export_cline.py to export all conversation turns"
+(A later automated commit `58ef64b` — "Archive Cline conversations: 2026-07-13 00:10 UTC" — was made by the background sync script after this fix and is unrelated to the code change itself.)
+
+**Files changed:**
+- `ai-chat-documentation/scripts/export_cline.py` (232 lines changed)
+- `ai-chat-documentation/scripts/test_export_cline.py` (new, 112 lines)
+
+**Tests executed:**
+- `python3 -m py_compile ai-chat-documentation/scripts/export_cline.py` → succeeded, no errors.
+- `python3 ai-chat-documentation/scripts/test_export_cline.py` → passed: "OK: export_cline.build_turns produced exactly 2 complete turns (and correctly handled a 3rd, not-yet-completed turn)."
+- End-to-end manual verification: ran the exporter against the real archived multi-turn task `1783881894942` in a scratch directory — all 3 human turns (initial task + 2 feedback rounds) were rendered correctly with matching Cline responses, tool-result/environment noise excluded, execution details collapsed in `<details>`, and archive metadata at the bottom.
+
+**GitHub compare URL:**
+https://github.com/bhaskarcmu/fhir-agent/compare/a0e8cde...3c609e5 (or browse the branch at https://github.com/bhaskarcmu/fhir-agent/tree/ai-chat-history)
+
+**Push status:** Confirmed `origin/ai-chat-history` == local `HEAD` (`58ef64b`), verified via `git fetch` + `git diff origin/ai-chat-history HEAD` (no diff) — already on GitHub, nothing further to push.
+
+**Summary:** Replaced the single-prompt/single-response extraction logic with `extract_human_prompt_from_message()` and `build_turns()`, which walk the full conversation chronologically, isolate every genuine human prompt (from `<task>`, `<feedback>`, or plain text, filtering out tool results, environment_details, and task_progress reminders), and pair each with its corresponding `attempt_completion` result. Markdown now renders `## Turn N` sections for every exchange, keeps execution details collapsed below, and preserves archive metadata at the bottom — unchanged raw-JSON copying and one-file-per-task index behavior.
+
+**Known limitations / review concerns:**
+- No `pytest` is installed in this environment, so the test is a plain-Python assertion script rather than a pytest suite; if CI expects pytest discovery, it may need a thin pytest wrapper or `pytest` added as a dependency.
+- `sync_cline.sh`, `watch_cline_events.sh`, and all raw archive files were intentionally left untouched, as required.
+- No application source code (in `/workspaces/fhir-agent`) was touched by this task — nothing to branch/PR there.
 
 ## Turn 3
 
@@ -250,7 +276,7 @@ Assume I will review the changes on GitHub before merging, but changes should be
 *[Cline has not completed this turn yet.]*
 
 <details>
-<summary>Execution details — 16 tool call(s)</summary>
+<summary>Execution details — 19 tool call(s)</summary>
 
 ### Files inspected
 
@@ -402,6 +428,33 @@ Assume I will review the changes on GitHub before merging, but changes should be
 }
 ```
 
+#### 17. `execute_command`
+
+```json
+{
+  "command": "cd /workspaces/.ai-chat-history && git log --oneline -3 && echo \"---STATUS---\" && git status --short",
+  "requires_approval": false
+}
+```
+
+#### 18. `execute_command`
+
+```json
+{
+  "command": "cd /workspaces/.ai-chat-history && git fetch origin ai-chat-history --quiet && git log origin/ai-chat-history --oneline -3 && echo \"---diff origin vs HEAD---\" && git diff origin/ai-chat-history HEAD --stat",
+  "requires_approval": false
+}
+```
+
+#### 19. `execute_command`
+
+```json
+{
+  "command": "cd /workspaces/.ai-chat-history && git show --stat 3c609e5 | head -20 && echo \"--- diff for export_cline.py summary ---\" && git diff a0e8cde 3c609e5 --stat",
+  "requires_approval": false
+}
+```
+
 </details>
 
 ---
@@ -410,7 +463,7 @@ Assume I will review the changes on GitHub before merging, but changes should be
 
 - **Cline task ID:** `1783898796080`
 - **Approximate creation time:** 12 July 2026, 23:26 UTC
-- **Stored API messages:** 32
-- **Recorded tool calls:** 16
+- **Stored API messages:** 40
+- **Recorded tool calls:** 19
 
 The complete original Cline records are retained in the corresponding `raw/` directory.
