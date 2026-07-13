@@ -1254,10 +1254,24 @@ Proceed to Phase 5
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+## Phase 5 — Full Docker Compose integration
+
+**Goal:** run the intended production-shaped topology — everything in containers on a shared Docker network, services talking to each other by name (not `localhost`). This is the integration check that proves the images build and wire together, not just the local processes.
+
+**Key config difference to call out (good interview material):** inside the Compose network, containers reach the FHIR server as `http://fhir:8080/fhir` (Docker DNS by service name), **not** `localhost` — `localhost` inside a container is the container itself. So I override `FHIR_GATEWAY_URL` for the containerized services. Kong stays bypassed (local, no GCP).
+
+### Step 1 — Free the port: stop the local uvicorn triage
+
+The local triage (`:8001`) would collide with Compose's triage. Stopping it and confirming the port is free:
+
+The `pkill` stopped the uvicorn (the background task shows "failed exit 144" = killed, which is exactly what I wanted). The foreground command got signalled before printing the checks, so let me re-run just the verification:
+
+Port free. Compose has all three services (`fhir`, `triage`, `mcp-agent`), and the running `fhir` container still holds our seeded patients — so I'll **reuse it (no re-seed, no duplicate patients)** and just build + start the containerized triage, pointing it at `fhir:8080` over the Compose network.
+
+### Step 2 — Build & start the triage container
 
 <details>
-<summary>Execution details — 91 tool events</summary>
+<summary>Execution details — 94 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1469,6 +1483,19 @@ FHIR_GATEWAY_URL=http://localhost:8080/fhir FHIR_API_KEY= \
 TRIAGE_SERVICE_URL=http://localhost:8001 \
 python3 -m agent.agent --query "C…`
 
+### Turn 22 activity
+
+- **Bash** `cd /workspaces/fhir-agent
+pkill -f "uvicorn triage.main:app" 2>/dev/null && echo "local uvicorn signalled" || echo "no local uvicorn process found"
+sleep 2
+echo "=== :8001 still listening? ==="; (curl…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== :8001 free? ==="; (curl -sf http://localhost:8001/health >/dev/null 2>&1 && echo "STILL UP") || echo "free"
+echo "=== compose services ==="; docker compose config -…`
+- **Bash** `cd /workspaces/fhir-agent
+FHIR_GATEWAY_URL=http://fhir:8080/fhir FHIR_API_KEY= \
+  docker compose up --build -d fhir triage 2>&1 | tail -30`
+
 </details>
 
 ---
@@ -1478,6 +1505,6 @@ python3 -m agent.agent --query "C…`
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 17:44 UTC
+- **Last updated:** 13 July 2026, 17:46 UTC
 - **Turns:** 22
-- **Status:** Incomplete
+- **Status:** Complete
