@@ -1518,6 +1518,22 @@ The script's own rationale is "Claude Code reads `ANTHROPIC_API_KEY` from the en
 
 Want me to draft the PR #23 additions (items 1–3) once you've weighed in, and separately outline the `ai-chat-history` archive-scrubbing change?
 
+## Turn 25
+
+### Prompt
+
+I am happy to change the password for Neon, but i want you to do the following first:
+
+1. I don't want to change tyhe secret names in Ona. So, please use CLAUDE_API_KEY as the only secret name that will come from Ona for Claude key. Do your best to use that exact name everywhere, but if you simply cannot, then duplicate it safely to another name id you really have to. Don't dwell too much on this, just get it done
+
+2. For neon or other passwords that have been committed to Github - please make fixes first that will prevent futyure leakage of those passwords. Tell me when that is fully done, then I will need your help to change the passwords on the Neon and/or other websites. Just need the instructions, I will make the passwd change manually of course
+
+3. Tell me what else we may be missing, before the PR can be actually called "ready". I am losing track by now!!
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 142 tool events</summary>
 
@@ -1859,6 +1875,6 @@ echo "  placeholder 'sk-ant-...' : $(grep -rlIE 'sk-ant-\.\.\.' .…`
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 18:15 UTC
-- **Turns:** 24
-- **Status:** Complete
+- **Last updated:** 13 July 2026, 18:54 UTC
+- **Turns:** 25
+- **Status:** Incomplete
