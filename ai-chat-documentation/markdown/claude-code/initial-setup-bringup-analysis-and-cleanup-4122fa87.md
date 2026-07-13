@@ -962,8 +962,10 @@ Let me check what the Ona CLI can do for secrets/env, so I give you exact comman
 
 `ona secret` is deprecated — it points to `gitpod project secret` / `gitpod user secret`. Let me get the exact secret subcommands and their flags:
 
+Now I have the exact tooling. Let me discover your project ID and the **names** of the existing secrets (I will NOT run `secret get`, which would print values — only `list`, which shows names):
+
 <details>
-<summary>Execution details — 75 tool events</summary>
+<summary>Execution details — 76 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1117,6 +1119,8 @@ echo; echo "=== where is…`
 echo; echo "=== ona env/secret subcommands? ==="; ona environment --help 2>&1 | head -40; ona secret --help 2>&1 | head -20; ona env --help 2>&…`
 - **Bash** `echo "=== gitpod project secret ==="; gitpod project secret --help 2>&1 | head -35
 echo; echo "=== gitpod project secret create ==="; gitpod project secret create --help 2>&1 | head -45`
+- **Bash** `echo "=== projects ==="; gitpod project list 2>&1 | head -20
+echo; echo "=== whoami ==="; ona whoami 2>&1 | head -10`
 
 </details>
 
