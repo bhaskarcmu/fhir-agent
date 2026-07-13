@@ -1,0 +1,3 @@
+# Synthea binary + generated output are never committed (large; regenerate via generate.sh).
+*.jar
+output/

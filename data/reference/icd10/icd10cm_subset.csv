@@ -1,0 +1,154 @@
+code,display,matched_term
+A01.03,Typhoid pneumonia,pneumonia
+A02.22,Salmonella pneumonia,pneumonia
+A50.04,Early congenital syphilitic pneumonia,pneumonia
+A54.84,Gonococcal pneumonia,pneumonia
+B01.2,Varicella pneumonia,pneumonia
+B05.2,Measles complicated by pneumonia,pneumonia
+B06.81,Rubella pneumonia,pneumonia
+B77.81,Ascariasis pneumonia,pneumonia
+D63.1,Anemia in chronic kidney disease,chronic kidney disease
+E10.10,Type 1 diabetes mellitus with ketoacidosis without coma,type 1 diabetes
+E10.11,Type 1 diabetes mellitus with ketoacidosis with coma,type 1 diabetes
+E10.21,Type 1 diabetes mellitus with diabetic nephropathy,type 1 diabetes
+E10.22,Type 1 diabetes mellitus with diabetic chronic kidney disease,chronic kidney disease
+E10.36,Type 1 diabetes mellitus with diabetic cataract,type 1 diabetes
+E10.40,"Type 1 diabetes mellitus with diabetic neuropathy, unspecified",type 1 diabetes
+E10.41,Type 1 diabetes mellitus with diabetic mononeuropathy,type 1 diabetes
+E10.42,Type 1 diabetes mellitus with diabetic polyneuropathy,type 1 diabetes
+E10.44,Type 1 diabetes mellitus with diabetic amyotrophy,type 1 diabetes
+E10.59,Type 1 diabetes mellitus with other circulatory complications,type 1 diabetes
+E10.610,Type 1 diabetes mellitus with diabetic neuropathic arthropathy,type 1 diabetes
+E10.618,Type 1 diabetes mellitus with other diabetic arthropathy,type 1 diabetes
+E10.620,Type 1 diabetes mellitus with diabetic dermatitis,type 1 diabetes
+E10.621,Type 1 diabetes mellitus with foot ulcer,type 1 diabetes
+E10.622,Type 1 diabetes mellitus with other skin ulcer,type 1 diabetes
+E10.628,Type 1 diabetes mellitus with other skin complications,type 1 diabetes
+E10.630,Type 1 diabetes mellitus with periodontal disease,type 1 diabetes
+E10.638,Type 1 diabetes mellitus with other oral complications,type 1 diabetes
+E10.641,Type 1 diabetes mellitus with hypoglycemia with coma,type 1 diabetes
+E10.649,Type 1 diabetes mellitus with hypoglycemia without coma,type 1 diabetes
+E10.65,Type 1 diabetes mellitus with hyperglycemia,type 1 diabetes
+E10.8,Type 1 diabetes mellitus with unspecified complications,type 1 diabetes
+E10.9,Type 1 diabetes mellitus without complications,type 1 diabetes
+E10.A0,"Type 1 diabetes mellitus, presymptomatic, unspecified",type 1 diabetes
+E10.A1,"Type 1 diabetes mellitus, presymptomatic, Stage 1",type 1 diabetes
+E10.A2,"Type 1 diabetes mellitus, presymptomatic, Stage 2",type 2 diabetes
+E11.01,Type 2 diabetes mellitus with hyperosmolarity with coma,type 2 diabetes
+E11.10,Type 2 diabetes mellitus with ketoacidosis without coma,type 2 diabetes
+E11.11,Type 2 diabetes mellitus with ketoacidosis with coma,type 2 diabetes
+E11.21,Type 2 diabetes mellitus with diabetic nephropathy,type 2 diabetes
+E11.22,Type 2 diabetes mellitus with diabetic chronic kidney disease,chronic kidney disease
+E11.36,Type 2 diabetes mellitus with diabetic cataract,type 2 diabetes
+E11.40,"Type 2 diabetes mellitus with diabetic neuropathy, unspecified",type 2 diabetes
+E11.41,Type 2 diabetes mellitus with diabetic mononeuropathy,type 2 diabetes
+E11.42,Type 2 diabetes mellitus with diabetic polyneuropathy,type 2 diabetes
+E11.44,Type 2 diabetes mellitus with diabetic amyotrophy,type 2 diabetes
+E11.59,Type 2 diabetes mellitus with other circulatory complications,type 2 diabetes
+E11.610,Type 2 diabetes mellitus with diabetic neuropathic arthropathy,type 2 diabetes
+E11.618,Type 2 diabetes mellitus with other diabetic arthropathy,type 2 diabetes
+E11.620,Type 2 diabetes mellitus with diabetic dermatitis,type 2 diabetes
+E11.621,Type 2 diabetes mellitus with foot ulcer,type 2 diabetes
+E11.622,Type 2 diabetes mellitus with other skin ulcer,type 2 diabetes
+E11.628,Type 2 diabetes mellitus with other skin complications,type 2 diabetes
+E11.630,Type 2 diabetes mellitus with periodontal disease,type 2 diabetes
+E11.638,Type 2 diabetes mellitus with other oral complications,type 2 diabetes
+E11.641,Type 2 diabetes mellitus with hypoglycemia with coma,type 2 diabetes
+E11.649,Type 2 diabetes mellitus with hypoglycemia without coma,type 2 diabetes
+E11.65,Type 2 diabetes mellitus with hyperglycemia,type 2 diabetes
+E11.69,Type 2 diabetes mellitus with other specified complication,type 2 diabetes
+E11.8,Type 2 diabetes mellitus with unspecified complications,type 2 diabetes
+E11.9,Type 2 diabetes mellitus without complications,type 2 diabetes
+E13.22,Other specified diabetes mellitus with diabetic chronic kidney disease,chronic kidney disease
+E78.2,Mixed hyperlipidemia,hyperlipidemia
+E78.49,Other hyperlipidemia,hyperlipidemia
+E78.5,"Hyperlipidemia, unspecified",hyperlipidemia
+F06.32,Mood disorder due to known physiological condition with major depressive-like episode,major depressive disorder
+F32.0,"Major depressive disorder, single episode, mild",major depressive disorder
+F32.1,"Major depressive disorder, single episode, moderate",major depressive disorder
+F32.2,"Major depressive disorder, single episode, severe without psychotic features",major depressive disorder
+F32.3,"Major depressive disorder, single episode, severe with psychotic features",major depressive disorder
+F32.4,"Major depressive disorder, single episode, in partial remission",major depressive disorder
+F32.5,"Major depressive disorder, single episode, in full remission",major depressive disorder
+F32.9,"Major depressive disorder, single episode, unspecified",major depressive disorder
+F33.0,"Major depressive disorder, recurrent, mild",major depressive disorder
+F33.1,"Major depressive disorder, recurrent, moderate",major depressive disorder
+F33.2,"Major depressive disorder, recurrent severe without psychotic features",major depressive disorder
+F33.3,"Major depressive disorder, recurrent, severe with psychotic symptoms",major depressive disorder
+F33.40,"Major depressive disorder, recurrent, in remission, unspecified",major depressive disorder
+F33.41,"Major depressive disorder, recurrent, in partial remission",major depressive disorder
+F33.42,"Major depressive disorder, recurrent, in full remission",major depressive disorder
+F33.9,"Major depressive disorder, recurrent, unspecified",major depressive disorder
+I10,Essential (primary) hypertension,essential hypertension
+I12.0,Hypertensive chronic kidney disease with stage 5 chronic kidney disease or end stage renal disease,chronic kidney disease
+I12.9,"Hypertensive chronic kidney disease with stage 1 through stage 4 chronic kidney disease, or unspecified chronic kidney disease",chronic kidney disease
+I13.0,"Hypertensive heart and chronic kidney disease with heart failure and stage 1 through stage 4 chronic kidney disease, or unspecified chronic kidney disease",chronic kidney disease
+I13.10,"Hypertensive heart and chronic kidney disease without heart failure, with stage 1 through stage 4 chronic kidney disease, or unspecified chronic kidney disease",chronic kidney disease
+I13.11,"Hypertensive heart and chronic kidney disease without heart failure, with stage 5 chronic kidney disease, or end stage renal disease",chronic kidney disease
+I13.2,"Hypertensive heart and chronic kidney disease with heart failure and with stage 5 chronic kidney disease, or end stage renal disease",chronic kidney disease
+I48.0,Paroxysmal atrial fibrillation,atrial fibrillation
+I48.11,Longstanding persistent atrial fibrillation,atrial fibrillation
+I48.19,Other persistent atrial fibrillation,atrial fibrillation
+I48.20,"Chronic atrial fibrillation, unspecified",atrial fibrillation
+I48.21,Permanent atrial fibrillation,atrial fibrillation
+I48.91,Unspecified atrial fibrillation,atrial fibrillation
+J12.0,Adenoviral pneumonia,pneumonia
+J12.1,Respiratory syncytial virus pneumonia,pneumonia
+J12.2,Parainfluenza virus pneumonia,pneumonia
+J12.3,Human metapneumovirus pneumonia,pneumonia
+J12.89,Other viral pneumonia,pneumonia
+J12.9,"Viral pneumonia, unspecified",pneumonia
+J15.1,Pneumonia due to Pseudomonas,pneumonia
+J15.9,Unspecified bacterial pneumonia,pneumonia
+J16.0,Chlamydial pneumonia,pneumonia
+J18.9,"Pneumonia, unspecified organism",pneumonia
+J45.20,"Mild intermittent asthma, uncomplicated",asthma
+J45.21,Mild intermittent asthma with (acute) exacerbation,asthma
+J45.22,Mild intermittent asthma with status asthmaticus,asthma
+J45.30,"Mild persistent asthma, uncomplicated",asthma
+J45.31,Mild persistent asthma with (acute) exacerbation,asthma
+J45.32,Mild persistent asthma with status asthmaticus,asthma
+J45.40,"Moderate persistent asthma, uncomplicated",asthma
+J45.41,Moderate persistent asthma with (acute) exacerbation,asthma
+J45.42,Moderate persistent asthma with status asthmaticus,asthma
+J45.50,"Severe persistent asthma, uncomplicated",asthma
+J45.51,Severe persistent asthma with (acute) exacerbation,asthma
+J45.52,Severe persistent asthma with status asthmaticus,asthma
+J45.901,Unspecified asthma with (acute) exacerbation,asthma
+J45.902,Unspecified asthma with status asthmaticus,asthma
+J45.909,"Unspecified asthma, uncomplicated",asthma
+J45.991,Cough variant asthma,asthma
+J45.998,Other asthma,asthma
+J82.81,Chronic eosinophilic pneumonia,pneumonia
+J82.82,Acute eosinophilic pneumonia,pneumonia
+J82.83,Eosinophilic asthma,asthma
+J84.116,Cryptogenic organizing pneumonia,pneumonia
+J84.117,Desquamative interstitial pneumonia,pneumonia
+J84.2,Lymphoid interstitial pneumonia,pneumonia
+J95.851,Ventilator associated pneumonia,pneumonia
+K21.00,"Gastro-esophageal reflux disease with esophagitis, without bleeding",gastro-esophageal reflux
+K21.01,"Gastro-esophageal reflux disease with esophagitis, with bleeding",gastro-esophageal reflux
+K21.9,Gastro-esophageal reflux disease without esophagitis,gastro-esophageal reflux
+N18.1,"Chronic kidney disease, stage 1",chronic kidney disease
+N18.2,"Chronic kidney disease, stage 2 (mild)",chronic kidney disease
+N18.30,"Chronic kidney disease, stage 3 unspecified",chronic kidney disease
+N18.31,"Chronic kidney disease, stage 3a",chronic kidney disease
+N18.32,"Chronic kidney disease, stage 3b",chronic kidney disease
+N18.4,"Chronic kidney disease, stage 4 (severe)",chronic kidney disease
+N18.5,"Chronic kidney disease, stage 5",chronic kidney disease
+N18.9,"Chronic kidney disease, unspecified",chronic kidney disease
+O10.011,"Pre-existing essential hypertension complicating pregnancy, first trimester",essential hypertension
+O10.012,"Pre-existing essential hypertension complicating pregnancy, second trimester",essential hypertension
+O10.013,"Pre-existing essential hypertension complicating pregnancy, third trimester",essential hypertension
+O10.019,"Pre-existing essential hypertension complicating pregnancy, unspecified trimester",essential hypertension
+O10.02,Pre-existing essential hypertension complicating childbirth,essential hypertension
+O10.03,Pre-existing essential hypertension complicating the puerperium,essential hypertension
+O10.211,"Pre-existing hypertensive chronic kidney disease complicating pregnancy, first trimester",chronic kidney disease
+O10.212,"Pre-existing hypertensive chronic kidney disease complicating pregnancy, second trimester",chronic kidney disease
+O10.213,"Pre-existing hypertensive chronic kidney disease complicating pregnancy, third trimester",chronic kidney disease
+O10.219,"Pre-existing hypertensive chronic kidney disease complicating pregnancy, unspecified trimester",chronic kidney disease
+O10.22,Pre-existing hypertensive chronic kidney disease complicating childbirth,chronic kidney disease
+O10.23,Pre-existing hypertensive chronic kidney disease complicating the puerperium,chronic kidney disease
+O10.32,Pre-existing hypertensive heart and chronic kidney disease complicating childbirth,chronic kidney disease
+P23.9,"Congenital pneumonia, unspecified",pneumonia
+Z82.5,Family history of asthma and other chronic lower respiratory diseases,asthma

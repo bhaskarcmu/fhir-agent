@@ -1,0 +1,21 @@
+drug,rxcui,atc_classes
+amoxicillin,723,Combinations for eradication of Helicobacter pylori; Penicillins with extended spectrum
+ampicillin,733,"Antibiotics; Combinations of penicillins, incl. beta-lactamase inhibitors; Penicillins with extended spectrum"
+penicillin V potassium,203195,Beta-lactamase sensitive penicillins
+piperacillin,8339,Penicillins with extended spectrum
+lisinopril,29046,"ACE inhibitors, plain"
+enalapril,3827,"ACE inhibitors, plain"
+losartan,52175,"Angiotensin II receptor blockers (ARBs), plain"
+valsartan,69749,"Angiotensin II receptor blockers (ARBs) and calcium channel blockers; Angiotensin II receptor blockers (ARBs), other combinations; Angiotensin II receptor blockers (ARBs), plain"
+atorvastatin,83367,Combinations of various lipid modifying agents; HMG CoA reductase inhibitors; Lipid modifying agents in combination with other drugs
+simvastatin,36567,Combinations of various lipid modifying agents; Dipeptidyl peptidase 4 (DPP-4) inhibitors; HMG CoA reductase inhibitors
+omeprazole,7646,Combinations for eradication of Helicobacter pylori; Proton pump inhibitors
+pantoprazole,40790,Proton pump inhibitors
+sertraline,36437,Selective serotonin reuptake inhibitors
+fluoxetine,4493,Selective serotonin reuptake inhibitors
+semaglutide,1991302,Glucagon-like peptide-1 (GLP-1) analogues
+adalimumab,327361,Tumor necrosis factor alpha (TNF-alpha) inhibitors
+metformin,6809,Biguanides; Combinations of oral blood glucose lowering drugs
+amlodipine,17767,"ACE inhibitors and calcium channel blockers; Angiotensin II receptor blockers (ARBs) and calcium channel blockers; Angiotensin II receptor blockers (ARBs), other combinations; Dihydropyridine derivatives; Lipid modifying agents in combination with other drugs; Renin-inhibitors"
+levothyroxine,10582,Thyroid hormones
+albuterol,435,Selective beta-2-adrenoreceptor agonists
