@@ -1386,8 +1386,10 @@ Now make `cd client/clinical && pytest` safe too (it's the one package dir conta
 
 Now fix the README's test command to the simple `pytest` (which the root `pytest.ini` now makes work), and verify both invocations:
 
+Both work — bare `pytest` (105) from root, and `cd client/clinical && pytest` (35, smoke_test excluded). Now validate the two remaining changes safely: the compose default renders correctly (with secrets unset so nothing leaks), and the agent's key fallback works (using a **fake** key, not the real secret):
+
 <details>
-<summary>Execution details — 129 tool events</summary>
+<summary>Execution details — 130 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1673,6 +1675,9 @@ python -m pytest --import-mode=importlib client/clinical/tests triage-service/sr
 - **Bash** `cd /workspaces/fhir-agent
 echo "=== bare 'pytest' from repo root ==="; python -m pytest -q 2>&1 | tail -3
 echo; echo "=== cd client/clinical && pytest ==="; (cd client/clinical && python -m pytest -q…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== compose: FHIR_GATEWAY_URL default renders (secrets unset for safety) ==="
+env -u CLAUDE_API_KEY -u ANTHROPIC_API_KEY -u FHIR_GATEWAY_URL docker compose config 2>/de…`
 
 </details>
 
