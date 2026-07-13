@@ -692,6 +692,16 @@ Done. Everything is saved, reviewable, and Phase 1 is protected.
 
 One optional follow-up: I can save a short **project memory** noting the current state (Phase 2 in planning, PR #24 awaiting review, `phase1-v1` tagged, no code yet) so a future session picks up instantly. I held off since the details now live in-repo — say the word if you'd like it.
 
+## Turn 8
+
+### Prompt
+
+I need some help with the very first prompt in this conversation. It was lost because of  a bug in my "auto AI chats push" system. Can you please respond here with the entire original PRD I provided, in nicely readable format, for posterity? They we can resume from where we just left off!
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 28 tool events</summary>
 
@@ -779,6 +789,6 @@ gh pr create --base main --head feature/phase2-planning \
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 13 July 2026, 23:00 UTC
-- **Turns:** 7
-- **Status:** Complete
+- **Last updated:** 13 July 2026, 23:02 UTC
+- **Turns:** 8
+- **Status:** Incomplete
