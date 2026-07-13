@@ -1,0 +1,55 @@
+{
+  "files_in_context": [
+    {
+      "path": "/workspaces/.ai-chat-history/ai-chat-documentation/scripts/export_cline.py",
+      "record_state": "active",
+      "record_source": "read_tool",
+      "cline_read_date": 1783898809393,
+      "cline_edit_date": null,
+      "user_edit_date": null
+    },
+    {
+      "path": "/workspaces/.ai-chat-history/ai-chat-documentation/markdown/2026/07/1783881894942-analyze-the-architecture-this-repo-is-based-on-and-summarize-in-10-bul.md",
+      "record_state": "stale",
+      "record_source": "read_tool",
+      "cline_read_date": 1783898821883,
+      "cline_edit_date": null,
+      "user_edit_date": null
+    },
+    {
+      "path": "/workspaces/.ai-chat-history/ai-chat-documentation/markdown/2026/07/1783881894942-analyze-the-architecture-this-repo-is-based-on-and-summarize-in-10-bul.md",
+      "record_state": "active",
+      "record_source": "user_edited",
+      "cline_read_date": 1783898821883,
+      "cline_edit_date": null,
+      "user_edit_date": 1783898848162
+    },
+    {
+      "path": "/workspaces/.ai-chat-history/ai-chat-documentation/raw/2026/07/1783881894942/api_conversation_history.json",
+      "record_state": "active",
+      "record_source": "read_tool",
+      "cline_read_date": 1783898861614,
+      "cline_edit_date": null,
+      "user_edit_date": null
+    }
+  ],
+  "model_usage": [
+    {
+      "ts": 1783898796257,
+      "model_id": "claude-sonnet-5",
+      "model_provider_id": "anthropic",
+      "mode": "act"
+    }
+  ],
+  "environment_history": [
+    {
+      "ts": 1783898796253,
+      "os_name": "linux",
+      "os_version": "7.0.0-1006-aws",
+      "os_arch": "x64",
+      "host_name": "Visual Studio Code",
+      "host_version": "1.127.0",
+      "cline_version": "4.0.8"
+    }
+  ]
+}

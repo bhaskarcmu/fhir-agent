@@ -1,0 +1,19 @@
+# Local synchronisation logs
+logs/*
+!logs/.gitkeep
+
+# Temporary and incomplete exports
+*.tmp
+*.partial
+*.lock
+
+# Secret-scanning reports
+secret-scan-report.txt
+
+# Local configuration containing machine-specific paths
+local-config.env
+.env
+
+# Common operating-system files
+.DS_Store
+Thumbs.db
