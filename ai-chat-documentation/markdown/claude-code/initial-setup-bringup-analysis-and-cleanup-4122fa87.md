@@ -1344,8 +1344,10 @@ Stating per rules: worktree `/workspaces/fhir-agent`, branch `main`, target new 
 
 mcp-agent's README is just a stub. Let me scan all docs for the specific stale patterns (the wrong run command, "planned" statuses) so I know exactly what to fix:
 
+Stale content is concentrated in the top-level [README.md](README.md). Let me check a few more files before editing — the other service READMEs and whether `.gitignore` covers the test/build artifacts that got generated:
+
 <details>
-<summary>Execution details — 102 tool events</summary>
+<summary>Execution details — 103 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1594,6 +1596,9 @@ echo "=== ports 8001/8080 ==="; (curl…`
 - **Bash** `cd /workspaces/fhir-agent
 echo "=== stale compose run command pattern ==="; grep -rn "mcp-agent python3 -m agent.agent\|mcp-agent .*python3 -m agent" --include=*.md . | grep -v node_modules
 echo; echo…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== .gitignore: pytest/pycache/egg-info covered? ==="; grep -nE "pytest_cache|__pycache__|egg-info|\.pyc" .gitignore || echo "NOT covered"
+echo; echo "=== git status (a…`
 
 </details>
 
