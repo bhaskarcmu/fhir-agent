@@ -943,6 +943,16 @@ Nothing was committed. FHIR server still up with the two seeded patients (Kristl
 
 Want me to (a) proceed to Phase 3 on your next prompt, and/or (b) help rotate the Neon credential now?
 
+## Turn 16
+
+### Prompt
+
+Help me rotate the Neon credential, then also help me save it in Ona as a secret properly!
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 71 tool events</summary>
 
@@ -1096,6 +1106,6 @@ env -u SPRING_DATASOURCE_URL -u SPRING_DATASOURCE_DRIVER_CLASS_NAME -u HIBERNATE
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 17:14 UTC
-- **Turns:** 15
-- **Status:** Complete
+- **Last updated:** 13 July 2026, 17:20 UTC
+- **Turns:** 16
+- **Status:** Incomplete
