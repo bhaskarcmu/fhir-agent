@@ -1297,8 +1297,12 @@ Great signal: Synthea's prebuilt `synthea-with-dependencies.jar` (187MB) is down
 
 Synthea jar is down (exit 0). The ICD-10 `df` param is returning empty — let me inspect the raw API shape rather than guess.
 
+`sf=code,name` was the missing piece — now 481 diabetes matches with descriptions. Synthea jar is 188M and complete. Let me write a proper reference-data fetch script (real ICD-10 + RxNorm/ATC for our adjudication domains) and run it, then validate Synthea actually emits Coverage/Claim resources.
+
+Real reference data landed: **153 ICD-10-CM codes** and **20 drugs with real RxCUIs + ATC classes** — the ATC groupings (penicillins, ACE inhibitors, ARBs, SSRIs, PPIs) directly ground our duplicate-therapy and formulary rules. Now let me validate that Synthea actually emits the payer/claims resources we need (Coverage/Claim/ExplanationOfBenefit) with a tiny run.
+
 <details>
-<summary>Execution details — 43 tool events</summary>
+<summary>Execution details — 46 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1424,6 +1428,14 @@ for…`
 echo "=== Synthea jar ==="; ls -lh data/synthea/synthea-with-dependencies.jar
 echo; echo "=== raw ICD-10 API response (diabetes) ==="
 curl -s --max-time 15 "https://clinicalt…`
+- **Write** `/workspaces/fhir-agent/data/scripts/fetch_reference_data.py`
+- **Bash** `cd /workspaces/fhir-agent
+python3 data/scripts/fetch_reference_data.py 2>&1 | tail -40`
+- **Bash** `cd /workspaces/fhir-agent
+echo "Running Synthea (p=3, fixed seed) to validate payer/claims output..."
+java -jar data/synthea/synthea-with-dependencies.jar \
+  -p 3 -s 20260713 \
+  --exporter.baseDirec…`
 
 </details>
 
@@ -1434,6 +1446,6 @@ curl -s --max-time 15 "https://clinicalt…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 13 July 2026, 23:17 UTC
+- **Last updated:** 13 July 2026, 23:19 UTC
 - **Turns:** 10
 - **Status:** Complete
