@@ -31,7 +31,8 @@ services:
       start_period: 20s
 
   # ── Triage service ────────────────────────────────────────────────────────
-  # Clinical-hat consumer: authenticates through Kong, never talks to HAPI directly.
+  # Clinical-hat consumer. Defaults to talking directly to the fhir container for
+  # the local demo; set FHIR_GATEWAY_URL to the Kong proxy for the gated setup.
   triage:
     build:
       context: .
@@ -40,8 +41,10 @@ services:
     ports:
       - "8001:8001"
     environment:
-      FHIR_GATEWAY_URL: ${FHIR_GATEWAY_URL:-}   # Kong proxy URL, e.g. http://localhost:8000/fhir
-      FHIR_API_KEY: ${FHIR_API_KEY:-}            # Required — issued by create-key.sh
+      # Default: direct to the fhir container (local demo, no Kong).
+      # Override with the Kong proxy URL for the gated setup, e.g. http://localhost:8000/fhir
+      FHIR_GATEWAY_URL: ${FHIR_GATEWAY_URL:-http://fhir:8080/fhir}
+      FHIR_API_KEY: ${FHIR_API_KEY:-}            # Kong API key — omit for local dev
     depends_on:
       fhir:
         condition: service_healthy
@@ -53,16 +56,21 @@ services:
       start_period: 10s
 
   # ── MCP agent (run-once CLI) ──────────────────────────────────────────────
-  # Clinical-hat consumer: authenticates through Kong, never talks to HAPI directly.
+  # Clinical-hat consumer. Defaults to talking directly to the fhir container for
+  # the local demo; set FHIR_GATEWAY_URL to the Kong proxy for the gated setup.
   mcp-agent:
     build:
       context: .
       dockerfile: mcp-agent/Dockerfile
     container_name: fhir-agent-mcp
     environment:
+      # ANTHROPIC_API_KEY is preferred; CLAUDE_API_KEY (the Ona secret name) is
+      # accepted as a fallback by the agent.
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      FHIR_GATEWAY_URL: ${FHIR_GATEWAY_URL:-}   # Kong proxy URL, e.g. http://localhost:8000/fhir
-      FHIR_API_KEY: ${FHIR_API_KEY:-}            # Required — issued by create-key.sh
+      CLAUDE_API_KEY: ${CLAUDE_API_KEY:-}
+      # Default: direct to the fhir container (local demo, no Kong).
+      FHIR_GATEWAY_URL: ${FHIR_GATEWAY_URL:-http://fhir:8080/fhir}
+      FHIR_API_KEY: ${FHIR_API_KEY:-}            # Kong API key — omit for local dev
       TRIAGE_SERVICE_URL: http://triage:8001
     depends_on:
       triage:

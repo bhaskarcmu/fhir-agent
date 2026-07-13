@@ -31,14 +31,17 @@ serve different audiences and should not modify each other's code.
 ## Build & test
 
 ```
-# Python packages (editable installs — see .ona/automations.yaml)
-python -m pip install -e client/clinical -e triage-service -e mcp-agent
+# Python packages (editable installs + test tooling — see .ona/automations.yaml)
+python -m pip install -e "client/clinical[dev]" -e "triage-service[dev]" -e "mcp-agent[dev]"
 pytest <path>                       # run focused tests for the changed package
 
-# FHIR service (Java)
+# FHIR service (Java). Unset SPRING_DATASOURCE_URL / NEON_* first so tests use H2;
+# otherwise MdmTest boots against a live DB and fails on auth (env issue, not code).
 cd fhir-service && ./mvnw clean verify        # full build + tests
 cd fhir-service && ./mvnw spring-boot:run     # run locally on :8080 (H2)
 ```
+
+The mcp-agent accepts `ANTHROPIC_API_KEY` or `CLAUDE_API_KEY` (the Ona secret name).
 
 Run only the tests relevant to a change when practical. Never claim tests
 passed unless they actually ran; if they can't run, say why.

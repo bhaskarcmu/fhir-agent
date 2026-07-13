@@ -16,9 +16,17 @@ dependencies = []
 [project.optional-dependencies]
 # Unlock when async workflows or OAuth token refresh are needed
 async = ["httpx>=0.27"]
+# Test tooling — install with: pip install -e "client/clinical[dev]"
+dev = ["pytest>=8"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-dir]
 "" = "src"
+
+[tool.pytest.ini_options]
+# Restrict to the unit-test suite; smoke_test.py is a runnable script, not a
+# pytest module (it needs a live server and calls sys.exit).
+testpaths = ["tests"]
+addopts = "--import-mode=importlib"

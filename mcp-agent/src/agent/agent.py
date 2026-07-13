@@ -181,10 +181,12 @@ def _print_tool_result(name: str, result_str: str) -> None:
 
 def _check_env() -> anthropic.Anthropic:
     """Validate required environment variables and return an Anthropic client."""
-    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    # Accept CLAUDE_API_KEY as a fallback — that is the name the Ona/devcontainer
+    # secret is stored under, while the Anthropic SDK expects ANTHROPIC_API_KEY.
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "") or os.environ.get("CLAUDE_API_KEY", "")
     if not api_key:
         print(error_block(
-            "ANTHROPIC_API_KEY is not set.\n"
+            "ANTHROPIC_API_KEY is not set (CLAUDE_API_KEY is also accepted).\n"
             "  export ANTHROPIC_API_KEY=<your-key>"
         ))
         sys.exit(1)
