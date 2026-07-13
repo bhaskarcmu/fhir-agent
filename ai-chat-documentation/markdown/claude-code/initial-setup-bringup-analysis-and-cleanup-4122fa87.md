@@ -844,8 +844,18 @@ Let me read the rest of it so I can explain precisely what it builds:
 
 Seeded cleanly: **Kristle Mraz = Patient/2**, **John Doe = Patient/5**. Let me verify the data is retrievable *through the domain client* — this ties Phase 1's parsers to live data and pre-proves the exact retrieval path the triage service will use in Phase 3:
 
+**Data layer fully validated.** Kristle Mraz retrieves as Amoxicillin (RxNorm 723) + high-criticality Penicillin allergy (SNOMED 764146007) → will trip the HIGH rule; John Doe has Lisinopril + no allergies → LOW. The parsers from Phase 1 correctly reconstruct all of it from the live server.
+
+### Step 4 — The repo's OWN Java FHIR service (the "second server")
+
+**What it is:** everything so far used the *upstream* `hapiproject/hapi` Docker image. But the repo contains its **own** Spring Boot service built on the HAPI JPA starter, with custom code — an MCP bridge and a versioned-URL validation fallback. **How it's built:** Maven (`./mvnw verify`) compiles it and runs its ~39 unit + integration tests (the integration tests spin up **Testcontainers**, hence Docker is required). **Why it matters:** this is the artifact you'd actually deploy; validating it proves your custom Java code compiles and passes, independent of the convenience image.
+
+This is the slow step (multi-minute Maven build + Testcontainers). I'll run it in the background and report when it finishes:
+
+While that builds, here's where Phase 2 stands. Let me peek once to confirm the Maven build actually started (not erroring on launch):
+
 <details>
-<summary>Execution details — 62 tool events</summary>
+<summary>Execution details — 64 tool events</summary>
 
 ### Turn 1 activity
 
@@ -971,6 +981,8 @@ from fhir_clinical_client import FHIRClient
 c = FHIRClient(gateway_url="http://localhost:8080/fhir")
 
 for name in…`
+- **Bash** `cd /workspaces/fhir-agent/fhir-service && ./mvnw verify 2>&1 | tail -60`
+- **Bash** `sleep 20; tail -15 /tmp/claude-1000/-workspaces-fhir-agent/4122fa87-767c-455f-9397-ab0d1fff4f85/tasks/bjnl6xyrm.output 2>&1`
 
 </details>
 
