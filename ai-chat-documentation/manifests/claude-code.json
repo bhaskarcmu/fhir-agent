@@ -18,10 +18,10 @@
     "present": true,
     "raw_filename": "4122fa87-767c-455f-9397-ab0d1fff4f85.jsonl",
     "source_deleted_at": null,
-    "status": "complete",
+    "status": "incomplete",
     "title": "Initial setup, bringup, analysis, and cleanup",
-    "turns": 33,
-    "updated_at": "2026-07-13T20:18:06.717000+00:00"
+    "turns": 34,
+    "updated_at": "2026-07-13T20:20:45.766000+00:00"
   },
   "b19190df-fadc-43a7-a3b8-8ef78a5d944c": {
     "archived_at": "2026-07-13T15:07:16.770377+00:00",
