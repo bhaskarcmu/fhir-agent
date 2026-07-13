@@ -1,0 +1,55 @@
+{
+  "files_in_context": [
+    {
+      "path": "../.ai-chat-history/ai-chat-documentation/scripts/export_cline.py",
+      "record_state": "active",
+      "record_source": "read_tool",
+      "cline_read_date": 1783904672108,
+      "cline_edit_date": null,
+      "user_edit_date": null
+    },
+    {
+      "path": "../.ai-chat-history/ai-chat-documentation/scripts/test_export_cline.py",
+      "record_state": "active",
+      "record_source": "read_tool",
+      "cline_read_date": 1783904672230,
+      "cline_edit_date": null,
+      "user_edit_date": null
+    },
+    {
+      "path": "../.ai-chat-history/ai-chat-documentation/markdown/2026/07/1783898796080-fix-the-cline-conversation-archive-exporter-located-at.md",
+      "record_state": "active",
+      "record_source": "read_tool",
+      "cline_read_date": 1783904676559,
+      "cline_edit_date": null,
+      "user_edit_date": null
+    },
+    {
+      "path": "../.ai-chat-history/ai-chat-documentation/raw/2026/07/1783898796080/api_conversation_history.json",
+      "record_state": "active",
+      "record_source": "read_tool",
+      "cline_read_date": 1783904676864,
+      "cline_edit_date": null,
+      "user_edit_date": null
+    }
+  ],
+  "model_usage": [
+    {
+      "ts": 1783904663905,
+      "model_id": "claude-sonnet-5",
+      "model_provider_id": "anthropic",
+      "mode": "act"
+    }
+  ],
+  "environment_history": [
+    {
+      "ts": 1783904663903,
+      "os_name": "linux",
+      "os_version": "7.0.0-1006-aws",
+      "os_arch": "x64",
+      "host_name": "Visual Studio Code",
+      "host_version": "1.127.0",
+      "cline_version": "4.0.8"
+    }
+  ]
+}
