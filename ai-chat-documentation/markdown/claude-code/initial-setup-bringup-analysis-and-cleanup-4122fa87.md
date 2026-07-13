@@ -2108,10 +2108,33 @@ delete the feature/bringup-smoothing branch. also delete the core dump
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Before deleting the branch, let me verify PR #23 is actually merged — deleting the branch of an *unmerged* PR would abandon the work and close the PR, which I don't want to do by accident. The core dump I'll delete right away (safe, untracked).
+
+PR #23 is **merged** (`6748a98` is in `origin/main`) — so branch deletion is safe. Core dump deleted (5.2 GB freed). Now syncing `main` and deleting the branch.
+
+Stating: worktree `/workspaces/fhir-agent`, current branch `feature/bringup-smoothing`, target `main` (sync) then delete the merged feature branch (local + remote).
+
+`main` synced. Now deleting the merged branch — local (safe `-d`, confirms it's merged) then remote:
+
+Both done. Let me confirm the final clean state:
+
+Done — both cleaned up.
+
+**Report:**
+- **PR #23** confirmed merged (`d4cd4be`) before I touched anything.
+- **`feature/bringup-smoothing`** deleted — local ✅ (`-d`, confirmed merged) + remote ✅.
+- **`core` dump** deleted — 5.2 GB freed.
+- Local `main` fast-forwarded to the merged state; working tree clean.
+
+**Remaining branches (all expected):**
+- `main` — protected
+- `ai-chat-history` — protected (archive worktree)
+- `origin/feature/walking-skeleton` — pre-existing, not ours; left alone unless you want it cleaned up.
+
+Everything from this whole effort is now landed: the bringup smoothing + secret-hygiene hardening are in `main`, the archive-side leak fixes are live on `ai-chat-history`, the Neon old credential is dead, and stray copies/junk are gone. Nice work getting it all through.
 
 <details>
-<summary>Execution details — 209 tool events</summary>
+<summary>Execution details — 213 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2626,6 +2649,20 @@ Track the curated .vscode/settings.json content that the whitelist git…`
 gh pr comment 23 --body "$(cat <<'EOF'
 Committed the curated `.vscode/settings.json` (commit 6748a98) so the shared, non-secret editor config is versioned alongside the white…`
 
+### Turn 34 activity
+
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== PR #23 merge state ==="; gh pr view 23 --json state,mergedAt,mergeCommit -q '{state,mergedAt}' 2>/dev/null
+echo "=== is the branch's head in origin/main yet? ===";…`
+- **Bash** `cd /workspaces/fhir-agent
+git checkout main && git pull --ff-only origin main 2>&1 | tail -4`
+- **Bash** `cd /workspaces/fhir-agent
+git branch -d feature/bringup-smoothing
+git push origin --delete feature/bringup-smoothing 2>&1 | tail -3`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== branches ==="; git branch -a | grep -vE "ai-chat-history" | head
+echo "=== working tree (core gone?) ==="; git status --short; ls core 2>/dev/null && echo "core STI…`
+
 </details>
 
 ---
@@ -2635,6 +2672,6 @@ Committed the curated `.vscode/settings.json` (commit 6748a98) so the shared, no
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 20:20 UTC
+- **Last updated:** 13 July 2026, 20:21 UTC
 - **Turns:** 34
-- **Status:** Incomplete
+- **Status:** Complete
