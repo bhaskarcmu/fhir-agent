@@ -1270,8 +1270,16 @@ Port free. Compose has all three services (`fhir`, `triage`, `mcp-agent`), and t
 
 ### Step 2 — Build & start the triage container
 
+Triage image built, container started, `fhir` reused (Healthy). Let me verify the containerized triage is healthy and can reach the FHIR container over the Compose network — by calling it through the host port `:8001` for the seeded patients:
+
+Containerized triage → containerized FHIR works over the Compose network, HIGH/LOW correct with the audit basis intact.
+
+### Step 3 — Run the agent as a container (the capstone)
+
+Now the fully-containerized end-to-end: build the `mcp-agent` image and run the demo query. It talks to `triage:8001` and `fhir:8080` by service name; I pass the Ona key inline (never printed). This builds the agent image first, so it'll take a moment:
+
 <details>
-<summary>Execution details — 94 tool events</summary>
+<summary>Execution details — 96 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1495,6 +1503,14 @@ echo "=== compose services ==="; docker compose config -…`
 - **Bash** `cd /workspaces/fhir-agent
 FHIR_GATEWAY_URL=http://fhir:8080/fhir FHIR_API_KEY= \
   docker compose up --build -d fhir triage 2>&1 | tail -30`
+- **Bash** `cd /workspaces/fhir-agent
+for i in $(seq 1 15); do curl -sf http://localhost:8001/health >/dev/null 2>&1 && break; sleep 1; done
+echo "=== compose ps ==="; docker compose ps --format '{{.Name}}\t{{.St…`
+- **Bash** `cd /workspaces/fhir-agent
+ANTHROPIC_API_KEY=‹redacted:env-secret› \
+FHIR_GATEWAY_URL=http://fhir:8080/fhir FHIR_API_KEY= \
+  docker compose run --build --rm mcp-agent \
+  python3 -m agent.agent --query "C…`
 
 </details>
 
@@ -1505,6 +1521,6 @@ FHIR_GATEWAY_URL=http://fhir:8080/fhir FHIR_API_KEY= \
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 17:46 UTC
+- **Last updated:** 13 July 2026, 17:47 UTC
 - **Turns:** 22
 - **Status:** Complete
