@@ -2649,10 +2649,46 @@ Critically review what I am sying above and respond carefully
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+You've done it again — and it's a genuinely good catch. But let me critically correct the *mechanism*, because the real risk is different (and less scary) than "everything gets marked for archival/deletion," and that distinction changes what the future fix needs to be.
+
+## What actually happens on a fresh VM
+
+Assuming the archive worktree is cloned from remote (so it has the full manifest + all files), and local `~/.claude/projects/...` is empty:
+
+1. Forward `sync` finds **0 live local sessions**, but the manifest still lists all prior conversations.
+2. The **retention** pass marks every prior entry `present: false` → **"archived (source deleted)"**, because *empty-local is indistinguishable from "the user deleted everything."*
+3. **Critically: nothing is deleted.** Retention *keeps* all `md` + `raw` files, and self-heal only drops an entry if **both** md and raw are missing (they aren't — they're cloned). So there is **no remote data loss and nothing is "marked for deletion."**
+
+So your feared outcome — remote archival being wiped/marked-for-deletion — **won't happen; your own retention design already prevents it.** The actual harm is milder but real:
+- Every prior conversation gets **mislabeled "archived (source deleted)"** + one noisy churn commit.
+- You **can't continue** those conversations, because Claude Code's *local* copies are gone.
+
+## Is reverse-sync the right fix? Yes — and it is NOT super easy
+- **Raw copies are redacted** → restored sessions would be lossy (`‹redacted:…›` where secrets were). Fine for reading, imperfect for exact continuation.
+- Whether Claude Code will **recognize** JSONL files dropped into its projects dir is **unverified** — it may depend on the cwd-encoding matching and possibly other session metadata. This needs real fresh-VM testing, which you've explicitly ruled out today.
+- **Ordering matters:** reverse-sync must run *before* the first forward sync, or the mislabeling happens first.
+
+So I agree: **defer to a future phase.** Don't build today.
+
+## Two things I'd fold into that future note (both cheaper than full reverse-sync)
+1. **Interim safeguard (small):** in `pipeline.run`, skip retention-flagging when `live_ids` is empty but the manifest is non-empty — treat "zero local sessions" as *"source not populated yet,"* not *"all deleted."* A few lines + a test; it neutralizes the fresh-VM churn/mislabel without any reverse-sync. This is arguably the higher-value first step.
+2. **Provisioning check (separate gap):** does a fresh VM even **recreate the `/workspaces/.ai-chat-history` worktree and the `aiChatArchiveWatcher` service**? The autostart path is hardcoded to that worktree. If a new VM doesn't recreate it, the watcher simply fails to start (no data harm, but no archiving either). Worth verifying before relying on fresh-VM auto-start.
+
+## Recording the note
+Noting it here as you asked — and, so it survives beyond this (archived) conversation, I saved a short project memory:
+
+Saved — memory note recorded (won't interfere with the watcher: it globs only `*.jsonl` in the top project dir, not `memory/*.md`).
+
+## Bottom line
+- **Your instinct (real gap): correct.** A fresh VM is an unhandled edge case worth a future phase.
+- **Your specific fear (remote gets marked for deletion): not what happens.** Retention keeps everything — no remote data loss. The real harm is cosmetic-plus: prior conversations get **mislabeled "archived (source deleted)"** and become uncontinuable locally.
+- **Reverse-sync: right long-term fix, not super-easy** (redacted/lossy raw, unverified Claude Code recognition, ordering, needs the fresh-VM test you're avoiding). **Deferred.**
+- **Captured** as a future-phase requirement — noted here and in a persistent project memory (`fresh-vm-reverse-sync-gap`), including the cheaper interim safeguard (skip retention when local is empty) and the provisioning check (does a new VM even recreate the worktree/service?).
+
+Nothing built or changed in the running system. The MVP is still live and archiving. Genuinely a good place to stop — enjoy the break. 🙂
 
 <details>
-<summary>Execution details — 157 tool events</summary>
+<summary>Execution details — 160 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2984,6 +3020,12 @@ echo "=== status ==="…`
 - **Bash** `echo "=== service ==="; gitpod automations service list 2>&1 | grep aiChatArchiveWatcher | grep -o "SERVICE_PHASE_[A-Z]*"
 cd /workspaces/.ai-chat-history/ai-chat-documentation/scripts && echo "=== sta…`
 
+### Turn 24 activity
+
+- **Write** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/fresh-vm-reverse-sync-gap.md`
+- **Bash** `M=/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/MEMORY.md; test -f "$M" && echo "--- existing MEMORY.md ---" && cat "$M" || echo "(MEMORY.md does not exist yet)"`
+- **Write** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/MEMORY.md`
+
 </details>
 
 ---
@@ -2993,6 +3035,6 @@ cd /workspaces/.ai-chat-history/ai-chat-documentation/scripts && echo "=== sta�
 - **Source:** Claude Code
 - **Session ID:** `b19190df-fadc-43a7-a3b8-8ef78a5d944c`
 - **Created:** 13 July 2026, 12:36 UTC
-- **Last updated:** 13 July 2026, 15:47 UTC
+- **Last updated:** 13 July 2026, 15:51 UTC
 - **Turns:** 24
 - **Status:** Incomplete
