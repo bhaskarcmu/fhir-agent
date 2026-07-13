@@ -1323,8 +1323,53 @@ Now commit the prework to the **local** `dataeng` branch (not pushed — stays o
 
 All staged files are tiny (largest 12K). Committing to the local branch:
 
+Part 1 (data prework) is **done and committed to the local `dataeng/phase2-prework` branch — not pushed, entirely off the docs PR**, as you required. Summary before I move to the cloud thinking:
+
+**Data prework results**
+- **Synthesis tool secured & validated:** Synthea v4.0.0 JAR (188MB, gitignored) — confirmed it emits **657 `Claim` + 657 `ExplanationOfBenefit`** plus Patient/Condition/MedicationRequest/AllergyIntolerance in one run. Cohort can be biased to "diabetes + penicillin allergy" via a `-k` keep-module.
+- **Real reference data pulled (no-auth):** 153 ICD-10-CM codes (NLM), 20 drugs with real RxCUIs + ATC classes (RxNav — the ATC groupings ground our duplicate-therapy/formulary rules), CMS NCD export (medical-necessity), and real pharmacy `Claim`/`EOB` samples extracted from Synthea.
+- **The jackpot source, documented for on-demand pull:** the **CMS Part D Formulary PUF** has *real per-NDC tier / prior-auth / step-therapy / quantity-limit flags* — exactly our rule inputs (2.4GB, so URL documented, not bulk-loaded; we distill a curated slice into `data/payer-kb/` per R13).
+- Full inventory + licenses + reproduce commands in `data/reference/README.md`; a `Coverage`-not-in-default-Synthea gotcha is flagged (we author Coverage in the seed).
+
+---
+
+Now **parts 2 & 3 — cloud security, observability, deployability, and scalability.** This is genuinely architectural and touches the requirements, so let me brainstorm before writing anything into the docs.
+
+## Security (treat claims data as if it were PHI)
+
+- **🔴 Concrete finding in existing config:** Kong's `file-log` plugin logs `request.uri` (e.g. `/fhir/Patient/123`) to stdout → **patient identifiers land in Cloud Logging**. For claims/PHI that's a leak. Fix: scrub identifiers or treat logs as a PHI store (restricted, retention-limited). This exists in Phase 1 today.
+- **AuthN depth:** Kong static API keys = coarse identity. Claims adjudication has distinct roles (submitter, reviewer, agent). The healthcare-standard answer is **OAuth2/OIDC + scopes (SMART-on-FHIR)** via Kong's OIDC plugin — the clinical client README already anticipates this migration. Fork: keep API keys for the prototype vs introduce JWT/OIDC now.
+- **Secrets:** move from imperative k8s Secrets → **GCP Secret Manager + Workload Identity** (rotation, no base64-in-etcd). Managed, scalable, matches the "managed services" directive.
+- **Data protection:** TLS everywhere incl. the Kong proxy (currently no TLS — README known-limitation), encryption at rest (Neon/Cloud SQL), parameterized queries in the "SQL400-like" emulator tables (injection surface), and the anti-corruption layer doubles as the input-validation boundary.
+- Non-repudiation is already strong (Provenance per decision + gateway audit log).
+
+## Observability
+
+- **Distributed tracing is the big gap.** One claim fans out to emulator + triage + fhir; without trace propagation you can't see a single adjudication end-to-end. Recommend **OpenTelemetry** (W3C `traceparent`) across services → **Cloud Trace**; Kong's OTel plugin propagates at the edge.
+- **Metrics:** Micrometer→Prometheus (Spring), Prometheus (FastAPI) → **Google Managed Prometheus** (already declared in `kong-values.yaml`). Emit *business* metrics: approvals/denials/pends, rule-fire counts, per-stage latency.
+- **Correlation IDs** in structured logs (PHI-scrubbed), and a **decisions dashboard** off the audit trail — a great Lead-Director demo artifact.
+
+## Deployability
+
+- Everything is already container-first. The gap is **imperative bash (`deploy.sh`)**. The devcontainer already ships Terraform — recommend **Terraform for GCP infra** (GKE/Cloud Run, Cloud SQL, Secret Manager, Artifact Registry, networking) + **GitHub Actions CI/CD** (build → vuln-scan → push → deploy). This makes "easily deployable + reproducible" real.
+
+## Scalability (this is where your directive reshapes the architecture)
+
+Your "containers or GCP lambda-equivalent + managed scalable data" pushes toward a cleaner target than Phase 1's GKE-only:
+
+- **Compute:** the new services (claims-service, legacy-emulator, triage, claims-agent) are **stateless request/response** → ideal **Cloud Run** (GCP's serverless-containers = the "lambda equivalent"; scale-to-zero, autoscale on concurrency). **Exception: HAPI FHIR** has a ~3-min cold start (see the 180s k8s probe) — keep it always-on (Cloud Run `min-instances≥1` or a GKE Deployment). Spring cold-start is mitigated with min-instances / GraalVM native.
+- **A bonus this unlocks:** if services run on Cloud Run, run **DB-less declarative Kong as the edge in *both* local and cloud** (fronting Cloud Run URLs in cloud, containers locally). That uses **one Kong config dialect everywhere** — which *eliminates the KIC-vs-`kong.yml` drift risk* I flagged in the plan. Nice convergence.
+- **Data — mapping to your NoSQL/sharded prompt:**
+  - **FHIR** → Postgres (Neon already autoscales like Aurora Serverless; scale via the `-pooler` + read replicas; HAPI supports partitioning / Elasticsearch for search at high scale).
+  - **Formulary / PA rules** → this is the canonical **high-cardinality key-value** workload (`plan_id + NDC → rule`). Full Part D is millions of rows → the right scale answer is **Bigtable or Firestore** (GCP's DynamoDB/wide-column equivalents), *not* relational. This is exactly your "non-relational" instinct.
+  - **Decision audit** → append-only, high-volume → stream to **BigQuery** for the audit warehouse + rule analytics (also powers the observability dashboard).
+  - **Caching / rate-limit at scale** → **Memorystore (Redis)** (Kong's `redis` policy — README already notes this upgrade path).
+- **Scale pattern:** keep the prototype small (R13 curated data), but put formulary behind a **repository interface** so Postgres→Bigtable is a swap, and make claim intake **Pub/Sub-ready** (accept→enqueue→adjudicate) so bursts decouple. Build small; make the scale path obvious — the right story for a Lead-Director prototype.
+
+A few of these are real forks that would revise the requirements/plan, so let me get your calls before I touch the docs:
+
 <details>
-<summary>Execution details — 57 tool events</summary>
+<summary>Execution details — 58 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1503,6 +1548,7 @@ git commit -q -F - <<'EOF'
 data(phase2): reference-data prework + synthesis tooling (local, not for PR)
 
 Data-engineering prework for Phase 2 claims adjudication. Kept off th…`
+- **AskUserQuestion** `{"questions": [{"question": "Cloud compute model for the new services (this is the biggest architectural fork)?", "header": "Compute model", "multiSelect": false, "options": [{"label": "Cloud Run + al…`
 
 </details>
 
@@ -1513,6 +1559,6 @@ Data-engineering prework for Phase 2 claims adjudication. Kept off th…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 13 July 2026, 23:23 UTC
+- **Last updated:** 13 July 2026, 23:26 UTC
 - **Turns:** 10
 - **Status:** Complete
