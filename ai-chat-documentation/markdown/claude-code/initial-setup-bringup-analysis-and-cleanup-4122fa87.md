@@ -1543,8 +1543,16 @@ So Request 1 is largely already satisfied the *right* way — one secret name, m
 
 There's already a redactor (`archive_ai/pipeline.py`, `test_redactor.py`) — yet the password still landed in the **raw** `.jsonl`. So the gap is likely that redaction is applied to the markdown but the raw capture is committed unredacted. Let me confirm exactly where the gap is:
 
+Now the gap is precise and important:
+
+- The redactor (`redactor.py`) covers `sk-ant-…`, Bearer tokens, and env lines whose **name** contains `TOKEN|SECRET|PASSWORD|API_KEY`. 
+- It **missed the Neon password** because that appeared as (a) a `postgresql://user:‹redacted:url-credentials›host` URI and (b) `SPRING_DATASOURCE_URL=…password=npg_…` — where the var name (`SPRING_DATASOURCE_URL`/`NEON_DB_URL`) doesn't contain those keywords, and the password is embedded mid-URL. So no pattern caught it.
+- **Both** the raw `.jsonl` (tracked, committed) **and** the markdown carry the secret; `raw/` is not gitignored.
+
+Let me read the redactor and pipeline to fix it correctly (this is the actual leak vector):
+
 <details>
-<summary>Execution details — 148 tool events</summary>
+<summary>Execution details — 149 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1889,6 +1897,7 @@ echo; echo "=== ai-chat-documentation tree (dirs + scripts) ==="; find ai-chat-�
 - **Bash** `cd /workspaces/.ai-chat-history 2>/dev/null || exit 0
 echo "=== redactor module location ==="; find ai-chat-documentation/scripts -name "*redact*" -o -name "*.py" | grep -iE "redact|pipeline" | head
 e…`
+- **Read** `/workspaces/.ai-chat-history/ai-chat-documentation/scripts/archive_ai/redactor.py`
 
 </details>
 
@@ -1899,6 +1908,6 @@ e…`
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 18:57 UTC
+- **Last updated:** 13 July 2026, 18:58 UTC
 - **Turns:** 25
 - **Status:** Complete
