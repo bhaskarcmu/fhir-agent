@@ -1303,8 +1303,12 @@ Real reference data landed: **153 ICD-10-CM codes** and **20 drugs with real RxC
 
 While Synthea runs and the research agents finish, I'll verify the Synthea output as soon as it lands. Let me check its progress and the generated resource types.
 
+Synthea validated as our claims synthesizer — it emits **Claim (657), ExplanationOfBenefit (657), Provenance, Organization** with realistic linkage. One gap to note: **no `Coverage` in the default R4 export**, so we'll author Coverage ourselves in the claims seed (grounded to plan definitions), as `seed_demo.py` already does for its resources.
+
+Let me guard the heavy outputs from ever being committed, then I'll wait for the two research agents to finish enriching the source list.
+
 <details>
-<summary>Execution details — 47 tool events</summary>
+<summary>Execution details — 48 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1443,6 +1447,13 @@ sleep 25
 echo "=== synthea output dir ==="; find data/synthea/output -type f 2>/dev/null | head; echo
 if ls data/synthea/output/fhir/*.json >/dev/null 2>&1; then
   echo "===…`
+- **Bash** `cd /workspaces/fhir-agent
+cat > data/synthea/.gitignore <<'EOF'
+# Synthea binary + generated output are never committed (large; regenerate via generate.sh).
+*.jar
+output/
+EOF
+echo "=== disk used by da…`
 
 </details>
 
@@ -1453,6 +1464,6 @@ if ls data/synthea/output/fhir/*.json >/dev/null 2>&1; then
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 13 July 2026, 23:19 UTC
+- **Last updated:** 13 July 2026, 23:20 UTC
 - **Turns:** 10
 - **Status:** Complete
