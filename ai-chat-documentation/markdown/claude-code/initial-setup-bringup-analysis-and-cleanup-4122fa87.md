@@ -854,6 +854,23 @@ This is the slow step (multi-minute Maven build + Testcontainers). I'll run it i
 
 While that builds, here's where Phase 2 stands. Let me peek once to confirm the Maven build actually started (not erroring on launch):
 
+Ah — because I piped the Maven output through `tail -60`, nothing lands in the file until the build finishes (tail buffers to the end). That's fine; I'll get a notification on completion. The build is running.
+
+### Phase 2 status so far
+
+| Step | What it proves | Result |
+|---|---|---|
+| 1. Health check | Upstream HAPI up, FHIR R4 (4.0.1), valid CapabilityStatement | ✅ |
+| 2. Platform integration test | Live Patient CRUD (POST→GET→verify→DELETE), protocol-level | ✅ 7/7 |
+| 2b. Clinical smoke test | *Kong-gateway test — out of local scope* (needs API key + rate-limit headers) | ⏭️ deferred |
+| 3. Seed demo data | Kristle Mraz (HIGH setup) + John Doe (LOW setup) created | ✅ |
+| 3b. Retrieve via domain client | Phase-1 parsers reconstruct live data correctly | ✅ |
+| 4. Java `fhir-service` `./mvnw verify` | The repo's *own* deployable server compiles + passes ~39 tests | ⏳ **running** |
+
+**One honest callout for your interview:** the two "client" test files split cleanly along the "two hats" design — `client/platform/integration_test.py` (Hat 1) is the *local* server test and it passed; `client/clinical/smoke_test.py` (Hat 2) is really a *deployed-through-Kong* test and can't meaningfully run locally. That's a coherent design, but worth knowing so you're not caught claiming the clinical smoke test runs against local H2 — it doesn't.
+
+I'll report back the moment the Maven build completes with the test count and pass/fail. Nothing else is running or changed.
+
 <details>
 <summary>Execution details — 65 tool events</summary>
 
