@@ -1206,8 +1206,23 @@ First, let me (a) check whether the key is wired into this environment — **wit
 
 The permission classifier correctly blocked that — I printed a 7-char key prefix, which violates the boundary I just committed to. My error; even a partial prefix counts. Redoing it as a pure set/not-set boolean, and running the e2e test (which mocks everything — no key or live services needed):
 
+**e2e: 11/11 passed** (fully mocked tool chain — patient lookup, risk assessment, multi-match, unreachable-triage, unknown-tool edge cases). And the key situation is now clear:
+
+- `CLAUDE_API_KEY`: **SET** ✅ (your Ona secret)
+- `ANTHROPIC_API_KEY`: not set — but the agent reads *that* name.
+
+So the Ona secret is present under the `CLAUDE_API_KEY` name; I just need to map it to `ANTHROPIC_API_KEY` for the agent process (the mapping [setup-credentials.sh](.devcontainer/scripts/setup-credentials.sh) normally does). I'll do that **inline** so the value is passed to the subprocess env and never printed.
+
+### Live agent run — the full demo, Kristle Mraz (expect HIGH)
+
+This is the whole platform working together: LLM → `get_patient_summary` (FHIR) → `assess_refill_risk` (triage → FHIR) → composed answer.
+
+The **entire stack just worked end-to-end with a live LLM.** The agent resolved the name to Patient/2, delegated risk to the triage service (which hit FHIR), got HIGH, and composed a clinician-facing narrative — with the audit reference `risk-9ee4ea2f` carried through. The Ona `CLAUDE_API_KEY` secret mapped cleanly, no value exposed.
+
+### Live agent run — John Doe (expect LOW, the contrast case)
+
 <details>
-<summary>Execution details — 89 tool events</summary>
+<summary>Execution details — 91 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1408,6 +1423,16 @@ for v in ANTHROPIC_API_KEY CLAUDE_API_KEY; do
   if [ -n "${!v}" ]; then echo "$v: SET"; else echo "$v: not set"; fi
 done`
 - **Bash** `python3 -m pytest mcp-agent/tests/test_e2e_demo_flow.py -v 2>&1 | tail -22`
+- **Bash** `cd /workspaces/fhir-agent
+ANTHROPIC_API_KEY=‹redacted:env-secret› \
+FHIR_GATEWAY_URL=http://localhost:8080/fhir FHIR_API_KEY= \
+TRIAGE_SERVICE_URL=http://localhost:8001 \
+python3 -m agent.agent --query "C…`
+- **Bash** `cd /workspaces/fhir-agent
+ANTHROPIC_API_KEY=‹redacted:env-secret› \
+FHIR_GATEWAY_URL=http://localhost:8080/fhir FHIR_API_KEY= \
+TRIAGE_SERVICE_URL=http://localhost:8001 \
+python3 -m agent.agent --query "C…`
 
 </details>
 
