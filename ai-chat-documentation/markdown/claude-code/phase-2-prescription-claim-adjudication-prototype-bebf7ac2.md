@@ -122,6 +122,19 @@ Two calls I need from you before I sequence this into the plan:
 1. **Front `triage` with Kong too** (uniform auth/logging on all internal APIs, slightly more config), or **keep triage internal/direct** (simpler, but the FHIR-only gateway boundary stays asymmetric)?
 2. **Add the DB-less Kong compose profile** (my recommendation — closes the parity gap), or **keep local strictly Kong-less** and rely on the env-var toggle as today?
 
+## Turn 2
+
+### Prompt
+
+Answers (caveated by questions):
+
+1. Front triage with Kong too (will this need me to setup Kong for dev testing too, I want to avoid that!)
+2. Add the DB-less Kong compose profile  (again, will this need me to setup Kong for dev testing too, I want to avoid that!)
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 4 tool events</summary>
 
@@ -149,6 +162,6 @@ echo; echo "===== k8s kinds/services ==…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 13 July 2026, 22:35 UTC
-- **Turns:** 1
-- **Status:** Complete
+- **Last updated:** 13 July 2026, 22:42 UTC
+- **Turns:** 2
+- **Status:** Incomplete
