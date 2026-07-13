@@ -1,6 +1,6 @@
 # Cline Conversation Archive
 
-Open a conversation below to see the original prompt and Claude's final response. Execution details are collapsed by default.
+Open a conversation below to see every prompt and Cline's corresponding final response, in order. Execution details are collapsed by default.
 
 **Archived conversations:** 2
 

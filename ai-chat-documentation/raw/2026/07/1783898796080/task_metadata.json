@@ -2,7 +2,7 @@
   "files_in_context": [
     {
       "path": "/workspaces/.ai-chat-history/ai-chat-documentation/scripts/export_cline.py",
-      "record_state": "active",
+      "record_state": "stale",
       "record_source": "read_tool",
       "cline_read_date": 1783898809393,
       "cline_edit_date": null,
@@ -18,7 +18,7 @@
     },
     {
       "path": "/workspaces/.ai-chat-history/ai-chat-documentation/markdown/2026/07/1783881894942-analyze-the-architecture-this-repo-is-based-on-and-summarize-in-10-bul.md",
-      "record_state": "active",
+      "record_state": "stale",
       "record_source": "user_edited",
       "cline_read_date": 1783898821883,
       "cline_edit_date": null,
@@ -29,6 +29,38 @@
       "record_state": "active",
       "record_source": "read_tool",
       "cline_read_date": 1783898861614,
+      "cline_edit_date": null,
+      "user_edit_date": null
+    },
+    {
+      "path": "/workspaces/.ai-chat-history/ai-chat-documentation/markdown/2026/07/1783881894942-analyze-the-architecture-this-repo-is-based-on-and-summarize-in-10-bul.md",
+      "record_state": "active",
+      "record_source": "user_edited",
+      "cline_read_date": 1783898821883,
+      "cline_edit_date": null,
+      "user_edit_date": 1783898878451
+    },
+    {
+      "path": "/workspaces/.ai-chat-history/ai-chat-documentation/scripts/export_cline.py",
+      "record_state": "active",
+      "record_source": "cline_edited",
+      "cline_read_date": 1783898984665,
+      "cline_edit_date": 1783898984665,
+      "user_edit_date": null
+    },
+    {
+      "path": "/workspaces/.ai-chat-history/ai-chat-documentation/scripts/test_export_cline.py",
+      "record_state": "active",
+      "record_source": "cline_edited",
+      "cline_read_date": 1783899006221,
+      "cline_edit_date": 1783899006221,
+      "user_edit_date": null
+    },
+    {
+      "path": "/workspaces/.ai-chat-history/ai-chat-documentation/scripts/sync_cline.sh",
+      "record_state": "active",
+      "record_source": "read_tool",
+      "cline_read_date": 1783899014841,
       "cline_edit_date": null,
       "user_edit_date": null
     }
