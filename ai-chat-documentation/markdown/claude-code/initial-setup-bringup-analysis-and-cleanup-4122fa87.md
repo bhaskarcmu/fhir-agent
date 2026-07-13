@@ -1666,8 +1666,10 @@ Good directives. Let me investigate thoroughly before touching anything — read
 
 Now I have the mechanism. Let me confirm the documented intent and get the exact paths (lock file, output dirs) I need for both the restart instructions and the publisher fix:
 
+Investigation complete — I have clear answers to both of your concerns. Let me read `autostart.sh` so my restart instructions are exact, then I'll implement the source-push fix:
+
 <details>
-<summary>Execution details — 174 tool events</summary>
+<summary>Execution details — 175 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2067,6 +2069,7 @@ echo; echo "=== is my redactor hardening in HEAD? (loo…`
 - **Read** `/workspaces/.ai-chat-history/ai-chat-documentation/scripts/archive_ai/config.py`
 - **Bash** `cd /workspaces/.ai-chat-history/ai-chat-documentation 2>/dev/null || exit 0
 echo "=== DESIGN.md: event-driven & commit intent ==="; grep -niE "event.driven|inotify|debounce|per (turn|prompt|message)|c…`
+- **Read** `/workspaces/.ai-chat-history/ai-chat-documentation/scripts/autostart.sh`
 
 </details>
 
@@ -2077,6 +2080,6 @@ echo "=== DESIGN.md: event-driven & commit intent ==="; grep -niE "event.driven|
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 19:14 UTC
+- **Last updated:** 13 July 2026, 19:16 UTC
 - **Turns:** 26
 - **Status:** Complete
