@@ -2037,8 +2037,12 @@ Let me verify the whitelist behaves correctly, then commit just the `.gitignore`
 
 Whitelist verified (settings.json stays tracked; other `.vscode/*` files get ignored). Committing and pushing:
 
+Now updating the PR title and description so they match the actual diff (bringup + security + `.vscode` hardening):
+
+Let me confirm CI is green on the latest commit and give you the final readiness verdict:
+
 <details>
-<summary>Execution details — 203 tool events</summary>
+<summary>Execution details — 205 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2531,6 +2535,13 @@ gitignore: whitelist only curated .vscode files
 
 Keep .vscode/settings.json (shared, non-secret editor config) tracked, per the
 VS Code best prac…`
+- **Bash** `cd /workspaces/fhir-agent
+gh pr edit 23 --title "Smooth local bringup + secret-hygiene hardening" --body "$(cat <<'EOF'
+Makes the full stack run with minimal friction, brings docs current, and closes…`
+- **Bash** `cd /workspaces/fhir-agent
+sleep 15
+echo "=== PR #23 state ==="; gh pr view 23 --json state,mergeable,mergeStateStatus,title -q '{title,state,mergeable,mergeStateStatus}' 2>/dev/null
+echo "=== CI check…`
 
 </details>
 
@@ -2541,6 +2552,6 @@ VS Code best prac…`
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 20:13 UTC
+- **Last updated:** 13 July 2026, 20:14 UTC
 - **Turns:** 32
 - **Status:** Complete
