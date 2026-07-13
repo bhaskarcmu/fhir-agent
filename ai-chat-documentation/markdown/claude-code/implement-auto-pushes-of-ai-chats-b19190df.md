@@ -2569,8 +2569,31 @@ Findings: the legacy Cline watcher is **not currently running** and **not auto-s
 
 Let me read the legacy scripts and see how they were historically launched before I neutralize them:
 
+Now I fully understand it. Critically, `sync_cline.sh` **commits and pushes to the same `ai-chat-history` branch** our new watcher uses — so a stray run would fight our archiver. It's dormant and manual-only, but I'll neutralize it so it can't run accidentally. Plan:
+
+1. **Stop** the live watcher briefly (avoid a commit race in the shared worktree).
+2. **Guard** the 3 entry-point scripts so they no-op unless `CLINE_ARCHIVER_ENABLED=1` (your explicit re-enable switch) — reversible, committed so it persists across rebuilds.
+3. **Kill** the orphaned `/tmp` inotifywait leak.
+4. **Commit + push**, then **restart** the watcher.
+
+Stopping the watcher first:
+
+Lock lingered — let me confirm the process actually died and clear any stale lock before proceeding:
+
+Watcher stopped, stale lock cleared. Now guarding the three legacy entry-point scripts (no-op unless `CLINE_ARCHIVER_ENABLED=1`):
+
+Verifying the guards actually no-op, and killing the orphaned `/tmp` inotifywait:
+
+The guards work (all no-op with exit 0; re-enable path confirmed). The `pkill -f` pattern accidentally matched its own shell (exit 144) — let me kill the orphan precisely by PID instead:
+
+Orphan cleaned; no inotify processes remain (watcher is stopped). Now commit the guarded scripts and push. Checking status and staging only the 3 scripts:
+
+Clean set. Committing and pushing:
+
+Pushed (`8bcd0fd`). Now restart the supervised watcher:
+
 <details>
-<summary>Execution details — 146 tool events</summary>
+<summary>Execution details — 156 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2875,6 +2898,27 @@ echo; echo "=== 2. all inotifywait processes (which dirs?) ==…`
 echo "=== watch_cline.sh ==="; cat watch_cline.sh
 echo; echo "=== watch_cline_events.sh ==="; cat watch_cline_events.sh
 echo; echo "=== sy…`
+- **Bash** `gitpod automations service stop aiChatArchiveWatcher 2>&1 && sleep 2 && echo "stopped." && (test -f /workspaces/.ai-chat-history/ai-chat-documentation/logs/watcher.lock && echo "lock still present" ||…`
+- **Bash** `echo "=== watch/inotify processes on claude projects ==="; pgrep -af "archive_ai watch|inotifywait.*projects" | grep -v pgrep || echo "(none — watcher stopped)"
+echo "=== service phase ==="; gitpod au…`
+- **Edit** `/workspaces/.ai-chat-history/ai-chat-documentation/scripts/watch_cline.sh`
+- **Edit** `/workspaces/.ai-chat-history/ai-chat-documentation/scripts/watch_cline_events.sh`
+- **Edit** `/workspaces/.ai-chat-history/ai-chat-documentation/scripts/sync_cline.sh`
+- **Bash** `cd /workspaces/.ai-chat-history/ai-chat-documentation/scripts
+echo "=== guard test: each should print retired msg and exit 0, doing nothing ==="
+for s in watch_cline.sh watch_cline_events.sh sync_clin…`
+- **Bash** `for pid in $(pgrep -f "inotifywait" ); do
+  if grep -q "/tmp/tmp" "/proc/$pid/cmdline" 2>/dev/null; then
+    echo "killing orphan inotifywait pid=$pid ($(tr '\0' ' ' < /proc/$pid/cmdline))"
+    kill "…`
+- **Bash** `cd /workspaces/.ai-chat-history && echo "=== status ===" && git status --short && echo "=== staging the 3 guarded scripts ===" && git add ai-chat-documentation/scripts/watch_cline.sh ai-chat-documenta…`
+- **Bash** `cd /workspaces/.ai-chat-history && git commit -m "$(cat <<'EOF'
+Retire legacy Cline archiver scripts (guard behind opt-in flag)
+
+The Claude Code archive_ai watcher (aiChatArchiveWatcher Ona service) s…`
+- **Bash** `gitpod automations service start aiChatArchiveWatcher 2>&1 && sleep 6
+echo "=== service phase ==="; gitpod automations service list 2>&1 | grep -A0 aiChatArchiveWatcher | head -1
+echo "=== status ==="…`
 
 </details>
 
@@ -2885,6 +2929,6 @@ echo; echo "=== sy…`
 - **Source:** Claude Code
 - **Session ID:** `b19190df-fadc-43a7-a3b8-8ef78a5d944c`
 - **Created:** 13 July 2026, 12:36 UTC
-- **Last updated:** 13 July 2026, 15:15 UTC
+- **Last updated:** 13 July 2026, 15:18 UTC
 - **Turns:** 22
 - **Status:** Incomplete
