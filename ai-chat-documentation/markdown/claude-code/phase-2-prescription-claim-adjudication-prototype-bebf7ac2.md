@@ -1385,7 +1385,7 @@ The `data/` shows as untracked leftovers from the branch switch (the raw downloa
 All three parts are complete. Let me record this state in project memory so it survives across sessions (the data branch in particular is local-only and non-obvious), then I'll summarize.
 
 <details>
-<summary>Execution details — 75 tool events</summary>
+<summary>Execution details — 77 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1592,6 +1592,8 @@ echo "=== staged (docs only) ==="; git diff --cached --name-only
 git commit -q -F - <<'EOF'
 docs(phase2): add cloud security, observability & scalability…`
 - **Read** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/MEMORY.md`
+- **Write** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase2-planning-state.md`
+- **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/MEMORY.md`
 
 </details>
 
@@ -1602,6 +1604,6 @@ docs(phase2): add cloud security, observability & scalability…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 13 July 2026, 23:41 UTC
+- **Last updated:** 13 July 2026, 23:42 UTC
 - **Turns:** 10
 - **Status:** Complete
