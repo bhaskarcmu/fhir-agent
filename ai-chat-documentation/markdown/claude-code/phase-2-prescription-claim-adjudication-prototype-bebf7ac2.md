@@ -1242,8 +1242,29 @@ Yes, save this reconstructed PRD into the repo for posterity per best practices 
 
 On `feature/phase2-planning` (PR #24). Saving it as `docs/phase2/source-prd.md` — alongside the plan/requirements so the Phase 2 docs are self-contained and the deviations table has a concrete reference. Let me confirm the branch, then write it.
 
+Now cross-link it from the Phase 2 index and requirements, so the archive is discoverable.
+
+Now commit, verify only docs changed, and push to keep PR #24 current.
+
+Done. The source PRD is archived in the repo for posterity.
+
+## What I saved
+- **[docs/phase2/source-prd.md](docs/phase2/source-prd.md)** — the full DRAFT PRD (all 14 sections, tables, and code blocks), with a provenance header noting it's a faithful reconstruction of the lost original, marked clearly as the **input, not the contract**.
+- Cross-linked from **[docs/phase2/README.md](docs/phase2/README.md)** (Documents list) and **[docs/phase2/requirements.md](docs/phase2/requirements.md)** (the deviations table now points back to it).
+
+**Naming/location rationale:** kept it inside `docs/phase2/` alongside `requirements.md` and `plan.md` so the planning set is self-contained; `source-prd.md` names it by role (the originating source document) rather than a version/date, matching the sibling files' kebab-case convention.
+
+## Result
+- **Verified:** docs-only change — no application code touched.
+- **Commit:** `6854e95` on `feature/phase2-planning`
+- **Pushed** — PR [#24](https://github.com/bhaskarcmu/fhir-agent/pull/24) is now up to date (three docs: source PRD, requirements, plan).
+
+The `docs/phase2/` set now reads cleanly as: **source-prd** (what was asked) → **requirements** (what we agreed, with D1–D8 deviations) → **plan** (how we build it).
+
+We're back to where we left off — planning is committed and under review, Phase 1 is tagged and protected, and no implementation has started. Whenever you're ready, the natural next step is **M0 (read-only recon)**: run the §11.3 FHIR resource counts against the live server to confirm what data already exists before any Phase 2 build. Want me to do that, or hold here?
+
 <details>
-<summary>Execution details — 29 tool events</summary>
+<summary>Execution details — 34 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1324,6 +1345,18 @@ gh pr create --base main --head feature/phase2-planning \
 
 - **Bash** `cd /workspaces/fhir-agent
 echo "branch: $(git rev-parse --abbrev-ref HEAD)"; git status --short`
+- **Write** `/workspaces/fhir-agent/docs/phase2/source-prd.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/requirements.md`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== changes (must be docs/ only) ==="; git status --short
+git status --short | grep -vE '^\s*[AM?]+ docs/' && echo "!! non-docs change present" || echo "OK: docs-only"`
+- **Bash** `cd /workspaces/fhir-agent
+git add docs/
+git commit -q -F - <<'EOF'
+docs(phase2): archive the source DRAFT PRD for posterity
+
+Add docs/phase2/source-prd.md — a faithful, verbatim-content reconstruction…`
 
 </details>
 
@@ -1334,6 +1367,6 @@ echo "branch: $(git rev-parse --abbrev-ref HEAD)"; git status --short`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 13 July 2026, 23:06 UTC
+- **Last updated:** 13 July 2026, 23:09 UTC
 - **Turns:** 9
 - **Status:** Complete
