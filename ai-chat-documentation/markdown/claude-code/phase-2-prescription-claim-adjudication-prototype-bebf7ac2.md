@@ -187,7 +187,49 @@ I want Phase 1 (all the pre-existing work at the moment) to be seperately runnab
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Strong instinct, and it's very achievable — mostly because Phase 2 should be **additive**, and the fact that Phase 2's cloud story comes later actually *helps* isolation rather than hurting it. Here's how I'd guarantee Phase 1 stays independently runnable, testable, and deployable.
+
+## The governing rule: the dependency arrow points one way
+
+**Phase 2 → Phase 1, never the reverse.** Phase 2 services may depend on the Phase 1 FHIR server and triage; nothing in Phase 1 may know Phase 2 exists. If I hold that line, Phase 1 comes up and passes tests with Phase 2 entirely absent.
+
+## How each shared surface stays isolated
+
+**1. Docker Compose — profiles, default unchanged.**
+New services (`claims-service`, `legacy-rxclaim-emulator`) get `profiles: [phase2]`. The Phase 1 three (`fhir`, `triage`, `mcp-agent`) get **no profile**, so:
+```bash
+docker compose up -d                 # ← identical to today: only Phase 1
+docker compose --profile phase2 up   # ← adds Phase 2 (which pulls Phase 1 up as its substrate)
+```
+Profiled services never start unless named. `depends_on` flows Phase2→Phase1 only, so Phase 1 never drags Phase 2 in. I'll verify with `docker compose config` that the default service set is byte-for-byte today's. Editing the shared compose file is unavoidable, but the edits are purely additive and gated.
+
+**2. Cloud deploy — don't touch it yet.** [deploy.sh](deploy.sh) and the live [gateway/kong/](gateway/kong/) config stay **Phase-1-only**. Since Phase 2 cloud comes later, Phase 2 gateway routes (`/claims`, fronting triage) go in *separate* files (e.g. `gateway/kong/phase2/`) applied by a future `deploy-phase2.sh`. Your proven, cloud-tested Phase 1 deploy path is literally unmodified. This is the cleanest part: the "front triage with Kong" decision is a Phase 2 **cloud** change, deferred — so Phase 1's cloud posture (FHIR-only gateway) stays exactly as tested. Locally it's just the opt-in profile.
+
+**3. Tests — separately invocable.** Phase 1 suites (triage, mcp-agent, client, fhir-service `mvn verify`) must pass with zero Phase 2 present. Phase 2 tests live in the new service dirs with their own markers, runnable in isolation. CI keeps a "Phase 1 only" job so a Phase 2 regression can never be reported as a Phase 1 failure.
+
+**4. Data seeding — separate scripts.** [seed_demo.py](data/scripts/seed_demo.py) (Kristle Mraz / John Doe) is untouched. Phase 2 gets its own `seed_claims_demo.py` + a `data/payer-kb/` folder. The Phase 1 refill demo needs no Phase 2 data.
+
+**5. Shared substrate is fine — additively.** Both phases use the same HAPI server and [client/clinical](client/clinical/). That's desirable (one source of truth). The constraint: Phase 2 only *adds* FHIR resource types (Claim, Coverage, ClaimResponse…) and only *adds* methods to `client/clinical` — never changes an existing signature or the Phase 1 contract.
+
+## The one real coupling risk: the MCP agent
+
+This is where isolation can quietly leak. The PRD wants the agent to *explain adjudication outcomes* — but [mcp-agent](mcp-agent/src/agent/) currently runs the Phase 1 refill demo, and adding claims logic to `tools.py`/`agent.py` couples it to Phase 2.
+
+My recommendation: **keep the existing agent Phase-1-pure and add claims explanation as a separate, feature-flagged capability** — new claims tools registered only when `CLAIMS_GATEWAY_URL`/claims env is present; absent that, the agent behaves exactly as today and the refill demo runs untouched. (Alternative: a distinct agent entrypoint/command for claims. Same isolation, more duplication.) Either way, `docker compose run --rm mcp-agent --query "Check refill risk for Kristle Mraz"` must keep working with no Phase 2 anywhere.
+
+## One safety net I'd add
+
+Since Phase 1 is stable and cloud-tested, **tag a known-good snapshot** (e.g. `git tag phase1-v1`) before Phase 2 work lands. It gives you a guaranteed independently-deployable reference point and a trivial way to prove "Phase 1 still stands alone" at any time. Low effort, high peace-of-mind.
+
+## Net effect
+
+- `docker compose up` + Phase 1 tests + `deploy.sh` → **behave identically to today, forever.**
+- Phase 2 is opt-in locally (`--profile phase2`, plus `--profile gateway` when you want the gated path), and stays out of the cloud path until its own deploy tooling is ready.
+
+Two decisions for you, then I'm ready to write the consolidated plan (still no app code):
+
+1. **Agent isolation:** feature-flagged claims capability inside the existing agent (my rec), or a separate claims-agent entrypoint?
+2. **Tag `phase1-v1`** now as the known-good snapshot before Phase 2 begins — yes/no?
 
 <details>
 <summary>Execution details — 4 tool events</summary>
@@ -216,6 +258,6 @@ echo; echo "===== k8s kinds/services ==…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 13 July 2026, 22:46 UTC
+- **Last updated:** 13 July 2026, 22:47 UTC
 - **Turns:** 3
-- **Status:** Incomplete
+- **Status:** Complete
