@@ -56,6 +56,15 @@ def _builtin_patterns() -> list[Pattern]:
         p("env-secret",
           r"(?im)^(\s*[A-Za-z0-9_]*(?:TOKEN|SECRET|PASSWORD|API_KEY)[A-Za-z0-9_]*\s*=\s*)\S+",
           _keep_prefix("env-secret", 1)),
+        # Credentials embedded in URL query strings / JDBC URLs, e.g.
+        #   jdbc:postgresql://host/db?user=u&password=SECRET&sslmode=require
+        # (url-credentials above only covers the scheme://user:pass@ authority form).
+        p("url-query-password",
+          r"(?i)([?&](?:password|pwd)=)[^&\s\"'<>]+",
+          _keep_prefix("url-query-password", 1)),
+        # Neon database password tokens (npg_…), wherever they appear, as a
+        # belt-and-suspenders catch independent of the surrounding URL structure.
+        p("neon-password", r"npg_[A-Za-z0-9]{8,}"),
     ]
 
 

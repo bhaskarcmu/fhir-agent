@@ -1565,8 +1565,12 @@ Committing these two main-branch fixes to PR #23's branch. Verifying branch and 
 
 Tasks 1 & 2 are pushed to PR #23. Updating tracker and moving to the archive redactor (ai-chat-history worktree). Let me read its test file to match style before hardening:
 
+Now I'll harden the redactor. The `url-credentials` pattern catches `postgres://user:‹redacted:url-credentials›`, but **not** the JDBC query form (`?…&password=npg_…`) or a bare `npg_…` token — that's the gap. Adding both, plus tests using the exact leaked forms:
+
+Now running the redactor tests to prove the hardened patterns catch the leaked forms:
+
 <details>
-<summary>Execution details — 158 tool events</summary>
+<summary>Execution details — 161 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1931,6 +1935,10 @@ setup-credentials.sh no longer copies the Claude key into any file. Previously
 it wro…`
 - **TodoWrite** `{"todos": [{"content": "Refactor setup-credentials.sh to stop writing the Claude key into files; standardize on CLAUDE_API_KEY (in-env mapping only) — main/PR#23", "status": "completed", "activeForm":…`
 - **Read** `/workspaces/.ai-chat-history/ai-chat-documentation/scripts/tests/test_redactor.py`
+- **Edit** `/workspaces/.ai-chat-history/ai-chat-documentation/scripts/archive_ai/redactor.py`
+- **Edit** `/workspaces/.ai-chat-history/ai-chat-documentation/scripts/tests/test_redactor.py`
+- **Bash** `cd /workspaces/.ai-chat-history/ai-chat-documentation/scripts
+python3 -m pytest tests/test_redactor.py -q 2>&1 | tail -15`
 
 </details>
 
@@ -1941,6 +1949,6 @@ it wro…`
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 19:02 UTC
+- **Last updated:** 13 July 2026, 19:03 UTC
 - **Turns:** 25
 - **Status:** Complete

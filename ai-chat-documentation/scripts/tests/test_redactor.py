@@ -49,6 +49,24 @@ class RedactorTest(unittest.TestCase):
         self.assertTrue(out.startswith("API_KEY="))
         self.assertIn("‹redacted:env-secret›", out)
 
+    def test_jdbc_query_password_masked(self):
+        # The SPRING_DATASOURCE_URL / JDBC form: password lives in the query string,
+        # so the scheme://user:pass@ url-credentials rule does not apply.
+        url = "jdbc:postgresql://host/fhirdb?user=neondb_owner&password=npg_ABCdef123456&sslmode=require"
+        out = self.r.redact(url)
+        self.assertNotIn("npg_ABCdef123456", out)
+        self.assertIn("password=", out)
+        self.assertIn("sslmode=require", out)  # non-secret query params preserved
+
+    def test_neon_token_masked_anywhere(self):
+        self._assert_masked("npg_ABCdef1234567890", "neon-password")
+
+    def test_neon_uri_form_masked(self):
+        # The postgres://user:PASS@host authority form (NEON_DB_URL).
+        out = self.r.redact("postgresql://neondb_owner:npg_ABCdef123456@ep-x.neon.tech/fhirdb")
+        self.assertNotIn("npg_ABCdef123456", out)
+        self.assertIn("postgresql://neondb_owner:", out)
+
     def test_counts_accumulate_and_value_never_leaks(self):
         self.r.redact("ghp_" + "A" * 36)
         self.r.redact("AKIAIOSFODNN7EXAMPLE")
