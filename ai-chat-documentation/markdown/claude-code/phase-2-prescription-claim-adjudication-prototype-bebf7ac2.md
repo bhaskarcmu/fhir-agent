@@ -1285,8 +1285,12 @@ Let me start with environment recon — what tools, network, disk, and gitignore
 
 All tools present, 58G free. Note: downloaded reference data must not enter the docs PR, so I'll isolate the data work on a **separate branch off `main`** (`dataeng/phase2-prework`) and gitignore the heavy/licensed downloads there — the docs PR stays pristine. But first, let me test what network access this sandbox actually has, since many sources are account-gated.
 
+Network is good — RxNav (RxNorm, no auth), NLM Clinical Tables, CDC ICD-10, Synthea GitHub, and the NPPES NPI API are all reachable. Synthea's own site and `download.cms.gov` aren't, so I'll route around those.
+
+Let me kick off two research agents to pin down exact, currently-working download URLs and synthesis-tool specifics, while I set up the isolated data branch and start pulling the easy no-auth sources.
+
 <details>
-<summary>Execution details — 36 tool events</summary>
+<summary>Execution details — 38 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1389,6 +1393,8 @@ echo "=== tools ==="; for t in curl wget jq unzip python3 java mvn docker; do pr
 probe() { code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 -L "$1" 2>/dev/null); echo "[$code] $2  ->  $1"; }
 echo "=== Network reachability probes ==="
 probe "htt…`
+- **Agent** `Research reference/rules data sources`
+- **Agent** `Research synthetic data generation tools`
 
 </details>
 
@@ -1399,6 +1405,6 @@ probe "htt…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 13 July 2026, 23:15 UTC
+- **Last updated:** 13 July 2026, 23:16 UTC
 - **Turns:** 10
 - **Status:** Complete
