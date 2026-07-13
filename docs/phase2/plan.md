@@ -80,11 +80,13 @@ docker compose --profile phase2 --profile gateway up -d   # + edge Kong fronting
 - Switching is config-only via env vars: `FHIR_GATEWAY_URL`, `TRIAGE_SERVICE_URL`,
   and a new `CLAIMS_GATEWAY_URL` (default direct; point at Kong for gated mode).
 
-### Known parity friction (tracked, not hidden)
-Kong is configured two ways — **KIC CRDs** (cloud) and a **declarative `kong.yml`**
-(local DB-less). They express the same 3 routes + 4 plugins in different dialects.
-Mitigation: keep both (small) and add a test asserting they define the same
-routes/plugins. Single source of truth via `deck` is a later option.
+### Parity dialect — resolved by decision C2
+Earlier this section flagged a drift risk between Kong's cloud config (KIC CRDs) and
+the local `kong.yml`. **Decision C2 removes it:** run **DB-less declarative Kong in
+both local and cloud** (fronting Cloud Run URLs in cloud, containers locally), so
+there is **one Kong config dialect everywhere** — a single `kong.yml` is the source
+of truth. See §5 (C2). (Phase 1's existing KIC config stays as-is and untouched; the
+DB-less model is the Phase 2 target.)
 
 ### Gotchas
 - Local Kong **admin** must not use `:8001` (taken by `triage`); map to `:8081`.
@@ -106,31 +108,77 @@ The dependency arrow points **Phase 2 → Phase 1 only**.
 
 **Safety net:** tag `phase1-v1` (pushed) = known-good, independently deployable snapshot.
 
-## 5. k8s pattern for new services (deferred to Phase 2 cloud)
-Mirror `fhir-service/k8s/` per new Java service: `namespace` (or reuse a namespace
-labelled `app.kubernetes.io/managed-by: kong` for Kong routability), `configmap`
-(non-secret env), `secret.yaml.example` (imperative create, never commit real),
-`service` (ClusterIP, name matches Kong backend + pod selector), `deployment`
-(`IMAGE_PLACEHOLDER` convention, actuator health probes). New services won't need
-HAPI's 180s startup delay — tune probes accordingly. Emulator = ClusterIP + a
-NetworkPolicy allowing only `claims-service`.
+## 5. Cloud architecture — compute, data, security, observability, scalability
+
+> Build is **deferred** (Phase 2 is local-first, per D8), but these decisions shape
+> how we write the services now (stateless, 12-factor, repository abstractions) so the
+> cloud path is a config change, not a rewrite. Decisions from the security/scalability
+> brainstorm are tagged **C1–C4**.
+
+### C1 — Compute: Cloud Run for stateless services, HAPI always-on
+The new services (`claims-service`, `rxclaim-emulator`, `triage`, `claims-agent`) are
+**stateless request/response** → **Cloud Run** (GCP's serverless-containers; scale-to-zero,
+autoscale on concurrency, per-request billing). **HAPI FHIR stays always-on** (Cloud Run
+`min-instances ≥ 1`, or a GKE Deployment) because of its ~3-min cold start (the 180s k8s
+probe today). Spring cold-start is mitigated with `min-instances` and, if needed, GraalVM
+native / CRaC. Privacy of the legacy core is enforced with Cloud Run **`ingress=internal`**
+(+ VPC connector / IAM invoker) — the Cloud Run equivalent of the ClusterIP + NetworkPolicy
+rule; **no gateway route** to the emulator.
+
+### C2 — Gateway: DB-less Kong everywhere
+One declarative `kong.yml` fronts everything in **both** environments (Cloud Run URLs as
+upstreams in cloud; containers locally). Single config dialect → no drift (see §3). Kong
+itself runs as a container (Cloud Run `min-instances ≥ 1`, or small GKE). Edge routes:
+`/claims`, `/fhir`, `/triage`; emulator has none.
+
+### C3 — Data: managed, scalable, with a documented NoSQL path
+| Data | Store (now) | Scale path |
+|---|---|---|
+| FHIR resources | Postgres (Neon, autoscaling + `-pooler`) | read replicas; HAPI partitioning / Elasticsearch search |
+| Formulary / PA rules | **Postgres behind a repository interface** | swap to **Bigtable/Firestore** (key: `plan_id+NDC → rule`) — the true high-cardinality KV pattern |
+| Legacy emulator tables | Postgres (SQL/400-style) | small/reference; stays relational |
+| Decision audit | **FHIR `Provenance`/`RiskAssessment`** in HAPI | add a **BigQuery** analytics plane later (C4) |
+
+The repository interface for formulary/PA is the key seam: build on Postgres now, make
+Bigtable/Firestore a swap, never a rewrite. Claim intake is written **Pub/Sub-ready**
+(accept → enqueue → adjudicate) so bursts decouple; caching/rate-limit scale via
+Memorystore (Redis) — Kong's documented `redis` policy upgrade.
+
+### C4 — Audit/analytics: FHIR Provenance now, BigQuery later
+Every decision persists a FHIR `Provenance` (as planned). A scalable BigQuery
+decision-warehouse + rule-fire dashboard is **deferred** to the cloud phase.
+
+### Security (R14) & observability (R15) in cloud
+- **Secrets** → GCP Secret Manager + Workload Identity. **TLS** terminated at the edge
+  incl. the proxy. **PHI-safe logging** — scrub identifiers (fixes the Kong `file-log`
+  URI leak). **AuthN** stays API-key for the prototype, OIDC/JWT the documented path.
+- **Tracing** → OpenTelemetry (`traceparent`) across the fan-out → Cloud Trace; **metrics**
+  → Managed Prometheus (per-stage latency + approvals/denials/pends/rule-fires).
+- **IaC/CI-CD (R16)** → Terraform (Cloud Run, Cloud SQL/Neon, Secret Manager, Artifact
+  Registry, networking) + GitHub Actions (build → scan → push → deploy).
+
+*(If instead we keep GKE: mirror `fhir-service/k8s/` per service — namespace labelled
+`app.kubernetes.io/managed-by: kong`, ClusterIP `service`, `deployment` with
+`IMAGE_PLACEHOLDER`, actuator probes; emulator = ClusterIP + NetworkPolicy. The C1
+decision chose Cloud Run, so this is the fallback pattern only.)*
 
 ## 6. Workstreams / milestones
 
 | # | Milestone | Deliverable | Depends on |
 |---|---|---|---|
 | **M0** | Recon (read-only) | Run PRD §11.3 FHIR counts against live server; document existing data so we seed only the gap. Note compose/README HAPI version drift (`v7.2.0` vs `8.8.0`) and `FHIR_GATEWAY_URL` vs `FHIR_BASE_URL` for later cleanup. | — |
-| **M1** | Payer knowledge base | Curated `data/payer-kb/` (formulary, PA rules, 4 plans, RxNorm/ICD subset) as JSON/YAML. Data only. | M0 |
+| **M1** | Payer knowledge base | Curated `data/payer-kb/` (formulary, PA rules, 4 plans, RxNorm/ICD subset) as JSON/YAML. Data only. **Sources confirmed in prework** (Synthea, RxNav, NLM/CDC ICD-10, CMS Part D Formulary PUF, CMS NCD) — see `data/reference/README.md` on `dataeng/phase2-prework`. | M0 |
 | **M2** | `rxclaim-emulator` | Spring Boot legacy core: DDS-style records, DB2/SQL400 tables, `ADJRXCLM` function, legacy response. | M1 |
 | **M3** | `claims-service` core | Spring Boot façade + anti-corruption layer + layered rules engine; calls emulator + triage; writes FHIR. Da Vinci-aware naming. | M1, M2 |
 | **M4** | Pipeline & artefacts | Wire the pipeline; emit `Claim`/`ClaimResponse`/`Task`/`Provenance`/`RiskAssessment`/`CoverageEligibilityResponse`. | M3 |
 | **M5** | `claims-agent` | Separate explanation agent over the claims façade; shares only non-clinical plumbing with `mcp-agent`. | M4 |
 | **M6** | Local wiring & demo | Compose services under `phase2` profile; DB-less Kong under `gateway` profile; `seed_claims_demo.py`; 4–5 golden paths. | M4, M5 |
 | **M7** | Tests & narrative | Per-service tests; Phase-1-only CI job; README/section reinforcing the interview narrative. | M6 |
-| **M8** | *(later)* Phase 2 cloud | k8s manifests per service, `deploy-phase2.sh`, Kong `/claims` + `/triage` routes, emulator NetworkPolicy. | M7 |
+| **M8** | *(later)* Phase 2 cloud | Terraform for Cloud Run + Cloud SQL/Neon + Secret Manager + Artifact Registry; DB-less Kong (`/claims`,`/fhir`,`/triage`); emulator `ingress=internal`; OTel→Cloud Trace + Managed Prometheus; GitHub Actions CI/CD (build→scan→push→deploy). Per C1–C4, R14–R16. | M7 |
 
-Each new service ships **both** a compose entry and (at M8) a k8s manifest set, so
-"local ↔ cloud" is structural.
+Each new service ships **both** a compose entry and (at M8) its Cloud Run/Terraform
+config, so "local ↔ cloud" is a config change, not a rewrite. Services are written
+stateless/12-factor with a repository seam for formulary/PA data (C3) from day one.
 
 ## 7. Directory layout (proposed, additive)
 ```
@@ -139,19 +187,26 @@ rxclaim-emulator/      # NEW — Java/Spring Boot legacy core (sibling to epic-/
 claims-agent/          # NEW — Python explanation agent
 data/payer-kb/         # NEW — curated formulary/PA/plan fixtures
 data/scripts/seed_claims_demo.py   # NEW
-gateway/kong/phase2/   # NEW — Phase 2 routes/plugins (cloud), applied separately
-gateway/kong/kong.yml  # NEW — DB-less declarative config for the local gateway profile
+gateway/kong/kong.yml  # NEW — DB-less declarative config, single source of truth (local + cloud, C2)
+infra/terraform/       # NEW (M8) — Cloud Run, Cloud SQL/Neon, Secret Manager, Artifact Registry
 docs/phase2/           # THIS planning set
 ```
+(Phase 1's existing `gateway/kong/*` KIC config is left untouched; the DB-less
+`kong.yml` is the Phase 2 target per C2.)
 
 ## 8. Risks & open questions
-- **Config-dialect drift** (KIC vs `kong.yml`) — mitigated by a parity test (§3).
-- **Compose HAPI version drift** — reconcile in M0 before building around it.
+- **Config-dialect drift** — *resolved* by C2 (DB-less Kong everywhere, one `kong.yml`).
+- **Cloud Run cold starts** — Spring Boot/HAPI cold-start; mitigate with `min-instances`
+  (always-on HAPI + Kong), GraalVM native / CRaC if needed (C1).
+- **PHI in gateway logs** — Kong `file-log` logs request URIs with identifiers; scrub or
+  treat as restricted (R14) — applies to Phase 1 today too.
+- **Compose HAPI version drift** — reconcile in M0 (`v7.2.0` vs `8.8.0`) before building around it.
 - **`client/clinical` additions** — keep strictly additive; Java services should not
   depend on the Python client.
 - **PRD open items** (COB, CPT licensing, NCPDP SCRIPT depth, naming) — tracked in
   `requirements.md`; none block M0–M7.
-- **Scope creep into full PAS/terminology** — explicitly out of scope (D6, D7).
+- **Scope creep into full PAS/terminology/NoSQL/BigQuery** — explicitly out of scope /
+  deferred (D6, D7, C3, C4).
 
 ## 9. Definition of done (Phase 2, local)
 - `docker compose --profile phase2 up` + `seed_claims_demo.py` → the 4 core golden

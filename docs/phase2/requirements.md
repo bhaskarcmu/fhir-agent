@@ -123,7 +123,41 @@ API (never the raw DB) is the contract for all application logic.
 Use **curated fixtures** (small RxNorm/ICD subset, formulary, PA rules, 4 plan
 definitions) checked into a `data/payer-kb/` folder; **check existing FHIR data
 first** before seeding. No full terminology loads. No AMA-licensed CPT beyond the
-tiny curated sample.
+tiny curated sample. Sources are confirmed (RxNav, NLM/CDC ICD-10, CMS Part D
+Formulary PUF, Synthea) and captured in the data-engineering prework (`data/reference/README.md`
+on the local `dataeng/phase2-prework` branch — kept off this docs PR).
+
+### R14 — Security & privacy (treat claims data as if PHI)
+- **PHI-safe logging:** do not emit patient/member identifiers to logs. (Fix the
+  existing Kong `file-log` behaviour that logs `request.uri` such as `/fhir/Patient/123`;
+  scrub identifiers or treat those logs as a restricted PHI store.)
+- **AuthN/Z:** static Kong API keys are acceptable for the prototype, but design for
+  **OAuth2/OIDC + scopes (SMART-on-FHIR)** as the path (Kong OIDC plugin; the clinical
+  client already anticipates OAuth). Consumers are least-privilege.
+- **Secrets:** managed via **GCP Secret Manager + Workload Identity** in cloud (no
+  secrets in git or plain k8s Secrets); local uses `.env` as today.
+- **In transit / at rest:** TLS everywhere **including the gateway proxy** (close the
+  Phase 1 no-TLS-on-proxy gap); encryption at rest on all managed data stores.
+- **Injection safety:** the legacy emulator's SQL/400-style tables use parameterized
+  queries; the anti-corruption layer is the input-validation boundary.
+- **Supply chain:** container image vulnerability scanning before deploy.
+
+### R15 — Observability
+- **Distributed tracing** across the adjudication fan-out (claims → emulator + triage
+  + fhir) via **OpenTelemetry** (W3C `traceparent`) → Cloud Trace; Kong propagates at
+  the edge. One claim = one trace.
+- **Metrics** via Micrometer/Prometheus (Java) and Prometheus (Python) → Google
+  Managed Prometheus (already declared in `kong-values.yaml`): per-stage latency,
+  and business metrics (approvals/denials/pends, rule-fire counts).
+- **Correlation IDs** in PHI-scrubbed structured logs; health/readiness endpoints on
+  every new service.
+
+### R16 — Deployability
+- **Container-first**: every service is a container, runnable locally via Compose and
+  deployable to cloud with config-only differences.
+- **IaC + CI/CD** for the (deferred) cloud phase: **Terraform** for GCP infra
+  (Cloud Run, Cloud SQL/Neon, Secret Manager, Artifact Registry, networking) and
+  **GitHub Actions** (build → scan → push → deploy). Supersedes hand-run bash.
 
 ---
 
@@ -135,6 +169,10 @@ tiny curated sample.
 - **Phase 2 cloud deployment** — this phase is **local-first**; Phase 2 cloud
   tooling comes later so Phase 1's proven cloud path stays untouched (see D8).
 - Any modification to Phase 1 behaviour, contracts, or deploy path.
+- **Deferred to the cloud phase (scale path documented, not built now):** NoSQL
+  formulary store (Bigtable/Firestore) — Postgres-behind-a-repository-interface now
+  (C3); a BigQuery decision-analytics plane — FHIR `Provenance` only now (C4);
+  Pub/Sub async claim intake; Memorystore/Redis caching; OIDC (API keys now).
 
 ---
 

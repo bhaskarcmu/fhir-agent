@@ -27,6 +27,20 @@ layer."*
 | Legacy emulator realism | **Convincing legacy shape** (DDS-style records, DB2/SQL400 table naming, RPG/CL-flavoured adjudication function) |
 | FHIR ambition | **Da Vinci-aware but generic** R4 resources (not full PAS conformance) |
 
+## Cloud, security & scalability decisions (build deferred; shape the code now)
+
+| # | Area | Choice |
+|---|---|---|
+| C1 | Compute | **Cloud Run** for stateless services (scale-to-zero); **HAPI always-on** (cold start). |
+| C2 | Gateway | **DB-less Kong everywhere** — one `kong.yml` for local + cloud (removes config drift). |
+| C3 | Rules data | **Postgres behind a repository interface** now; Bigtable/Firestore is the documented scale swap. |
+| C4 | Audit | **FHIR `Provenance`** now; BigQuery analytics plane deferred. |
+
+Security (R14), observability (R15), deployability (R16) requirements added — see
+[`plan.md` §5](./plan.md) and [`requirements.md`](./requirements.md). Data-engineering
+prework (sources, Synthea, curated fixtures) lives on the local `dataeng/phase2-prework`
+branch (kept off this docs PR by design).
+
 ## Non-negotiable constraint
 
 **Phase 1 must remain independently runnable, testable, and cloud-deployable.**
