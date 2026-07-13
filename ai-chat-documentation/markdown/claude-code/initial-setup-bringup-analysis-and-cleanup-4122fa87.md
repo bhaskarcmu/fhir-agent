@@ -1541,8 +1541,10 @@ Key discovery: [devcontainer.json:57-58](.devcontainer/devcontainer.json#L57-L58
 ```
 So Request 1 is largely already satisfied the *right* way — one secret name, mapped in-env. The problem is [setup-credentials.sh](.devcontainer/scripts/setup-credentials.sh) *also* copies the value into 6 files (the insecure part). Let me set up tracking and find the archive tooling before implementing.
 
+There's already a redactor (`archive_ai/pipeline.py`, `test_redactor.py`) — yet the password still landed in the **raw** `.jsonl`. So the gap is likely that redaction is applied to the markdown but the raw capture is committed unredacted. Let me confirm exactly where the gap is:
+
 <details>
-<summary>Execution details — 147 tool events</summary>
+<summary>Execution details — 148 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1884,6 +1886,9 @@ echo; echo "=== AI-chat worktree layout (read-only) ==="; ls…`
 - **Bash** `cd /workspaces/.ai-chat-history 2>/dev/null || exit 0
 echo "=== .ona/ in archive worktree ==="; ls -la .ona/ 2>/dev/null
 echo; echo "=== ai-chat-documentation tree (dirs + scripts) ==="; find ai-chat-…`
+- **Bash** `cd /workspaces/.ai-chat-history 2>/dev/null || exit 0
+echo "=== redactor module location ==="; find ai-chat-documentation/scripts -name "*redact*" -o -name "*.py" | grep -iE "redact|pipeline" | head
+e…`
 
 </details>
 
