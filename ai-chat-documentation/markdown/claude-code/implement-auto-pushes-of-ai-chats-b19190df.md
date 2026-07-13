@@ -2620,6 +2620,23 @@ Okay looks like we are complete with auto pushes of AI sessions for now, at leas
 
 Quick live-status check, then the wrap-up.
 
+**Live status confirmed:** watcher **running**, last archive commit **`b97dfe5` (15:21 UTC)** — it archived this very session as you wrote the prompt — local **in sync with origin** (ahead 0 / behind 0), **3 conversations** on the branch. On GitHub: `ai-chat-history` → `ai-chat-documentation/INDEX.md` should show `b97dfe5` as the latest commit.
+
+## Project accomplishments — MVP wrap-up
+
+1. **Reverse-engineered Claude Code's on-disk format** — confirmed sessions live as append-only JSONL at `~/.claude/projects/<enc-cwd>/<id>.jsonl`, with typed records distinguishing visible prompts from tool/thinking/meta.
+2. **Reviewed and de-scoped an over-built PRD** into a lean, single-repo MVP; captured approved requirements + design docs and pushed them.
+3. **Built `archive_ai`** — a dependency-free Python package: discovery → deterministic typed-field parser → redaction → Markdown/index renderer → atomic writer → git publisher → inotify watcher → CLI.
+4. **Event-driven capture (no polling)** via `inotifywait` + 15s debounce, with the key fix that line-buffering (`stdbuf`) is needed to catch appends to the held-open active session file.
+5. **Auto-commit + auto-push** to `ai-chat-history`, scoped with `git -C`, empty-diff no-op, and correct **commit-then-`pull --rebase`** ordering (caught/fixed a steady-state regression).
+6. **Human-readable output** — title → prompt/response → collapsed tool details → metadata; **title-slug filenames** that follow renames in real time; manifest-driven `INDEX.md`.
+7. **State manifest with retention** — deleted sessions are kept + flagged "archived (source deleted)"; renames move files; exclusions purge; **self-heal** regenerates missing markdown from the retained raw.
+8. **Real-time secret redaction** on all committed output (incl. raw + filenames); verified via self-inspection that no intact keys/tokens survive.
+9. **Went live durably** — Ona-supervised `aiChatArchiveWatcher` service (auto-starts on env start, restarts on crash); published the back-catalog and confirmed continuous operation.
+10. **Hardening & hygiene** — 47 passing tests + invariant self-checks; retired the legacy Cline watcher behind an opt-in flag; correct two-worktree Git discipline throughout (feature-branch PR #22 to `main`, direct commits to `ai-chat-history`, branch cleanup).
+
+Nice work today — the MVP is running and archiving your Claude Code sessions autonomously. Enjoy the break. 🎉
+
 <details>
 <summary>Execution details — 157 tool events</summary>
 
@@ -2962,6 +2979,6 @@ cd /workspaces/.ai-chat-history/ai-chat-documentation/scripts && echo "=== sta�
 - **Source:** Claude Code
 - **Session ID:** `b19190df-fadc-43a7-a3b8-8ef78a5d944c`
 - **Created:** 13 July 2026, 12:36 UTC
-- **Last updated:** 13 July 2026, 15:21 UTC
+- **Last updated:** 13 July 2026, 15:22 UTC
 - **Turns:** 23
 - **Status:** Incomplete
