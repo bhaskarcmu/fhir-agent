@@ -964,6 +964,77 @@ Let me check what the Ona CLI can do for secrets/env, so I give you exact comman
 
 Now I have the exact tooling. Let me discover your project ID and the **names** of the existing secrets (I will NOT run `secret get`, which would print values — only `list`, which shows names):
 
+I've mapped out exactly how secrets work here and where the boundaries are. One decisive finding shapes everything:
+
+**From inside this environment, the CLI runs as `PRINCIPAL_ENVIRONMENT` — an environment service account, not your user.** It deliberately *cannot* manage org/project secrets (user-secret list errors with empty user_id; project-secret list needs a project ID it can't see). That's a correct security boundary: an environment shouldn't be able to rewrite its own secrets. **So the actual secret write has to happen from the Ona dashboard or from your laptop after `ona login`** — not from here. What I *can* do from here is prepare the exact values safely and verify the result functionally.
+
+Here's the complete playbook.
+
+---
+
+## Part A — Rotate the password (you, in the Neon Console)
+
+Your connection details (already known from the leaked string — the *password* is the only part being replaced):
+- Project endpoint: `ep-restless-resonance-amqcyrmq` (pooler), region `us-east-1`
+- Database: `fhirdb` · Role: `neondb_owner`
+
+Steps:
+1. Neon Console → your project → **Roles** (or **Branches → your branch → Roles**).
+2. Select **`neondb_owner`** → **Reset password**.
+3. **Copy the new password immediately** — Neon shows it once.
+
+That single action neutralizes the leak: the exposed password becomes useless the instant you reset it.
+
+---
+
+## Part B — Rebuild the two connection strings
+
+⚠️ **Design smell worth naming in your interview:** the same password is currently duplicated across **two** secrets, both embedding it inline:
+- `NEON_DB_URL` = `postgresql://neondb_owner:‹redacted:url-credentials›ep-restless-resonance-amqcyrmq-pooler.c-5.us-east-1.aws.neon.tech/fhirdb?sslmode=require&channel_binding=require`
+- `SPRING_DATASOURCE_URL` = `jdbc:postgresql://ep-restless-resonance-amqcyrmq-pooler.c-5.us-east-1.aws.neon.tech/fhirdb?user=neondb_owner&password=<PW>&sslmode=require`
+
+(`SPRING_DATASOURCE_DRIVER_CLASS_NAME` and `HIBERNATE_DIALECT` are **not** secrets — they can stay as plain env vars.)
+
+You have two options — tell me which and I'll prep it:
+- **Minimal:** update both secrets with the new password (2 places to keep in sync forever).
+- **Cleaner (recommended):** store the password **once** as `NEON_PASSWORD` and construct both URLs at container start from that single source of truth — no password duplication. Small refactor to `setup-credentials.sh`/automations.
+
+---
+
+## Part C — Store it in Ona *properly*
+
+**Dashboard path (simplest):** app.gitpod.io → your **Organization** → **Settings → Environment Variables / Secrets** → edit `NEON_DB_URL` and `SPRING_DATASOURCE_URL` → paste new values → ensure they're marked as **Secret** (masked/encrypted), scoped to this project/repo.
+
+**CLI path (from your laptop, after `ona login` as *you*):**
+```bash
+# update existing secret — read value from a file, NOT --value (keeps it out of shell history & ps)
+gitpod project secret update <project-id> --name SPRING_DATASOURCE_URL --value-from-file ./sds.txt
+gitpod project secret update <project-id> --name NEON_DB_URL          --value-from-file ./neon.txt
+rm -f ./sds.txt ./neon.txt
+# get <project-id> from: gitpod project list
+```
+"Properly" = **`--value-from-file` (never `--value`)**, marked secret, project-scoped, temp files deleted after.
+
+---
+
+## Part D — Clean up the local copy
+
+The old password is also sitting in **`/etc/environment`** (plaintext on disk). Don't hand-edit it — after you update the Ona secret, **stop & restart/rebuild this environment** so Ona re-injects the new value and regenerates that file. Rotation already makes the old value worthless, but the restart removes the stale plaintext too.
+
+---
+
+## Part E — Verify (I do this, without ever seeing the secret)
+
+After you've rotated + updated the secret + restarted, I'll re-run the exact test that failed — `MdmTest` (or full `./mvnw verify`) **with** the ambient Neon env vars present. If it goes green, the new credential is working end-to-end. That's a clean functional check that never requires me to read the password.
+
+---
+
+**What I need from you to proceed:**
+1. Do Part A (rotate) — it's the one thing only you can do.
+2. Tell me **minimal vs. cleaner** for Part B, and whether you'll use **dashboard or laptop CLI** for Part C.
+
+If you pick the CLI path, I can right now write you a tiny local helper that prompts you to paste the new password, builds both correctly-formatted strings into temp files for `--value-from-file`, and never echoes them — so you don't hand-assemble the JDBC/pooler URL. Want that?
+
 <details>
 <summary>Execution details — 77 tool events</summary>
 
@@ -1133,6 +1204,6 @@ echo; echo "=== can this env principal see project secrets? ==="; gitpod project
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 17:21 UTC
+- **Last updated:** 13 July 2026, 17:22 UTC
 - **Turns:** 16
 - **Status:** Complete
