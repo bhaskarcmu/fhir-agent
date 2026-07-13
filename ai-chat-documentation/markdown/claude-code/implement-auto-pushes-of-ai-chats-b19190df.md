@@ -2514,8 +2514,10 @@ Now step 2 — the durable watcher. Let me check whether the running environment
 
 It's registered and `STOPPED` — no reload needed. Starting the supervised watcher:
 
+Let me verify it's actually up — service phase, lock, and logs:
+
 <details>
-<summary>Execution details — 143 tool events</summary>
+<summary>Execution details — 144 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2808,6 +2810,9 @@ echo "=== current archiver status (no sync/pu…`
 - **Bash** `cd /workspaces/.ai-chat-history/ai-chat-documentation/scripts && PYTHONPATH=. python3 -m archive_ai sync 2>&1`
 - **Bash** `echo "=== registered automation services ==="; gitpod automations service list 2>&1 | head -30`
 - **Bash** `gitpod automations service start aiChatArchiveWatcher 2>&1`
+- **Bash** `echo "=== service phase ==="; gitpod automations service list 2>&1 | grep -i "aiChatArchiveWatcher\|PHASE"
+echo; echo "=== archiver status ==="
+cd /workspaces/.ai-chat-history/ai-chat-documentation/sc…`
 
 </details>
 
