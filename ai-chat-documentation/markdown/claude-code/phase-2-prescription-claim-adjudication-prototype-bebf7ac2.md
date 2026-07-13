@@ -1317,8 +1317,14 @@ PAS example filenames are versioned/404 — not worth chasing since our Synthea 
 
 Real pharmacy `Claim` + `ExplanationOfBenefit` samples extracted (`type=pharmacy`, with `insurance`/`item`/`prescription`; EOB carries `outcome`/`adjudication`). That gives us concrete canonical shapes locally. Now let me write the data-engineering inventory and refine the gitignore so only small public-domain derivatives are tracked (never the 188MB jar / 2.4GB formulary).
 
+Exactly the right set is tracked (small CSV/JSON derivatives only; the jar, zips, and `.mdb` are excluded). Now the inventory README documenting every source, what's local vs reference-only, licenses, and adjudication mapping.
+
+Now commit the prework to the **local** `dataeng` branch (not pushed — stays off the docs PR entirely). Let me verify no large files sneak in, then commit.
+
+All staged files are tiny (largest 12K). Committing to the local branch:
+
 <details>
-<summary>Execution details — 54 tool events</summary>
+<summary>Execution details — 57 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1487,6 +1493,16 @@ f=$(ls…`
 cat > data/reference/.gitignore <<'EOF'
 # Reference-data area. Never commit large or license-gated RAW downloads.
 # Small, public-domain, curated text derivatives (CSV/JSON)…`
+- **Write** `/workspaces/fhir-agent/data/reference/README.md`
+- **Bash** `cd /workspaces/fhir-agent
+git add -A data/
+echo "=== staged files + sizes (must be small only) ==="
+git diff --cached --name-only | while read f; do [ -f "$f" ] && printf "%8s  %s\n" "$(du -h "$f" | c…`
+- **Bash** `cd /workspaces/fhir-agent
+git commit -q -F - <<'EOF'
+data(phase2): reference-data prework + synthesis tooling (local, not for PR)
+
+Data-engineering prework for Phase 2 claims adjudication. Kept off th…`
 
 </details>
 
@@ -1497,6 +1513,6 @@ cat > data/reference/.gitignore <<'EOF'
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 13 July 2026, 23:22 UTC
+- **Last updated:** 13 July 2026, 23:23 UTC
 - **Turns:** 10
 - **Status:** Complete
