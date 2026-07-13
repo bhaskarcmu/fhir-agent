@@ -1933,6 +1933,35 @@ Clear picture: no local process uses Neon (H2 locally), and this session still h
 
 For Step 5, I can verify meaningfully without a restart. Let me install a lightweight pure-Python postgres driver and **confirm the OLD password is now rejected** (which proves your rotation took effect) — reading from the env, never printing any value:
 
+✅ **Rotation confirmed.** The old credential is now **rejected by Neon** (auth failed). That means:
+- Your Step 1–3 worked — the password really was rotated.
+- The old value still sitting in this session's env, in `~/.claude` source logs, and in old `ai-chat-history` git history is now **worthless**. The leak is effectively neutralized.
+
+**Step 4 — nothing to do, and do NOT restart.** No local process uses Neon (H2 locally), and the new secret values are safely stored in Ona; they'll inject naturally at the next env start (whenever that happens on its own). Restarting now would risk your session for zero local benefit. Your session is untouched — I only installed a small pure-Python driver (`pg8000`) for the check; I can remove it if you like.
+
+## Step 5 — optional but recommended: verify the *new* value you stored
+
+The check above proves the old password is dead. It does **not** prove the *new* connection string you saved into the Ona secrets is typo-free (that value isn't in this session). Catching a typo now avoids a broken deploy later. Safe way to test it **without a restart and without echoing the secret**:
+
+1. In the VS Code editor (not the terminal), create a file `/tmp/neon_check.txt` and paste **only** the new `NEON_DB_URL` value (the `postgresql://…` form) into it, then save. *(Editor paste isn't captured by the archive watcher; terminal echo would be.)*
+2. Tell me "ready", and I'll run a connection test that reads that file, reports **only** success/failure (never the value), and then deletes the file immediately.
+
+If you'd rather skip it (the deployed service will validate on next deploy), that's fine too — the security-critical part is already done.
+
+## Where this leaves us
+
+| Item | Status |
+|---|---|
+| Redactor hardened, publisher fixed, watcher restarted | ✅ |
+| Archive tip scrubbed (real secret masked) | ✅ verified |
+| `/tmp` stray copies (157) removed | ✅ |
+| Neon password rotated / **old credential dead** | ✅ **confirmed** |
+| New secret value correctness | ⏳ optional Step-5 file check |
+| Old secret in `~/.claude` log + git history | ✅ now harmless (value dead) |
+| PR #23 (main) | ⏸️ still on hold per your call |
+
+The secret-leak incident is essentially **closed**. Want to run the optional new-value check, and/or should I remove `pg8000` and then circle back to PR #23 when you're ready?
+
 <details>
 <summary>Execution details — 193 tool events</summary>
 
@@ -2406,6 +2435,6 @@ if not url:
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 19:58 UTC
+- **Last updated:** 13 July 2026, 19:59 UTC
 - **Turns:** 29
 - **Status:** Complete
