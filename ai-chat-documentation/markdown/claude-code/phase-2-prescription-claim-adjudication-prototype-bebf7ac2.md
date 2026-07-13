@@ -1380,8 +1380,10 @@ Let me add the cloud decisions (C1–C4) to the Phase 2 index so they're discove
 
 Now verify the docs-only diff, commit, and push to keep PR #24 current.
 
+The `data/` shows as untracked leftovers from the branch switch (the raw downloads live in the working tree but are only *tracked* on the `dataeng` branch). They won't enter the commit — I'll add only `docs/`. Committing and pushing:
+
 <details>
-<summary>Execution details — 73 tool events</summary>
+<summary>Execution details — 74 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1582,6 +1584,11 @@ echo "=== requirements.md NFR section tail ==="; grep -n "### R13\|## Out of…`
 echo "=== branch: $(git rev-parse --abbrev-ref HEAD) ==="
 echo "=== changed (must be docs/phase2 only) ==="; git status --short
 git status --short | grep -vE 'docs/phase2/' &…`
+- **Bash** `cd /workspaces/fhir-agent
+git add docs/phase2
+echo "=== staged (docs only) ==="; git diff --cached --name-only
+git commit -q -F - <<'EOF'
+docs(phase2): add cloud security, observability & scalability…`
 
 </details>
 
@@ -1592,6 +1599,6 @@ git status --short | grep -vE 'docs/phase2/' &…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 13 July 2026, 23:40 UTC
+- **Last updated:** 13 July 2026, 23:41 UTC
 - **Turns:** 10
 - **Status:** Complete
