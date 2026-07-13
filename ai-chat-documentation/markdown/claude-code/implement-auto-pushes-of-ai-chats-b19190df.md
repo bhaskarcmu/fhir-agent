@@ -2508,8 +2508,14 @@ So the go-live is two steps: **(1) `sync` now to publish the back-catalog, (2) s
 
 Executing step 1 — the first real publish of your existing 3 sessions:
 
+**Step 1 complete** — pushed commit `9004ade2` to `origin/ai-chat-history` with all 3 conversations (redactions applied: anthropic-key×23, aws×4, github×4, private-key×2, url-creds×13, bearer×3). Your back-catalog is now live on GitHub.
+
+Now step 2 — the durable watcher. Let me check whether the running environment already knows the `aiChatArchiveWatcher` service (it was merged to `main` *after* this env started, so it may need loading):
+
+It's registered and `STOPPED` — no reload needed. Starting the supervised watcher:
+
 <details>
-<summary>Execution details — 141 tool events</summary>
+<summary>Execution details — 143 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2800,6 +2806,8 @@ echo "=== current archiver status (no sync/pu…`
 ### Turn 21 activity
 
 - **Bash** `cd /workspaces/.ai-chat-history/ai-chat-documentation/scripts && PYTHONPATH=. python3 -m archive_ai sync 2>&1`
+- **Bash** `echo "=== registered automation services ==="; gitpod automations service list 2>&1 | head -30`
+- **Bash** `gitpod automations service start aiChatArchiveWatcher 2>&1`
 
 </details>
 
