@@ -1263,6 +1263,24 @@ The `docs/phase2/` set now reads cleanly as: **source-prd** (what was asked) →
 
 We're back to where we left off — planning is committed and under review, Phase 1 is tagged and protected, and no implementation has started. Whenever you're ready, the natural next step is **M0 (read-only recon)**: run the §11.3 FHIR resource counts against the live server to confirm what data already exists before any Phase 2 build. Want me to do that, or hold here?
 
+## Turn 10
+
+### Prompt
+
+Before merging the plan and documentation, I want you to do the following:
+
+1. Investigate and do some prework for the data side of things. Find, research, and download any data you can find for example for adjudication rules or anything else we might need. Search for standard tools to synthesize data where possibe. DO NOT inlude any of this in the open PR - that is for documentation only.
+
+2. Consider the security and obserevability aspects of when this will be deployed to thge cloud. Also consier the deployability apects. If these ruminations require re-architecture or even revisiting the resuirements, happy to brainsorm with you.
+
+3. Consider scalability very strongly. When deployed to cloud, all the logic should be running either in containers or the GCP equivalent of AWS lambdas. All the data has to be stored in a very scalable way, using managed services akin to AWS RDS where possible. Thimk about using non relational databases or sharded relational databses as well.
+
+Okay to write things locally for the data engineering part
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 34 tool events</summary>
 
@@ -1367,6 +1385,6 @@ Add docs/phase2/source-prd.md — a faithful, verbatim-content reconstruction…
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 13 July 2026, 23:09 UTC
-- **Turns:** 9
-- **Status:** Complete
+- **Last updated:** 13 July 2026, 23:14 UTC
+- **Turns:** 10
+- **Status:** Incomplete
