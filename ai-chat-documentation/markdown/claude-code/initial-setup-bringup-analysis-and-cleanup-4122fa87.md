@@ -1680,6 +1680,61 @@ The daemon **already auto-committed and pushed my `publisher.py` edit** before I
 
 Both fixes are confirmed in HEAD and pushed. Everything code-side is done; the only remaining action is the **watcher restart**, which is yours to run. Here's the full picture.
 
+## Investigation results (your point #3)
+
+**Is it a timer? No — it IS event-driven, exactly as you expected.**
+[watcher.py](/workspaces/.ai-chat-history/ai-chat-documentation/scripts/archive_ai/watcher.py) runs `inotifywait` on your Claude session file (`~/.claude/projects/…/*.jsonl`). Every prompt/response makes Claude append to that file → inotify fires → a **15 s debounce** window → **one commit+push per burst**. [DESIGN.md](/workspaces/.ai-chat-history/ai-chat-documentation/docs/DESIGN.md) confirms: "One user interaction writes several file events… the debounce collapses a burst into a single commit." There is **no background timer**. The "every minute" I saw was just our turns landing ~1 min apart — one commit per turn. Your mental model was right; my earlier wording was sloppy.
+
+**Why source `.py` files got auto-pushed — real bug, now fixed.**
+The publisher staged the *entire* `ai-chat-documentation/` subdir — and the archive's **own source lives under it** (`ai-chat-documentation/scripts/`). So editing `redactor.py` (or anything in `scripts/`) got swept into the next archive commit. You saw this happen *live*: when I tried to commit `publisher.py` myself, git said "nothing to commit" — the daemon had already grabbed and pushed my edit under an "Archive Claude Code conversations" message. 
+**Fix (committed + pushed):** the publisher now stages generated output only, excluding `scripts/` and `logs/`. Source changes must be committed deliberately from now on. (Bonus: excluding `logs/` also stops log files — which can contain secrets — from being committed.)
+
+## What's done vs. what needs the restart
+
+| Fix | Status |
+|---|---|
+| Redactor hardened (masks `npg_`, `postgres://user:‹redacted:url-credentials›`, JDBC `?password=`) — 12 tests pass | ✅ committed + pushed |
+| Publisher no longer auto-commits source/logs | ✅ committed + pushed |
+| **Both take effect only after the watcher reloads** | ⚠️ **running daemon still has OLD code in memory** |
+
+The running watcher (PID `2616304`) still uses the old redactor and old publisher, so until it restarts it keeps emitting `npg_` and staging source. **Restarting is the activation switch** — and its startup catch-up `sync` will re-redact the tip, scrubbing the current `npg_` from the archive HEAD.
+
+## Restart instructions (your point #2 — exact commands, no Ona UI needed)
+
+Run these in a terminal:
+
+```bash
+# 1. Stop the running watcher (SIGTERM)
+kill 2616304
+
+# 2. Wait, then check if Ona's supervisor auto-respawned it (autostart.sh runs the
+#    catch-up sync with the NEW code, then re-enters watch)
+sleep 20 && pgrep -af "archive_ai watch"
+```
+
+- **If step 2 prints a NEW pid** (different from 2616304): Ona restarted it — done. Skip to verify.
+- **If step 2 prints nothing** (Ona didn't respawn), start it manually the same way the service does:
+
+```bash
+pkill -f "archive_ai watch" 2>/dev/null            # ensure fully stopped
+rm -f /workspaces/.ai-chat-history/ai-chat-documentation/logs/watcher.lock   # clear stale lock
+nohup bash /workspaces/.ai-chat-history/ai-chat-documentation/scripts/autostart.sh >/dev/null 2>&1 &
+```
+
+**Verify the tip is scrubbed** (after ~30 s for the catch-up sync to finish):
+
+```bash
+grep -rlI "npg_" /workspaces/.ai-chat-history/ai-chat-documentation 2>/dev/null | grep -v '/\.git/' || echo "CLEAN — no npg_ tokens in the archive tip"
+```
+
+Expected: `CLEAN`. (Old git *history* still holds the value — that's what the rotation handles.)
+
+## Then — Neon rotation
+
+Once you've confirmed `CLEAN`, rotate: Neon Console → **Roles** → `neondb_owner` → **Reset password**; then update the `NEON_DB_URL` and `SPRING_DATASOURCE_URL` Ona secret values. That neutralizes the value still sitting in old archive history. Tell me if you want the exact connection-string formats.
+
+**One heads-up:** the fixes are committed on `ai-chat-history`, but the *live daemon* won't use them until you run the restart above — so until then, this conversation is still being archived with the old (leaky) code. Want me to walk through it with you as you run the restart, or is the command list enough?
+
 <details>
 <summary>Execution details — 181 tool events</summary>
 
