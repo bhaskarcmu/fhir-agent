@@ -1289,8 +1289,12 @@ Network is good — RxNav (RxNorm, no auth), NLM Clinical Tables, CDC ICD-10, Sy
 
 Let me kick off two research agents to pin down exact, currently-working download URLs and synthesis-tool specifics, while I set up the isolated data branch and start pulling the easy no-auth sources.
 
+While they research, let me set up the isolated data branch (off `main`, so it's completely separate from the docs PR) and begin pulling the no-auth sources I've already confirmed reachable.
+
+Branch `dataeng/phase2-prework` is isolated off `main` — the docs PR is untouched. Now let me start actual downloads from the confirmed no-auth sources. First, Synthea (the primary synthesis tool) via the GitHub API, and a proof-of-pipeline pull from RxNav + NLM ICD-10.
+
 <details>
-<summary>Execution details — 38 tool events</summary>
+<summary>Execution details — 40 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1395,6 +1399,15 @@ echo "=== Network reachability probes ==="
 probe "htt…`
 - **Agent** `Research reference/rules data sources`
 - **Agent** `Research synthetic data generation tools`
+- **Bash** `cd /workspaces/fhir-agent
+git switch main >/dev/null 2>&1 && git switch -c dataeng/phase2-prework
+echo "=== now on: $(git rev-parse --abbrev-ref HEAD) ==="
+# Data engineering work area
+mkdir -p data/r…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== Synthea latest release asset (GitHub API) ==="
+curl -s --max-time 20 https://api.github.com/repos/synthetichealth/synthea/releases/latest \
+ | jq -r '.tag_name as $…`
 
 </details>
 
@@ -1405,6 +1418,6 @@ probe "htt…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 13 July 2026, 23:16 UTC
+- **Last updated:** 13 July 2026, 23:17 UTC
 - **Turns:** 10
 - **Status:** Complete
