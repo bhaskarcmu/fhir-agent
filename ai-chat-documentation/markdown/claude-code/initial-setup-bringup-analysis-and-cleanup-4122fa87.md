@@ -1364,8 +1364,18 @@ Now the microservices status table (triage + agent are built, not "planned"):
 
 Now the roadmap/status section — let me read its current exact text to edit precisely:
 
+Now updating the status, roadmap, and adding accurate test instructions. Four edits to the README:
+
+Now the "Build and test before committing" section — let me read its exact text:
+
+Now sync CLAUDE.md's Build & test section (dev extras + the Neon-env caveat):
+
+Finally, the `mcp-agent/README.md` is just a one-line stub — filling it in to match the triage README's style and reflect what actually works:
+
+All edits done. Now let me verify nothing broke — reinstall with the new `[dev]` extras (validates the pyproject changes), then run the full Python suite:
+
 <details>
-<summary>Execution details — 113 tool events</summary>
+<summary>Execution details — 122 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1627,6 +1637,18 @@ echo; echo "=== git status (a…`
 - **Edit** `/workspaces/fhir-agent/README.md`
 - **Read** `/workspaces/fhir-agent/README.md`
 - **Read** `/workspaces/fhir-agent/README.md`
+- **Edit** `/workspaces/fhir-agent/README.md`
+- **Edit** `/workspaces/fhir-agent/README.md`
+- **Edit** `/workspaces/fhir-agent/README.md`
+- **Read** `/workspaces/fhir-agent/README.md`
+- **Edit** `/workspaces/fhir-agent/README.md`
+- **Edit** `/workspaces/fhir-agent/CLAUDE.md`
+- **Write** `/workspaces/fhir-agent/mcp-agent/README.md`
+- **Bash** `cd /workspaces/fhir-agent
+python -m pip install -q -e "client/clinical[dev]" -e "triage-service[dev]" -e "mcp-agent[dev]" 2>&1 | tail -3
+echo "=== install exit: $? ==="`
+- **Bash** `cd /workspaces/fhir-agent
+python -m pytest client/clinical triage-service mcp-agent data/scripts -q 2>&1 | tail -15`
 
 </details>
 
@@ -1637,6 +1659,6 @@ echo; echo "=== git status (a…`
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 17:56 UTC
+- **Last updated:** 13 July 2026, 17:58 UTC
 - **Turns:** 23
 - **Status:** Complete
