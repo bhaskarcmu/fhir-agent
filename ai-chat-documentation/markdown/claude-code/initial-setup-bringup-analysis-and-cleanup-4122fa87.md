@@ -1559,8 +1559,12 @@ The live path is `archive_ai` (the old cline scripts are superseded), and it red
 
 Now I'll refactor [setup-credentials.sh](.devcontainer/scripts/setup-credentials.sh) to stop writing the Claude key into files (relying on the devcontainer's existing in-env mapping), while keeping the non-secret GitHub CLI setup:
 
+setup-credentials.sh no longer writes any secret to disk (Request 1 done — single `CLAUDE_API_KEY` secret, mapped in-env to `ANTHROPIC_API_KEY` by the existing devcontainer config, agent accepts both). Now Task 2 — a gitleaks CI scan on main:
+
+Committing these two main-branch fixes to PR #23's branch. Verifying branch and staging only these files:
+
 <details>
-<summary>Execution details — 153 tool events</summary>
+<summary>Execution details — 156 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1912,6 +1916,17 @@ echo "=== where redact() is called in pipeline.py ==="; grep -nE "redact|raw|jso
 echo "=== how does the watcher produce raw? (cp/rsync/redact?) ==="; grep -nE "cp |rsync|raw|redact|pipeline|python|…`
 - **Read** `/workspaces/fhir-agent/.devcontainer/scripts/setup-credentials.sh`
 - **Write** `/workspaces/fhir-agent/.devcontainer/scripts/setup-credentials.sh`
+- **Write** `/workspaces/fhir-agent/.github/workflows/secret-scan.yml`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== branch ==="; git branch --show-current
+git add .devcontainer/scripts/setup-credentials.sh .github/workflows/secret-scan.yml
+echo "=== staged ==="; git diff --cached…`
+- **Bash** `cd /workspaces/fhir-agent
+git commit -m "$(cat <<'EOF'
+Security: stop writing secrets to files; add gitleaks scan
+
+setup-credentials.sh no longer copies the Claude key into any file. Previously
+it wro…`
 
 </details>
 
@@ -1922,6 +1937,6 @@ echo "=== how does the watcher produce raw? (cp/rsync/redact?) ==="; grep -nE "c
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 19:01 UTC
+- **Last updated:** 13 July 2026, 19:02 UTC
 - **Turns:** 25
 - **Status:** Complete
