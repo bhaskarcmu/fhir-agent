@@ -1859,8 +1859,10 @@ Doing both. First, deleting the five `/tmp` scratch copies (you've authorized; t
 
 The five are deleted — but this revealed the bigger picture: there are **~150 more pytest temp dirs** in `/tmp` (each a `tmpXXXX/work` or `/clone` archive tree from repeated test runs). Crucially, the full `/tmp` scan for real-secret tokens came back **`none`** — every one of these is a **secret-free test fixture** (`sess-good.jsonl`, `sess-secret.jsonl` with fake data), and the `/clone/` ones only ever pushed to a *local bare repo*, never GitHub. They're the same category you asked me to clean, so I'll clear them too:
 
+**`/tmp` fully cleaned — 152 stray archive trees removed, and confirmed zero real secrets remain anywhere in `/tmp`.** Updating the tracker and giving you the rotation steps:
+
 <details>
-<summary>Execution details — 190 tool events</summary>
+<summary>Execution details — 191 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2308,6 +2310,7 @@ find /tmp -maxdepth 4 -type d -…`
 - **Bash** `# Target only tmp dirs that contain an archive tree (pytest leftovers) — computed, secret-free
 before=$(find /tmp -maxdepth 4 -type d -name "ai-chat-documentation" 2>/dev/null | wc -l)
 find /tmp -maxd…`
+- **TodoWrite** `{"todos": [{"content": "Refactor setup-credentials.sh (no secret file writes) — main/PR#23", "status": "completed", "activeForm": "Refactoring setup-credentials.sh"}, {"content": "Add gitleaks CI — ma…`
 
 </details>
 
