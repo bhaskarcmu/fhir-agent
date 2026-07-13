@@ -1796,8 +1796,10 @@ Clear verdict on `/tmp/archive-dryrun`: it's a **stale scratch copy, and it's sa
 
 One last check — the *source* Claude logs, which are the one place the real secret genuinely still lives locally:
 
+More stray copies surfaced in `/tmp` — this is the real answer to "what else is problematic." Let me get the definitive picture: which `/tmp` copies contain the actual secret, and whether any can push:
+
 <details>
-<summary>Execution details — 187 tool events</summary>
+<summary>Execution details — 188 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2232,6 +2234,10 @@ echo; echo "=== git repo? remote? branch? (a remote = it could push somewhere) =
 if git -C /tmp/archive-dryrun rev-parse --is-…`
 - **Bash** `echo "=== source Claude session logs (~/.claude/projects) — do they still hold the real secret? (count only) ==="
 grep -rIE "npg_[A-Za-z0-9]{8,}" "$HOME/.claude/projects" 2>/dev/null | grep -vc "npg_A…`
+- **Bash** `echo "=== all /tmp files containing a real-secret-SHAPED npg token (filenames only, value never shown) ==="
+grep -rIlE "npg_[A-Za-z0-9]{8,}" /tmp 2>/dev/null || echo "  (none)"
+echo
+echo "=== per stra…`
 
 </details>
 
@@ -2242,6 +2248,6 @@ grep -rIE "npg_[A-Za-z0-9]{8,}" "$HOME/.claude/projects" 2>/dev/null | grep -vc 
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 19:38 UTC
+- **Last updated:** 13 July 2026, 19:39 UTC
 - **Turns:** 27
 - **Status:** Complete
