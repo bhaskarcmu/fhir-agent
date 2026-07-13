@@ -1384,6 +1384,36 @@ The `data/` shows as untracked leftovers from the branch switch (the raw downloa
 
 All three parts are complete. Let me record this state in project memory so it survives across sessions (the data branch in particular is local-only and non-obvious), then I'll summarize.
 
+All three parts are done. Here's the wrap-up.
+
+## 1. Data prework — done, kept off the docs PR ✅
+Committed to the **local `dataeng/phase2-prework` branch (not pushed)** — entirely separate from PR #24, as you required.
+
+- **Synthesis tool secured:** Synthea v4.0.0 JAR (188MB), validated it emits **657 `Claim` + 657 `ExplanationOfBenefit`** + Patient/Condition/MedicationRequest/AllergyIntolerance. Cohort biasing via `-k` keep-module documented.
+- **Real reference data pulled (no-auth):** 153 ICD-10-CM codes (NLM), 20 drugs → real RxCUIs + ATC classes (RxNav), CMS NCD export, and extracted real pharmacy `Claim`/`EOB` samples.
+- **Richest rules source found & documented for on-demand pull:** CMS Part D Formulary PUF (real per-NDC tier/PA/step-therapy/quantity-limit — 2.4GB, so URL-documented, not bulk-loaded).
+- Reproducible via `data/scripts/fetch_reference_data.py`; full inventory + licenses in `data/reference/README.md`. Raw/large files gitignored — only tiny public-domain derivatives tracked. Flagged: **Synthea doesn't emit `Coverage`** by default (we author it in the seed).
+
+## 2 & 3. Cloud security, observability, scalability — brainstormed, decided, folded into docs ✅
+Your four calls, now in the docs PR:
+- **C1 Compute:** Cloud Run for stateless services + always-on HAPI.
+- **C2 Gateway:** DB-less Kong everywhere — *this also resolved the earlier KIC-vs-`kong.yml` config-drift risk* (one dialect now).
+- **C3 Rules data:** Postgres behind a repository interface; Bigtable/Firestore = documented scale swap.
+- **C4 Audit:** FHIR `Provenance` now; BigQuery deferred.
+
+Plus new NFRs **R14 security/privacy** (incl. the concrete finding that Kong's `file-log` leaks patient IDs in URIs → PHI-safe logging; Secret Manager; TLS-on-proxy; OIDC path; injection safety), **R15 observability** (OpenTelemetry tracing across the fan-out, Managed Prometheus, correlation IDs), **R16 deployability** (Terraform + GitHub Actions).
+
+## State
+- **Docs PR [#24](https://github.com/bhaskarcmu/fhir-agent/pull/24)** updated & pushed — commit `a676e3c`, still docs-only, ready for your review before merge.
+- **Data prework** on local `dataeng/phase2-prework` (commit `9fa8d0f`, unpushed).
+- Saved a project **memory** capturing this state (notably that the data branch is local-only, so it's not lost across sessions).
+
+## Open for your call
+- **Push `dataeng/phase2-prework`?** It's local-only right now. I can push it (as a non-PR branch) if you want it backed up on origin, or leave it local.
+- Anything in the cloud decisions (C1–C4) or new NFRs you'd revise before we consider PR #24 mergeable?
+
+One thing I did *not* do: fetch the 2.4GB formulary PUF or open a PR for the data branch — both felt like they warranted your say-so first.
+
 <details>
 <summary>Execution details — 77 tool events</summary>
 
