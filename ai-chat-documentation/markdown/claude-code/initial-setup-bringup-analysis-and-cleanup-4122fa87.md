@@ -2031,8 +2031,14 @@ So: **keep tracked, and add the whitelist-style ignore pattern** as defense-in-d
 
 Only `settings.json` is tracked, and `.gitignore` has just a comment (no actual rule). Let me first see the benign uncommitted `settings.json` change (to advise on it), then add the whitelist hardening:
 
+The tracked `settings.json` is actually a Continue.dev model config (no `apiKey` — clean) plus a benign Python-env setting in the working tree; the `.gitignore` "Java runtime config" comment is stale. No secret either way. I'll apply the whitelist hardening and fix the comment. Let me read `.gitignore` then edit:
+
+Let me verify the whitelist behaves correctly, then commit just the `.gitignore` change:
+
+Whitelist verified (settings.json stays tracked; other `.vscode/*` files get ignored). Committing and pushing:
+
 <details>
-<summary>Execution details — 199 tool events</summary>
+<summary>Execution details — 203 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2515,6 +2521,16 @@ echo "=== currently tracked .vscode files ==="; git ls-files .vscode/
 echo "=== current .gitignore .vscode lines ==="; grep -nE "vscode" .gitignore || echo "(none — only the…`
 - **Bash** `cd /workspaces/fhir-agent
 echo "=== the uncommitted .vscode/settings.json diff (benign, no secret) ==="; git diff .vscode/settings.json`
+- **Read** `/workspaces/fhir-agent/.gitignore`
+- **Edit** `/workspaces/fhir-agent/.gitignore`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== settings.json still tracked (should print NOTHING = not ignored) ==="; git check-ignore .vscode/settings.json && echo "IGNORED (bad)" || echo "not ignored (correct)…`
+- **Bash** `cd /workspaces/fhir-agent
+git commit -m "$(cat <<'EOF'
+gitignore: whitelist only curated .vscode files
+
+Keep .vscode/settings.json (shared, non-secret editor config) tracked, per the
+VS Code best prac…`
 
 </details>
 
@@ -2525,6 +2541,6 @@ echo "=== the uncommitted .vscode/settings.json diff (benign, no secret) ==="; g
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 20:12 UTC
+- **Last updated:** 13 July 2026, 20:13 UTC
 - **Turns:** 32
 - **Status:** Complete
