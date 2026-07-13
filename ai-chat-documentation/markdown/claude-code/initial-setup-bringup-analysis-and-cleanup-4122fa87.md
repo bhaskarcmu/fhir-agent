@@ -1563,8 +1563,10 @@ setup-credentials.sh no longer writes any secret to disk (Request 1 done — sin
 
 Committing these two main-branch fixes to PR #23's branch. Verifying branch and staging only these files:
 
+Tasks 1 & 2 are pushed to PR #23. Updating tracker and moving to the archive redactor (ai-chat-history worktree). Let me read its test file to match style before hardening:
+
 <details>
-<summary>Execution details — 156 tool events</summary>
+<summary>Execution details — 158 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1927,6 +1929,8 @@ Security: stop writing secrets to files; add gitleaks scan
 
 setup-credentials.sh no longer copies the Claude key into any file. Previously
 it wro…`
+- **TodoWrite** `{"todos": [{"content": "Refactor setup-credentials.sh to stop writing the Claude key into files; standardize on CLAUDE_API_KEY (in-env mapping only) — main/PR#23", "status": "completed", "activeForm":…`
+- **Read** `/workspaces/.ai-chat-history/ai-chat-documentation/scripts/tests/test_redactor.py`
 
 </details>
 
