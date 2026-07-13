@@ -1374,8 +1374,14 @@ Now I'll add the security/observability/deployability/scalability NFRs and updat
 
 Now plan.md. Let me read the parity-friction note (§3), the k8s section (§5), risks (§8), and the M8 milestone so I can update them precisely and add a cloud/scalability section.
 
+Now update the M0/M1/M8 milestones and the risks section to reflect the decisions:
+
+Let me add the cloud decisions (C1–C4) to the Phase 2 index so they're discoverable alongside the four framing decisions.
+
+Now verify the docs-only diff, commit, and push to keep PR #24 current.
+
 <details>
-<summary>Execution details — 64 tool events</summary>
+<summary>Execution details — 73 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1564,6 +1570,18 @@ echo "=== requirements.md NFR section tail ==="; grep -n "### R13\|## Out of…`
 - **Edit** `/workspaces/fhir-agent/docs/phase2/requirements.md`
 - **Read** `/workspaces/fhir-agent/docs/phase2/plan.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Read** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Read** `/workspaces/fhir-agent/docs/phase2/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/README.md`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== branch: $(git rev-parse --abbrev-ref HEAD) ==="
+echo "=== changed (must be docs/phase2 only) ==="; git status --short
+git status --short | grep -vE 'docs/phase2/' &…`
 
 </details>
 
@@ -1574,6 +1592,6 @@ echo "=== requirements.md NFR section tail ==="; grep -n "### R13\|## Out of…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 13 July 2026, 23:39 UTC
+- **Last updated:** 13 July 2026, 23:40 UTC
 - **Turns:** 10
 - **Status:** Complete
