@@ -1,4 +1,4 @@
-# Review Phase 2 prescription claims adjudication modernization PRD
+# Phase 2 - prescription claim adjudication prototype
 
 ---
 

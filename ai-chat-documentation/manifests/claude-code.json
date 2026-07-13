@@ -38,12 +38,12 @@
   "bebf7ac2-4f1b-4a70-8685-440da76db7e1": {
     "archived_at": "2026-07-13T22:17:08.597357+00:00",
     "created_at": "2026-07-13T22:16:19.387000+00:00",
-    "md_filename": "review-phase-2-prescription-claims-adjudication-modernizatio-bebf7ac2.md",
+    "md_filename": "phase-2-prescription-claim-adjudication-prototype-bebf7ac2.md",
     "present": true,
     "raw_filename": "bebf7ac2-4f1b-4a70-8685-440da76db7e1.jsonl",
     "source_deleted_at": null,
     "status": "empty",
-    "title": "Review Phase 2 prescription claims adjudication modernization PRD",
+    "title": "Phase 2 - prescription claim adjudication prototype",
     "turns": 0,
     "updated_at": "2026-07-13T22:28:45.842000+00:00"
   }
