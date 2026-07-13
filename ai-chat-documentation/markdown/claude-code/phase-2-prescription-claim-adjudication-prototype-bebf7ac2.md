@@ -1382,8 +1382,10 @@ Now verify the docs-only diff, commit, and push to keep PR #24 current.
 
 The `data/` shows as untracked leftovers from the branch switch (the raw downloads live in the working tree but are only *tracked* on the `dataeng` branch). They won't enter the commit — I'll add only `docs/`. Committing and pushing:
 
+All three parts are complete. Let me record this state in project memory so it survives across sessions (the data branch in particular is local-only and non-obvious), then I'll summarize.
+
 <details>
-<summary>Execution details — 74 tool events</summary>
+<summary>Execution details — 75 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1589,6 +1591,7 @@ git add docs/phase2
 echo "=== staged (docs only) ==="; git diff --cached --name-only
 git commit -q -F - <<'EOF'
 docs(phase2): add cloud security, observability & scalability…`
+- **Read** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/MEMORY.md`
 
 </details>
 
