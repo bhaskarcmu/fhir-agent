@@ -893,8 +893,30 @@ Found it — and I need to be precise since the build **did not pass**. Let me l
 
 The other 38 tests passed but `MdmTest` is the one that boots the **full Spring application context** with a datasource — and it's resolving to Neon Postgres. Let me confirm where that datasource comes from (default config vs. an env var leaking in):
 
+Now I have the full, precise picture. Here's the honest result — **and a security finding you need to act on.**
+
+## Phase 2, Step 4 — result: BUILD FAILURE (38/39 passed, 1 error)
+
+**I will not sugarcoat this: the Java build did *not* pass.** (The earlier "exit code 0" was an artifact of my piping Maven through `tail` — the pipe's exit code masked Maven's. My mistake; the real status is BUILD FAILURE.)
+
+- **38 of 39 tests passed**, including all your custom code: `VersionedUrlFallbackValidationSupportTest` (24 tests), `CustomOperation/Interceptor/Bean` tests, `ParallelUpdatesVersionConflictTest`, etc.
+- **1 test errored:** `MdmTest.testApplicationStartedSuccessfully`.
+
+**Root cause — environmental, not a code bug:**
+This Ona workspace has ambient env vars set that point at your **Neon Postgres**: `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_DRIVER_CLASS_NAME`, `HIBERNATE_DIALECT`. Spring Boot's relaxed binding makes `SPRING_DATASOURCE_URL` **override** the H2 default baked into [application.yaml:107](fhir-service/src/main/resources/application.yaml#L107). Most tests don't boot a live datasource, but `MdmTest` starts the **full application context**, so it tries to connect to Neon — and gets `password authentication failed for user 'neondb_owner'` (stale/rotated password, or the Neon pooler needs the `endpoint=…;` password prefix). So your code is fine; the test is picking up a broken external DB connection from the environment.
+
+## 🔴 Security finding (please act before/independent of the interview)
+
+While inspecting env vars I found a **live Neon database password sitting in plaintext** in the `NEON_DB_URL` workspace variable (and in `SPRING_DATASOURCE_URL`). It got printed to this terminal. Per your own CLAUDE.md secret-protection rule, I'm flagging it rather than moving on:
+- **Recommend rotating that Neon password** (Neon dashboard → Roles → reset), since it's now been echoed into a terminal/log.
+- I won't re-print it. Consider whether these belong as Ona *secrets* (masked) rather than plain env vars.
+
+## Let me confirm the diagnosis
+
+To prove it's purely environmental, I'll re-run *just* `MdmTest` with those Neon vars unset so it uses the H2 default — it should pass:
+
 <details>
-<summary>Execution details — 70 tool events</summary>
+<summary>Execution details — 71 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1033,6 +1055,9 @@ for name in…`
 - **Bash** `cd /workspaces/fhir-agent
 echo "=== datasource in application.yaml ==="; grep -nE "datasource|url:|username|password|driver|neon" fhir-service/src/main/resources/application.yaml | head -20
 echo; echo…`
+- **Bash** `cd /workspaces/fhir-agent/fhir-service
+env -u SPRING_DATASOURCE_URL -u SPRING_DATASOURCE_DRIVER_CLASS_NAME -u HIBERNATE_DIALECT -u NEON_DB_URL \
+  ./mvnw test -Dtest=MdmTest -DfailIfNoTests=false 2>&1…`
 
 </details>
 
@@ -1043,6 +1068,6 @@ echo; echo…`
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 17:12 UTC
+- **Last updated:** 13 July 2026, 17:13 UTC
 - **Turns:** 15
 - **Status:** Complete
