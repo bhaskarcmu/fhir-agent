@@ -1857,8 +1857,10 @@ Yes to both 1. and 2.
 
 Doing both. First, deleting the five `/tmp` scratch copies (you've authorized; they hold no secrets and aren't git repos):
 
+The five are deleted — but this revealed the bigger picture: there are **~150 more pytest temp dirs** in `/tmp` (each a `tmpXXXX/work` or `/clone` archive tree from repeated test runs). Crucially, the full `/tmp` scan for real-secret tokens came back **`none`** — every one of these is a **secret-free test fixture** (`sess-good.jsonl`, `sess-secret.jsonl` with fake data), and the `/clone/` ones only ever pushed to a *local bare repo*, never GitHub. They're the same category you asked me to clean, so I'll clear them too:
+
 <details>
-<summary>Execution details — 189 tool events</summary>
+<summary>Execution details — 190 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2303,6 +2305,9 @@ echo "=== per stra…`
 - **Bash** `rm -rf /tmp/archive-dryrun /tmp/archive-verify /tmp/archive-dryrun2 /tmp/tmpqzobj94o /tmp/tmp96h8lq1g
 echo "=== deleted. verifying no archive copies remain in /tmp ==="
 find /tmp -maxdepth 4 -type d -…`
+- **Bash** `# Target only tmp dirs that contain an archive tree (pytest leftovers) — computed, secret-free
+before=$(find /tmp -maxdepth 4 -type d -name "ai-chat-documentation" 2>/dev/null | wc -l)
+find /tmp -maxd…`
 
 </details>
 
@@ -2313,6 +2318,6 @@ find /tmp -maxdepth 4 -type d -…`
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 19:42 UTC
+- **Last updated:** 13 July 2026, 19:43 UTC
 - **Turns:** 28
 - **Status:** Complete
