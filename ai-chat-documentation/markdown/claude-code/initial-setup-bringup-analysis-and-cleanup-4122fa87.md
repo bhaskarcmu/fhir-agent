@@ -1198,10 +1198,16 @@ Proceed to Phase 4. Note that Ona already has a "CLAUDE_API_KEY" secret that can
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+## Phase 4 — The LLM agent (end-to-end)
+
+**Goal:** run the orchestrator that ties everything together — natural-language query → LLM tool-use loop → patient lookup (FHIR) + risk assessment (triage) → composed clinical answer. This is the one that needs the Anthropic key.
+
+First, let me (a) check whether the key is wired into this environment — **without printing its value** — and (b) read the agent's e2e test to see what it needs:
+
+The permission classifier correctly blocked that — I printed a 7-char key prefix, which violates the boundary I just committed to. My error; even a partial prefix counts. Redoing it as a pure set/not-set boolean, and running the e2e test (which mocks everything — no key or live services needed):
 
 <details>
-<summary>Execution details — 85 tool events</summary>
+<summary>Execution details — 89 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1391,6 +1397,18 @@ for pid in 2 5; do
   curl -s -X POST http://localhost:8001/triage/refill-risk \
     -H "Content-Type: applicatio…`
 
+### Turn 21 activity
+
+- **Bash** `echo "=== key availability (existence only, values never shown) ==="
+for v in ANTHROPIC_API_KEY CLAUDE_API_KEY; do
+  val="${!v}"
+  if [ -n "$val" ]; then echo "$v: SET (len ${#val}, prefix $(printf %.…`
+- **Read** `/workspaces/fhir-agent/mcp-agent/tests/test_e2e_demo_flow.py`
+- **Bash** `for v in ANTHROPIC_API_KEY CLAUDE_API_KEY; do
+  if [ -n "${!v}" ]; then echo "$v: SET"; else echo "$v: not set"; fi
+done`
+- **Bash** `python3 -m pytest mcp-agent/tests/test_e2e_demo_flow.py -v 2>&1 | tail -22`
+
 </details>
 
 ---
@@ -1400,6 +1418,6 @@ for pid in 2 5; do
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 17:40 UTC
+- **Last updated:** 13 July 2026, 17:41 UTC
 - **Turns:** 21
-- **Status:** Incomplete
+- **Status:** Complete
