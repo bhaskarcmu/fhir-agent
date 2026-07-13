@@ -2029,8 +2029,10 @@ The research consensus is clear, and it points to *keep it tracked* for your spe
 
 So: **keep tracked, and add the whitelist-style ignore pattern** as defense-in-depth. That fits neatly into PR #23's security theme. Let me apply it and check what's currently tracked first:
 
+Only `settings.json` is tracked, and `.gitignore` has just a comment (no actual rule). Let me first see the benign uncommitted `settings.json` change (to advise on it), then add the whitelist hardening:
+
 <details>
-<summary>Execution details — 198 tool events</summary>
+<summary>Execution details — 199 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2511,6 +2513,8 @@ echo; ech…`
 - **Bash** `cd /workspaces/fhir-agent
 echo "=== currently tracked .vscode files ==="; git ls-files .vscode/
 echo "=== current .gitignore .vscode lines ==="; grep -nE "vscode" .gitignore || echo "(none — only the…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== the uncommitted .vscode/settings.json diff (benign, no secret) ==="; git diff .vscode/settings.json`
 
 </details>
 
