@@ -953,8 +953,17 @@ Help me rotate the Neon credential, then also help me save it in Ona as a secret
 
 Rotating a live database credential is security-sensitive and the actual rotation happens in your Neon account (I can't and shouldn't reach into that) — so my role is to **guide you precisely, handle the parts I safely can, and verify the result without ever seeing the secret.** Let me first learn how this repo/Ona already handles secrets so my guidance is exact, not generic.
 
+The repo's pattern is clear: **Ona secrets are injected as environment variables at container start** (that's how `CLAUDE_API_KEY` → `ANTHROPIC_API_KEY` works via [setup-credentials.sh](.devcontainer/scripts/setup-credentials.sh)). Two more things I found:
+
+- The `ona` and `gitpod` CLIs are both installed — so we may be able to set the secret from the terminal instead of clicking the dashboard.
+- ⚠️ **The Neon values are persisted in `/etc/environment`** (a plaintext file on disk), not just in memory — a second exposure surface we should clean up after rotation.
+
+Let me check what the Ona CLI can do for secrets/env, so I give you exact commands:
+
+`ona secret` is deprecated — it points to `gitpod project secret` / `gitpod user secret`. Let me get the exact secret subcommands and their flags:
+
 <details>
-<summary>Execution details — 73 tool events</summary>
+<summary>Execution details — 75 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1104,6 +1113,10 @@ echo "=== setup-credentials.sh (how secrets are consumed) ==="; sed -n '1,80p' .
 echo; echo "=== .ona/automations.yaml —…`
 - **Bash** `echo "=== Ona / Gitpod / Neon CLIs available? ==="; for c in ona gitpod gp neonctl neon psql; do printf "%-10s " "$c"; command -v "$c" 2>/dev/null || echo "(not found)"; done
 echo; echo "=== where is…`
+- **Bash** `echo "=== ona top-level ==="; ona --help 2>&1 | head -40
+echo; echo "=== ona env/secret subcommands? ==="; ona environment --help 2>&1 | head -40; ona secret --help 2>&1 | head -20; ona env --help 2>&…`
+- **Bash** `echo "=== gitpod project secret ==="; gitpod project secret --help 2>&1 | head -35
+echo; echo "=== gitpod project secret create ==="; gitpod project secret create --help 2>&1 | head -45`
 
 </details>
 
@@ -1114,6 +1127,6 @@ echo; echo "=== where is…`
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 17:20 UTC
+- **Last updated:** 13 July 2026, 17:21 UTC
 - **Turns:** 16
 - **Status:** Complete
