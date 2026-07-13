@@ -1368,8 +1368,10 @@ Your "containers or GCP lambda-equivalent + managed scalable data" pushes toward
 
 A few of these are real forks that would revise the requirements/plan, so let me get your calls before I touch the docs:
 
+Decisions locked: **Cloud Run + always-on HAPI · DB-less Kong everywhere · Postgres-behind-repository for rules · FHIR Provenance now (BigQuery deferred).** These meaningfully sharpen the plan, and since you want this settled *before merging the documentation*, I'll fold them into the docs PR now. Let me switch to the docs branch and re-read the sections I'll edit.
+
 <details>
-<summary>Execution details — 58 tool events</summary>
+<summary>Execution details — 60 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1549,6 +1551,11 @@ data(phase2): reference-data prework + synthesis tooling (local, not for PR)
 
 Data-engineering prework for Phase 2 claims adjudication. Kept off th…`
 - **AskUserQuestion** `{"questions": [{"question": "Cloud compute model for the new services (this is the biggest architectural fork)?", "header": "Compute model", "multiSelect": false, "options": [{"label": "Cloud Run + al…`
+- **Bash** `cd /workspaces/fhir-agent
+git switch feature/phase2-planning >/dev/null 2>&1
+echo "on: $(git rev-parse --abbrev-ref HEAD)"
+echo "=== requirements.md NFR section tail ==="; grep -n "### R13\|## Out of…`
+- **Read** `/workspaces/fhir-agent/docs/phase2/requirements.md`
 
 </details>
 
@@ -1559,6 +1566,6 @@ Data-engineering prework for Phase 2 claims adjudication. Kept off th…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 13 July 2026, 23:37 UTC
+- **Last updated:** 13 July 2026, 23:38 UTC
 - **Turns:** 10
 - **Status:** Complete
