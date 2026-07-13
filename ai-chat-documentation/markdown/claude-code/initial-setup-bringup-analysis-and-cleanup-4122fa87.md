@@ -1650,6 +1650,20 @@ I'll give the exact connection-string formats when you're ready.
 
 So the single thing standing between you and "future leakage prevented" is **restarting that watcher.** Want me to attempt the restart, or will you do it in the Ona UI?
 
+## Turn 26
+
+### Prompt
+
+Let us hold off on PR #23 for a bit, and focus on fixing the secret leakage issue in the AI chat history worktree. Note the following:
+
+1. Dont worry about what is alreay committed to the repo. I will definitely change the password very soon
+2. Restarting a running watcher may be difficult from Ona interface. All this is a black box for Ona. You have to give me specific instructions what to do for this!
+3. I did not know that anything was committing anything every minute! The AI chat pushing mechanism is supposed to be event driven, occurring everytime a chat prompt or response occurs (check documetation if you need to). Also, no python source files should be pushed automatically - that is really really weird. Investigate thoroughly what is going on
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 170 tool events</summary>
 
@@ -2053,6 +2067,6 @@ echo; echo "=== is my redactor hardening in HEAD? (loo…`
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 19:08 UTC
-- **Turns:** 25
-- **Status:** Complete
+- **Last updated:** 13 July 2026, 19:13 UTC
+- **Turns:** 26
+- **Status:** Incomplete
