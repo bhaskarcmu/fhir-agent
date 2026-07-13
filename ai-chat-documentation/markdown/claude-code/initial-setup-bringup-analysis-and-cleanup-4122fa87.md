@@ -1573,8 +1573,10 @@ Now running the redactor tests to prove the hardened patterns catch the leaked f
 
 There's a `publisher.py` that auto-commits+pushes — which is the *designed* archive behavior (and allowed by CLAUDE.md: direct commit+push, no PR). Let me understand `sync` vs `watch` and what publisher stages, so I regenerate deliberately:
 
+Let me read the CLI to see exactly what `sync` does (regenerate only, or also publish), and what `subdir` the publisher stages:
+
 <details>
-<summary>Execution details — 163 tool events</summary>
+<summary>Execution details — 164 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1949,6 +1951,9 @@ grep -rnE "git |commit|push|subprocess" archive_ai/ 2>/dev/null | grep -iE "…`
 - **Bash** `cd /workspaces/.ai-chat-history/ai-chat-documentation/scripts
 echo "=== __main__.py ==="; cat archive_ai/__main__.py 2>/dev/null | head -60
 echo "=== publisher stage scope ==="; grep -nE "add|stage|_g…`
+- **Bash** `cd /workspaces/.ai-chat-history/ai-chat-documentation/scripts
+echo "=== cli.py ==="; sed -n '1,120p' archive_ai/cli.py 2>/dev/null
+echo "=== subdir / config ==="; grep -rnE "subdir|Publisher\(|publish…`
 
 </details>
 
