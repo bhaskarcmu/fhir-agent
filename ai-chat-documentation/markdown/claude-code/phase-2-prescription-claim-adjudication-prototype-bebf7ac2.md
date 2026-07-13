@@ -1232,8 +1232,18 @@ That's the full PRD, all 14 sections. A note for your archive: this is the **sou
 
 Want me to also **save this reconstructed PRD into the repo** for posterity — e.g. `docs/phase2/source-prd.md` — so the planning docs are self-contained and the deviations table has something concrete to reference? If so I'll add it to the same `feature/phase2-planning` branch / PR #24. Otherwise we can resume the planning work from where we left off.
 
+## Turn 9
+
+### Prompt
+
+Yes, save this reconstructed PRD into the repo for posterity per best practices for naming and location.
+
+### Claude response
+
+On `feature/phase2-planning` (PR #24). Saving it as `docs/phase2/source-prd.md` — alongside the plan/requirements so the Phase 2 docs are self-contained and the deviations table has a concrete reference. Let me confirm the branch, then write it.
+
 <details>
-<summary>Execution details — 28 tool events</summary>
+<summary>Execution details — 29 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1310,6 +1320,11 @@ gh pr create --base main --head feature/phase2-planning \
   --body "$(cat <<'EOF'
 ## Wh…`
 
+### Turn 9 activity
+
+- **Bash** `cd /workspaces/fhir-agent
+echo "branch: $(git rev-parse --abbrev-ref HEAD)"; git status --short`
+
 </details>
 
 ---
@@ -1319,6 +1334,6 @@ gh pr create --base main --head feature/phase2-planning \
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 13 July 2026, 23:04 UTC
-- **Turns:** 8
+- **Last updated:** 13 July 2026, 23:06 UTC
+- **Turns:** 9
 - **Status:** Complete
