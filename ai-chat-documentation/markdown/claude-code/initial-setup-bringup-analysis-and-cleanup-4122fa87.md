@@ -1049,6 +1049,26 @@ Good push — let me be accurate rather than defensive. I did *see* `NEON_DB_URL
 
 **2. Is `SPRING_DATASOURCE_URL` a second secret, or derived from `NEON_DB_URL`?** This is the part I shouldn't guess at. If it's *derived* at startup from `NEON_DB_URL`, then you already have the single-source-of-truth pattern I was recommending, and my "duplication smell" was wrong. Let me actually check:
 
+That check settles it. You're **half right, and it's a fair callout** — let me split what `NEON_DB_URL`-as-a-secret does and doesn't cover:
+
+**What you're right about:** if `NEON_DB_URL` is already a proper dashboard secret, then the *"store it in Ona as a secret properly"* mechanism is **already done for that variable.** My Part C guidance was largely redundant for `NEON_DB_URL` — you'd just be *updating* an existing secret, not creating one. Fair.
+
+**What it does *not* satisfy — two concrete gaps I just verified:**
+
+1. **Rotation is still required.** A secret store holds whatever value you give it; it can't un-leak a value that already leaked. The password inside `NEON_DB_URL` was echoed into this terminal, so the value is burned. Being stored securely ≠ being safe. You still have to reset it in Neon and update the secret's value. (This is the one thing only you can do.)
+
+2. **There is a *second* independent copy, and it's not derived.** I grepped for any transform that builds `SPRING_DATASOURCE_URL` from `NEON_DB_URL` — **there is none.** Both sit in `/etc/environment` as separate values, each with the password embedded:
+   - `NEON_DB_URL` → `postgresql://…` (Neon/psql format) — your dashboard secret ✅
+   - `SPRING_DATASOURCE_URL` → `jdbc:postgresql://…?password=…` (Spring Boot needs JDBC format)
+
+   They legitimately need two *formats* (different consumers), but right now the *password* lives in **two places** with no single source of truth. So:
+   - After rotating, you must update **both**, not just `NEON_DB_URL`.
+   - ❓ **Check this in the dashboard:** is `SPRING_DATASOURCE_URL` *also* marked as a **secret**, or is it a plain (visible) environment variable? If it's plain, that's a real gap — a full copy of the password stored unmasked. That's the thing most likely to actually be wrong.
+
+**So, net:** your `NEON_DB_URL` secret handles *storage* for one of the two. It doesn't cover rotation, and it doesn't cover the second copy. The cleanest end state is: rotate → store the password/URL once as a secret → derive the JDBC form at container start (kill the duplication). Minimal end state: rotate → update both secrets → confirm both are masked.
+
+Want me to write the small startup-script change that derives `SPRING_DATASOURCE_URL` from `NEON_DB_URL` at boot, so there's only one secret to rotate next time? That's the change that would make your instinct ("isn't one secret enough?") actually true.
+
 <details>
 <summary>Execution details — 78 tool events</summary>
 
@@ -1225,6 +1245,6 @@ grep -rniE "SPRING_DATASOURCE_URL|NEON_DB_URL" \
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 17:26 UTC
+- **Last updated:** 13 July 2026, 17:27 UTC
 - **Turns:** 17
 - **Status:** Complete
