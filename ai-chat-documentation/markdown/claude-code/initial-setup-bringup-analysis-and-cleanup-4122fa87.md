@@ -1788,8 +1788,10 @@ take a quick look at what archive-dryrun is. and what else might be a similar pr
 
 Let me locate `archive-dryrun` and any other copies of the chat archive or stray chat captures (read-only, secrets never printed).
 
+`archive-dryrun` doesn't exist now, and there's only the one live archive tree + two known worktrees. Let me search more broadly and figure out what it *was* — plus check the *other* likely leak surface: on-disk secret copies the **old** `setup-credentials.sh` wrote before my fix (which the refactor stops going forward but doesn't retroactively clean).
+
 <details>
-<summary>Execution details — 184 tool events</summary>
+<summary>Execution details — 185 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2216,6 +2218,9 @@ echo "   count of matching…`
 
 - **Bash** `echo "=== directories named archive-dryrun ==="; find /workspaces "$HOME" -maxdepth 5 -type d -name "archive-dryrun" 2>/dev/null
 echo; echo "=== all ai-chat-documentation trees on disk ==="; find /wor…`
+- **Bash** `echo "=== broader search for archive-dryrun (any root) ==="
+find /workspaces /tmp /home /root /var/tmp -type d -name "archive-dryrun" 2>/dev/null | head
+echo "=== how was it created / used? (shell his…`
 
 </details>
 
@@ -2226,6 +2231,6 @@ echo; echo "=== all ai-chat-documentation trees on disk ==="; find /wor…`
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 19:36 UTC
+- **Last updated:** 13 July 2026, 19:37 UTC
 - **Turns:** 27
 - **Status:** Complete
