@@ -1293,8 +1293,12 @@ While they research, let me set up the isolated data branch (off `main`, so it's
 
 Branch `dataeng/phase2-prework` is isolated off `main` — the docs PR is untouched. Now let me start actual downloads from the confirmed no-auth sources. First, Synthea (the primary synthesis tool) via the GitHub API, and a proof-of-pipeline pull from RxNav + NLM ICD-10.
 
+Great signal: Synthea's prebuilt `synthea-with-dependencies.jar` (187MB) is downloadable, and RxNav returns real RxCUIs matching what's already in the triage rules (amoxicillin 723, lisinopril 29046) plus ATC drug classes — exactly what we need to ground formulary/therapeutic-class data. Let me start the Synthea download in the background and pull structured reference data properly (my ICD-10 field selector was off).
+
+Synthea jar is down (exit 0). The ICD-10 `df` param is returning empty — let me inspect the raw API shape rather than guess.
+
 <details>
-<summary>Execution details — 40 tool events</summary>
+<summary>Execution details — 43 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1408,6 +1412,18 @@ mkdir -p data/r…`
 echo "=== Synthea latest release asset (GitHub API) ==="
 curl -s --max-time 20 https://api.github.com/repos/synthetichealth/synthea/releases/latest \
  | jq -r '.tag_name as $…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "Starting Synthea jar download in background..."
+curl -sL --max-time 300 -o data/synthea/synthea-with-dependencies.jar \
+  https://github.com/synthetichealth/synthea/rel…`
+- **Bash** `cd /workspaces/fhir-agent
+# Proper ICD-10-CM pull via NLM Clinical Tables (df=code,name). Pull representative codes per clinical domain.
+echo "=== ICD-10-CM sample pulls (real codes, no auth) ==="
+for…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== Synthea jar ==="; ls -lh data/synthea/synthea-with-dependencies.jar
+echo; echo "=== raw ICD-10 API response (diabetes) ==="
+curl -s --max-time 15 "https://clinicalt…`
 
 </details>
 
