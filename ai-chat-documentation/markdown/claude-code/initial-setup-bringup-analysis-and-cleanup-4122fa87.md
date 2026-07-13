@@ -1278,8 +1278,12 @@ Containerized triage → containerized FHIR works over the Compose network, HIGH
 
 Now the fully-containerized end-to-end: build the `mcp-agent` image and run the demo query. It talks to `triage:8001` and `fhir:8080` by service name; I pass the Ona key inline (never printed). This builds the agent image first, so it'll take a moment:
 
+Close — the image built and ran, but the invocation was wrong: the container's `ENTRYPOINT` already launches the agent, so my `python3 -m agent.agent` got appended as *arguments*. I just need to pass `--query` directly. Let me confirm the entrypoint and re-run correctly:
+
+Confirmed — `ENTRYPOINT` is `python3 -m agent.agent`, so I pass only `--query`. (The README's `docker compose run … python3 -m agent.agent --query` example is stale — worth fixing later.) Re-running correctly for both patients (image already built, no rebuild):
+
 <details>
-<summary>Execution details — 96 tool events</summary>
+<summary>Execution details — 98 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1511,6 +1515,11 @@ ANTHROPIC_API_KEY=‹redacted:env-secret› \
 FHIR_GATEWAY_URL=http://fhir:8080/fhir FHIR_API_KEY= \
   docker compose run --build --rm mcp-agent \
   python3 -m agent.agent --query "C…`
+- **Bash** `cd /workspaces/fhir-agent; grep -iE "ENTRYPOINT|CMD" mcp-agent/Dockerfile`
+- **Bash** `cd /workspaces/fhir-agent
+for q in "Check refill risk for Kristle Mraz" "Check refill risk for John Doe"; do
+  echo "════════════════ QUERY: $q ════════════════"
+  ANTHROPIC_API_KEY=‹redacted:env-secret›
 
 </details>
 
