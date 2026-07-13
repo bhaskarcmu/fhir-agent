@@ -475,7 +475,13 @@ One correctness note if you touch `rules.py`: `PENICILLIN_ALLERGY_SNOMED_CODES` 
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Rich confirmation. Key planning locks from this analysis:
+- **Reuse `POST /triage/refill-risk` as-is** for Phase 2 clinical safety — it already takes `{patient_id, medication_id?}`, so the Java claims-service just calls it over HTTP. **No triage changes needed** → Phase 1 stays untouched.
+- Adjudication proper (eligibility/formulary/prior-auth/coverage) is **greenfield** — no duplication risk.
+- Additive extension points confirmed: new `FHIRClient` methods (for the Python claims-agent), new triage-style engine, mirror the "return a FHIR resource" pattern (`ClaimResponse`/`CoverageEligibilityResponse`).
+- Hard constraints: don't touch `Rule.evaluate` signature or the `/triage/refill-risk` contract; agent holds no clinical logic; audiences don't cross into `client/platform` or `fhir-service`.
+
+Waiting on the infra/data reader before drafting — it covers the k8s pattern, seeding conventions, and the emulator-README question I need to resolve.
 
 <details>
 <summary>Execution details — 12 tool events</summary>
@@ -531,4 +537,4 @@ diff <(grep -E '^#|^##' CLAUDE.md) <(grep -E '^#|^##' .clinerules) && echo "HEAD
 - **Created:** 13 July 2026, 22:16 UTC
 - **Last updated:** 13 July 2026, 22:54 UTC
 - **Turns:** 6
-- **Status:** Incomplete
+- **Status:** Complete
