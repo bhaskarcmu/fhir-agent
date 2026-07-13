@@ -871,8 +871,30 @@ Ah — because I piped the Maven output through `tail -60`, nothing lands in the
 
 I'll report back the moment the Maven build completes with the test count and pass/fail. Nothing else is running or changed.
 
+## Turn 15
+
+### Prompt
+
+<task-notification>
+<task-id>bjnl6xyrm</task-id>
+<tool-use-id>toolu_01VppkwdhjzefAHD9xSDPK9B</tool-use-id>
+<output-file>/tmp/claude-1000/-workspaces-fhir-agent/4122fa87-767c-455f-9397-ab0d1fff4f85/tasks/bjnl6xyrm.output</output-file>
+<status>completed</status>
+<summary>Background command "Build and test the Java FHIR service" completed (exit code 0)</summary>
+</task-notification>
+
+### Claude response
+
+The Maven build completed with **exit code 0** (success). Let me pull the test summary from the output:
+
+Important correction: the background task showed "exit code 0", but that's misleading — the `| tail` pipe masked Maven's real exit code. The actual result is **BUILD FAILURE: 39 tests run, 0 failures, 1 error.** One test errored. Let me find which one and why:
+
+Found it — and I need to be precise since the build **did not pass**. Let me look at the one failing test and its config to explain the root cause accurately:
+
+The other 38 tests passed but `MdmTest` is the one that boots the **full Spring application context** with a datasource — and it's resolving to Neon Postgres. Let me confirm where that datasource comes from (default config vs. an env var leaking in):
+
 <details>
-<summary>Execution details — 65 tool events</summary>
+<summary>Execution details — 70 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1002,6 +1024,16 @@ for name in…`
 - **Bash** `sleep 20; tail -15 /tmp/claude-1000/-workspaces-fhir-agent/4122fa87-767c-455f-9397-ab0d1fff4f85/tasks/bjnl6xyrm.output 2>&1`
 - **Read** `/tmp/claude-1000/-workspaces-fhir-agent/4122fa87-767c-455f-9397-ab0d1fff4f85/tasks/bjnl6xyrm.output`
 
+### Turn 15 activity
+
+- **Bash** `grep -E "Tests run:|BUILD SUCCESS|BUILD FAILURE|Total time|Finished at" /tmp/claude-1000/-workspaces-fhir-agent/4122fa87-767c-455f-9397-ab0d1fff4f85/tasks/bjnl6xyrm.output 2>&1 | tail -20`
+- **Bash** `grep -E "ERROR|<<< ERROR|Caused by|Exception|BUILD FAILURE|failsafe|surefire" /tmp/claude-1000/-workspaces-fhir-agent/4122fa87-767c-455f-9397-ab0d1fff4f85/tasks/bjnl6xyrm.output 2>&1 | grep -iE "ERROR…`
+- **Read** `/workspaces/fhir-agent/fhir-service/src/test/java/ca/uhn/fhir/jpa/starter/MdmTest.java`
+- **Read** `/workspaces/fhir-agent/fhir-service/src/test/resources/application-test.yaml`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== datasource in application.yaml ==="; grep -nE "datasource|url:|username|password|driver|neon" fhir-service/src/main/resources/application.yaml | head -20
+echo; echo…`
+
 </details>
 
 ---
@@ -1011,6 +1043,6 @@ for name in…`
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 17:10 UTC
-- **Turns:** 14
+- **Last updated:** 13 July 2026, 17:12 UTC
+- **Turns:** 15
 - **Status:** Complete
