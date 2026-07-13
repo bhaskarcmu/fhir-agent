@@ -2592,6 +2592,24 @@ Clean set. Committing and pushing:
 
 Pushed (`8bcd0fd`). Now restart the supervised watcher:
 
+Done — legacy Cline watcher retired, Claude Code watcher back up and caught up.
+
+## What I did
+1. **Investigated thoroughly** — the old Cline watcher was **not running and not auto-started anywhere**: no cron (unavailable), no Ona service/task, no shell-rc or devcontainer hook. It had only ever been launched manually. (The "cline" process hits were just the `roo-cline` VS Code extension.)
+2. **Neutralized all 3 entry-point scripts** — `watch_cline.sh`, `watch_cline_events.sh`, `sync_cline.sh` now **exit immediately as a no-op unless `CLINE_ARCHIVER_ENABLED=1`**. Verified each prints the retired notice and exits 0. Committed + pushed as **`8bcd0fd`**, so the guard persists across environment rebuilds too.
+3. **Killed the orphaned `/tmp` inotifywait** (a leak from my earlier live-watcher test).
+4. **Cleanly cycled the Claude Code watcher** (stopped → made changes → restarted) to avoid a commit race in the shared worktree.
+
+## Why guard rather than delete
+It matches your ask exactly — "won't run again unless I explicitly change something." The scripts remain intact (and `export_cline.py`/tests are untouched), but they can't run accidentally or race the new archiver. Re-enabling is a deliberate `CLINE_ARCHIVER_ENABLED=1`.
+
+## Current live state
+- **`aiChatArchiveWatcher`: RUNNING** (supervised), inotify alive on the Claude Code projects dir.
+- Startup catch-up pushed **`0fc7c9c`**, then settled to `publish=noop` and is watching.
+- Only **one** archiver now owns `ai-chat-history` — the Claude Code `archive_ai` watcher. No more "Exported Cline task(s)" activity.
+
+Everything's clean: your Claude Code chats archive automatically, the old Cline pathway is retired-but-recoverable, and nothing else is running in the background.
+
 <details>
 <summary>Execution details — 156 tool events</summary>
 
@@ -2929,6 +2947,6 @@ echo "=== status ==="…`
 - **Source:** Claude Code
 - **Session ID:** `b19190df-fadc-43a7-a3b8-8ef78a5d944c`
 - **Created:** 13 July 2026, 12:36 UTC
-- **Last updated:** 13 July 2026, 15:18 UTC
+- **Last updated:** 13 July 2026, 15:19 UTC
 - **Turns:** 22
 - **Status:** Incomplete
