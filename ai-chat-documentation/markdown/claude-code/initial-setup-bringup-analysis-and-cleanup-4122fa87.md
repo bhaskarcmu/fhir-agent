@@ -1091,6 +1091,42 @@ Back to the interview prep — we're through Phase 0, 1, and 2. **Phase 3 is the
 
 Want me to kick off Phase 3, or would it help more right now to do an interview-focused recap of what Phases 0–2 prove (the architecture story, the "two hats," the pure-logic-vs-I/O layering, the config/secrets talking points)?
 
+## Turn 19
+
+### Prompt
+
+Recap just Phase 2. I lost track with all this noise you created
+
+### Claude response
+
+# Phase 2 recap — the FHIR data layer
+
+**Goal:** prove the foundation works locally — stand up the FHIR server, confirm real data flows in and back out. No GCP, no Kong.
+
+**What I did and found:**
+
+| Step | Action | Result |
+|---|---|---|
+| 1 | Health-checked the running HAPI server (`:8080`) | ✅ Live, FHIR R4 (4.0.1), valid CapabilityStatement |
+| 2 | Ran `client/platform/integration_test.py` (direct-to-server Patient CRUD) | ✅ 7/7 |
+| 3 | Seeded demo data via `seed_demo.py` | ✅ Kristle Mraz = Patient/2 (HIGH setup), John Doe = Patient/5 (LOW setup) |
+| 4 | Read data back through the domain client | ✅ Amoxicillin + Penicillin allergy for Kristle; Lisinopril, no allergy for John |
+| 5 | Built & tested the repo's *own* Java FHIR service (`./mvnw verify`) | ⚠️ 38/39 — one test errored |
+| 6 | Diagnosed the failure, re-ran it against H2 | ✅ Passes — failure was environmental, not code |
+
+**The one failure, explained:** `MdmTest` was the only test that boots the full app with a live database. The workspace has Neon datasource env vars that override the H2 default, so it tried Neon and the DB auth failed. Unset those vars → the test passes → the code is fine.
+
+**Two servers tested (as you asked):** the stock HAPI image for fast local iteration, and your own Spring Boot service (the deployable artifact). Simpler tests first, heavy Java build last.
+
+---
+
+**Interview takeaways from Phase 2:**
+1. **The data layer works end-to-end** — live CRUD + a deterministic two-patient seed that sets up the HIGH/LOW demo.
+2. **Correct clinical coding** — allergies in SNOMED, meds in RxNorm; that pairing is what the rule engine keys on.
+3. **Your custom Java code passes** (validation-fallback, custom operations/interceptors) — the lone failure is a Spring config-precedence/secrets issue, not logic.
+
+**State right now:** FHIR server still up, two patients seeded, nothing committed. Ready for Phase 3 (triage service) when you are.
+
 <details>
 <summary>Execution details — 80 tool events</summary>
 
@@ -1272,6 +1308,6 @@ grep -rniE "SPRING_DATASOURCE_URL|NEON_DB_URL" \
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 17:32 UTC
-- **Turns:** 18
+- **Last updated:** 13 July 2026, 17:34 UTC
+- **Turns:** 19
 - **Status:** Complete
