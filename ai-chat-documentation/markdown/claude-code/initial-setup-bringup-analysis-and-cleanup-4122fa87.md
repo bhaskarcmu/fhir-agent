@@ -1346,8 +1346,26 @@ mcp-agent's README is just a stub. Let me scan all docs for the specific stale p
 
 Stale content is concentrated in the top-level [README.md](README.md). Let me check a few more files before editing — the other service READMEs and whether `.gitignore` covers the test/build artifacts that got generated:
 
+Everything's clear now. Two things worth flagging before I edit:
+- `.gitignore` already covers `__pycache__`/`.pyc`/`.egg-info`, so no stray test artifacts will be committed. Good.
+- ⚠️ **Pre-existing security concern (not mine to commit):** `.vscode/settings.json` is a *tracked* file, and [setup-credentials.sh](.devcontainer/scripts/setup-credentials.sh) writes the API key into it (Continue.dev config). It's showing as modified. I will **not** stage it, and you should consider gitignoring it / redirecting that config elsewhere — otherwise a key can land in git history. (Also, another `core` dump reappeared — untracked; I'll leave it out and you can delete it.)
+
+Now the changes. **Code + config first:**
+
+Those diagnostics are the IDE pointing at a different interpreter — the packages are installed in `/opt/pyenv` (we verified). Ignoring.
+
+Now the automations install line and the compose defaults:
+
+Now the docker-compose local defaults (so `docker compose up` works out-of-the-box without Kong, and the Ona `CLAUDE_API_KEY` flows through):
+
+Now the documentation. **Top-level README — the quick-demo run command (the stale entrypoint invocation):**
+
+Now the microservices status table (triage + agent are built, not "planned"):
+
+Now the roadmap/status section — let me read its current exact text to edit precisely:
+
 <details>
-<summary>Execution details — 103 tool events</summary>
+<summary>Execution details — 113 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1599,6 +1617,16 @@ echo; echo…`
 - **Bash** `cd /workspaces/fhir-agent
 echo "=== .gitignore: pytest/pycache/egg-info covered? ==="; grep -nE "pytest_cache|__pycache__|egg-info|\.pyc" .gitignore || echo "NOT covered"
 echo; echo "=== git status (a…`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/client/clinical/pyproject.toml`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/pyproject.toml`
+- **Edit** `/workspaces/fhir-agent/.ona/automations.yaml`
+- **Edit** `/workspaces/fhir-agent/docker-compose.yml`
+- **Edit** `/workspaces/fhir-agent/docker-compose.yml`
+- **Edit** `/workspaces/fhir-agent/README.md`
+- **Edit** `/workspaces/fhir-agent/README.md`
+- **Read** `/workspaces/fhir-agent/README.md`
+- **Read** `/workspaces/fhir-agent/README.md`
 
 </details>
 
@@ -1609,6 +1637,6 @@ echo; echo "=== git status (a…`
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 17:54 UTC
+- **Last updated:** 13 July 2026, 17:56 UTC
 - **Turns:** 23
 - **Status:** Complete
