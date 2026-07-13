@@ -1396,8 +1396,10 @@ The compose demo now resolves to `http://fhir:8080/fhir` out-of-the-box. All cha
 
 Staging only the intended files — deliberately excluding `.vscode/settings.json` (contains a key) and `core`:
 
+Correct — 10 intended files staged; `.vscode/settings.json` and `core` left out. Committing and opening the PR:
+
 <details>
-<summary>Execution details — 135 tool events</summary>
+<summary>Execution details — 138 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1699,6 +1701,18 @@ echo; echo "=== diff stat (tracked changes) ==="; git diff --stat`
 git add .env.example .ona/automations.yaml CLAUDE.md README.md \
   client/clinical/pyproject.toml docker-compose.yml \
   mcp-agent/README.md mcp-agent/pyproject.toml mcp-agen…`
+- **Bash** `cd /workspaces/fhir-agent
+git commit -m "$(cat <<'EOF'
+Smooth out local bringup: tests, key naming, compose defaults, docs
+
+Make the full stack runnable with minimal friction and bring all docs curren…`
+- **Bash** `cd /workspaces/fhir-agent
+git push -u origin feature/bringup-smoothing 2>&1 | tail -3`
+- **Bash** `cd /workspaces/fhir-agent
+gh pr create --base main --head feature/bringup-smoothing \
+  --title "Smooth out local bringup: tests, key naming, compose defaults, docs" \
+  --body "$(cat <<'EOF'
+Makes th…`
 
 </details>
 
