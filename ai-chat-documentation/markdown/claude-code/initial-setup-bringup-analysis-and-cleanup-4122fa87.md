@@ -1735,8 +1735,10 @@ Once you've confirmed `CLEAN`, rotate: Neon Console → **Roles** → `neondb_ow
 
 **One heads-up:** the fixes are committed on `ai-chat-history`, but the *live daemon* won't use them until you run the restart above — so until then, this conversation is still being archived with the old (leaky) code. Want me to walk through it with you as you run the restart, or is the command list enough?
 
+Let me examine this precisely — the "not CLEAN" result needs interpretation, and I can verify the real question (is the *actual secret* masked?) myself without printing it. First, what the restart actually did and whether the catch-up sync ran:
+
 <details>
-<summary>Execution details — 181 tool events</summary>
+<summary>Execution details — 182 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2152,6 +2154,9 @@ The publisher sta…`
 echo "=== publisher.py in HEAD has the exclusion? ==="; git show HEAD:ai-chat-documentation/scripts/archive_ai/publisher.py | grep -c "exclude" 
 echo "=== redactor.py i…`
 - **TodoWrite** `{"todos": [{"content": "Refactor setup-credentials.sh (no secret file writes) — main/PR#23", "status": "completed", "activeForm": "Refactoring setup-credentials.sh"}, {"content": "Add gitleaks CI — ma…`
+- **Bash** `cd /workspaces/.ai-chat-history/ai-chat-documentation 2>/dev/null || exit 0
+echo "=== new watcher running? ==="; pgrep -af "archive_ai watch" | grep -v pgrep
+echo; echo "=== did the catch-up sync run/…`
 
 </details>
 
@@ -2162,6 +2167,6 @@ echo "=== redactor.py i…`
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 19:29 UTC
+- **Last updated:** 13 July 2026, 19:31 UTC
 - **Turns:** 26
 - **Status:** Complete
