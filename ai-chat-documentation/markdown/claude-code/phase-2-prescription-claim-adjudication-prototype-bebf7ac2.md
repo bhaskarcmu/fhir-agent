@@ -647,8 +647,10 @@ Now I'll write the plan + requirements. Per CLAUDE.md I'll do this on a feature 
 
 **Git context:** worktree `/workspaces/fhir-agent`, branch `main` → new branch `feature/phase2-planning`. Creating the branch (no commit to `main`):
 
+On the branch. Writing three focused documents under `docs/phase2/`: an index, the agreed **requirements** (with explicit PRD deviations), and the **implementation plan**.
+
 <details>
-<summary>Execution details — 13 tool events</summary>
+<summary>Execution details — 14 tool events</summary>
 
 ### Turn 1 activity
 
@@ -696,6 +698,7 @@ diff <(grep -E '^#|^##' CLAUDE.md) <(grep -E '^#|^##' .clinerules) && echo "HEAD
 git switch -c feature/phase2-planning
 echo "=== now on ==="; git rev-parse --abbrev-ref HEAD
 echo "=== docs/ currently ==="; ls -la docs/`
+- **Write** `/workspaces/fhir-agent/docs/phase2/README.md`
 
 </details>
 
