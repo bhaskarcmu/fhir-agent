@@ -1569,8 +1569,12 @@ Now I'll harden the redactor. The `url-credentials` pattern catches `postgres://
 
 Now running the redactor tests to prove the hardened patterns catch the leaked forms:
 
+**12 passed** — the redactor now masks the Neon password in JDBC-query, bare-token, and URI forms. Before regenerating the archive, let me check whether `archive_ai sync` auto-commits/pushes (I don't want a surprise git operation):
+
+There's a `publisher.py` that auto-commits+pushes — which is the *designed* archive behavior (and allowed by CLAUDE.md: direct commit+push, no PR). Let me understand `sync` vs `watch` and what publisher stages, so I regenerate deliberately:
+
 <details>
-<summary>Execution details — 161 tool events</summary>
+<summary>Execution details — 163 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1939,6 +1943,12 @@ it wro…`
 - **Edit** `/workspaces/.ai-chat-history/ai-chat-documentation/scripts/tests/test_redactor.py`
 - **Bash** `cd /workspaces/.ai-chat-history/ai-chat-documentation/scripts
 python3 -m pytest tests/test_redactor.py -q 2>&1 | tail -15`
+- **Bash** `cd /workspaces/.ai-chat-history/ai-chat-documentation/scripts
+echo "=== does archive_ai do git commit/push internally? ==="
+grep -rnE "git |commit|push|subprocess" archive_ai/ 2>/dev/null | grep -iE "…`
+- **Bash** `cd /workspaces/.ai-chat-history/ai-chat-documentation/scripts
+echo "=== __main__.py ==="; cat archive_ai/__main__.py 2>/dev/null | head -60
+echo "=== publisher stage scope ==="; grep -nE "add|stage|_g…`
 
 </details>
 
@@ -1949,6 +1959,6 @@ python3 -m pytest tests/test_redactor.py -q 2>&1 | tail -15`
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 19:03 UTC
+- **Last updated:** 13 July 2026, 19:04 UTC
 - **Turns:** 25
 - **Status:** Complete
