@@ -1557,8 +1557,10 @@ Now it's clear — `pipeline.py:78-80` **does** redact both raw and markdown whe
 
 The live path is `archive_ai` (the old cline scripts are superseded), and it redacts on write — so the committed secret is either a pattern gap or a pre-hardening capture. Either way, the robust fix is the same: **harden the redactor patterns and regenerate**. I have enough to implement everything now. Let me read the full setup-credentials.sh so I can refactor it without losing the non-secret setup:
 
+Now I'll refactor [setup-credentials.sh](.devcontainer/scripts/setup-credentials.sh) to stop writing the Claude key into files (relying on the devcontainer's existing in-env mapping), while keeping the non-secret GitHub CLI setup:
+
 <details>
-<summary>Execution details — 152 tool events</summary>
+<summary>Execution details — 153 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1909,6 +1911,7 @@ echo "=== where redact() is called in pipeline.py ==="; grep -nE "redact|raw|jso
 - **Bash** `cd /workspaces/.ai-chat-history/ai-chat-documentation/scripts 2>/dev/null || exit 0
 echo "=== how does the watcher produce raw? (cp/rsync/redact?) ==="; grep -nE "cp |rsync|raw|redact|pipeline|python|…`
 - **Read** `/workspaces/fhir-agent/.devcontainer/scripts/setup-credentials.sh`
+- **Write** `/workspaces/fhir-agent/.devcontainer/scripts/setup-credentials.sh`
 
 </details>
 
@@ -1919,6 +1922,6 @@ echo "=== how does the watcher produce raw? (cp/rsync/redact?) ==="; grep -nE "c
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 13 July 2026, 19:00 UTC
+- **Last updated:** 13 July 2026, 19:01 UTC
 - **Turns:** 25
 - **Status:** Complete
