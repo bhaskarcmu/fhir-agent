@@ -13,6 +13,10 @@ dependencies = [
     "fhir-clinical-client",   # installed via pip install -e client/clinical
 ]
 
+[project.optional-dependencies]
+# Test tooling — install with: pip install -e "mcp-agent[dev]"
+dev = ["pytest>=8"]
+
 [tool.setuptools.packages.find]
 where = ["src"]
 

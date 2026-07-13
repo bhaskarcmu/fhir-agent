@@ -19,5 +19,6 @@
         "title": "Claude 3.5 Sonnet",
         "provider": "anthropic",
         "model": "claude-3-5-sonnet-20241022"
-    }
+    },
+    "python-envs.defaultEnvManager": "ms-python.python:system"
 }
