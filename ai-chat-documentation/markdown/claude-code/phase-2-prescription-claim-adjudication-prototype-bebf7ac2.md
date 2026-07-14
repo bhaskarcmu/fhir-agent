@@ -3503,8 +3503,12 @@ Domain model — the Decision Contract types (findings, severities, outcomes) an
 
 The rules engine — accumulate-then-resolve with deterministic precedence and tie-break (R17):
 
+Payer-KB repository seam (C3) — interface + file-backed implementation:
+
+Now the anti-corruption layer — the boundary that speaks the legacy fixed-width contract:
+
 <details>
-<summary>Execution details — 252 tool events</summary>
+<summary>Execution details — 255 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4086,6 +4090,9 @@ git branch --merged main | grep -q 'feature/phase2-m2-rxclaim-emulator' && echo 
 - **Write** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/domain/LegacyPricing.java`
 - **Write** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/domain/AdjudicationDecision.java`
 - **Write** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/rules/RulesEngine.java`
+- **Write** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/kb/PayerKb.java`
+- **Write** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/kb/FilePayerKb.java`
+- **Write** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/acl/LegacyAdapter.java`
 
 </details>
 
@@ -4096,6 +4103,6 @@ git branch --merged main | grep -q 'feature/phase2-m2-rxclaim-emulator' && echo 
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 16:34 UTC
+- **Last updated:** 14 July 2026, 16:36 UTC
 - **Turns:** 54
 - **Status:** Incomplete
