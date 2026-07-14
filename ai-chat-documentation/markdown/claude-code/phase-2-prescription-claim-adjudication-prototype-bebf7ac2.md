@@ -3381,8 +3381,10 @@ Now the curated formulary (10 drugs × 4 plans, driving the R8 scenarios) and th
 
 Now validate the KB is internally consistent (plan refs, rxcui refs, and the scenarios resolve as intended):
 
+All 40 rows validate; every scenario resolves as designed. Let me stage, guard against large files, and commit:
+
 <details>
-<summary>Execution details — 212 tool events</summary>
+<summary>Execution details — 213 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3881,6 +3883,11 @@ kb = pathlib.Path("data/payer-kb")
 plan_ids=set()
 for p in glob.glob(str(kb/"plans/*.yaml")):
     t=…`
+- **Bash** `cd /workspaces/fhir-agent
+git add data/payer-kb data/scripts/build_ndc_rxcui_crosswalk.py
+echo "=== staged for M1 ==="; git diff --cached --name-only
+echo "=== guard: any staged file > 200KB? ==="
+git…`
 
 </details>
 
