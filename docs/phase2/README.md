@@ -37,11 +37,18 @@ layer."*
 | C4 | Audit | **FHIR `Provenance`** now (with R18 invariants); BigQuery analytics plane deferred to Phase 2b. |
 
 **Cloud is a first-class concern from every milestone** (design + stub + test); only the
-live/paid GCP deploy is late (**Phase 2b**). Added normative sections: **Decision Contract
+live/paid GCP deploy is late (**Phase 2b**). Normative sections: **Decision Contract
 (R17)**, **audit invariants + idempotency (R18)**, **test matrix (R19)**, plus security
-(R14), observability (R15), deployability (R16), and a **stakeholder × milestone** matrix
-(plan §13). Data-engineering prework (sources, Synthea, curated fixtures) lives on branch
-`dataeng/phase2-prework` (off this docs PR by design).
+(R14), observability (R15), deployability (R16), a **stakeholder × milestone** matrix
+(plan §13), the **modernization/strangler snapshot** and **reliability patterns** (plan §5),
+**engineering standards** (plan §14), and the **delivery/PR strategy** (plan §15).
+
+**Payer grounding — Medicare *and* commercial.** Coverage is grounded in **real public
+disclosure data** for both: CMS Part D (Medicare) and ACA-mandated disclosures — EHB
+benchmark plans + QHP machine-readable formularies (tier/PA/step-therapy/quantity-limit) —
+for representative commercial plans (requirements R13.1). The rules engine is
+payer-agnostic; plan type is configuration. The data-engineering source catalog, synthesis
+tooling, curated fixtures, and verified URLs live under `data/reference/`.
 
 ## Non-negotiable constraint
 

@@ -94,7 +94,7 @@ single source of truth, used **both** locally and for the Phase 2 cloud gateway 
 Cloud Run URLs in cloud, containers locally). Phase 1's KIC config is **not migrated** —
 it keeps serving `/fhir` untouched until the gateway-strangler step below.
 
-### Gateway-strangler — hybrid, with a reversible migration (resolves review #1)
+### Gateway-strangler — hybrid, with a reversible migration
 The gateway is the **one genuinely cross-phase artifact**. Rather than a risky rewrite,
 the two gateways coexist and Phase 2 strangles the old one on our schedule:
 
@@ -129,7 +129,7 @@ The dependency arrow points **Phase 2 → Phase 1 only**.
 | `mcp-agent` | Untouched — claims explanation is a **separate** `claims-agent` (D3). |
 | `.ona/automations.yaml` | Append new Python pkgs to the `installDependencies` `pip install -e` list; add build tasks with `dependsOn: installDependencies`. Don't replace. |
 
-**Safety net:** tag `phase1-v1` (pushed) = known-good, independently deployable snapshot.
+**Safety net:** tag `phase1-v1` = known-good, independently deployable snapshot.
 
 ## 5. Cloud architecture — compute, data, security, observability, scalability
 
@@ -140,7 +140,7 @@ The dependency arrow points **Phase 2 → Phase 1 only**.
 > repository seam now makes that deploy a config step, not a rewrite. Decisions are C1–C4.
 
 ### C1 — Compute: hybrid — GKE for Phase 1 (untouched) + Cloud Run for Phase 2 (new)
-This is **additive, with no Phase 1 rework** (resolves review #2):
+This is **additive, with no Phase 1 rework**:
 - **Phase 1 stays on GKE exactly as today** — KIC Kong + `fhir-service` (HAPI). Not moved,
   not modified. HAPI stays always-on there (its ~3-min cold start, the 180s probe).
 - **New Phase 2 services** (`claims-service`, `rxclaim-emulator`, `claims-agent`) are
@@ -153,6 +153,35 @@ This is **additive, with no Phase 1 rework** (resolves review #2):
   gateway route** either way.
 - Spring cold-start on Cloud Run is mitigated with `min-instances` and, if needed, GraalVM
   native / CRaC.
+
+### Modernization state — the strangler snapshot we depict
+The prototype captures a **deliberate mid-migration snapshot**, not a green-field or a
+finished migration. This makes the strangler *legible*: it says exactly what has been
+peeled off the legacy core and what has not.
+
+**Strangled → modern (Java/Spring + reused Python + FHIR):**
+- Intake / API / validation / canonicalization (the façade + anti-corruption layer).
+- **Benefit-determination rules** — eligibility, formulary status, prior-auth requirements,
+  quantity limits (the layered rules engine).
+- **Clinical decision support** — drug-allergy, duplicate-therapy (reused `triage-service`).
+- **Decision orchestration + audit/interop** — the Decision Contract (§10) and FHIR
+  artefacts (`Claim`/`ClaimResponse`/`Task`/`Provenance`).
+
+**Still legacy (IBM i / RxClaim core — wrapped, not rewritten):**
+- The authoritative **adjudication transaction** (`ADJRXCLM`) that posts the claim.
+- **Pricing / financials** (ingredient cost, dispensing fee, copay/coinsurance, plan-pay).
+- **Systems-of-record** — member/coverage master and **accumulators** (deductible / OOP
+  running balances).
+
+**Why this split:** you strangle the *decisioning and experience* first (high value, lower
+blast radius) and migrate **money + system-of-record last** (highest risk, most encoded).
+The pipeline order (§2) reflects this — modern rule checks run *in front of* the legacy
+call, so each future strangler step pulls another responsibility forward until the core can
+be retired.
+
+**Trajectory:** past = legacy did everything → **now** = rules/experience/audit modern,
+pricing/SOR legacy → next = extract pricing, then accumulators/coverage SOR, then retire
+`ADJRXCLM`. (We apply the same pattern to infrastructure — the gateway-strangler, §3.)
 
 ### C2 — Gateway: DB-less Kong everywhere
 One declarative `kong.yml` fronts everything in **both** environments (Cloud Run URLs as
@@ -172,6 +201,28 @@ The repository interface for formulary/PA is the key seam: build on Postgres now
 Bigtable/Firestore a swap, never a rewrite. Claim intake is written **Pub/Sub-ready**
 (accept → enqueue → adjudicate) so bursts decouple; caching/rate-limit scale via
 Memorystore (Redis) — Kong's documented `redis` policy upgrade.
+
+**Why relational *and* NoSQL (the trade-off, stated explicitly):** money and truth need
+**ACID** (atomic, consistent, isolated, durable) — you cannot lose, double, or corrupt a
+payment or an accumulator — so the **claim-of-record + accumulators are relational**
+(Postgres / Db2 for i). Formulary/PA is a **high-cardinality key-value read**
+(`plan_id + NDC → rule`, tens of millions of combinations, read-heavy, changes quarterly),
+which is exactly what a **NoSQL KV store** does at scale — so there we trade strict
+consistency for horizontal scale, which a quarterly formulary tolerates and money does not.
+
+### Reliability & scale patterns (request path)
+Concrete patterns the services implement so scale never costs correctness:
+- **Load-level with a queue, don't just rate-limit.** A spike is absorbed by a queue
+  (Pub/Sub/SQS) and processed at a steady pace (nobody is dropped); gateway rate-limiting is
+  a last-resort safety valve, not the primary defense. Consumers autoscale on queue depth.
+  (Queues deliver at-least-once → consumers must be idempotent, R18.3.)
+- **Circuit breaker on the legacy call.** Calls to the IBM i core are wrapped in a breaker:
+  after repeated failures it **opens** and fails fast (or pends) instead of piling up threads
+  and cascading a platform-wide outage; a **half-open** probe restores it. One sick
+  dependency degrades gracefully rather than taking everything down.
+- **No partial persistence (R18.4).** A decision's artefacts are written all-or-nothing
+  (FHIR transaction bundle or a compensating action), so a mid-flight failure leaves nothing
+  half-written — which is what makes the client's retry clean and safe.
 
 ### C4 — Audit/analytics: FHIR Provenance now, BigQuery later
 Every decision persists a FHIR `Provenance` with the R18 referential invariants. A
@@ -201,13 +252,13 @@ Phase 2b). Stakeholder deliverables per milestone are in §13.
 | # | Milestone | Deliverable | Cloud touchpoint (design/stub/test) | Depends on |
 |---|---|---|---|---|
 | **M0** | Recon (read-only) | Run PRD §11.3 FHIR counts against live server; seed only the gap. Note compose/README HAPI drift (`v7.2.0` vs `8.8.0`) and `FHIR_GATEWAY_URL`/`FHIR_BASE_URL`. | Target topology diagram (GKE+Cloud Run hybrid); `infra/terraform/` skeleton. | — |
-| **M1** | Payer knowledge base | Curated `data/payer-kb/` (formulary, PA rules, 4 plans, RxNorm/ICD subset). Sources confirmed in prework (see `data/reference/README.md` on `dataeng/phase2-prework`). | C3 **repository interface** defined for formulary/PA (Postgres impl + a NoSQL-emulator impl behind the same seam). | M0 |
+| **M1** | Payer knowledge base | Curated `data/payer-kb/` (formulary, PA rules, 4 plans, RxNorm/ICD subset). Sources confirmed in prework (see `data/reference/`). | C3 **repository interface** defined for formulary/PA (Postgres impl + a NoSQL-emulator impl behind the same seam). | M0 |
 | **M2** | `rxclaim-emulator` | Spring Boot legacy core: DDS records, DB2/SQL400 tables, `ADJRXCLM`, legacy response. Parameterized queries (R14). | Terraform module + **Cloud Run service config** for the emulator (`ingress=internal`); cloud **smoke test in CI** (deploy to emulator/stub). | M1 |
 | **M3** | `claims-service` core | Façade + ACL + layered rules engine; calls emulator + triage; **Decision Contract** (§10, R17). | OTel tracing wired; health/readiness; Cloud Run config; **contract tests** (R19). | M1, M2 |
 | **M4** | Pipeline & artefacts | Wire pipeline; accumulate→resolve; emit the linked artefact graph (§11, R18): `Claim`/`ClaimResponse`/`Task`/`Provenance`/`RiskAssessment`/`CoverageEligibilityResponse`. | Trace of one claim across services; **idempotency/replay tests** (R18.3); Managed-Prometheus metric names. | M3 |
 | **M5** | `claims-agent` | Separate explanation agent over the façade; non-authoritative (R17.8); shares only non-clinical plumbing with `mcp-agent`. | Cloud Run config; PHI-safe log assertions in CI. | M4 |
 | **M6** | Local wiring & demo | Compose `phase2` profile; DB-less Kong `gateway` profile (generated dev key); `seed_claims_demo.py`; 4–5 golden paths. | `kong.yml` == the cloud gateway config (C2); gateway-strangler runbook drafted (§3). | M4, M5 |
-| **M7** | Tests & narrative | Full **test matrix** (§12, R19); Phase-1-only CI job; README/interview narrative. | End-to-end cloud **dry-run** (Terraform plan + CI deploy to stubs, no live spend); Phase-2b deploy runbook. | M6 |
+| **M7** | Tests & narrative | Full **test matrix** (§12, R19); Phase-1-only CI job; README/platform narrative. | End-to-end cloud **dry-run** (Terraform plan + CI deploy to stubs, no live spend); Phase-2b deploy runbook. | M6 |
 | **M8 = Phase 2b** | *(separate deliverable)* **Live cloud** | Terraform **apply** to GCP: Cloud Run + Cloud SQL/Neon + Secret Manager + Artifact Registry; DB-less Kong live; emulator `ingress=internal`; OTel→Cloud Trace + Managed Prometheus live; gateway-strangler S1→S2. First real GCP spend. | *(this is the live deploy)* | M7 |
 
 Every service ships its Compose entry **and** its Terraform/Cloud Run config **from its own
@@ -361,5 +412,52 @@ What each audience can expect after each milestone (see §6 for the engineering 
 | **M4** | first adjudicated-claim demo | golden-path outcomes | audit graph + determinism proof | pipeline + idempotency tests | audit-chain + idempotency evidence | metrics names; replay tests |
 | **M5** | plain-language explanation demo | explanation UX | agent-non-authoritative boundary | `claims-agent` + plumbing reuse | agent logs PHI-clean | agent Cloud Run config |
 | **M6** | full local end-to-end demo | all golden paths runnable | gateway-strangler runbook | compose/profiles + seed | gated-path (Kong) auth verified | `kong.yml` == cloud gateway |
-| **M7** | interview-ready narrative + docs | demo script + acceptance | end-to-end architecture proof | full test matrix green | full security evidence pack | Phase-2b deploy runbook + Terraform plan |
+| **M7** | platform narrative + docs | demo script + acceptance | end-to-end architecture proof | full test matrix green | full security evidence pack | Phase-2b deploy runbook + Terraform plan |
 | **M8 (2b)** | live cloud demo | live acceptance | production-shaped topology | deployed services | secrets/TLS/scan in prod posture | live deploy + observability |
+
+## 14. Engineering standards (platform-wide)
+
+The standards every Phase 2 service inherits by default — the "right thing is the easy
+thing." These are enforced via templates + CI gates (not just review), and map to the
+normative requirements.
+
+| Standard | What it means | Enforced by | Maps to |
+|---|---|---|---|
+| **API / contract-first** | Define & version the interface (OpenAPI / FHIR profiles) before building; no breaking change without a new version | contract tests in CI; schema review | R17.7 |
+| **12-factor services** | Stateless, config/secrets from the environment, disposable, one build many envs → autoscale + local↔cloud by config | Cloud Run/compose parity; config lint | C1, R10 |
+| **PHI-safe-by-default** | Privacy is the default path: encryption, least-privilege, **no identifiers in logs/traces** (log `decisionId`, not member id) | log scrubbing + CI check; secret scanning (gitleaks) | R14 |
+| **Test + review gates** | No merge without passing tests, coverage threshold, and ≥1 peer approval | CI required checks; branch protection | R19 |
+| **Observability by default** | Every service born instrumented — traces (one claim = one trace), metrics, correlation IDs; reliability as an **SLO** | OTel + Managed Prometheus templates | R15 |
+| **ADRs (Architecture Decision Records)** | Significant/irreversible decisions recorded (context, options, choice, trade-offs); supersede, don't edit | ADR file per decision, reviewed like code | (this planning set already *is* ADRs: D1–D8, C1–C4, R17–R19) |
+
+**Adoption approach (how, not just what):** co-author the standard with the senior
+architects + change champions + outside input (a tailored "constitution"), gather feedback,
+then enforce **incrementally** — new code and the code it touches — through **automated CI
+gates first, peer review second.** Automation is what makes standards hold across 50+
+engineers without heroics.
+
+## 15. Delivery & PR strategy
+
+One PR per milestone is the default (each independently reviewable, mergeable, and
+revertable; each keeps Phase 1 green per R9), with three refinements:
+
+| Milestone | PR? | Notes |
+|---|---|---|
+| **M0** | **No PR** | Read-only recon; findings go in the M1 PR description |
+| **M1** | Yes | Payer-KB — includes commercial/ACA grounding (requirements R13) |
+| **M2–M5** | Yes (one each) | M3 **splittable** (M3a scaffold+ACL, M3b rules+contract) if large |
+| **M6** | Yes | Compose profiles + DB-less Kong + seed + golden paths |
+| **M7** | Yes (thin) | e2e/contract matrix + Phase-1-only CI job + narrative |
+| **M8 = Phase 2b** | Yes (2–3) | Live cloud: infra, gateway-strangler cutover, CI/CD |
+
+Principles:
+- **Tests ship *in* each milestone PR** (per R19) — M7 is the integration/e2e capstone, not
+  "where testing happens."
+- **Cloud artifacts ship *in* each service's PR** (Terraform/Cloud Run config + stub tests) —
+  only the *live* deploy is deferred to Phase 2b.
+- **Additive only**: new services under the `phase2` compose profile so merging to `main`
+  never activates Phase 2 in the default path.
+- Each PR description references its **milestone + the R/C items it satisfies**.
+- **Sequential off `main`** (merge M2, branch M3 off updated `main`, …) for clean review;
+  stacked PRs only when parallelism is worth the rebase cost.
+- Never self-merge — PRs are prepared and kept current for review.
