@@ -3571,8 +3571,12 @@ Adding the HAPI FHIR client to build/persist R4 resources:
 
 Now the FHIR artefact builder — constructs the linked transaction bundle (Claim→ClaimResponse→Task→Provenance→RiskAssessment) with a shared `decisionId` and conditional-create idempotency:
 
+Now the FHIR client (interface + HAPI impl with conditional-create idempotency + intake dedupe), the service that ties persistence in, and the controller update:
+
+Updating the controller to persist via the service, mapping FHIR/system failures to 503 (R17.6, retry-safe since writes are atomic):
+
 <details>
-<summary>Execution details — 289 tool events</summary>
+<summary>Execution details — 294 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4220,6 +4224,11 @@ git branch --merged main | grep -q 'feature/phase2-m3-claims-service' && echo "M
 git branch -d…`
 - **Edit** `/workspaces/fhir-agent/claims-service/pom.xml`
 - **Write** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/fhir/FhirArtifactBuilder.java`
+- **Write** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/fhir/FhirClient.java`
+- **Write** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/fhir/HapiFhirClient.java`
+- **Write** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/pipeline/AdjudicationService.java`
+- **Write** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/api/ClaimController.java`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/main/resources/application.yml`
 
 </details>
 
@@ -4230,6 +4239,6 @@ git branch -d…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 16:53 UTC
+- **Last updated:** 14 July 2026, 16:55 UTC
 - **Turns:** 55
 - **Status:** Incomplete
