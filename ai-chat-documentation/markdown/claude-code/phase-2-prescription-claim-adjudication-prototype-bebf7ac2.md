@@ -3639,8 +3639,14 @@ Installing the package and running the tests:
 
 All 8 tests pass. Now a real CLI end-to-end smoke — driving the actual CLI + `ClaimsClient` (real httpx) against a stub claims endpoint (the full cross-service wiring is M6):
 
+CLI works end-to-end (parses claim → real httpx POST → renders explanation with pricing). Let me check the root pytest config to wire the new tests additively, then add Dockerfile/README:
+
+Adding `claims-agent/tests` to the root pytest config (additive — extends, never narrows):
+
+Let me verify the change set is clean (egg-info/pycache excluded) and commit:
+
 <details>
-<summary>Execution details — 317 tool events</summary>
+<summary>Execution details — 322 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4351,6 +4357,14 @@ cat > /tmp/mockclaims.py <<'PY'
 import json, http.server
 DECISION={"decisionId":"DEC-C1","outcome":"APPROVED","reasons":[],"allFindings":[],
           "pricing":{"paid":True,…`
+- **Bash** `cd /workspaces/fhir-agent; cat pytest.ini`
+- **Edit** `/workspaces/fhir-agent/pytest.ini`
+- **Write** `/workspaces/fhir-agent/claims-agent/Dockerfile`
+- **Write** `/workspaces/fhir-agent/claims-agent/README.md`
+- **Bash** `cd /workspaces/fhir-agent
+git add claims-agent/ pytest.ini
+echo "=== staged ==="; git diff --cached --name-only
+echo "=== guard: egg-info/pycache staged? ==="; git diff --cached --name-only | grep -E…`
 
 </details>
 
@@ -4361,6 +4375,6 @@ DECISION={"decisionId":"DEC-C1","outcome":"APPROVED","reasons":[],"allFindings":
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 17:09 UTC
+- **Last updated:** 14 July 2026, 17:10 UTC
 - **Turns:** 56
 - **Status:** Incomplete
