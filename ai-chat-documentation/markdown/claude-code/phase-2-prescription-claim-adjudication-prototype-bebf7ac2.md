@@ -3521,8 +3521,10 @@ Close — 18/20 pass, 2 failures. Let me see them:
 
 Root cause is a design choice in the engine: I short-circuited the PA/quantity/step rules when a drug is non-formulary, but the Decision Contract (and PRD §9.4's multi-reason example) says **all applicable rules run** so reasons aggregate across tiers. Fixing the engine to evaluate attribute rules whenever a formulary row exists:
 
+All 20 tests pass. Now a runtime smoke against the real endpoint (triage/legacy aren't running, so the pipeline degrades gracefully — proving the façade + rules + payer-KB loading + resilience). Packaging first:
+
 <details>
-<summary>Execution details — 274 tool events</summary>
+<summary>Execution details — 276 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4133,6 +4135,13 @@ for c in RulesEngineTest AdjudicationPipelineTest; do
 - **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/rules/RulesEngine.java`
 - **Bash** `cd /workspaces/fhir-agent
 mvn -f claims-service/pom.xml -B test 2>&1 | grep -E "Tests run: [0-9]+, Fail|BUILD" | tail -8`
+- **Bash** `cd /workspaces/fhir-agent
+mvn -q -f claims-service/pom.xml -DskipTests package 2>&1 | tail -3
+ls -lh claims-service/target/claims-service-*.jar`
+- **Bash** `cd /workspaces/fhir-agent
+java -Dpayer-kb.dir=/workspaces/fhir-agent/data/payer-kb \
+     -jar claims-service/target/claims-service-0.1.0.jar >/tmp/claims.log 2>&1 &
+APP=$!; echo "pid $APP; waiting fo…`
 
 </details>
 
@@ -4143,6 +4152,6 @@ mvn -f claims-service/pom.xml -B test 2>&1 | grep -E "Tests run: [0-9]+, Fail|BU
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 16:41 UTC
+- **Last updated:** 14 July 2026, 16:42 UTC
 - **Turns:** 54
 - **Status:** Incomplete
