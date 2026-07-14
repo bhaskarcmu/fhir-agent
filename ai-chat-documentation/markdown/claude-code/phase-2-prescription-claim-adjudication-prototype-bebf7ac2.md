@@ -2900,6 +2900,16 @@ Here's what's queued for documentation since PR #24 merged — tagged **[agreed]
 
 **Routing:** items **1–4, 9–10** → a new **docs PR** against `main`; items **5–8** → fold into the **M1 payer-KB PR** (data branch). Want me to start with the docs PR (1–4) or go straight into M1 (5–8)?
 
+## Turn 44
+
+### Prompt
+
+I feel like we can pull published information fro ACA about what private insurers are required to cover and what they are required to disclose in plans to the public. Thoughts?
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 120 tool events</summary>
 
@@ -3211,6 +3221,6 @@ echo; echo "=== commits o…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 14:15 UTC
-- **Turns:** 43
+- **Last updated:** 14 July 2026, 14:32 UTC
+- **Turns:** 44
 - **Status:** Incomplete
