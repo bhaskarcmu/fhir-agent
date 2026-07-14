@@ -1652,8 +1652,10 @@ b) YEs, apply the whole manifest of documentation to PR #24 after the above
 
 Executing the full manifest now. Let me re-read the current state of both docs so my edits are precise.
 
+Now applying the manifest. Starting with `requirements.md` — R10 (gateway reconcile + generated dev key), R11 (platform-follows-controls):
+
 <details>
-<summary>Execution details — 84 tool events</summary>
+<summary>Execution details — 85 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1890,6 +1892,7 @@ echo "=== requirements.md line count ==="; wc -l docs/phase2/requirements.md
 echo "=== plan.md line count ==="; wc -l docs/phase…`
 - **Read** `/workspaces/fhir-agent/docs/phase2/requirements.md`
 - **Read** `/workspaces/fhir-agent/docs/phase2/requirements.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/requirements.md`
 
 </details>
 
