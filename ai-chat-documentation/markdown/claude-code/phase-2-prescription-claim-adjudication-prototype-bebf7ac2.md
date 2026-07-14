@@ -3855,8 +3855,10 @@ Two issues surfaced: triage returned no prediction even for the correct patient,
 
 Root cause: the ambient `FHIR_GATEWAY_URL=http://localhost:8080/fhir` (a dev-env quirk, like the `SPRING_DATASOURCE_URL` one) leaked into the compose `triage` service — so inside the container `localhost:8080` isn't the FHIR server → triage errored → LOW. Let me re-verify with triage pointed at the right host, and confirm resolution works:
 
+Still no risk — triage's response structure likely differs from what `HttpTriageClient` parses. Let me restart cleanly, seed, and dump triage's **raw** response to see its actual shape:
+
 <details>
-<summary>Execution details — 377 tool events</summary>
+<summary>Execution details — 378 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4722,6 +4724,9 @@ curl -s -X POST -H 'Content-Type: application/json' --data '{"patient_id":"1","m
 docker compose stop triage >/dev/null 2>&1
 # Override the ambient var ONLY for compose so triage reaches the fhir container.
 FHIR_GATEWAY_URL=http://fhir:8080/fhir docker com…`
+- **Bash** `cd /workspaces/fhir-agent
+FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose up -d fhir triage >/dev/null 2>&1
+for i in $(seq 1 40); do curl -s --max-time 3 http://localhost:8080/fhir/metadata 2>/d…`
 
 </details>
 
@@ -4732,6 +4737,6 @@ FHIR_GATEWAY_URL=http://fhir:8080/fhir docker com…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 18:35 UTC
+- **Last updated:** 14 July 2026, 18:36 UTC
 - **Turns:** 60
 - **Status:** Incomplete
