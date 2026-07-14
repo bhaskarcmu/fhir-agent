@@ -3859,8 +3859,10 @@ Still no risk — triage's response structure likely differs from what `HttpTria
 
 Now it's clear: triage's `medication_id` is a **FHIR MedicationRequest id**, not an RxNorm code — passing the rxcui caused a 404. For the clinical-safety check I should call triage with **just the patient id** (evaluate all active meds vs. allergies). Let me confirm the response shape with that call:
 
+The fix is simple: call triage with **only** `patient_id` (its `medication_id` expects a MedicationRequest id, not an rxcui). The `qualitativeRisk` code (`high`/`moderate`) my parser reads is correct. Updating `HttpTriageClient`:
+
 <details>
-<summary>Execution details — 379 tool events</summary>
+<summary>Execution details — 380 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4732,6 +4734,7 @@ for i in $(seq 1 40); do curl -s --max-time 3 http://localhost:8080/fhir/metadat
 - **Bash** `cd /workspaces/fhir-agent
 FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose up -d fhir triage >/dev/null 2>&1
 for i in $(seq 1 40); do curl -s --max-time 3 http://localhost:8080/fhir/metadata 2>/d…`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/client/HttpTriageClient.java`
 
 </details>
 
@@ -4742,6 +4745,6 @@ for i in $(seq 1 40); do curl -s --max-time 3 http://localhost:8080/fhir/metadat
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 18:38 UTC
+- **Last updated:** 14 July 2026, 18:39 UTC
 - **Turns:** 60
 - **Status:** Incomplete
