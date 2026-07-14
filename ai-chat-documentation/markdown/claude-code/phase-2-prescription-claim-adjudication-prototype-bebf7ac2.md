@@ -3219,10 +3219,38 @@ Look like you are putting branch and PR information in the requirements document
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+You're right, and it's a good catch. Requirements should say **what** we build, not carry ephemeral bookkeeping (branch names, PR numbers, "off this PR") that GitHub already tracks and that rots the moment a branch is deleted. And I agree a separate status doc isn't worth it — **GitHub (branches/PRs/commits) + the plan's durable milestone list and delivery *strategy*** already cover "where are we."
+
+My rule going forward: **keep durable references** (milestone names M0–M8, the `phase1-v1` tag, file *paths*, the general PR-per-milestone *strategy*) and **cut ephemeral ones** (specific branch names, PR numbers, "kept off this docs PR").
+
+Since PR #25 is still open, I'll fold the scrub into it so the merged result is clean. Let me find every offending reference first.
+
+Line 160 is a false positive (durable text). The rest are genuine — scrubbing each now.
+
+Now the plan.md items — drop the review-# tags, `(pushed)`, and branch names:
+
+Let me re-scan to confirm the docs are clean of ephemeral references:
+
+Clean — ephemeral branch/PR refs gone; durable references (tag, paths, milestones) intact. Committing to the open PR #25:
+
+Done — PR [#25](https://github.com/bhaskarcmu/fhir-agent/pull/25) updated (`861ccec`).
+
+## What I changed
+Scrubbed all ephemeral process bookkeeping from the formal docs (requirements, plan, README, source-prd):
+- Removed specific **branch names**, **PR phrasing** ("off the docs PR", "data branch → PR"), **`(pushed)`**, and **`(resolves review #N)`** tags.
+- **Kept durable references**: file paths (`data/reference/`), the `phase1-v1` tag, milestone names (M0–M8), and the general delivery/PR *strategy* (that's durable guidance, not bookkeeping).
+
+## The principle going forward
+- **Requirements/plan = what & why** (durable). **GitHub = where/status** (branches, PRs, commits). No separate status doc — you were right that it's redundant.
+- I'll reference **milestones and paths**, never branch names or PR numbers, inside the docs.
+
+## One consistency note
+The **data-engineering working README** (`data/reference/README.md`, on the data branch) still opens with a "this lives on branch `dataeng/phase2-prework`, not part of the docs PR" note. That one's a *working artifact* (lower formality, and it's explaining why raw data isn't committed to the formal docs), so I left it — but if you want the same treatment there for consistency, I can tidy it in a quick follow-up on the data branch. Your call.
+
+Otherwise PR #25 is clean and ready for your review. Want me to tidy that data README header too, or move on to **M1**?
 
 <details>
-<summary>Execution details — 155 tool events</summary>
+<summary>Execution details — 167 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3597,6 +3625,31 @@ echo "=== open PRs ==="; gh pr list --state…`
 - **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase2-planning-state.md`
 - **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase2-planning-state.md`
 
+### Turn 47 activity
+
+- **Bash** `cd /workspaces/fhir-agent
+git switch feature/phase2-docs-refinements 2>&1 | tail -1
+echo "=== ephemeral references in docs/phase2 (branch/PR/process) ==="
+grep -nE 'dataeng/phase2-prework|phase2-prewo…`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/requirements.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/requirements.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/source-prd.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== remaining ephemeral refs (expect none meaningful) ==="
+grep -nE 'dataeng/phase2-prework|phase2-prework|docs PR|this PR|PR #|data branch|feature/phase2|kept off|\(pu…`
+- **Bash** `cd /workspaces/fhir-agent
+git add docs/phase2
+git commit -q -F - <<'EOF'
+docs(phase2): scrub ephemeral branch/PR references from the planning docs
+
+Requirements/plan/README should describe WHAT we bui…`
+
 </details>
 
 ---
@@ -3606,6 +3659,6 @@ echo "=== open PRs ==="; gh pr list --state…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 15:17 UTC
+- **Last updated:** 14 July 2026, 15:20 UTC
 - **Turns:** 47
 - **Status:** Incomplete
