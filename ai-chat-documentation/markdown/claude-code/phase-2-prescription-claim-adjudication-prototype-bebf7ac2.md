@@ -2263,6 +2263,26 @@ That resonates — abstraction by role, and tying it to top- and bottom-line.
 
 Let's make it concrete to our world. Our core adjudication runs on **RxClaim on IBM i** — decades of encoded logic, real financial and regulatory blast radius, and some aging technology underneath. If you're accountable for modernizing it **without disrupting live claims adjudication**, how would you sequence that journey? Where would you start, what would you deliberately touch *last*, and how would you keep the business and compliance partners confident while you do it?
 
+## Turn 28
+
+### Prompt
+
+I would use the Strangler pattern to execute a multi-phase modernization roadmap. To redice risk and maintain contuity in operations, I would "peel off" functionality from the legacy IBM system, focusing on lower risk domains first. For examle, claims adjudiccation and clinical safely rules can be modernized first, while leaving finalcial processing and record keeping for final phases.
+
+To get my hands dirty, I have been preparing for this type of role by building prototypes. I have recently developed a system that mimics the IBM legacy part by using fixed width databse SQL tables and a monolothic control layer for finanial management. I implementd anti corruption layer to interface this legacy emulator to a facade exposed to an agentic "Adjudication as a Servce" user exposed application. I also implemented a JAva Springboot based modern component that used an containerized FHIR server and rules engines for both clinical safelty and claims adjudication in a modern platform.
+
+Compliance parners can rest assured that clinical and adjudication rules are hand-coded and carefully reviewed with full traceability to business rules and requirements, while agentic solutions are uses to leverage those rules to provide seamless user experience. Business leaders can rely on continuity of service, and flexible incremental investment in modernization as well as mesurable impact on the company's financial performance.
+
+### Claude response
+
+Good — and I like that you've actually built a slice of it.
+
+---
+
+**Question 6 of 10**
+
+Staying on architecture but zooming out to the org level. The JD calls for **creating and enforcing application-development standards** that drive simplification and modularization across a 50+ engineer organization. What are the specific standards or architectural principles you'd institute on day one? And just as important — how do you get 50 engineers and a set of opinionated senior architects to actually *adopt* them, rather than nod and go back to how they've always done it?
+
 <details>
 <summary>Execution details — 120 tool events</summary>
 
@@ -2574,6 +2594,6 @@ echo; echo "=== commits o…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 10:33 UTC
-- **Turns:** 27
+- **Last updated:** 14 July 2026, 10:45 UTC
+- **Turns:** 28
 - **Status:** Incomplete
