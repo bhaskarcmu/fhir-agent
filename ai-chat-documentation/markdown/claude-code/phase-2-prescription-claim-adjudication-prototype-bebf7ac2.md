@@ -3883,8 +3883,10 @@ Rebuilding (with tests) and re-running the full demo — the safety path should 
 
 The "seeded" line didn't print and it's still APPROVED — likely the build didn't pick up my change (compile issue) or the seed PUT failed. Let me check both explicitly:
 
+HAPI rejects **purely-numeric** client-assigned ids (they're reserved for the server) → 400. Fix: use a non-numeric logical id `member-<memberId>` for the patient, and read that. Updating the resolver and the seed:
+
 <details>
-<summary>Execution details — 393 tool events</summary>
+<summary>Execution details — 395 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4791,6 +4793,8 @@ echo "=== rebuild claims-service — full result ==="
 mvn -q -f claims-service/pom.xml -DskipTests package 2>&1 | tail -6
 echo "exit: $?"
 ls -la --time-style=+%H:%M:%S claims-s…`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/fhir/HapiFhirClient.java`
+- **Edit** `/workspaces/fhir-agent/data/scripts/seed_claims_demo.py`
 
 </details>
 
@@ -4801,6 +4805,6 @@ ls -la --time-style=+%H:%M:%S claims-s…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 18:52 UTC
+- **Last updated:** 14 July 2026, 18:53 UTC
 - **Turns:** 60
 - **Status:** Incomplete
