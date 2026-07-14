@@ -1,0 +1,218 @@
+[
+  {
+    "rxnorm_id": "617333",
+    "drug_name": "Amoxicillin 25 MG/ML / Clavulanate 6.25 MG/ML Oral Suspension [Augmentin]",
+    "plans": [
+      {
+        "plan_id_type": "HIOS-PLAN-ID",
+        "plan_id": "38344AK1110001",
+        "drug_tier": "ACA-PREVENTIVE-DRUGS",
+        "prior_authorization": false,
+        "step_therapy": false,
+        "quantity_limit": false,
+        "years": [
+          2026
+        ]
+      },
+      {
+        "plan_id_type": "HIOS-PLAN-ID",
+        "plan_id": "38344AK1120001",
+        "drug_tier": "ACA-PREVENTIVE-DRUGS",
+        "prior_authorization": false,
+        "step_therapy": false,
+        "quantity_limit": false,
+        "years": [
+          2026
+        ]
+      }
+    ]
+  },
+  {
+    "rxnorm_id": "96304",
+    "drug_name": "Primidone 250 MG Oral Tablet",
+    "plans": [
+      {
+        "plan_id_type": "HIOS-PLAN-ID",
+        "plan_id": "38344AK1100004",
+        "drug_tier": "PREFERRED-GENERIC-DRUGS",
+        "prior_authorization": false,
+        "step_therapy": false,
+        "quantity_limit": false,
+        "years": [
+          2026
+        ]
+      },
+      {
+        "plan_id_type": "HIOS-PLAN-ID",
+        "plan_id": "38344AK1060001",
+        "drug_tier": "PREFERRED-GENERIC-DRUGS",
+        "prior_authorization": false,
+        "step_therapy": false,
+        "quantity_limit": false,
+        "years": [
+          2026
+        ]
+      },
+      {
+        "plan_id_type": "HIOS-PLAN-ID",
+        "plan_id": "38344AK1100002",
+        "drug_tier": "PREFERRED-GENERIC-DRUGS",
+        "prior_authorization": false,
+        "step_therapy": false,
+        "quantity_limit": false,
+        "years": [
+          2026
+        ]
+      },
+      {
+        "plan_id_type": "HIOS-PLAN-ID",
+        "plan_id": "38344AK1060004",
+        "drug_tier": "FORMULARY-DRUGS",
+        "prior_authorization": false,
+        "step_therapy": false,
+        "quantity_limit": false,
+        "years": [
+          2026
+        ]
+      },
+      {
+        "plan_id_type": "HIOS-PLAN-ID",
+        "plan_id": "38344AK1080001",
+        "drug_tier": "PREFERRED-GENERIC-DRUGS",
+        "prior_authorization": false,
+        "step_therapy": false,
+        "quantity_limit": false,
+        "years": [
+          2026
+        ]
+      },
+      {
+        "plan_id_type": "HIOS-PLAN-ID",
+        "plan_id": "38344AK1060002",
+        "drug_tier": "PREFERRED-GENERIC-DRUGS",
+        "prior_authorization": false,
+        "step_therapy": false,
+        "quantity_limit": false,
+        "years": [
+          2026
+        ]
+      },
+      {
+        "plan_id_type": "HIOS-PLAN-ID",
+        "plan_id": "38344AK1070002",
+        "drug_tier": "PREFERRED-GENERIC-DRUGS",
+        "prior_authorization": false,
+        "step_therapy": false,
+        "quantity_limit": false,
+        "years": [
+          2026
+        ]
+      },
+      {
+        "plan_id_type": "HIOS-PLAN-ID",
+        "plan_id": "38344AK1100001",
+        "drug_tier": "PREFERRED-GENERIC-DRUGS",
+        "prior_authorization": false,
+        "step_therapy": false,
+        "quantity_limit": false,
+        "years": [
+          2026
+        ]
+      }
+    ]
+  },
+  {
+    "rxnorm_id": "103401",
+    "drug_name": "Hydrocortisone 0.025 MG/MG Topical Ointment",
+    "plans": [
+      {
+        "plan_id_type": "HIOS-PLAN-ID",
+        "plan_id": "38344AK1100004",
+        "drug_tier": "PREFERRED-GENERIC-DRUGS",
+        "prior_authorization": false,
+        "step_therapy": false,
+        "quantity_limit": false,
+        "years": [
+          2026
+        ]
+      },
+      {
+        "plan_id_type": "HIOS-PLAN-ID",
+        "plan_id": "38344AK1060001",
+        "drug_tier": "PREFERRED-GENERIC-DRUGS",
+        "prior_authorization": false,
+        "step_therapy": false,
+        "quantity_limit": false,
+        "years": [
+          2026
+        ]
+      },
+      {
+        "plan_id_type": "HIOS-PLAN-ID",
+        "plan_id": "38344AK1100002",
+        "drug_tier": "PREFERRED-GENERIC-DRUGS",
+        "prior_authorization": false,
+        "step_therapy": false,
+        "quantity_limit": false,
+        "years": [
+          2026
+        ]
+      },
+      {
+        "plan_id_type": "HIOS-PLAN-ID",
+        "plan_id": "38344AK1060004",
+        "drug_tier": "FORMULARY-DRUGS",
+        "prior_authorization": false,
+        "step_therapy": false,
+        "quantity_limit": false,
+        "years": [
+          2026
+        ]
+      },
+      {
+        "plan_id_type": "HIOS-PLAN-ID",
+        "plan_id": "38344AK1080001",
+        "drug_tier": "PREFERRED-GENERIC-DRUGS",
+        "prior_authorization": false,
+        "step_therapy": false,
+        "quantity_limit": false,
+        "years": [
+          2026
+        ]
+      },
+      {
+        "plan_id_type": "HIOS-PLAN-ID",
+        "plan_id": "38344AK1060002",
+        "drug_tier": "PREFERRED-GENERIC-DRUGS",
+        "prior_authorization": false,
+        "step_therapy": false,
+        "quantity_limit": false,
+        "years": [
+          2026
+        ]
+      },
+      {
+        "plan_id_type": "HIOS-PLAN-ID",
+        "plan_id": "38344AK1070002",
+        "drug_tier": "PREFERRED-GENERIC-DRUGS",
+        "prior_authorization": false,
+        "step_therapy": false,
+        "quantity_limit": false,
+        "years": [
+          2026
+        ]
+      },
+      {
+        "plan_id_type": "HIOS-PLAN-ID",
+        "plan_id": "38344AK1100001",
+        "drug_tier": "PREFERRED-GENERIC-DRUGS",
+        "prior_authorization": false,
+        "step_therapy": false,
+        "quantity_limit": false,
+        "years": [
+          2026
+        ]
+      }
+    ]
+  }
+]
