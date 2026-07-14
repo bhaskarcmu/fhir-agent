@@ -3853,8 +3853,10 @@ The safety path returned APPROVED — the clinical risk didn't fire. Let me chec
 
 Two issues surfaced: triage returned no prediction even for the correct patient, and the resolution missed during the demo. Let me inspect triage's raw response and confirm its FHIR inputs exist:
 
+Root cause: the ambient `FHIR_GATEWAY_URL=http://localhost:8080/fhir` (a dev-env quirk, like the `SPRING_DATASOURCE_URL` one) leaked into the compose `triage` service — so inside the container `localhost:8080` isn't the FHIR server → triage errored → LOW. Let me re-verify with triage pointed at the right host, and confirm resolution works:
+
 <details>
-<summary>Execution details — 376 tool events</summary>
+<summary>Execution details — 377 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4716,6 +4718,10 @@ echo "=== restart fhir+triage, rese…`
 - **Bash** `cd /workspaces/fhir-agent
 echo "=== raw triage response for Patient/1 ==="
 curl -s -X POST -H 'Content-Type: application/json' --data '{"patient_id":"1","medication_id":"723"}' http://localhost:8001/t…`
+- **Bash** `cd /workspaces/fhir-agent
+docker compose stop triage >/dev/null 2>&1
+# Override the ambient var ONLY for compose so triage reaches the fhir container.
+FHIR_GATEWAY_URL=http://fhir:8080/fhir docker com…`
 
 </details>
 
@@ -4726,6 +4732,6 @@ curl -s -X POST -H 'Content-Type: application/json' --data '{"patient_id":"1","m
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 18:34 UTC
+- **Last updated:** 14 July 2026, 18:35 UTC
 - **Turns:** 60
 - **Status:** Incomplete
