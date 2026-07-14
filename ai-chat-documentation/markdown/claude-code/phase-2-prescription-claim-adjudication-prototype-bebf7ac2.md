@@ -3889,8 +3889,12 @@ Rebuilding and running the demo — this should land the clinical-safety denial:
 
 The seed worked (Patient/member-000000009, meds+allergies indexed) but safety is still APPROVED. Let me trace what claims-service did for the safety claim:
 
+Found the real culprit: triage returned **422 "body missing"** — the RestClient wasn't sending the JSON body (no Content-Type set), so triage never got `patient_id`. Everything else works (resolution reads Patient/member-000000009 → 200; triage direct returns `high` with "CONFLICT DETECTED: amoxicillin... penicillin family"). Fix: set the content type explicitly:
+
+Rebuilding and running the final demo:
+
 <details>
-<summary>Execution details — 397 tool events</summary>
+<summary>Execution details — 399 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4807,6 +4811,11 @@ for i in $(seq 1 4…`
 echo "=== safety-related log lines ==="
 grep -iE "000000009|no FHIR patient|triage unavailable|member-" /tmp/claims.log | tail -8
 echo "=== restart, seed, and probe triage wi…`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/client/HttpTriageClient.java`
+- **Bash** `cd /workspaces/fhir-agent
+mvn -q -f claims-service/pom.xml -DskipTests package 2>&1 | tail -2
+FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose up -d fhir triage >/dev/null 2>&1
+for i in $(seq 1 4…`
 
 </details>
 
@@ -4817,6 +4826,6 @@ echo "=== restart, seed, and probe triage wi…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 18:56 UTC
+- **Last updated:** 14 July 2026, 18:57 UTC
 - **Turns:** 60
 - **Status:** Incomplete
