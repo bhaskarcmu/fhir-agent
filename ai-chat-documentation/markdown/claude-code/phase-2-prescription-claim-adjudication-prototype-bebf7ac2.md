@@ -1493,6 +1493,66 @@ One more point: I know the source-prd.md is intentionally archival and non-norma
 
 Great review — sharp, and mostly on target. Before I discuss, let me ground myself in the *exact* current wording of the spots you flagged (reading only, changing nothing), so I'm critiquing the real text and not my memory of it.
 
+Confirmed all eight against the live text — your evidence holds, and a couple go deeper than stated. Here's my honest critique, point by point, with where I'd push back or extend. **I've changed nothing.**
+
+## Synthesis first
+Five of your eight (1, 2, 5, 6, 8) share one root cause: the docs are strong on **architecture and isolation** but thin on the **normative contract layer** — decision semantics, referential/idempotency invariants, a single canonical gateway model, and a test matrix that enforces determinism. The framing decisions (D1–D8) and cloud decisions (C1–C4) were layered on over time without a reconciliation pass, which is exactly how R10 and C2 ended up contradicting each other. So beyond fixing each item, I'd add a short **"Decision Contract"** section as the normative anchor. I'd also **raise 5 and 6 to Critical** (they're the determinism core), leaving your other severities as-is.
+
+## Point-by-point
+
+**1. Gateway contradiction — agree, Critical, and it's deeper than a doc mismatch.**
+Confirmed: [requirements.md:109](docs/phase2/requirements.md#L109) ("Cloud continues to use the existing KIC/Helm Kong") flatly contradicts C2 at [plan.md:128](docs/phase2/plan.md#L128)/[190](docs/phase2/plan.md#L190). But the real tension is one layer down: "Phase 1 cloud stays untouched" (KIC Kong) **plus** "DB-less Kong everywhere" implies **two Kongs in cloud**. That's not "one source of truth." The honest resolution is a **gateway strangler**: DB-less Kong is the canonical Phase 2 gateway; Phase 1's KIC Kong keeps serving `/fhir` untouched *until* an explicit, reversible migration step folds `/fhir` onto the DB-less Kong (rollback = re-point to KIC). I fully agree with your recommendation and would add that migration/rollback/ownership subsection you asked for. This is the top fix.
+
+**2. Emulator isolation inconsistency — agree, High; also an *intra*-plan conflict.**
+It's worse than requirements-vs-plan: the plan contradicts *itself* — [plan.md:66](docs/phase2/plan.md#L66) says NetworkPolicy while [plan.md:124](docs/phase2/plan.md#L124) says Cloud Run `ingress=internal`. Since C1 already **chose Cloud Run**, my recommendation over yours: don't split into "if GKE / if Cloud Run" as co-equal — that re-opens a decision we closed. Make **Cloud Run controls normative** (internal ingress + IAM invoker + VPC connector), and demote GKE/NetworkPolicy to a single clearly-labeled "fallback only" line. One canonical target, not two maintained control models. Requirements [line 115](docs/phase2/requirements.md#L115) should stop asserting NetworkPolicy as *the* control.
+
+**3. Committed dev key — agree, and the repo makes it worse than you said.**
+Confirmed at [requirements.md:108](docs/phase2/requirements.md#L108) and [plan.md:79](docs/phase2/plan.md#L79). Reinforcing evidence: this repo already runs **gitleaks** (`.github/workflows/secret-scan.yml`, commit `dd2729c` "stop writing secrets to files"). A committed key would trip the scanner or need an allowlist — actively normalizing the pattern the repo just removed. Agree with generated-at-startup. My one constraint on the fix: **preserve the zero-setup property** (the whole reason the key existed). A compose entrypoint that generates a key and templates it into both `kong.yml` and the client env at `docker compose up` keeps it one-command *and* keeps secrets out of git. So: adopt your recommendation, but the acceptance criterion is "still zero manual steps."
+
+**4. Local-first vs deep cloud detail — partial pushback.**
+I'd resist framing this as scope bloat, because the cloud depth exists *by your explicit request* (parts 2 & 3) and it's audience-relevant for a Lead-Director artifact. Also M8 is *already* fenced as `*(later)*` ([plan.md:177](docs/phase2/plan.md#L177)). So I don't want to move or thin the design — I want to **label** it better: (a) add a per-milestone "cloud touchpoint" column distinguishing *design-now/shape-the-code* work (stateless services, the C3 repository seam — these live in M2–M5) from *build-later* work; (b) rename M8 to read as a distinct deliverable phase (e.g., "Phase 2b — Cloud") with its own DoD. That addresses the stakeholder-expectation risk without discarding valuable design. Agree on the goal, disagree on "move the detail out."
+
+**5. Decision contract underspecified — agree, and I'd raise to Critical. This is the biggest technical gap.**
+The crux you're circling: **adjudication is not the triage engine's "first-match-wins."** Triage returns one `RuleResult` and stops. But a claim can fail eligibility *and* formulary *and* PA simultaneously — the PRD §9.4 example literally aggregates multiple reasons into one denial. So Phase 2 needs an **accumulate-then-resolve** model, not first-match. The contract must define:
+- **Outcome precedence** (e.g., hard-reject > pend/route-to-review > approve) and how multiple denial reasons aggregate onto one `ClaimResponse`.
+- **The triage→adjudication mapping** — currently undefined: does a triage `HIGH` force reject or pend? `MODERATE` → route-to-review? This is a real hole in the reuse boundary (D1).
+- **Canonical request/response schemas** (we can ground these in the Da Vinci PAS shapes + the real Synthea `Claim`/`EOB` samples the prework already pulled) and an **error taxonomy** (validation error vs adjudication denial vs system error — very different HTTP/outcome semantics).
+Strong agree; I'd make this the normative anchor section.
+
+**6. Referential invariants + idempotency — agree, Critical; and I verified your suspicion.**
+I grepped: **"idempoten" appears nowhere in `docs/phase2/`.** You were right to flag it as unchecked. It matters in at least four places, and they're distinct:
+- **Intake dedupe:** resubmitting the same claim (same business identifier) must not create a second `ClaimResponse` — needs an idempotency key / claim identifier.
+- **FHIR writes:** on retry, use conditional create (`If-None-Exist`) so a network retry doesn't double-write artifacts.
+- **Emulator call:** the legacy `ADJRXCLM` call must be retry-safe.
+- **Async (if we adopt C3's Pub/Sub path):** at-least-once delivery *forces* idempotent consumers.
+On referential invariants, agree: define **one decision id per adjudication** and mandatory links — `ClaimResponse.request→Claim`, `Task.focus→ClaimResponse`, `Provenance.target→[Claim,ClaimResponse]`, `RiskAssessment.basis→…`. Without these the audit chain is unprovable. Strong agree.
+
+**7. Archived PRD commands — agree, Low.**
+Confirmed §11.3 uses `Authorization: Bearer $FHIR_API_KEY`, but our Kong uses the `apikey` header — copy-paste would fail against our platform. Agree with a warning block. Cheap, worth doing.
+
+**8. Test strategy incomplete — agree, Critical.**
+"Per-service tests" ([plan.md:176](docs/phase2/plan.md#L176)) is inadequate for a growing rules engine. Agree with your matrix, and I'd bind it to points 5 & 6: **rules golden tests** (claim → expected decision, per rule *and combinations* — the aggregation cases), **API contract tests** (schema/error taxonomy), **e2e golden paths** (the 4–5 demo scenarios), **non-regression snapshots** on `ClaimResponse`, **idempotency/replay tests**, and a **Phase-1-independence test** (`docker compose up` starts only Phase 1). Golden-fixture governance (where they live, how they're regenerated, review policy) should be explicit.
+
+**Final note (archival banner) — agree.** Same fix as #7: strengthen the `source-prd.md` banner to "archival, non-normative, superseded by requirements.md — do not execute commands as-is."
+
+## Two things you didn't flag that I'd add
+- **Agent/determinism boundary isn't asserted in the contract.** The claims-agent explains; it must be stated as **non-authoritative** and *outside* the decision contract, so the LLM can never alter a deterministic outcome. This protects point 5.
+- **Triage's single-result return under-reports for aggregation.** `POST /triage/refill-risk` returns the *first* matching `RuleResult` only. If a patient has both a penicillin conflict *and* a duplicate therapy, adjudication sees one. Fine for a HIGH gate; limiting for a complete "reasons" list. This is a genuine consequence of the D1 reuse decision and belongs in the contract discussion.
+
+## What I'd change (for your approval — not doing it yet)
+1. Reconcile **R10 ↔ C2**; make DB-less Kong the canonical Phase 2 gateway; add a **gateway-strangler migration/rollback/ownership** subsection.
+2. Make **Cloud Run isolation controls normative**; demote GKE/NetworkPolicy to a labeled fallback; fix the intra-plan conflict.
+3. Replace the **committed dev key** with generated-at-startup, acceptance criterion = still zero-setup.
+4. Add a **per-milestone cloud-touchpoint** distinction; rebrand M8 as "Phase 2b — Cloud" with its own DoD (keep the design).
+5. Add a normative **"Decision Contract"** section: outcome precedence + aggregation, triage→outcome mapping, canonical schemas, error taxonomy, agent-non-authoritative clause.
+6. Add **referential-invariant + idempotency** requirements (one decision id, mandatory links, the four idempotency sites).
+7. Strengthen **source-prd** banner + add a "commands illustrative, not runnable as-is" note.
+8. Add a **minimum test matrix** + golden-fixture governance.
+
+Two questions before I touch anything:
+- On **#2**, do you agree we keep Cloud Run canonical (my recommendation) rather than maintaining dual GKE/Cloud Run control models — or do you actually want both documented as first-class?
+- On **#4**, are you okay keeping the cloud *design* in-plan (just better fenced), or do you want the deep cloud detail physically relocated to a separate doc?
+
 <details>
 <summary>Execution details — 80 tool events</summary>
 
@@ -1728,6 +1788,6 @@ grep -n "KIC/Helm\|DB-less Kong everywhere\|one .kong.yml\|source of truth\…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 00:05 UTC
+- **Last updated:** 14 July 2026, 00:06 UTC
 - **Turns:** 12
 - **Status:** Complete
