@@ -3865,8 +3865,12 @@ That diagnostic is informational (non-project file). Rebuilding and re-running t
 
 Still `no FHIR patient for member 000000009` — the resolution returns empty in-app even though the patient is seeded and a manual search finds it. Let me isolate whether it's a HAPI search-index timing race (rapid-fire after seed) with a controlled sequence + a delay:
 
+Resolution actually **works** once the patient is indexed — the demo's rapid seed→submit hit a HAPI search-index lag (a seeding-timing artifact; in production the member exists well beforehand). And my controlled test only seeded the Patient (no allergy/med), hence LOW. Fix: have the seed **wait until the patient is searchable** before claims submit. Adding that:
+
+Re-running the full demo with the timing fix — the safety path should now deny:
+
 <details>
-<summary>Execution details — 382 tool events</summary>
+<summary>Execution details — 385 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4743,6 +4747,11 @@ for i in $(seq 1 40); do curl -s --max-time 3 http://localhost:8080/fhir/metadat
 mvn -q -f claims-service/pom.xml -DskipTests package 2>&1 | tail -2
 FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose up -d fhir triage >/dev/null 2>&1
 for i in $(seq 1 4…`
+- **Bash** `cd /workspaces/fhir-agent
+FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose up -d fhir triage >/dev/null 2>&1
+for i in $(seq 1 40); do curl -s --max-time 3 http://localhost:8080/fhir/metadata 2>/d…`
+- **Edit** `/workspaces/fhir-agent/data/scripts/seed_claims_demo.py`
+- **Edit** `/workspaces/fhir-agent/data/scripts/seed_claims_demo.py`
 - **Bash** `cd /workspaces/fhir-agent
 FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose up -d fhir triage >/dev/null 2>&1
 for i in $(seq 1 40); do curl -s --max-time 3 http://localhost:8080/fhir/metadata 2>/d…`
