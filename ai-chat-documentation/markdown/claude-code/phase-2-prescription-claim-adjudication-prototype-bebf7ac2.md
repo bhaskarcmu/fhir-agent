@@ -3875,8 +3875,12 @@ Resolution fails specifically in the demo (claims-service already running when t
 
 Rebuilding with the diagnostic and re-running the demo to see exactly what the search returns:
 
+Diagnostic confirms it: the identifier **search** returns 0 from claims-service (HAPI search-index lag on the system-less identifier). Reads are immediately consistent, so I'll switch to a **read-based resolution** (seed the patient with a known logical id = member id) and have the seed **poll the exact searches triage performs** before submitting. First, the read-based resolver:
+
+Now rewrite the seed to use fixed logical ids (upsert via PUT) and poll the exact searches triage runs. Let me read the current function:
+
 <details>
-<summary>Execution details — 388 tool events</summary>
+<summary>Execution details — 390 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4770,6 +4774,10 @@ echo "=== was triage reachable? (any triage…`
 mvn -q -f claims-service/pom.xml -DskipTests package 2>&1 | tail -2
 FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose up -d fhir triage >/dev/null 2>&1
 for i in $(seq 1 4…`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/fhir/HapiFhirClient.java`
+- **Bash** `cd /workspaces/fhir-agent
+grep -n "def seed_safety_patient" data/scripts/seed_claims_demo.py
+sed -n '/def seed_safety_patient/,/print(f"seeded/p' data/scripts/seed_claims_demo.py`
 
 </details>
 
@@ -4780,6 +4788,6 @@ for i in $(seq 1 4…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 18:47 UTC
+- **Last updated:** 14 July 2026, 18:49 UTC
 - **Turns:** 60
 - **Status:** Incomplete
