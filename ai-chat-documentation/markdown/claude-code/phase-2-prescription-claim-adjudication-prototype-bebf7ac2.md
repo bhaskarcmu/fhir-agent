@@ -3327,8 +3327,18 @@ YEs to what you are leaning towards - #2
 
 On the PR #25 branch — genericizing `source-prd.md`. Let me pull the complete list of role/interview phrases to rewrite:
 
+Complete list captured. Two things need care: the provenance banner currently claims "verbatim reconstruction" (which genericizing would break), and the §8 heading. Let me read those:
+
+Now making all the edits. First the banner (it must no longer claim "verbatim" since we're genericizing):
+
+Now §8 (heading + interview-conversation framing) and the two §12 FAQ mentions:
+
+All edits done. Let me verify the entire `docs/phase2/` is now free of role/interview/job references:
+
+One left — and it's the same trap you flagged earlier: my banner note *says* what was removed, reintroducing the concept. Fixing it:
+
 <details>
-<summary>Execution details — 177 tool events</summary>
+<summary>Execution details — 196 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3763,6 +3773,31 @@ grep -cniE 'interview|lead director|target role|adjudication as a service' docs/
 
 - **Bash** `cd /workspaces/fhir-agent
 grep -nE 'target role|Lead Director|interview|the candidate|for interview|Target Role|job description|leadership of (50|a technology)|Lead-Director' docs/phase2/source-prd.md`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== banner (lines 1-16) ==="; sed -n '1,16p' docs/phase2/source-prd.md
+echo "=== §8 header ==="; grep -n "^## 8\." docs/phase2/source-prd.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/source-prd.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/source-prd.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/source-prd.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/source-prd.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/source-prd.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/source-prd.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/source-prd.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/source-prd.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/source-prd.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/source-prd.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/source-prd.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/source-prd.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/source-prd.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/source-prd.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/source-prd.md`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== full docs/phase2 scan for role/interview/job/candidate/hiring/employer terms ==="
+grep -rniE 'target role|lead director|lead-director|interview|the candidate|for in…`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/source-prd.md`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== final scan (should be fully clean) ==="
+grep -rniE 'target role|lead director|lead-director|interview|the candidate|for interview|job description|hiring|janmeet|\br…`
 
 </details>
 
@@ -3773,6 +3808,6 @@ grep -nE 'target role|Lead Director|interview|the candidate|for interview|Target
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 15:30 UTC
+- **Last updated:** 14 July 2026, 15:33 UTC
 - **Turns:** 50
 - **Status:** Incomplete
