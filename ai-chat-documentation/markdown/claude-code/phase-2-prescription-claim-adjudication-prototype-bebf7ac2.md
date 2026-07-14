@@ -3899,8 +3899,10 @@ Same 422 — the manually-built `RestClient` isn't serializing the `Map` to JSON
 
 Removing the now-unused `Map` import, then rebuild and run the final demo:
 
+Let me check the log again to see what changed:
+
 <details>
-<summary>Execution details — 402 tool events</summary>
+<summary>Execution details — 403 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4828,6 +4830,9 @@ grep -iE "000000009|triage unavailable|no FHIR patient" /tmp/claims.log | grep -
 - **Bash** `cd /workspaces/fhir-agent
 sed -i '/^import java.util.Map;$/d' claims-service/src/main/java/com/payer/claims/client/HttpTriageClient.java
 mvn -q -f claims-service/pom.xml -DskipTests package 2>&1 | tai…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== last claims.log lines mentioning triage/patient/422/error ==="
+grep -iE "triage|422|no FHIR|error|exception" /tmp/claims.log | tail -6`
 
 </details>
 
@@ -4838,6 +4843,6 @@ mvn -q -f claims-service/pom.xml -DskipTests package 2>&1 | tai…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 18:59 UTC
+- **Last updated:** 14 July 2026, 19:00 UTC
 - **Turns:** 60
 - **Status:** Incomplete
