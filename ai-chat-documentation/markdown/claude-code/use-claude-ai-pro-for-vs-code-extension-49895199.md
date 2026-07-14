@@ -118,8 +118,12 @@ Before deleting anything, let me confirm the working tree state (per repo conven
 
 **Worktree:** `/workspaces/fhir-agent` · **current branch:** `feature/phase2-m6-wiring-demo` (clean, only the untracked `core` file pending) · **target for the `.gitignore` fix:** a new branch off `main` → PR, since this is an unrelated security-hygiene fix and shouldn't ride on the M6 feature branch.
 
+Core file deleted, `main` is up to date. Now creating the branch and adding the `.gitignore` entry.
+
+Diff looks correct and scoped. Committing and pushing.
+
 <details>
-<summary>Execution details — 16 tool events</summary>
+<summary>Execution details — 22 tool events</summary>
 
 ### Turn 1 activity
 
@@ -149,6 +153,15 @@ if [ -n "$CLAUDE_API_KEY" ]; then echo "CLAUDE_AP…`
 - **Bash** `git -C /workspaces/fhir-agent branch --show-current`
 - **Bash** `rm /workspaces/fhir-agent/core`
 - **Bash** `git -C /workspaces/fhir-agent fetch origin main && git -C /workspaces/fhir-agent checkout main && git -C /workspaces/fhir-agent pull origin main`
+- **Bash** `git -C /workspaces/fhir-agent checkout -b chore/gitignore-core-dump`
+- **Read** `/workspaces/fhir-agent/.gitignore`
+- **Edit** `/workspaces/fhir-agent/.gitignore`
+- **Bash** `git -C /workspaces/fhir-agent diff .gitignore`
+- **Bash** `git -C /workspaces/fhir-agent add .gitignore && git -C /workspaces/fhir-agent commit -m "$(cat <<'EOF'
+chore: ignore core dumps (may leak secrets via process env)
+
+A 4.9GB core dump was found untracke…`
+- **Bash** `git -C /workspaces/fhir-agent push -u origin chore/gitignore-core-dump`
 
 </details>
 
@@ -159,6 +172,6 @@ if [ -n "$CLAUDE_API_KEY" ]; then echo "CLAUDE_AP…`
 - **Source:** Claude Code
 - **Session ID:** `49895199-bfa2-470d-ba8d-4bd7737fd12b`
 - **Created:** 14 July 2026, 17:33 UTC
-- **Last updated:** 14 July 2026, 17:52 UTC
+- **Last updated:** 14 July 2026, 17:54 UTC
 - **Turns:** 5
 - **Status:** Complete
