@@ -3645,8 +3645,30 @@ Adding `claims-agent/tests` to the root pytest config (additive — extends, nev
 
 Let me verify the change set is clean (egg-info/pycache excluded) and commit:
 
+M5 is up as PR [#30](https://github.com/bhaskarcmu/fhir-agent/pull/30). Updating memory, then summary.
+
+Cleanup and M5 both done.
+
+## Branch cleanup
+Deleted the merged M4 branch (`feature/phase2-m4-fhir-artefacts`, local + remote). Remaining: `main`, `ai-chat-history`, old `feature/walking-skeleton`.
+
+## M5 — `claims-agent` → PR [#30](https://github.com/bhaskarcmu/fhir-agent/pull/30)
+A **separate** Python agent (deviation D3 — the Phase 1 `mcp-agent` is untouched, no shared code) that explains adjudication decisions in plain language, **non-authoritative** (R17.8):
+- Calls claims-service (`adjudicate_claim` tool) for the **authoritative** decision, then narrates it — it can never compute or override an outcome.
+- **Two modes:** Anthropic tool-use loop when a key is present; **deterministic renderer** (`--no-llm`, or auto when no key) that produces §9.4-style explanations — so it runs and tests with **no API key**.
+- `explain.py` (outcome, aggregated reasons, secondary findings, pricing, decision id), `tools.ClaimsClient` (injectable httpx, never raises into the loop), CLI `python -m claims_agent --claim <json|file>`.
+
+**Verified two ways:** 8 unit tests (renderer per outcome incl. multi-reason; tool client with mocked httpx incl. failure path) **and** a CLI runtime smoke against a stub endpoint that rendered the APPROVED explanation with pricing end-to-end.
+
+Additive: `pytest.ini` extended to include `claims-agent/tests`; Phase 1 untouched.
+
+## State
+- Open: **PR #30** (M5). `main` has #24–#29. `phase1-v1` tagged. Memory updated.
+
+Next is **M6 — local wiring & demo**: add the `phase2` + `gateway` Compose profiles, the DB-less Kong config, `seed_claims_demo.py`, and run the 4–5 golden paths end-to-end across all services (claims-service → emulator + triage + FHIR, with the claims-agent explaining). This is the milestone where everything comes together and actually runs as one stack. Want me to proceed to M6, or pause here?
+
 <details>
-<summary>Execution details — 322 tool events</summary>
+<summary>Execution details — 324 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4365,6 +4387,12 @@ DECISION={"decisionId":"DEC-C1","outcome":"APPROVED","reasons":[],"allFindings":
 git add claims-agent/ pytest.ini
 echo "=== staged ==="; git diff --cached --name-only
 echo "=== guard: egg-info/pycache staged? ==="; git diff --cached --name-only | grep -E…`
+- **Bash** `cd /workspaces/fhir-agent
+git commit -q -F - <<'EOF'
+feat(phase2 M5): claims-agent — non-authoritative explanation agent
+
+New standalone Python agent that explains claim adjudication decisions in plai…`
+- **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase2-planning-state.md`
 
 </details>
 
@@ -4375,6 +4403,6 @@ echo "=== guard: egg-info/pycache staged? ==="; git diff --cached --name-only | 
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 17:10 UTC
+- **Last updated:** 14 July 2026, 17:11 UTC
 - **Turns:** 56
 - **Status:** Incomplete
