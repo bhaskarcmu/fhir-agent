@@ -3383,8 +3383,33 @@ Now validate the KB is internally consistent (plan refs, rxcui refs, and the sce
 
 All 40 rows validate; every scenario resolves as designed. Let me stage, guard against large files, and commit:
 
+Opening the M1 PR (it consolidates the data-engineering prework + the new payer-KB into `main`):
+
+M1 is up as PR [#26](https://github.com/bhaskarcmu/fhir-agent/pull/26). Let me update the memory, then summarize.
+
+Done — merged branch cleaned up and **M1 built**.
+
+## Branch cleanup
+- Deleted `feature/phase2-docs-refinements` (local + remote) — it was merged via PR #25. `main` confirmed clean (source-prd genericized).
+
+## M1 — Payer Knowledge Base → PR [#26](https://github.com/bhaskarcmu/fhir-agent/pull/26)
+Built `data/payer-kb/`, grounded in the real data we verified:
+- **4 plan definitions** — Commercial Silver/Gold, Medicare Advantage Demo, Employer PPO (payer type, normalized tiers + cost-sharing, deductible/MOOP, example coverage windows).
+- **Formulary** — 40 rows (10 drugs × 4 plans), keyed `(plan_id, rxcui)` → tier + PA + step-therapy + quantity-limit + covered.
+- **Layered PA rules** — federal/plan/customer, mapped to the Decision-Contract severities (DENY/PEND/REVIEW).
+- **NDC↔RxCUI crosswalk** — 20/20 demo drugs mapped to **real NDCs from openFDA** (so NDC-keyed claims resolve to the RxCUI the clinical rules use), plus a reproducible builder script.
+
+**Grounding:** tier/PA/ST/QL *structure* from CMS Part D + ACA QHP; drugs from RxNav; NDCs from openFDA — values curated to be representative and to drive all five R8 demo scenarios. **Validated**: every plan/rxcui reference resolves and each scenario (approved / pended-PA / safety / multi-reason denial / step-therapy) checks out.
+
+The PR also **consolidates the data-engineering foundation** (reference catalog, glossary, fetch scripts, curated samples) into `main` — so once #26 merges, the standalone `dataeng/phase2-prework` branch is redundant and can be deleted.
+
+## State
+- Open: **PR #26** (M1). `main` has #24 + #25. `phase1-v1` tagged. Memory updated.
+
+When you've reviewed/merged #26, the next milestone is **M2 — the `rxclaim-emulator`** (Spring Boot legacy core: DDS-style records, DB2/SQL400 tables, `ADJRXCLM`). Want me to start M2, or pause for your review of #26 first?
+
 <details>
-<summary>Execution details — 213 tool events</summary>
+<summary>Execution details — 215 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3888,6 +3913,12 @@ git add data/payer-kb data/scripts/build_ndc_rxcui_crosswalk.py
 echo "=== staged for M1 ==="; git diff --cached --name-only
 echo "=== guard: any staged file > 200KB? ==="
 git…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== PR diff vs main — file summary ==="
+git diff --stat main...feature/phase2-m1-payer-kb | tail -3
+gh pr create --base main --head feature/phase2-m1-payer-kb \
+  --tit…`
+- **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase2-planning-state.md`
 
 </details>
 
@@ -3898,6 +3929,6 @@ git…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 15:43 UTC
+- **Last updated:** 14 July 2026, 15:44 UTC
 - **Turns:** 51
 - **Status:** Incomplete
