@@ -3879,8 +3879,10 @@ Diagnostic confirms it: the identifier **search** returns 0 from claims-service 
 
 Now rewrite the seed to use fixed logical ids (upsert via PUT) and poll the exact searches triage runs. Let me read the current function:
 
+Rebuilding (with tests) and re-running the full demo — the safety path should finally deny:
+
 <details>
-<summary>Execution details — 390 tool events</summary>
+<summary>Execution details — 392 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4778,6 +4780,10 @@ for i in $(seq 1 4…`
 - **Bash** `cd /workspaces/fhir-agent
 grep -n "def seed_safety_patient" data/scripts/seed_claims_demo.py
 sed -n '/def seed_safety_patient/,/print(f"seeded/p' data/scripts/seed_claims_demo.py`
+- **Edit** `/workspaces/fhir-agent/data/scripts/seed_claims_demo.py`
+- **Bash** `cd /workspaces/fhir-agent
+mvn -q -f claims-service/pom.xml package 2>&1 | grep -E "Tests run: 2[0-9]|BUILD" | tail -3
+FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose up -d fhir triage >/dev/null…`
 
 </details>
 
