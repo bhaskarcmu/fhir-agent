@@ -3792,8 +3792,10 @@ I'll do these as **two separate PRs**, and given each is genuinely complex, I'll
 
 Starting the gateway profile off `main`:
 
+The branch is off `main` (so it doesn't carry PR #33's README changes — I'll keep this PR's docs in the compose/kong files to avoid conflicting with #33). Writing the DB-less Kong declarative config:
+
 <details>
-<summary>Execution details — 348 tool events</summary>
+<summary>Execution details — 349 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4593,6 +4595,7 @@ git switch main >/dev/null 2>&1
 git switch -c feature/phase2-gateway-profile 2>&1 | tail -1
 mkdir -p gateway/kong/.runtime && touch gateway/kong/.runtime/.gitkeep
 echo "on: $…`
+- **Write** `/workspaces/fhir-agent/gateway/kong/kong.tmpl.yml`
 
 </details>
 
