@@ -1610,6 +1610,36 @@ Here's the concrete shape I'd propose regardless of intensity — cloud woven th
 
 To fill that in properly, I need two calls from you:
 
+Both answers are clear and they fully resolve #2 and #4:
+
+- **#2 → hybrid, no Phase 1 rework.** I'll drop the "canonical/fallback" framing entirely and document it as **GKE for Phase 1 (untouched) + Cloud Run for Phase 2 (new)**, with controls following each component's platform. Your rework worry is unfounded once phrased this way, and it also fixes the point-2 inconsistency.
+- **#4 → "design + stub + test throughout, deploy late."** Cloud becomes a first-class thread through every milestone (Terraform/Cloud Run config, contract + smoke tests against emulators/stubs, OTel from M3, the C3 repository seam tested against Postgres *and* a NoSQL emulator) — but **no live GCP spend until a late milestone**. This **rewrites D8** from "cloud deferred" to "cloud designed/stubbed/tested continuously; live deploy is Phase 2b." Stakeholder matrix covers all six audiences (Exec/Business, Product, Architect, Developer, Security/Compliance, SRE/Platform).
+
+Here's the **consolidated change manifest** I'd apply to the docs PR (#24). Nothing changed yet — this is for your go/no-go, and you can veto any line.
+
+**`requirements.md`**
+1. **R10** — reconcile with C2: DB-less Kong is the canonical Phase 2 gateway; Phase 1 KIC Kong untouched; hybrid stated explicitly. *(fixes #1)*
+2. **R11** — emulator isolation = Cloud Run `ingress=internal` + IAM; "controls follow the platform"; stop asserting NetworkPolicy as *the* control. *(fixes #2)*
+3. **Dev key** (R10/§gateway) — replace committed key with **generated-at-startup**, acceptance criterion = still zero manual steps (gitleaks-clean). *(fixes #3)*
+4. **New R17 — Decision Contract:** outcome precedence + multi-reason aggregation (adjudication is accumulate-then-resolve, *not* triage's first-match), triage→outcome mapping, canonical Claim/ClaimResponse schemas + error taxonomy, **agent-output-non-authoritative** clause. *(fixes #5)*
+5. **New R18 — Audit invariants + idempotency:** one decision id per adjudication, mandatory resource links, and idempotency at the four sites (intake dedupe, FHIR conditional create, emulator retry, async at-least-once). *(fixes #6)*
+6. **New R19 — Test matrix + golden-fixture governance.** *(fixes #8)*
+7. **Rewrite D8** → cloud designed/stubbed/tested throughout; live deploy = Phase 2b. Adjust out-of-scope (NoSQL/BigQuery still deferred; live cloud deploy is *late*, not out-of-scope). *(implements #4)*
+
+**`plan.md`**
+8. Reframe §1/§2/§5 to **hybrid GKE+Cloud Run**; fix the intra-plan NetworkPolicy-vs-internal-ingress conflict (L66 vs L124). *(#2)*
+9. Add a **gateway-strangler** subsection: state transition, rollback, ownership. *(#1)*
+10. **Intensify cloud across M2–M7** (artifacts/stubs/tests per milestone) + add per-milestone cloud touchpoints; rebrand M8 → **"Phase 2b — Cloud (live deploy)."** *(#4)*
+11. Add **Decision Contract**, **Audit/idempotency**, **Test matrix**, and **Stakeholder × milestone deliverables matrix** (6 audiences) sections. *(#4,#5,#6,#8)*
+12. Update §8 risks accordingly.
+
+**`README.md`** — update C2 to hybrid; surface the cloud-throughout posture + stakeholder matrix.
+**`source-prd.md`** — strengthen the archival banner and add a "commands illustrative, not runnable as-is" note near the §11 command blocks. *(#7 + your final note)*
+
+Two small confirmations before I write:
+- The new **R17/R18 decision-contract + idempotency** content is normative design. Do you want me to **specify it concretely** (precedence matrix, tie-breaks, example payloads, the four idempotency mechanisms) — my recommendation — or keep it as *requirements-to-be-detailed* placeholders so you can shape the semantics yourself first?
+- Otherwise, **shall I apply the whole manifest to PR #24** (likely 2–3 logical commits: reconciliation fixes; decision-contract/idempotency/tests; cloud-intensification + stakeholder matrix)?
+
 <details>
 <summary>Execution details — 81 tool events</summary>
 
@@ -1849,6 +1879,6 @@ grep -n "KIC/Helm\|DB-less Kong everywhere\|one .kong.yml\|source of truth\…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 00:20 UTC
+- **Last updated:** 14 July 2026, 00:21 UTC
 - **Turns:** 13
 - **Status:** Complete
