@@ -4033,8 +4033,10 @@ Now rewrite the constructor and the `assess` body to use the JDK HttpClient:
 
 Rebuild and run the full demo again:
 
+The body is definitely being sent now, yet FastAPI still sees none — that points to the protocol. The JDK `HttpClient` defaults to HTTP/2 and attempts an h2c upgrade on cleartext, which uvicorn (HTTP/1.1-only) mishandles for a POST body. Forcing HTTP/1.1:
+
 <details>
-<summary>Execution details — 409 tool events</summary>
+<summary>Execution details — 411 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4982,6 +4984,11 @@ ls -la --time-style=+%H:%M:%S claims-service/target/claims-service-0.1.0.jar`
 - **Bash** `cd /workspaces/fhir-agent
 FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose up -d fhir triage >/dev/null 2>&1
 for i in $(seq 1 40); do curl -s --max-time 3 http://localhost:8080/fhir/metadata 2>/d…`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/client/HttpTriageClient.java`
+- **Bash** `cd /workspaces/fhir-agent
+mvn -q -f claims-service/pom.xml -DskipTests clean package 2>&1 | tail -5
+FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose up -d fhir triage >/dev/null 2>&1
+for i in $(s…`
 
 </details>
 
@@ -4992,6 +4999,6 @@ for i in $(seq 1 40); do curl -s --max-time 3 http://localhost:8080/fhir/metadat
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 19:06 UTC
+- **Last updated:** 14 July 2026, 19:08 UTC
 - **Turns:** 61
 - **Status:** Incomplete
