@@ -2301,6 +2301,24 @@ Solid — the "constitution" co-authored with the resident skeptic, plus peer re
 
 Let me see you roll up your sleeves. Design-level: a pharmacy claim hits your modern layer at high volume. **Walk me through the request path for scale and reliability** — where the logic runs (compute model), where the data lives (and where you'd choose relational vs. NoSQL and why), how you absorb traffic spikes, and — critically — how you guarantee that a claim which gets retried after a timeout is **never adjudicated or paid twice.** Get as concrete as you'd expect one of your architects to be.
 
+## Turn 30
+
+### Prompt
+
+In order to scale, I use managed services for both compute and data. The logic is entirely containerized - I have specifically done this for prodiction systems at Rain Bird and Oak Street - using Kubernetes clusters. I have experience with DynamoDB and RDS at Rain Bird, as well as MongoDB at Oak Street. All of these can be auto-scaled - which is specifically the solution for bursts of high volume traffic such as pharmacy claims. When incoming traffic exceeds the pre-determined system capacity, rate limiting can be applied at the API Gateway (I have experience with AWS API Gateway as well as Kong)  to minimize the risk of a total system failure.
+
+Regarding not paying the same claim twice - I would enforce the idempotency principle so that, for example, a claim ID is assigned to each unique claim so that the system recognizes duplicate requests easily. Eavery retry uses the same claimID, which eables the system to recognize dulicates and prevent errneous multiple payments.
+
+### Claude response
+
+Good — managed services, autoscale, gateway rate-limiting, and idempotency keyed on a claim ID.
+
+---
+
+**Question 8 of 10**
+
+Let me push on something directly. This role asks for **expert Java/Spring** — Core Java, JEE, Spring Boot, JDBC, Hibernate — and hands-on **IBM i integration**. Looking at your background, a lot of your production depth is Python, .NET, and AWS, and your IBM i work so far is a prototype/emulator rather than the real thing. **Be straight with me: how do you close that gap, and why should I trust you to lead a Java-and-IBM i platform at expert level?** And concretely — how would you actually wire a modern Java service to RxClaim on IBM i in production?
+
 <details>
 <summary>Execution details — 120 tool events</summary>
 
@@ -2612,6 +2630,6 @@ echo; echo "=== commits o…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 10:53 UTC
-- **Turns:** 29
+- **Last updated:** 14 July 2026, 11:25 UTC
+- **Turns:** 30
 - **Status:** Incomplete
