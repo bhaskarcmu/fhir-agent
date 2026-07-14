@@ -3183,8 +3183,10 @@ Now updating the reference README — TL;DR, inventory, reproduce, notes, plus a
 
 Now refine the commercial note and append the full glossary (#6):
 
+Let me verify what's staged on the data branch — only small curated files, no raw/xlsx:
+
 <details>
-<summary>Execution details — 149 tool events</summary>
+<summary>Execution details — 151 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3543,6 +3545,11 @@ curl -s --max-time 90 "https://…`
 - **Edit** `/workspaces/fhir-agent/data/reference/README.md`
 - **Edit** `/workspaces/fhir-agent/data/reference/README.md`
 - **Edit** `/workspaces/fhir-agent/data/reference/README.md`
+- **Edit** `/workspaces/fhir-agent/data/reference/README.md`
+- **Bash** `cd /workspaces/fhir-agent
+git add -A data/
+echo "=== staged data files + sizes ==="
+git diff --cached --name-only -- data/ | while read f; do [ -f "$f" ] && printf "%8s  %s\n" "$(du -h "$f"|cut -f1)"…`
 
 </details>
 
@@ -3553,6 +3560,6 @@ curl -s --max-time 90 "https://…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 15:05 UTC
+- **Last updated:** 14 July 2026, 15:06 UTC
 - **Turns:** 46
 - **Status:** Incomplete
