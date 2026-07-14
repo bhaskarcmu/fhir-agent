@@ -2005,7 +2005,46 @@ What part of the functionality are we assuming still live in IBM legacy world, a
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Excellent question — this is *the* question a sharp interviewer asks, because it forces you to place the prototype on the modernization **timeline** rather than wave at "we use the strangler pattern." Let me make our assumed state explicit and defensible.
+
+## The one-line answer
+Our prototype depicts a **deliberate mid-migration snapshot**: the **decisioning rules, the intake experience, and the interoperability/audit layer have been strangled out into modern Java/Spring Boot (+ reused Python)**, while the **financial adjudication engine and the systems-of-record still live in the IBM i / RxClaim legacy core.** In strangler terms: the fig has grown over the *edges and the brain*; the *money and the ledger* are still the host tree.
+
+## What's been strangled → modern vs. what's still legacy
+
+| Capability | Where it lives in our model | Why |
+|---|---|---|
+| API/channel, intake, validation, canonicalization | **Modern** — `claims-service` façade + **anti-corruption layer** | New front door; legacy green-screen/EDI channel is bypassed |
+| **Benefit determination rules** — eligibility *logic*, formulary status, prior-auth *requirements*, quantity limits | **Modern** — the layered deterministic **rules engine** | Extracted from legacy's monolithic rule tables into a testable, layered engine (the "Benefit + Prior Auth Rules Service") |
+| **Clinical decision support** — drug-allergy, duplicate-therapy | **Modern** — reused `triage-service` (Python) | CDS was already carved out as its own service (arguably strangled back in Phase 1) |
+| **Decision orchestration** — accumulate-then-resolve, the Decision Contract | **Modern** — `claims-service` | The deterministic decision semantics (R17) are new |
+| **Interoperability & audit** — FHIR `Claim`/`ClaimResponse`/`Task`/`Provenance`, decision id | **Modern** — FHIR persistence | FHIR/auditable artefacts never existed in the green-screen world |
+| **Core adjudication transaction** (`ADJRXCLM`) — the authoritative "post the claim" | **Legacy** — `rxclaim-emulator` | The system that actually books the claim is the riskiest thing to move; wrapped, not rewritten |
+| **Pricing / financials** — ingredient cost, dispensing fee, copay/coinsurance, plan-pay (PRD pipeline step 9) | **Legacy** | Encodes decades of contracts, MAC pricing, rebate logic — last to migrate |
+| **Systems-of-record** — member/coverage master, **accumulators** (deductible/OOP running balances) | **Legacy** | Stateful, authoritative, deeply integrated — you migrate this *last* |
+
+## Map to our actual components
+- **`claims-service`** = the strangler **façade + new rule brain**: it runs eligibility/formulary/PA/quantity + calls triage for clinical safety, produces the deterministic decision, and writes the FHIR audit trail.
+- **`triage-service`** = the already-modernized **CDS**.
+- **`rxclaim-emulator`** = the **legacy core still standing**: it owns the authoritative adjudication + pricing + member/accumulator state, exposed only through the façade via the ACL.
+
+## The clever bit: our pipeline *order* encodes the migration
+Look at the sequence: `intake → eligibility → formulary → prior-auth → clinical safety → **legacy adjudication (ADJRXCLM)** → translate → decide`. The **modern rule checks run in front of the legacy call.** That's the strangler in motion — the new layer increasingly makes determinations *before* the request ever reaches the legacy core. Today the legacy core still does the money and the posting; each future strangler step pulls another responsibility forward into the modern layer until the legacy call shrinks to "just price it," then "nothing," then retire.
+
+## The trajectory (say this to show it's a snapshot, not an endpoint)
+- **Past (pre-prototype):** legacy did *everything* — channel, rules, pricing, SOR.
+- **Now (what we're building):** rules + experience + audit modernized; **pricing + SOR still legacy.**
+- **Next strangler steps:** move **pricing** into a modern pricing service (behind the same façade) → then **accumulators/coverage SOR** (the hard, stateful one) → finally retire `ADJRXCLM`.
+- We even apply the same pattern *recursively* to infrastructure — the **gateway-strangler** (KIC Kong → DB-less Kong, S0→S1→S2 with rollback).
+
+## Interview soundbite
+> "The prototype captures a realistic mid-migration state: I've strangled the *decisioning* — eligibility, formulary, prior-auth, clinical safety — and the *audit/interop* layer into modern Spring Boot and FHIR, sitting in front of the legacy RxClaim core. What's deliberately *still* on IBM i is the **money and the ledger**: pricing, and the member/accumulator systems-of-record — because those are the highest-risk, most deeply-encoded pieces, so you migrate them last. My pipeline runs the new rule checks in front of the legacy adjudication call, so each subsequent strangler step just pulls another responsibility forward until the core can be retired."
+
+**If they push** ("why not modernize pricing too?"): pricing encodes contractual/MAC/rebate logic with real financial and regulatory blast radius — the whole point of the strangler is to *not* bet the business on rewriting that in one shot; you earn trust by migrating the safe, high-value edges first.
+
+---
+
+One observation: this migration-state assumption is currently **implicit** in our docs — the boundary is inferable from the component responsibilities, but we never state "here's the strangler snapshot we're depicting." That's exactly the kind of thing that makes the architecture legible to a reviewer. Want me to add a short **"Modernization state (strangler snapshot)"** subsection to `plan.md` §5 (the two-column table + the trajectory) when we next open a docs PR? It'd also strengthen your interview narrative to have it written down.
 
 <details>
 <summary>Execution details — 120 tool events</summary>
@@ -2318,6 +2357,6 @@ echo; echo "=== commits o…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 09:19 UTC
+- **Last updated:** 14 July 2026, 09:20 UTC
 - **Turns:** 20
-- **Status:** Incomplete
+- **Status:** Complete
