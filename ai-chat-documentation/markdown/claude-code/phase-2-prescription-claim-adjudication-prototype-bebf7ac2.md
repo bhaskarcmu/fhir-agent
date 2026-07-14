@@ -3895,8 +3895,12 @@ Rebuilding and running the final demo:
 
 Still APPROVED — let me see the current error in the log:
 
+Same 422 — the manually-built `RestClient` isn't serializing the `Map` to JSON (String bodies work, which is why the legacy text/plain call is fine). I'll send a JSON string body directly, matching the curl that works:
+
+Removing the now-unused `Map` import, then rebuild and run the final demo:
+
 <details>
-<summary>Execution details — 400 tool events</summary>
+<summary>Execution details — 402 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4820,6 +4824,10 @@ FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose up -d fhir triage >/dev/nu
 for i in $(seq 1 4…`
 - **Bash** `cd /workspaces/fhir-agent
 grep -iE "000000009|triage unavailable|no FHIR patient" /tmp/claims.log | grep -iE "000000009|unavailable" | tail -4`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/client/HttpTriageClient.java`
+- **Bash** `cd /workspaces/fhir-agent
+sed -i '/^import java.util.Map;$/d' claims-service/src/main/java/com/payer/claims/client/HttpTriageClient.java
+mvn -q -f claims-service/pom.xml -DskipTests package 2>&1 | tai…`
 
 </details>
 
@@ -4830,6 +4838,6 @@ grep -iE "000000009|triage unavailable|no FHIR patient" /tmp/claims.log | grep -
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 18:58 UTC
+- **Last updated:** 14 July 2026, 18:59 UTC
 - **Turns:** 60
 - **Status:** Incomplete
