@@ -3442,8 +3442,10 @@ Root cause found: the environment exports `SPRING_DATASOURCE_URL` (Neon Postgres
 
 All 8 tests pass. Now the cloud touchpoint + docs for M2 — Dockerfile, a Terraform stub (Cloud Run `ingress=internal`), and the README:
 
+Tests pass; now a real end-to-end runtime smoke (drive the actual endpoint, not just tests). Packaging first:
+
 <details>
-<summary>Execution details — 236 tool events</summary>
+<summary>Execution details — 237 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3992,6 +3994,9 @@ mvn -f rxclaim-emulator/pom.xml -B test 2>&1 | grep -E "Tests run|BUILD|ERROR.*T
 - **Write** `/workspaces/fhir-agent/rxclaim-emulator/Dockerfile`
 - **Write** `/workspaces/fhir-agent/rxclaim-emulator/infra/main.tf`
 - **Write** `/workspaces/fhir-agent/rxclaim-emulator/README.md`
+- **Bash** `cd /workspaces/fhir-agent
+mvn -q -f rxclaim-emulator/pom.xml -DskipTests package 2>&1 | tail -5
+ls -lh rxclaim-emulator/target/rxclaim-emulator-*.jar 2>/dev/null`
 
 </details>
 
@@ -4002,6 +4007,6 @@ mvn -f rxclaim-emulator/pom.xml -B test 2>&1 | grep -E "Tests run|BUILD|ERROR.*T
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 16:03 UTC
+- **Last updated:** 14 July 2026, 16:04 UTC
 - **Turns:** 52
 - **Status:** Incomplete
