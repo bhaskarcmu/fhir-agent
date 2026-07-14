@@ -3687,8 +3687,10 @@ Let me validate the compose file (syntax + that the default `up` set is unchange
 
 Compose is valid and the default set is exactly Phase 1 — additive confirmed. Now I'll verify the full integration by running the stack (fhir + triage via Docker; emulator + claims-service as host jars using the warm Maven cache) and driving the golden paths. Building the jars first:
 
+Jars built; fhir + triage healthy. Now start the emulator + claims-service (host jars) and drive the demo:
+
 <details>
-<summary>Execution details — 330 tool events</summary>
+<summary>Execution details — 331 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4432,6 +4434,9 @@ docker compose…`
 echo "=== building emulator + claims-service jars (warm cache) ==="
 mvn -q -f rxclaim-emulator/pom.xml -DskipTests package 2>&1 | tail -2
 mvn -q -f claims-service/pom.xml -Ds…`
+- **Bash** `cd /workspaces/fhir-agent
+# Emulator (H2 forced to dodge ambient SPRING_DATASOURCE_URL)
+java -Dspring.datasource.url='jdbc:h2:mem:rxclaim;DB_CLOSE_DELAY=-1' -Dspring.datasource.driver-class-name=org.h…`
 
 </details>
 
@@ -4442,6 +4447,6 @@ mvn -q -f claims-service/pom.xml -Ds…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 17:19 UTC
+- **Last updated:** 14 July 2026, 17:20 UTC
 - **Turns:** 57
 - **Status:** Incomplete
