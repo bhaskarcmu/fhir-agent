@@ -3579,8 +3579,10 @@ Now the tests — FHIR artefact linkage (no server) and intake idempotency (fake
 
 Building and testing M4 (first run downloads HAPI FHIR — sizeable):
 
+All 24 tests pass (+4 for FHIR). Now the real persistence + idempotency smoke against a live HAPI server. Bringing up the FHIR server and packaging:
+
 <details>
-<summary>Execution details — 297 tool events</summary>
+<summary>Execution details — 298 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4237,6 +4239,10 @@ git branch -d…`
 - **Write** `/workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/AdjudicationServiceTest.java`
 - **Bash** `cd /workspaces/fhir-agent
 mvn -f claims-service/pom.xml -B test 2>&1 | grep -E "Tests run:|BUILD|ERROR|error:" | head -30`
+- **Bash** `cd /workspaces/fhir-agent
+docker compose up -d fhir 2>&1 | tail -3
+echo "waiting for HAPI FHIR..."
+for i in $(seq 1 60); do curl -s --max-time 3 http://localhost:8080/fhir/metadata 2>/dev/null | grep…`
 
 </details>
 
