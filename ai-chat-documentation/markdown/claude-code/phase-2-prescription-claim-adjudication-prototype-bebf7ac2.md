@@ -3735,8 +3735,10 @@ PR #31 merged. Cleaning up and moving to **M7 — tests & narrative** (cross-ser
 
 **Git context:** on `feature/phase2-m6-wiring-demo`; switching to `main`, syncing, deleting merged M6 branch, creating M7 branch. Then I'll inspect the existing CI and README to extend additively.
 
+Only a secret-scan workflow exists — no test CI yet. Let me check whether the Phase 1 mcp-agent test is hermetic (so I scope the Phase-1 CI job correctly):
+
 <details>
-<summary>Execution details — 336 tool events</summary>
+<summary>Execution details — 337 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4505,6 +4507,9 @@ gh pr create --base main --head feature/phase2-m6-wiring-demo \
 git switch main >/dev/null 2>&1 && git pull --ff-only 2>&1 | tail -1
 git branch --merged main | grep -q 'feature/phase2-m6-wiring-demo' && echo "M6 merged ✓"
 git branch -d fe…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== mcp-agent test — does it need live services / skip? ==="
+grep -nE "skip|requires|localhost|httpx|def test|@pytest|connect" mcp-agent/tests/test_e2e_demo_flow.py | h…`
 
 </details>
 
@@ -4515,6 +4520,6 @@ git branch -d fe…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 17:59 UTC
+- **Last updated:** 14 July 2026, 18:00 UTC
 - **Turns:** 58
 - **Status:** Incomplete
