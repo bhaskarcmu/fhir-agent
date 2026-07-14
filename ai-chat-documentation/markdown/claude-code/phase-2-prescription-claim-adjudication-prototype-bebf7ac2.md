@@ -1686,8 +1686,40 @@ All manifest edits applied. Let me verify structural integrity (section numberin
 
 Structure is clean — plan.md §1–§13 sequential, requirements R1–R19 sequential, no duplicate headers, and only `docs/phase2/` changed (the `data/` untracked leftovers are excluded). Committing in the two logical commits I described, then pushing:
 
+Pushed as one cohesive commit — PR #24 now carries the full reconciliation. Let me update the project memory to reflect the refined decisions, then summarize.
+
+Done — the entire manifest is applied and pushed to PR [#24](https://github.com/bhaskarcmu/fhir-agent/pull/24) (commit `3ac6048`, docs-only, verified).
+
+## What I specified concretely (a — R17/R18)
+
+**R17 Decision Contract** (requirements.md + plan.md §10):
+- **Accumulate-then-resolve**, explicitly *not* triage's first-match — every rule runs, emits typed findings.
+- **Outcome precedence**: `DENY > PEND > REVIEW > approved`; `INFO` never changes outcome; all winning-tier findings returned (multi-reason aggregation per PRD §9.4).
+- **Determinism**: total-order tie-break `(severity_rank, domain_order, rule_id)`; no clock/hash/set ordering allowed.
+- **Triage mapping**: HIGH→DENY, MODERATE→REVIEW, LOW→none.
+- **Error taxonomy**: validation (400, no persist) vs decision (200, full graph) vs system error (502/503, no partial persist) — disjoint.
+- **Agent non-authoritative** clause + canonical schemas grounded in the real Synthea/Da Vinci samples. Worked example matches PRD §9.4.
+
+**R18 Audit + idempotency** (requirements.md + plan.md §11):
+- One `decisionId` on every artefact; mandatory link graph (`ClaimResponse.request→Claim`, `Task.focus→ClaimResponse`, `Provenance.target→[…]`, `RiskAssessment.basis`).
+- **Four idempotency sites** each specified (intake dedupe, FHIR `If-None-Exist`, emulator keyed by decisionId, async at-least-once) + no-partial-persistence.
+- **R19** test matrix (contract, rules-golden incl. combinations, e2e+audit-graph, snapshots, idempotency/replay, Phase-1-independence, cloud-stub) + fixture governance.
+
+## What else landed (b — full manifest)
+- **#1 Gateway**: R10↔C2 reconciled; **gateway-strangler** section (S0→S1→S2 + rollback + ownership).
+- **#2 Hybrid, no rework**: C1 reframed — **GKE for Phase 1 (untouched) + Cloud Run for Phase 2**; controls follow each component's platform.
+- **#3 Dev key**: generated-at-startup, never committed (gitleaks-clean).
+- **#4 Cloud intensified**: D8 rewritten (cloud designed/stubbed/tested from every milestone; live = **Phase 2b**), per-milestone **cloud touchpoints**, and a **stakeholder × milestone matrix** (§13, all six audiences).
+- **#7 + final note**: source-prd archival banner strengthened + "not runnable as-is" warnings.
+
+## State
+- PR **#24** updated & pushed (`3ac6048`) — still docs-only.
+- Memory updated with the refined decisions.
+
+The docs now have a normative contract layer (R17–R19), a coherent hybrid-cloud story with no Phase 1 rework, and cloud woven through every milestone. Ready for your re-review of PR #24 — want me to walk any section, or is this mergeable from your side?
+
 <details>
-<summary>Execution details — 115 tool events</summary>
+<summary>Execution details — 116 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1961,6 +1993,7 @@ echo; echo "=== requirements.md R-headers ==="; grep -nE "^### R[0-9]+" docs/pha
 - **Bash** `cd /workspaces/fhir-agent
 # Commit 1: reconciliation fixes (gateway hybrid/strangler, isolation controls, dev key, D8)
 git add docs/phase2/requirements.md docs/phase2/plan.md docs/phase2/README.md doc…`
+- **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase2-planning-state.md`
 
 </details>
 
@@ -1971,6 +2004,6 @@ git add docs/phase2/requirements.md docs/phase2/plan.md docs/phase2/README.md do
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 00:31 UTC
+- **Last updated:** 14 July 2026, 00:32 UTC
 - **Turns:** 14
 - **Status:** Complete
