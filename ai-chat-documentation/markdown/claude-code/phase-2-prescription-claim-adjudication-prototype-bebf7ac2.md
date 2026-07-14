@@ -3377,8 +3377,10 @@ The ingredient RxCUI has no direct NDCs (NDCs attach to drug *products*). openFD
 
 20/20 real NDCs mapped. Now building the payer-KB files — schema README, 4 plan definitions, curated formulary (grounded in real tiers, driving the R8 demo scenarios), and layered PA rules.
 
+Now the curated formulary (10 drugs × 4 plans, driving the R8 scenarios) and the layered PA rules:
+
 <details>
-<summary>Execution details — 209 tool events</summary>
+<summary>Execution details — 211 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3867,6 +3869,8 @@ python3 data/scripts/build_ndc_rxcui_crosswalk.py 2>&1 | tail -24`
 - **Write** `/workspaces/fhir-agent/data/payer-kb/plans/commercial-gold.yaml`
 - **Write** `/workspaces/fhir-agent/data/payer-kb/plans/medicare-advantage-demo.yaml`
 - **Write** `/workspaces/fhir-agent/data/payer-kb/plans/employer-ppo.yaml`
+- **Write** `/workspaces/fhir-agent/data/payer-kb/formulary/formulary.csv`
+- **Write** `/workspaces/fhir-agent/data/payer-kb/pa-rules/pa-rules.yaml`
 
 </details>
 
