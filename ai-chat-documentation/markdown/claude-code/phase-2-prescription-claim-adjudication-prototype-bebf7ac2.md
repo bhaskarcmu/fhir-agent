@@ -3871,8 +3871,10 @@ Re-running the full demo with the timing fix — the safety path should now deny
 
 Let me check the log to see whether it was resolution or triage this time:
 
+Resolution fails specifically in the demo (claims-service already running when the patient is seeded) but works in my controlled test (claims-service started after). That points at the search itself. Let me add diagnostic logging to `resolvePatientId` to see exactly what claims-service gets:
+
 <details>
-<summary>Execution details — 386 tool events</summary>
+<summary>Execution details — 387 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4761,6 +4763,7 @@ for i in $(seq 1 40); do curl -s --max-time 3 http://localhost:8080/fhir/metadat
 echo "=== resolution/triage signals for 000000009 in claims.log ==="
 grep -iE "000000009|triage|no FHIR" /tmp/claims.log | tail -6
 echo "=== was triage reachable? (any triage…`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/fhir/HapiFhirClient.java`
 
 </details>
 
@@ -4771,6 +4774,6 @@ echo "=== was triage reachable? (any triage…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 18:45 UTC
+- **Last updated:** 14 July 2026, 18:46 UTC
 - **Turns:** 60
 - **Status:** Incomplete
