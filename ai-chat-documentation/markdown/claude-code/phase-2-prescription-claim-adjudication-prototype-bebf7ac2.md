@@ -3847,8 +3847,10 @@ Building and testing claims-service with the changes:
 
 Wiring the seeding into the demo run (graceful if FHIR is unreachable):
 
+Now the runtime verification — rebuild the claims-service jar, bring up the stack, and confirm the safety path now denies (and the others are unchanged):
+
 <details>
-<summary>Execution details — 373 tool events</summary>
+<summary>Execution details — 374 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4699,6 +4701,10 @@ mvn -f claims-service/pom.xml -B test 2>&1 | grep -E "Tests run: [0-9]+, Fail|BU
 - **Edit** `/workspaces/fhir-agent/data/scripts/seed_claims_demo.py`
 - **Edit** `/workspaces/fhir-agent/data/scripts/seed_claims_demo.py`
 - **Edit** `/workspaces/fhir-agent/data/scripts/seed_claims_demo.py`
+- **Bash** `cd /workspaces/fhir-agent
+mvn -q -f claims-service/pom.xml -DskipTests package 2>&1 | tail -2
+docker compose up -d fhir triage 2>&1 | tail -2
+for i in $(seq 1 60); do curl -s --max-time 3 http://local…`
 
 </details>
 
@@ -4709,6 +4715,6 @@ mvn -f claims-service/pom.xml -B test 2>&1 | grep -E "Tests run: [0-9]+, Fail|BU
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 18:30 UTC
+- **Last updated:** 14 July 2026, 18:31 UTC
 - **Turns:** 60
 - **Status:** Incomplete
