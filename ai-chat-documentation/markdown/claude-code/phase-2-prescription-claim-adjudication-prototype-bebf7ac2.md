@@ -3507,8 +3507,12 @@ Payer-KB repository seam (C3) — interface + file-backed implementation:
 
 Now the anti-corruption layer — the boundary that speaks the legacy fixed-width contract:
 
+Service clients (interfaces + resilient HTTP impls) for the legacy core and triage:
+
+Now the pipeline orchestration, controller, application entry point, and config:
+
 <details>
-<summary>Execution details — 255 tool events</summary>
+<summary>Execution details — 263 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4093,6 +4097,14 @@ git branch --merged main | grep -q 'feature/phase2-m2-rxclaim-emulator' && echo 
 - **Write** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/kb/PayerKb.java`
 - **Write** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/kb/FilePayerKb.java`
 - **Write** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/acl/LegacyAdapter.java`
+- **Write** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/client/LegacyClient.java`
+- **Write** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/client/HttpLegacyClient.java`
+- **Write** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/client/TriageClient.java`
+- **Write** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/client/HttpTriageClient.java`
+- **Write** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/pipeline/AdjudicationPipeline.java`
+- **Write** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/api/ClaimController.java`
+- **Write** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/ClaimsServiceApplication.java`
+- **Write** `/workspaces/fhir-agent/claims-service/src/main/resources/application.yml`
 
 </details>
 
@@ -4103,6 +4115,6 @@ git branch --merged main | grep -q 'feature/phase2-m2-rxclaim-emulator' && echo 
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 16:36 UTC
+- **Last updated:** 14 July 2026, 16:37 UTC
 - **Turns:** 54
 - **Status:** Incomplete
