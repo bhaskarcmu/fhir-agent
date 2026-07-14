@@ -2766,7 +2766,30 @@ added credit. try again
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Here it is, tight.
+
+## Why the adjudication rules are industry-standard & production-credible
+- **Grounded in real regulation/standards, not invented:** the canonical **10-step adjudication pipeline** and rule domains; **CMS NCD/LCD** for medical necessity; **CMS Part D formulary** structure (status, tier, PA flag, step-therapy, quantity limit); awareness of **CMS-0057-F / Da Vinci PAS** for prior auth.
+- **Real terminologies, not fabricated codes:** **RxNorm** (drugs) + **ATC** (drug classes), **ICD-10-CM** (diagnoses), **SNOMED** (allergies), **NDC** (drug products). Clinical logic is real — e.g., **penicillin cross-reactivity**, **duplicate-therapy by ATC class**.
+- **Built with production-grade properties:** **deterministic** (accumulate-then-resolve with explicit precedence + tie-breaks → same claim, same decision every time), **layered** (federal → plan → customer, so rules change independently), **hand-coded & reviewed with traceability to business rules** (not an LLM deciding), **auditable** (a `Provenance` per decision), **idempotent** (no double-pay), and **tested** (golden-fixture governance).
+- **Honest scoping:** it's a **curated subset** sized for a credible demo — the *patterns and grounding* are production-shaped; the *volume* is deliberately small (per the "no fabricated data" discipline).
+
+## Data sources used (all authoritative, no-auth)
+| Source | What it grounds |
+|---|---|
+| **RxNorm** (via RxNav API) | drug identity (RxCUI) + **ATC therapeutic class** |
+| **ICD-10-CM** (NLM Clinical Tables + CDC) | diagnosis codes |
+| **CMS Part D Formulary PUF** | **real** per-NDC tier / PA / step-therapy / quantity-limit |
+| **CMS NCD** | medical-necessity rules |
+| **NPI registry** (NPPES) | provider eligibility |
+| **openFDA** | NDC ↔ drug product |
+| **Synthea** (MITRE) | synthetic patients + real-shaped `Claim`/`ExplanationOfBenefit` |
+| **Da Vinci PAS** examples | canonical `Claim`/`ClaimResponse` shapes |
+
+Explicitly **excluded:** fabricated JSON, invented drug/diagnosis names, made-up CPT numbers, undocumented rules.
+
+## One-line interview version
+> "The rules aren't invented — they're grounded in CMS coverage determinations and real Part D formulary data, coded against RxNorm, ICD-10, and NDC, and built to production standards: deterministic, layered, hand-reviewed with full traceability, auditable, and idempotent. I used only authoritative public sources — RxNorm, ICD-10, the CMS formulary and NCD files, NPI, openFDA, and Synthea — and deliberately kept it a curated subset rather than fabricating data."
 
 <details>
 <summary>Execution details — 120 tool events</summary>
