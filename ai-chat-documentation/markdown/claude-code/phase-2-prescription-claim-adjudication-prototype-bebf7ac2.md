@@ -3802,8 +3802,10 @@ Validating the compose config and the service sets:
 
 Compose valid, default unchanged (`fhir mcp-agent triage`). Now verify the gateway mechanism end-to-end with fhir + kong (lightweight — no Phase 2 image builds): generate key, test 401 without it and 200 with it:
 
+The gateway works end-to-end: **key generated at startup** (32-hex, logged, never committed), **no/wrong key → 401**, **valid key → 200** routed to the upstream with the path preserved. Committing the gateway profile:
+
 <details>
-<summary>Execution details — 354 tool events</summary>
+<summary>Execution details — 356 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4618,6 +4620,14 @@ docker compose --profile gateway up -d fhir kong 2>&1 | tail -4
 echo "waiting for kong + fhir..."
 for i in $(seq 1 40); do
   kh=$(docker inspect -f '{{.State.Health.Status}}'…`
+- **Bash** `cd /workspaces/fhir-agent
+git add docker-compose.yml gateway/kong/kong.tmpl.yml
+echo "=== staged ==="; git diff --cached --name-only
+git diff --cached --name-only | grep -vE '^docker-compose.yml$|^gat…`
+- **Bash** `cd /workspaces/fhir-agent
+gh pr create --base main --head feature/phase2-gateway-profile \
+  --title "feat(phase2 gateway): DB-less Kong edge gateway profile (parity path, C2)" \
+  --body "$(cat <<'EO…`
 
 </details>
 
@@ -4628,6 +4638,6 @@ for i in $(seq 1 40); do
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 18:21 UTC
+- **Last updated:** 14 July 2026, 18:22 UTC
 - **Turns:** 59
 - **Status:** Incomplete
