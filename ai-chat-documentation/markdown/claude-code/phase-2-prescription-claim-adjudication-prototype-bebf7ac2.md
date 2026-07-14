@@ -2046,6 +2046,67 @@ Look at the sequence: `intake → eligibility → formulary → prior-auth → c
 
 One observation: this migration-state assumption is currently **implicit** in our docs — the boundary is inferable from the component responsibilities, but we never state "here's the strangler snapshot we're depicting." That's exactly the kind of thing that makes the architecture legible to a reviewer. Want me to add a short **"Modernization state (strangler snapshot)"** subsection to `plan.md` §5 (the two-column table + the trajectory) when we next open a docs PR? It'd also strengthen your interview narrative to have it written down.
 
+This posting is almost uncanny — you've essentially built a purpose-made artifact for *this exact role*. The supervisory org is literally **"Adjudication-RxClaim Development"**, they say **"Adjudication as a Service"** verbatim, and the stack (Java/Spring + IBM i/AS400 + microservices + modernization roadmaps) is precisely what our prototype demonstrates. Let me internalize it and give you honest, prioritized prep.
+
+## First, the three things this JD changes about my advice
+
+1. **It's a *Lead Director* role (50+ people, budgets, HR, strategy) — ~70% leadership, ~30% technical.** Your prototype proves technical credibility, but you **cannot win this with a demo.** You win it by showing you can *set standards, drive a modularization roadmap, and lead a 50-person org through modernization*. The prototype is your **evidence and thinking tool**, not the deliverable. This is where technical candidates lose Director interviews — internalize it.
+2. **It's an internal CVS posting** (RxClaim org, hiring manager **Janmeet Dhillon**). You can and should speak in *their* terms — "your RxClaim platform," "PSS IT partnership," "our members."
+3. **The prototype's job is to make you concrete, not to be production.** Frame it as: *"To pressure-test how I'd approach your transformation, I built a working slice."* Never oversell it as production IBM i experience.
+
+## JD requirement → what your prototype lets you show (your cheat sheet)
+
+| JD asks for | You can point to |
+|---|---|
+| "RESTful APIs using Java to connect frontend with backend **IBM i**" | `claims-service` (Spring Boot REST) as a **façade + anti-corruption layer** over the `rxclaim-emulator` (IBM i/RxClaim core); in prod you'd bridge via **JTOpen/jt400** (RPG/CL calls, Db2 for i) |
+| "**System Integration**: AS/400 with enterprise systems, cloud, 3rd-party web services" | Kong gateway, FHIR interoperability, hybrid **GKE + Cloud Run**, the ACL translation boundary |
+| "**Adjudication as a Service**… cost of change, speed to market, scalability, serviceability" | **Layered rules engine** (federal/plan/customer), modular service decomposition, IaC/CI-CD → those are literally the four value levers, mapped to design choices |
+| "simplification and **modularization** of key adjudication functions" | Strangler: extracted eligibility/formulary/PA/CDS into modular services in front of the legacy core |
+| "**IBMi Fundamentals**: AS/400 arch, CL, IFS" + "SQL/400, DDS" | The emulator's **DDS-style fixed-width records, Db2/SQL400 tables, RPG/CL `ADJRXCLM`** — you can talk the vocabulary |
+| "Java Stack: Core Java, JEE, Spring, Spring Boot, JDBC, Hibernate" | claims-service + emulator are Spring Boot/JDBC |
+| "PostgreSQL, **mongoDB**, SQL Server" + "scalable growth" | Neon Postgres now; **C3 repository seam → NoSQL (Firestore/Bigtable/Mongo)** for the formulary KV pattern — speak to *why* NoSQL fits `plan_id+NDC→rule` |
+| "DevOps: Git, **CI/CD, Maven, Docker/Kubernetes**" | GitHub Actions, Maven, Docker Compose, GKE, image scanning |
+| "APIs and **microservices** architecture" | Three-slice decomposition + edge gateway |
+| "legacy mainframe/mid-range **modernization roadmaps**" | The **strangler snapshot + trajectory** we defined (what's strangled vs. still legacy; pricing/SOR migrate last) |
+| "regulatory/compliance" | CMS NCD/LCD grounding, **CMS-0057-F**, PHI-safe design (R14), audit trail (Provenance + idempotency) |
+| "EOL software/hardware" | Strangler = de-risked path off aging IBM i without a big-bang |
+| Preferred: **DevSecOps / DataOps** | gitleaks + secret-scan CI (DevSecOps); the curated payer-KB data pipeline + provenance (DataOps) |
+
+## The leadership pivot (rehearse these reframes)
+For every technical thing, have the **Director-altitude version** ready:
+
+- *Builder:* "I wrote a layered rules engine." → *Director:* "I'd establish a **layered-rules standard** so federal, plan, and customer logic evolve independently — that's how you drive down cost-of-change across a 50-person org and dozens of clients."
+- *Builder:* "I wrapped the legacy in a façade." → *Director:* "I'd sequence the modernization as a **strangler roadmap** — measurable, reversible increments — so we retire EOL risk without betting the platform on a rewrite. Pricing and accumulators migrate last."
+- *Builder:* "I added tracing and idempotency." → *Director:* "I'd set **non-negotiable platform standards** — determinism, idempotency, PHI-safe observability — and bake them into templates and CI so 50 engineers inherit them by default."
+
+## Honest gaps — name them before they do
+- **No web frontend.** JD wants Angular/React/Vue. Your prototype is API/agent-only. Be straight: "The slice focused on the API/adjudication core; I'm proficient in [your real frontend level]." Don't fake it.
+- **Simulated, not production, IBM i.** If you lack real IBM i years, say: "I've modeled the integration patterns — DDS, Db2 for i, RPG/CL, JTOpen — deeply enough to lead the modernization; I'd lean on the team's deep RxClaim operators for the last mile." Leaders orchestrate expertise; they needn't be the deepest RPG coder.
+- **50+ team / budgets / HR.** The prototype says nothing here — this is **your real career narrative**. Prepare STAR stories (below).
+- **mongoDB** specifically: we chose GCP NoSQL; be ready to speak to Mongo equivalently (document/KV model, sharding).
+
+## STAR stories to prepare (from your real career — I can't supply these)
+Have 5–6 crisp ones ready, mapped to their competencies: **led change / modernization at scale**, **drove results under compliance pressure**, **built/grew a team (50+ or matrixed)**, **influenced senior stakeholders across boundaries**, **made a hard build-vs-buy or migration call**, **recovered a troubled program**. Each: Situation → your leadership action → measurable outcome.
+
+## Smart questions to ASK (signals Director thinking)
+- "Where is RxClaim on its modernization curve today — what's already been strangled off IBM i, and what's deliberately still there?" *(you can then relate your framework)*
+- "How do you measure 'cost of change' and 'speed to market' on the platform today — what would success look like in 12 months?"
+- "How is the 50-person org structured — by adjudication function, by client, or by layer?"
+- "What's the biggest compliance driver on the roadmap — CMS-0057-F prior-auth, interoperability, something else?"
+- "How does this team partner with PSS IT and the business on priorities?"
+
+## Likely tough questions + your angle
+- *"You've never run a team this big / real RxClaim in prod."* → Acknowledge, pivot to how you scale *leadership and standards*, and that you built the slice precisely to engage their problem substantively.
+- *"How would you modernize without disrupting live adjudication?"* → Strangler + façade + ACL, reversible increments, pricing/SOR last, idempotent + audited throughout.
+- *"How do you keep determinism and compliance across many clients?"* → Layered rules + golden-fixture governance + the decision contract + immutable audit trail.
+
+## One reframe for your opening
+> "I lead modernization of legacy adjudication platforms. To make my thinking concrete for this role, I built a working slice that wraps an RxClaim/IBM i-style core behind Spring Boot APIs and strangles the rules and experience into modular services — deterministic, auditable, cloud-scalable. But my real focus at this level is the *roadmap, the standards, and the team* that get you to Adjudication-as-a-Service at lower cost of change."
+
+---
+
+Want me to (a) run a **mock interview** (I play Janmeet / the panel, mixing technical + leadership + behavioral), (b) help you **draft your STAR stories** into tight narratives, or (c) fold a short **"target-role alignment"** note into the docs and get back to the **M1 payer-KB PR**? I can also add a one-line memory that the prototype targets this confirmed CVS RxClaim role so our future work stays aligned — say the word.
+
 <details>
 <summary>Execution details — 120 tool events</summary>
 
@@ -2357,6 +2418,6 @@ echo; echo "=== commits o…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 09:31 UTC
+- **Last updated:** 14 July 2026, 09:33 UTC
 - **Turns:** 20
 - **Status:** Complete
