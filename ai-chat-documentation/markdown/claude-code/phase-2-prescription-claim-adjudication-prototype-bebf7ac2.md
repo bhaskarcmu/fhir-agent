@@ -3845,8 +3845,10 @@ Building and testing claims-service with the changes:
 
 24 tests pass. Now the demo: the safety scenario needs a **separate** member (else the penicillin patient would trip triage for all claims on member 000000001). I'll seed a distinct patient (000000009: Kristle Mraz, penicillin allergy + amoxicillin) and add a safety golden path. Updating `seed_claims_demo.py`:
 
+Wiring the seeding into the demo run (graceful if FHIR is unreachable):
+
 <details>
-<summary>Execution details — 371 tool events</summary>
+<summary>Execution details — 373 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4694,6 +4696,8 @@ echo "=== Adjudicati…`
 - **Edit** `/workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/AdjudicationServiceTest.java`
 - **Bash** `cd /workspaces/fhir-agent
 mvn -f claims-service/pom.xml -B test 2>&1 | grep -E "Tests run: [0-9]+, Fail|BUILD|ERROR|error:" | head -15`
+- **Edit** `/workspaces/fhir-agent/data/scripts/seed_claims_demo.py`
+- **Edit** `/workspaces/fhir-agent/data/scripts/seed_claims_demo.py`
 - **Edit** `/workspaces/fhir-agent/data/scripts/seed_claims_demo.py`
 
 </details>
