@@ -3683,8 +3683,10 @@ Now I'll add the three Phase 2 services under a `phase2` profile (default `docke
 
 Compose wired additively (Phase 2 services are `profiles: ["phase2"]`). Now the demo driver and a small emulator data top-up so the quantity-limit path prices cleanly:
 
+Let me validate the compose file (syntax + that the default `up` set is unchanged) before running:
+
 <details>
-<summary>Execution details — 327 tool events</summary>
+<summary>Execution details — 329 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4418,6 +4420,12 @@ git branch --merged main | grep -q 'feature/phase2-m5-claims-agent' && echo "M5 
 git branch -d f…`
 - **Edit** `/workspaces/fhir-agent/docker-compose.yml`
 - **Edit** `/workspaces/fhir-agent/rxclaim-emulator/src/main/resources/data.sql`
+- **Write** `/workspaces/fhir-agent/data/scripts/seed_claims_demo.py`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== default services (plain 'up' — must be exactly Phase 1) ==="
+docker compose config --services 2>/dev/null | sort
+echo "=== with --profile phase2 ==="
+docker compose…`
 
 </details>
 
@@ -4428,6 +4436,6 @@ git branch -d f…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 17:17 UTC
+- **Last updated:** 14 July 2026, 17:18 UTC
 - **Turns:** 57
 - **Status:** Incomplete
