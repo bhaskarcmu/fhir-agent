@@ -3569,8 +3569,10 @@ PR #28 merged. Cleaning up and moving to **M4 — pipeline & FHIR artefacts** (e
 
 Adding the HAPI FHIR client to build/persist R4 resources:
 
+Now the FHIR artefact builder — constructs the linked transaction bundle (Claim→ClaimResponse→Task→Provenance→RiskAssessment) with a shared `decisionId` and conditional-create idempotency:
+
 <details>
-<summary>Execution details — 288 tool events</summary>
+<summary>Execution details — 289 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4217,6 +4219,7 @@ git switch main >/dev/null 2>&1 && git pull --ff-only 2>&1 | tail -1
 git branch --merged main | grep -q 'feature/phase2-m3-claims-service' && echo "M3 merged ✓"
 git branch -d…`
 - **Edit** `/workspaces/fhir-agent/claims-service/pom.xml`
+- **Write** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/fhir/FhirArtifactBuilder.java`
 
 </details>
 
@@ -4227,6 +4230,6 @@ git branch -d…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 16:51 UTC
+- **Last updated:** 14 July 2026, 16:53 UTC
 - **Turns:** 55
 - **Status:** Incomplete
