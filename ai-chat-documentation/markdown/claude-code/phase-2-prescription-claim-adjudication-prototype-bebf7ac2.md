@@ -1670,8 +1670,12 @@ Now update §5 (hybrid framing, remove "deferred"/"fallback") and the §4 cloud-
 
 Now let me read the milestones (§6) through the end to update them and append the new normative sections:
 
+Now rewriting the milestones (§6) to thread cloud through each and rebrand M8 → Phase 2b:
+
+Now update §8 risks, and append the four new normative sections (§10 Decision Contract, §11 Audit/idempotency, §12 Test matrix, §13 Stakeholder matrix). Let me read the end first:
+
 <details>
-<summary>Execution details — 102 tool events</summary>
+<summary>Execution details — 105 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1927,6 +1931,9 @@ grep -n "### Gotchas\|## 4. Isolation" docs/phase2/plan.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
 - **Read** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Read** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
 
 </details>
 
@@ -1937,6 +1944,6 @@ grep -n "### Gotchas\|## 4. Isolation" docs/phase2/plan.md`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 00:28 UTC
+- **Last updated:** 14 July 2026, 00:29 UTC
 - **Turns:** 14
 - **Status:** Complete
