@@ -3701,8 +3701,30 @@ Jars built; fhir + triage healthy. Now start the emulator + claims-service (host
 
 Let me stop the containers and commit M6:
 
+M6 is up as PR [#31](https://github.com/bhaskarcmu/fhir-agent/pull/31). Updating memory, then summary.
+
+Cleanup and M6 both done.
+
+## Branch cleanup
+Deleted the merged M5 branch (`feature/phase2-m5-claims-agent`). Remaining: `main`, `ai-chat-history`, old `feature/walking-skeleton`.
+
+## M6 — local wiring & demo → PR [#31](https://github.com/bhaskarcmu/fhir-agent/pull/31)
+The milestone where it all runs as one stack:
+- **`docker compose` `phase2` profile** — adds `rxclaim-emulator` (internal, no host port), `claims-service` (wired to emulator/triage/fhir via Spring program args, payer-KB mounted read-only), and `claims-agent`. **Plain `docker compose up` is unchanged** (verified via `docker compose config` — still fhir/triage/mcp-agent).
+- **`seed_claims_demo.py`** — drives the 5 golden paths.
+- Topped up emulator pricing so the quantity-limit path prices cleanly.
+
+**Verified end-to-end** (ran fhir+triage in Docker, emulator+claims-service wired identically to the compose profile): all five outcomes correct — APPROVED $241.50, PENDED $952 (PA), ROUTED $1081.50 (quantity), DENIED (inactive coverage), DENIED (non-formulary multi-reason) — each priced via the emulator ACL, each persisting a `ClaimResponse` to FHIR, and the **claims-agent rendered the explanation** with pricing.
+
+**Scoped/deferred (transparent in the PR):** the DB-less Kong **`gateway` profile** (gated/parity path) is the next slice; the clinical-safety (triage) demo path awaits member→FHIR-patient resolution (triage degrades to LOW gracefully today); and image builds themselves weren't run in-sandbox (host jars used the warm cache) — the identical wiring is runtime-verified and the compose file is config-validated.
+
+## State
+- Open: **PR #31** (M6). `main` has #24–#30. `phase1-v1` tagged. Memory updated.
+
+The natural next steps: the **`gateway` profile** (DB-less Kong, closing out M6's parity path) and then **M7 — tests & narrative** (the cross-service e2e/contract test matrix, the Phase-1-only CI job, and the README/architecture narrative). Want me to do the gateway profile next, proceed to M7, or pause?
+
 <details>
-<summary>Execution details — 334 tool events</summary>
+<summary>Execution details — 335 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4463,6 +4485,7 @@ gh pr create --base main --head feature/phase2-m6-wiring-demo \
   --title "feat(phase2 M6): local wiring + claims demo (phase2 compose profile)" \
   --body "$(cat <<'EOF'
 ##…`
+- **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase2-planning-state.md`
 
 </details>
 
@@ -4473,6 +4496,6 @@ gh pr create --base main --head feature/phase2-m6-wiring-demo \
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 17:21 UTC
+- **Last updated:** 14 July 2026, 17:22 UTC
 - **Turns:** 57
 - **Status:** Incomplete
