@@ -3443,7 +3443,7 @@ Root cause found: the environment exports `SPRING_DATASOURCE_URL` (Neon Postgres
 All 8 tests pass. Now the cloud touchpoint + docs for M2 — Dockerfile, a Terraform stub (Cloud Run `ingress=internal`), and the README:
 
 <details>
-<summary>Execution details — 235 tool events</summary>
+<summary>Execution details — 236 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3991,6 +3991,7 @@ grep -iE "Ca…`
 mvn -f rxclaim-emulator/pom.xml -B test 2>&1 | grep -E "Tests run|BUILD|ERROR.*Test" | head -20`
 - **Write** `/workspaces/fhir-agent/rxclaim-emulator/Dockerfile`
 - **Write** `/workspaces/fhir-agent/rxclaim-emulator/infra/main.tf`
+- **Write** `/workspaces/fhir-agent/rxclaim-emulator/README.md`
 
 </details>
 
