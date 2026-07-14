@@ -3749,6 +3749,32 @@ All CI commands validated: **Phase 1 = 86 passed** (hermetic, no Phase 2 package
 
 M7 is up as PR [#33](https://github.com/bhaskarcmu/fhir-agent/pull/33). Updating memory, then summary.
 
+Cleanup and M7 both done — and this closes out the core Phase 2 build.
+
+## Branch cleanup
+Deleted the merged M6 branch (`feature/phase2-m6-wiring-demo`). Remaining: `main`, `ai-chat-history`, old `feature/walking-skeleton`.
+
+## M7 — tests & narrative → PR [#33](https://github.com/bhaskarcmu/fhir-agent/pull/33)
+- **CI (`tests.yml`, new):** a **Phase-1-only job** that proves independence (R9) — Phase 1 suites pass with *no Phase 2 packages installed*, plus a `docker compose config` gate asserting the default stack is unchanged — and **phase2-java** (emulator + claims-service `mvn test`) and **phase2-python** (claims-agent) jobs.
+- **e2e golden paths (`e2e/test_golden_paths.py`, new):** assertive golden-path + idempotency test against a live stack that **self-skips** when the stack is down.
+- **Narrative:** README gains a Phase 2 section (flow diagram, strangler framing, demo + test commands) and the three new services in the table.
+
+**Verified locally:** Phase 1 = **86 passed** (hermetic → independence), e2e = **6 skipped** with no stack, compose default-services gate **passes**.
+
+## Where Phase 2 stands
+**M0–M7 are essentially complete** — the whole slice runs end-to-end and is tested:
+`claims-agent → claims-service (façade + ACL + rules + Decision Contract) → {rxclaim-emulator, triage, FHIR}`, deterministic and idempotent, with the demo and CI in place.
+
+**Remaining (all previously scoped/deferred):**
+- **M8 / Phase 2b — live cloud deploy** (Terraform apply, Cloud Run, DB-less Kong live, OTel/Prometheus) — designed & stubbed, not yet applied.
+- **DB-less Kong `gateway` profile** (the local gated/parity path, deferred from M6).
+- **Clinical-safety demo path** (member→FHIR-patient resolution so triage fires on the penicillin scenario).
+
+## State
+- Open: **PR #33** (M7). `main` has #24–#31. `phase1-v1` tagged. Memory updated.
+
+Once you merge #33, good next options are the **`gateway` profile** (finish M6's parity path) or the **clinical-safety patient-resolution** slice (makes the drug-allergy demo fully light up) — both smaller than M8's live cloud. Want me to tackle one of those, start M8 planning, or pause here?
+
 <details>
 <summary>Execution details — 347 tool events</summary>
 
@@ -4552,6 +4578,6 @@ gh pr create --base main --head feature/phase2-m7-tests-narrative \
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 18:03 UTC
+- **Last updated:** 14 July 2026, 18:04 UTC
 - **Turns:** 58
 - **Status:** Incomplete
