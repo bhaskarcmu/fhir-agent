@@ -3737,8 +3737,10 @@ PR #31 merged. Cleaning up and moving to **M7 — tests & narrative** (cross-ser
 
 Only a secret-scan workflow exists — no test CI yet. Let me check whether the Phase 1 mcp-agent test is hermetic (so I scope the Phase-1 CI job correctly):
 
+The mcp-agent test mocks httpx — it's hermetic. So the Phase-1 CI job can run all three Phase 1 suites. Writing the CI workflow (Phase-1-only job proving independence + Phase 2 jobs):
+
 <details>
-<summary>Execution details — 337 tool events</summary>
+<summary>Execution details — 338 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4510,6 +4512,7 @@ git branch -d fe…`
 - **Bash** `cd /workspaces/fhir-agent
 echo "=== mcp-agent test — does it need live services / skip? ==="
 grep -nE "skip|requires|localhost|httpx|def test|@pytest|connect" mcp-agent/tests/test_e2e_demo_flow.py | h…`
+- **Write** `/workspaces/fhir-agent/.github/workflows/tests.yml`
 
 </details>
 
@@ -4520,6 +4523,6 @@ grep -nE "skip|requires|localhost|httpx|def test|@pytest|connect" mcp-agent/test
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 18:00 UTC
+- **Last updated:** 14 July 2026, 18:01 UTC
 - **Turns:** 58
 - **Status:** Incomplete
