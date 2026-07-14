@@ -1833,7 +1833,42 @@ Do you recommend separate PRs for each milestone? LAy that our for me , please
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Short answer: **yes — one PR per milestone as the default**, because your milestones are already scoped to be independently reviewable, each can keep Phase 1 green (so each is safely mergeable/revertable alone), and PR titles map 1:1 to the plan. But I'd apply three refinements rather than a rigid "9 milestones = 9 PRs."
+
+## Recommended PR breakdown
+
+| Milestone | Separate PR? | Branch (suggested) | Scope of the PR | Depends on |
+|---|---|---|---|---|
+| **M0 — Recon** | **No PR** | — | Read-only. Output is findings (post in the M1 PR description or a short issue), not code. | — |
+| **M1 — Payer KB** | **Yes** | `dataeng/phase2-prework` → PR | The existing prework branch *becomes* the M1 PR: `data/payer-kb/` schema, 4 plan defs, curated formulary/PA rules, NDC↔RxCUI crosswalk. | M0 |
+| **M2 — rxclaim-emulator** | **Yes** | `feat/phase2-m2-rxclaim-emulator` | Emulator service + its Terraform/Cloud Run config + cloud smoke test. | M1 |
+| **M3 — claims-service core** | **Yes** *(split if large)* | `feat/phase2-m3-claims-service` | Façade + ACL + rules engine + Decision Contract (R17). If it balloons: **M3a** scaffold+ACL, **M3b** rules engine+contract. | M1, M2 |
+| **M4 — Pipeline & artefacts** | **Yes** | `feat/phase2-m4-pipeline` | Accumulate→resolve, FHIR artefact graph (R18), idempotency. | M3 |
+| **M5 — claims-agent** | **Yes** | `feat/phase2-m5-claims-agent` | Separate non-authoritative agent. | M4 |
+| **M6 — Local wiring & demo** | **Yes** | `feat/phase2-m6-demo` | Compose `phase2`+`gateway` profiles, `kong.yml`, `seed_claims_demo.py`, golden paths. | M4, M5 |
+| **M7 — Tests & narrative** | **Yes (thin)** | `feat/phase2-m7-tests` | e2e/contract matrix wiring, Phase-1-only CI job, README/interview narrative. | M6 |
+| **M8 = Phase 2b — Cloud** | **Yes (maybe 2–3)** | `feat/phase2b-*` | `terraform apply`, live Kong, OTel/Prometheus, gateway-strangler. Likely split: infra, gateway-cutover, CI/CD. | M7 |
+
+## The three refinements (why not a literal 1:1)
+
+1. **M0 isn't a PR.** It's read-only recon — there's nothing to merge. Fold its findings into the M1 PR description. Making a code PR out of it is ceremony.
+2. **Don't defer tests to M7 (contradicts R19).** Each milestone PR ships *its own* unit/contract/golden tests — that's what makes each PR independently mergeable and green. M7 shrinks to **e2e/integration + the CI matrix + narrative**, a capstone, not "where testing happens."
+3. **Cloud rides inside each PR, not a separate cloud PR** (until M8). Per the merged plan, each service's Terraform/Cloud Run config + stub tests ship in *that service's* PR. Only the **live deploy** (Phase 2b) is its own PR set.
+
+## Non-negotiables that make per-milestone PRs work
+- **Every PR keeps Phase 1 green** (R9): `docker compose up` + Phase 1 tests + `deploy.sh` unchanged. That invariant is what lets you merge each PR independently without a big-bang.
+- **Additive only**; new services under the `phase2` compose profile so merging M2/M3/M4 to `main` never activates them in the default path.
+- **PR description references the milestone + the R/C items it satisfies** (e.g., "M4 — implements R17/R18").
+- **Never merge my own PRs** (CLAUDE.md) — I prepare + keep them current for your review.
+
+## Sequencing: sequential vs stacked
+Because M2→M3→M4 form a dependency chain, two options:
+- **Sequential (recommended for solo review):** merge M2, branch M3 off updated `main`, etc. Simplest history, cleanest reviews, but serialized.
+- **Stacked PRs:** open M3 on top of M2's branch before M2 merges (parallelism), but rebases get fiddly. Only worth it if you want to review ahead.
+
+My recommendation: **sequential off `main`**, one PR per milestone, tests-in-each, M0 as notes, M3 splittable, cloud-in-each until the M8 live-deploy PR(s).
+
+Want me to start by turning the current `dataeng/phase2-prework` branch into the **M1 PR** (build out `data/payer-kb/` on it, then open it against `main`)?
 
 <details>
 <summary>Execution details — 120 tool events</summary>
@@ -2146,6 +2181,6 @@ echo; echo "=== commits o…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 00:41 UTC
+- **Last updated:** 14 July 2026, 00:42 UTC
 - **Turns:** 18
-- **Status:** Incomplete
+- **Status:** Complete
