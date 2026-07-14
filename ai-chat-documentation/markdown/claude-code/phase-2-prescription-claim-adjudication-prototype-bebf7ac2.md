@@ -3290,8 +3290,10 @@ Good catch — mentioning the omission *reintroduces* the very topic on GitHub. 
 
 Found the full footprint. Three cleanups I can do now, plus one bigger item to flag. Let me start with the doc content I missed (plan.md M7 row still says "interview narrative"):
 
+Verify docs (excluding the archived PRD) are now clean, then squash the #25 branch into one commit with a clean message and force-push:
+
 <details>
-<summary>Execution details — 173 tool events</summary>
+<summary>Execution details — 174 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3709,6 +3711,9 @@ git switch feature/phase2-docs-refinements 2>&1 | tail -1
 echo "=== (1) role/interview terms in docs/phase2 content ==="
 grep -rniE 'interview|lead director|target role|hirin…`
 - **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== docs/phase2 (excl source-prd) role/interview check ==="
+grep -rniE 'interview|lead director|target role|hiring|\bjob\b|\bcareer\b|resume|janmeet|\bCVS\b' docs/phase…`
 
 </details>
 
