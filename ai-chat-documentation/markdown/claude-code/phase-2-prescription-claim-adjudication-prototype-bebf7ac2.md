@@ -2799,7 +2799,52 @@ Tell me more about the "public sources" you used soe abbreviations, expand the a
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Here's each public source in plain English, with every abbreviation spelled out. I'll group them so it's easy to follow.
+
+## First, the "who's who" (the organizations behind the data)
+- **NIH — National Institutes of Health:** the U.S. government's main medical research agency.
+- **NLM — National Library of Medicine:** the world's largest medical library; part of NIH. Publishes drug and terminology data.
+- **CDC — Centers for Disease Control and Prevention:** the U.S. public-health agency; here, it publishes the diagnosis codes.
+- **CMS — Centers for Medicare & Medicaid Services:** the agency that runs **Medicare** (coverage for 65+) and **Medicaid** (coverage for low-income). It publishes the insurance/coverage data.
+- **FDA — Food and Drug Administration:** regulates drugs; publishes drug-product data.
+- **WHO — World Health Organization:** the global health body; here, the source of a drug-classification system.
+- **HL7 — Health Level Seven:** a nonprofit that sets healthcare **data-exchange standards** (how systems talk to each other).
+- **MITRE:** a nonprofit that runs federally funded research; it built the fake-patient generator we use.
+
+## The medical "dictionaries" (standardized vocabularies)
+Think of these as **universal codebooks** so every system means the same thing by a drug, diagnosis, or allergy.
+
+- **RxNorm** (published by NLM) — a **universal translator for medication names.** "Ozempic," "semaglutide," the generic, the brand — RxNorm ties them to one standard ID so systems agree on *what drug* is meant. Each drug gets an **RxCUI** (*RxNorm Concept Unique Identifier* — basically its unique ID number). *We use it to identify drugs and look up their family.*
+- **ATC — Anatomical Therapeutic Chemical classification** (from WHO) — the **"family tree" for drugs.** It groups drugs by what they are and treat (e.g., all "ACE inhibitors," all "penicillins"). *We use it for duplicate-therapy and class-based rules.*
+- **ICD-10-CM — International Classification of Diseases, 10th Revision, Clinical Modification** (published by CDC/CMS) — the **standardized codebook for diagnoses.** Every condition has a code (e.g., Type 2 diabetes = E11.9). *We use it to validate diagnoses on a claim.*
+- **SNOMED CT — Systematized Nomenclature of Medicine, Clinical Terms** — a very detailed **medical dictionary** for clinical concepts, including allergies. *We use it to code allergies (e.g., penicillin allergy).*
+- **NDC — National Drug Code** (from FDA) — a drug product's **"barcode/UPC."** It identifies the exact product, manufacturer, and package. *Insurance formularies are keyed by NDC, so we map NDC ↔ RxNorm.*
+
+## The government coverage & provider data (the "rules and registries")
+- **CMS Part D Formulary PUF** — three things to unpack:
+  - **Part D** = Medicare's **prescription-drug benefit.**
+  - **Formulary** = an insurance plan's **"menu of covered drugs,"** with each drug's tier (cost level), whether it needs prior approval, step-therapy, or quantity limits.
+  - **PUF — Public Use File** = a dataset CMS **publishes for anyone to download.**
+  - *This is our richest, real source for actual formulary rules.*
+- **CMS NCD / LCD — National / Local Coverage Determination** — CMS's **official rulings on what Medicare covers** and under what medical conditions (National = nationwide; Local = regional). *We use these for medical-necessity rules.*
+- **NPI — National Provider Identifier**, from **NPPES — National Plan and Provider Enumeration System** (run by CMS) — every U.S. healthcare provider has an **NPI, like a professional ID number**, searchable in the NPPES registry. *We use it to check provider eligibility.*
+- **openFDA** — the FDA's **free, public data service** ("open" data from the FDA) covering drug products and labeling. *We use it for NDC ↔ product details.*
+
+## The access tools (how we pull the above, free & without a license)
+- **RxNav** (NLM) — a **free website/API** (a way for software to fetch data) that lets you query RxNorm and ATC **without a paid license.** *This is how we pulled drug IDs and classes.*
+- **NLM Clinical Tables** — a **free lookup API** for ICD-10 and other code sets. *This is how we pulled diagnosis codes.*
+  *(An "API — Application Programming Interface — is just a doorway that lets one program request data from another.")*
+
+## Synthetic data & interoperability standards
+- **Synthea** (by MITRE) — a **"fake-patient factory."** It generates realistic-but-**completely made-up** patients with conditions, medications, allergies, insurance, and claims — so you can build and test **without touching real patient data** (a privacy win). *We use it to generate patients and claim records.*
+- **FHIR — Fast Healthcare Interoperability Resources** (an HL7 standard) — the **modern common format** for exchanging healthcare data between systems (think "a shared file format for health records"). Our platform speaks FHIR.
+- **HL7 Da Vinci PAS — Prior Authorization Support** — an HL7 project defining the **standard way to do electronic prior authorization** in FHIR. **PAS = Prior Authorization Support.** *We use its example shapes as the blueprint for our Claim/decision records.*
+
+## Why this matters (the credibility point)
+Every one of these is **authoritative** (from NIH/NLM, CDC, CMS, FDA, WHO, or HL7), **public/free**, and **real** — so the prototype's rules and data are grounded in the same sources a production payer would use, not fabricated. That's the whole point: *no invented drugs, diagnoses, or rules.*
+
+**One-line interview version:**
+> "I grounded everything in authoritative public sources — RxNorm and ATC for drugs, ICD-10 and SNOMED for diagnoses and allergies, the CMS Part D formulary and coverage determinations for payer rules, NPI for providers, openFDA for drug products, and Synthea for privacy-safe synthetic patients — all free, standards-based, and real, so nothing is fabricated."
 
 <details>
 <summary>Execution details — 120 tool events</summary>
@@ -3112,6 +3157,6 @@ echo; echo "=== commits o…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 13:21 UTC
+- **Last updated:** 14 July 2026, 13:22 UTC
 - **Turns:** 41
 - **Status:** Incomplete
