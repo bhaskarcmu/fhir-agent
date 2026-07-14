@@ -2107,6 +2107,42 @@ Have 5–6 crisp ones ready, mapped to their competencies: **led change / modern
 
 Want me to (a) run a **mock interview** (I play Janmeet / the panel, mixing technical + leadership + behavioral), (b) help you **draft your STAR stories** into tight narratives, or (c) fold a short **"target-role alignment"** note into the docs and get back to the **M1 payer-KB PR**? I can also add a one-line memory that the prototype targets this confirmed CVS RxClaim role so our future work stays aligned — say the word.
 
+Internalized — resume and cover letter both. This meaningfully upgrades my read of you, and it means I need to **correct my earlier "gaps" advice**: several things I flagged as gaps are actually strengths you already own. Here's the synthesized picture before we spar.
+
+## The core narrative you should run (it's strong)
+> "I've done exactly this modernization before — **legacy monolith → cloud-native microservices, at scale, in regulated healthcare — just on a different stack.** At Rain Bird I modernized a legacy control platform (WPF monolith → Angular + event-driven microservices), 100× scale, 90% latency cut, leading 45+ and a $20M portfolio. At Oak Street (a CVS company) I run 30+ across seven disciplines on a mission-critical healthcare platform. The prototype is me **porting that proven playbook to your IBM i / RxClaim / Java-Spring world — and adding AI.**"
+
+That "same playbook, new stack" framing is your spine. The prototype's job, exactly as you said, is to **bridge stack credibility (Java/Spring + IBM i adjudication) and prove AI fluency** — not to prove you can lead or modernize; your career already proves that.
+
+## Corrected assessment — these are STRENGTHS, not gaps
+| I earlier flagged… | Reality from your resume |
+|---|---|
+| 50+ team leadership | ✅ 45+ engineers + $20M portfolio (Rain Bird); 30+/7 disciplines (Oak Street); built 3→25 (Photometrics) |
+| Legacy modernization roadmap | ✅ Rain Bird two-phase legacy→cloud-native — a real strangler-style story |
+| Frontend (Angular/React/Vue) | ✅ You led the WPF→**Angular** migration |
+| NoSQL (mongoDB) | ✅ **DynamoDB** at scale — transferable |
+| Compliance / regulatory | ✅ HIPAA, GDPR, SOX, PCI-DSS |
+| Healthcare domain | ✅ Oak Street/CVS (current) — meets the *preferred* qual |
+| Reliability/serviceability | ✅ SRE founder, SLO/SLI, MTTR −50%, defects −90% |
+| Business/strategy for "AaaS" | ✅ **CMU MBA + P&L ownership** — a genuine differentiator at Director level |
+| AI proficiency | ✅ Anthropic Claude agent + MIT AI/ML cert — a bonus most candidates won't have |
+
+Plus a quiet advantage: **Oak Street Health is a CVS company**, so you're effectively an internal candidate — lean into cultural fit and "our members/platform."
+
+## The REAL gaps to manage (be ready, be honest)
+1. **Java/Spring at "expert" level** — the JD says *expert* Core Java/JEE/Spring/Boot/JDBC/Hibernate, but your production depth is Python/AWS/Angular/C++. The prototype bridges it, but an interviewer may probe. **Position:** command it at *architecture/standards* level + the working Spring Boot slice + fast ramp — "I set Java/Spring standards and lead the teams; here's a Spring Boot adjudication slice I built." Don't claim to be the deepest Hibernate tuner in the room.
+2. **IBM i/AS400 production** — none; simulated only. **Position:** conceptual command (DDS, CL, IFS, Db2 for i, JTOpen) + a modernization roadmap, while respecting the deep RxClaim operators you'd inherit. Leaders orchestrate expertise.
+3. **PBM/pharmacy-claims specifics** (NCPDP, RxClaim internals, formulary mechanics) — general healthcare ✓, PBM adjudication specifics are newer. **Position:** show you've studied the 10-step pipeline/rule domains (you have) and ask sharp questions.
+4. **Title/grade jump** — official title is Sr Eng Mgr → applying for Lead Director (grade 411). **Position:** scope-over-title ("director-scope work: 45+, $20M, seven disciplines").
+
+## Ready to spar — how do you want the mock?
+I'll play a realistic CVS panel (technical + leadership/behavioral + domain/strategy, in the style of hiring manager Janmeet Dhillon's org). Two quick choices:
+
+- **Focus:** (a) full mixed panel, (b) technical/architecture-heavy (drill the Java/Spring/IBM i/scalability gaps), (c) leadership & behavioral (STAR), or (d) strategy/"Adjudication-as-a-Service" vision. 
+- **Style:** I recommend **one question at a time** — you answer, I give tight feedback (what landed, what an interviewer would ding) + a follow-up, like a real loop. Or I can batch a set if you'd rather draft answers.
+
+Default if you just say "go": **full mixed panel, one question at a time, realistic difficulty, escalating.** Which do you want — and shall I open with the classic "walk me through your background and why this role"?
+
 <details>
 <summary>Execution details — 120 tool events</summary>
 
@@ -2418,6 +2454,6 @@ echo; echo "=== commits o…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 09:42 UTC
+- **Last updated:** 14 July 2026, 09:44 UTC
 - **Turns:** 20
 - **Status:** Complete
