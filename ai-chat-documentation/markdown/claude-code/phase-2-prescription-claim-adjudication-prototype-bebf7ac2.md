@@ -2965,8 +2965,12 @@ Now the reliability & scale patterns (#4) after C3:
 
 Now append the Engineering Standards (#3) and Delivery & PR strategy (#2) sections. Let me see the end of plan.md:
 
+I'll append the two new sections after §13, and also scrub an interview-specific phrase from the M7 row (aligning with your "avoid role-specific" directive):
+
+Now enhance requirements R13 with the commercial/ACA data strategy (#5) and the prework pointer (#10). Let me read R13:
+
 <details>
-<summary>Execution details — 127 tool events</summary>
+<summary>Execution details — 129 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3282,6 +3286,8 @@ echo "on: $(git rev-parse --abbrev-ref HEAD)…`
 - **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
 - **Read** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Read** `/workspaces/fhir-agent/docs/phase2/requirements.md`
 
 </details>
 
