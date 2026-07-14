@@ -3259,8 +3259,22 @@ tidy that data README header too
 
 Switching to the data branch to tidy its README header consistently.
 
+Done — data README header tidied and pushed (`0f23884` on the data branch).
+
+- Reworded the opening from "Not part of the documentation PR / lives on branch `dataeng/phase2-prework`" → **"Data-engineering working notes (source catalog + synthesis tooling)"**, keeping the durable content (raw downloads gitignored, curated derivatives tracked, reproducible via scripts).
+- Verified: **no branch/PR references remain** anywhere in the data README.
+
+Now consistent everywhere — the planning docs (PR #25) and the data reference README all describe *what things are*, with branch/PR/status left to GitHub.
+
+Current state:
+- **PR #25** (docs refinements + scrub) — open, ready for review.
+- **`dataeng/phase2-prework`** — ACA sample + glossary + tidy, pushed (no PR).
+- `main` has #24; `phase1-v1` tagged.
+
+Ready for **M1** (build `data/payer-kb/` — schema + 4 plan definitions grounded in the real Medicare + commercial samples + NDC↔RxCUI crosswalk) whenever you want to start. Want me to kick it off?
+
 <details>
-<summary>Execution details — 168 tool events</summary>
+<summary>Execution details — 171 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3665,6 +3679,11 @@ Requirements/plan/README should describe WHAT we bui…`
 - **Bash** `cd /workspaces/fhir-agent
 git switch dataeng/phase2-prework 2>&1 | tail -1
 echo "=== current header ==="; sed -n '1,10p' data/reference/README.md`
+- **Read** `/workspaces/fhir-agent/data/reference/README.md`
+- **Edit** `/workspaces/fhir-agent/data/reference/README.md`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== any branch/PR refs left in data README? ==="
+grep -nE 'dataeng/phase2-prework|documentation PR|docs PR|data branch' data/reference/README.md || echo "NONE — clean"…`
 
 </details>
 
