@@ -3637,8 +3637,10 @@ Adding the module entrypoint and tests:
 
 Installing the package and running the tests:
 
+All 8 tests pass. Now a real CLI end-to-end smoke — driving the actual CLI + `ClaimsClient` (real httpx) against a stub claims endpoint (the full cross-service wiring is M6):
+
 <details>
-<summary>Execution details — 316 tool events</summary>
+<summary>Execution details — 317 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4344,6 +4346,11 @@ echo "created package dirs"`
 - **Bash** `cd /workspaces/fhir-agent
 python -m pip install -e "claims-agent[dev]" -q 2>&1 | tail -3
 python -m pytest claims-agent/tests -q 2>&1 | tail -15`
+- **Bash** `cd /workspaces/fhir-agent
+cat > /tmp/mockclaims.py <<'PY'
+import json, http.server
+DECISION={"decisionId":"DEC-C1","outcome":"APPROVED","reasons":[],"allFindings":[],
+          "pricing":{"paid":True,…`
 
 </details>
 
