@@ -3379,8 +3379,10 @@ The ingredient RxCUI has no direct NDCs (NDCs attach to drug *products*). openFD
 
 Now the curated formulary (10 drugs × 4 plans, driving the R8 scenarios) and the layered PA rules:
 
+Now validate the KB is internally consistent (plan refs, rxcui refs, and the scenarios resolve as intended):
+
 <details>
-<summary>Execution details — 211 tool events</summary>
+<summary>Execution details — 212 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3871,6 +3873,14 @@ python3 data/scripts/build_ndc_rxcui_crosswalk.py 2>&1 | tail -24`
 - **Write** `/workspaces/fhir-agent/data/payer-kb/plans/employer-ppo.yaml`
 - **Write** `/workspaces/fhir-agent/data/payer-kb/formulary/formulary.csv`
 - **Write** `/workspaces/fhir-agent/data/payer-kb/pa-rules/pa-rules.yaml`
+- **Bash** `cd /workspaces/fhir-agent
+python3 - <<'PY'
+import csv, glob, re, pathlib
+kb = pathlib.Path("data/payer-kb")
+# plan_ids from plan files
+plan_ids=set()
+for p in glob.glob(str(kb/"plans/*.yaml")):
+    t=…`
 
 </details>
 
@@ -3881,6 +3891,6 @@ python3 data/scripts/build_ndc_rxcui_crosswalk.py 2>&1 | tail -24`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 15:42 UTC
+- **Last updated:** 14 July 2026, 15:43 UTC
 - **Turns:** 51
 - **Status:** Incomplete
