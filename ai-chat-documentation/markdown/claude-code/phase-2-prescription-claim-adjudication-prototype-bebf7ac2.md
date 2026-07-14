@@ -4031,8 +4031,10 @@ Fresh jar, JSON string body, still 422. Legacy's string body works via the same 
 
 Now rewrite the constructor and the `assess` body to use the JDK HttpClient:
 
+Rebuild and run the full demo again:
+
 <details>
-<summary>Execution details — 407 tool events</summary>
+<summary>Execution details — 409 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4974,6 +4976,12 @@ FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose up -d fhir triage >/dev/nu
 for i in $(seq 1 40); do curl -s --max-time 3 http://localhost:8080/fhir/metadata 2>/d…`
 - **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/client/HttpTriageClient.java`
 - **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/client/HttpTriageClient.java`
+- **Bash** `cd /workspaces/fhir-agent
+mvn -q -f claims-service/pom.xml -DskipTests clean package 2>&1 | tail -8
+ls -la --time-style=+%H:%M:%S claims-service/target/claims-service-0.1.0.jar`
+- **Bash** `cd /workspaces/fhir-agent
+FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose up -d fhir triage >/dev/null 2>&1
+for i in $(seq 1 40); do curl -s --max-time 3 http://localhost:8080/fhir/metadata 2>/d…`
 
 </details>
 
