@@ -1,0 +1,43 @@
+# DB-less (declarative) Kong config for the local Phase 2 `gateway` profile (decision C2).
+#
+# This is the SINGLE declarative dialect used for the Phase 2 edge gateway (the same shape
+# would front Cloud Run upstreams in cloud). It is a TEMPLATE: `__DEV_KEY__` is replaced with a
+# freshly generated key at `docker compose up` (see the kong service entrypoint), so no secret
+# is ever committed. The generated key is PRINTED to the Kong container logs at startup:
+#   docker compose logs kong | grep 'DEV APIKEY'
+#
+# Phase 1's KIC/Helm Kong config (kong-ingress.yaml, kong-plugins.yaml, …) is separate and
+# untouched — this file does not replace it (gateway-strangler; see docs/phase2/plan.md §3).
+
+_format_version: "3.0"
+
+services:
+  - name: claims-service          # edge → the adjudication façade
+    url: http://claims-service:8090
+    routes:
+      - name: claims
+        paths: ["/claims"]
+        strip_path: false         # keep /claims/... so the upstream path is preserved
+  - name: fhir-service            # edge → the FHIR data plane
+    url: http://fhir:8080
+    routes:
+      - name: fhir
+        paths: ["/fhir"]
+        strip_path: false
+  - name: triage-service          # edge → clinical safety
+    url: http://triage:8001
+    routes:
+      - name: triage
+        paths: ["/triage"]
+        strip_path: false
+
+plugins:
+  - name: key-auth                # every edge request needs a valid apikey (401 otherwise)
+    config:
+      key_names: ["apikey"]
+      hide_credentials: true      # strip the key before forwarding upstream
+
+consumers:
+  - username: local-dev
+    keyauth_credentials:
+      - key: __DEV_KEY__          # replaced at startup with a generated key (never committed)
