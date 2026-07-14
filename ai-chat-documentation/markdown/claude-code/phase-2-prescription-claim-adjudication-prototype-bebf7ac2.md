@@ -4047,6 +4047,27 @@ Diffs are clean and consistent. Per the repo's Git rules, let me confirm worktre
 
 On `feature/phase2-clinical-safety` (off the merged main). **Worktree** `/workspaces/fhir-agent`, **current branch** `feature/phase2-clinical-safety`, **target** `main` via PR. Staging only the slice's files (excluding the stray `core`), then committing:
 
+Done. The clinical-safety slice is complete and up for review.
+
+## Summary
+
+**Root cause of the blocker:** not the request body at all — it was the **HTTP protocol**. The JDK/RestClient path attempted an **h2c upgrade** against uvicorn (which is HTTP/1.1-only), so FastAPI received an empty body → `422 body required`. Pinning the client to **HTTP/1.1** fixed it immediately. (Legacy calls worked because the emulator is Spring, which tolerates the upgrade dance.)
+
+**What the slice does:** the pipeline now resolves a member → FHIR `Patient` (via a consistent READ on `Patient/member-{id}`), then calls the reused Phase 1 triage service with `patient_id` so it evaluates active meds vs. recorded allergies. A `HIGH` conflict becomes a `clinical-safety-high` DENY; unresolved patient or triage failure degrades to `LOW` (logged).
+
+**Files changed:**
+- [HttpTriageClient.java](claims-service/src/main/java/com/payer/claims/client/HttpTriageClient.java) — JDK `HttpClient` pinned to HTTP/1.1
+- [TriageClient.java](claims-service/src/main/java/com/payer/claims/client/TriageClient.java), [FhirClient.java](claims-service/src/main/java/com/payer/claims/fhir/FhirClient.java), [HapiFhirClient.java](claims-service/src/main/java/com/payer/claims/fhir/HapiFhirClient.java), [AdjudicationPipeline.java](claims-service/src/main/java/com/payer/claims/pipeline/AdjudicationPipeline.java) — patient resolution wiring
+- Two test files + [seed_claims_demo.py](data/scripts/seed_claims_demo.py) (DEMO-SAFETY golden path)
+
+**Validation:** all 6 golden paths correct end-to-end against the live `phase2` stack — including **DEMO-SAFETY → DENIED clinical-safety-high**. 24 claims-service unit tests pass.
+
+**Branch:** `feature/phase2-clinical-safety` · **Commit:** `20865f0` · **PR:** [#35](https://github.com/bhaskarcmu/fhir-agent/pull/35) → `main`
+
+**Known limitations (as designed):** resolution assumes the `member-{id}` logical-id convention (a real member→Patient index would replace it); triage failures fall back to LOW rather than PEND (a production build would add a circuit breaker). The stray untracked `core` file was left out of the commit.
+
+Both parallel slices are now in review — gateway profile (#34, merged) and this one (#35). After you merge #35, the next queued step is **M8/Phase 2b** (live cloud deploy — Terraform apply, previously deferred).
+
 <details>
 <summary>Execution details — 420 tool events</summary>
 
@@ -5043,6 +5064,6 @@ gh pr create --base main --head feature/phase2-clinical-safety \
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 19:10 UTC
+- **Last updated:** 14 July 2026, 19:11 UTC
 - **Turns:** 61
 - **Status:** Incomplete
