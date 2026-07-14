@@ -3800,8 +3800,10 @@ Appending the DB-less Kong service under the `gateway` profile (generates the ke
 
 Validating the compose config and the service sets:
 
+Compose valid, default unchanged (`fhir mcp-agent triage`). Now verify the gateway mechanism end-to-end with fhir + kong (lightweight — no Phase 2 image builds): generate key, test 401 without it and 200 with it:
+
 <details>
-<summary>Execution details — 353 tool events</summary>
+<summary>Execution details — 354 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4611,6 +4613,11 @@ echo "removed .runtime"`
 docker compose config -q 2>&1 && echo "VALID ✓" || echo "INVALID"
 echo "default:  $(docker compose config --services 2>/dev/null | sort | paste -sd' ' -)"
 echo "gateway:  $(d…`
+- **Bash** `cd /workspaces/fhir-agent
+docker compose --profile gateway up -d fhir kong 2>&1 | tail -4
+echo "waiting for kong + fhir..."
+for i in $(seq 1 40); do
+  kh=$(docker inspect -f '{{.State.Health.Status}}'…`
 
 </details>
 
