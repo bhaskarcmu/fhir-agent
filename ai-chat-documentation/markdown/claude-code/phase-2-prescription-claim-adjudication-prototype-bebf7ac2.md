@@ -3743,8 +3743,10 @@ Now the on-demand e2e golden-path contract test (self-skips when the stack isn't
 
 Now the platform narrative. Let me find the right spot in the root README to add a Phase 2 section and update the services table:
 
+Let me validate the CI commands actually work — run the Phase-1 suite (hermetic), confirm the e2e self-skips with no stack, and the compose-default check:
+
 <details>
-<summary>Execution details — 342 tool events</summary>
+<summary>Execution details — 344 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4522,6 +4524,11 @@ grep -nE "skip|requires|localhost|httpx|def test|@pytest|connect" mcp-agent/test
 grep -n "^## \|^### \|Microservices\|Current Status\|| \*\*fhir-service\|epic-emulator\|athena-emulator" README.md | head -40`
 - **Read** `/workspaces/fhir-agent/README.md`
 - **Edit** `/workspaces/fhir-agent/README.md`
+- **Edit** `/workspaces/fhir-agent/README.md`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== Phase 1 suites (as the phase1 CI job runs them) ==="
+pytest client/clinical/tests triage-service/src/triage/tests mcp-agent/tests -q 2>&1 | tail -5
+echo "=== e2e wi…`
 
 </details>
 
