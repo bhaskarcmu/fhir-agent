@@ -2329,7 +2329,13 @@ In my protytoye I have proven how to wire a modern JAva sercvice to a legacy IMB
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Understood — the "learn fast, prove with prototypes grounded in real business rules, façade+ACL pattern I've shipped before" line.
+
+---
+
+**Question 9 of 10**
+
+Two more. This one's about navigating a big, matrixed organization — you'd be partnering constantly with **PSS IT, business leaders, and compliance**, often without direct authority over them. Tell me about a time you had a **real disagreement with a senior stakeholder** — someone whose buy-in you needed but who saw it differently. How did you handle it, and what was the outcome? I'm listening for how you influence and, honestly, how you handle *not* getting your way.
 
 <details>
 <summary>Execution details — 120 tool events</summary>
