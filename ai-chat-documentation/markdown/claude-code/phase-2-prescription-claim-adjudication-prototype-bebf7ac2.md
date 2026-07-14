@@ -3679,8 +3679,10 @@ PR #30 merged. Cleaning up and moving to **M6 — local wiring & demo** (bring t
 
 **Git context:** on `feature/phase2-m5-claims-agent`; switching to `main`, syncing, deleting merged M5 branch, creating M6 branch. Then I'll re-read the compose file to wire additively.
 
+Now I'll add the three Phase 2 services under a `phase2` profile (default `docker compose up` stays exactly Phase 1). Appending to the compose file:
+
 <details>
-<summary>Execution details — 325 tool events</summary>
+<summary>Execution details — 326 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4412,6 +4414,7 @@ New standalone Python agent that explains claim adjudication decisions in plai�
 git switch main >/dev/null 2>&1 && git pull --ff-only 2>&1 | tail -1
 git branch --merged main | grep -q 'feature/phase2-m5-claims-agent' && echo "M5 merged ✓"
 git branch -d f…`
+- **Edit** `/workspaces/fhir-agent/docker-compose.yml`
 
 </details>
 
@@ -4422,6 +4425,6 @@ git branch -d f…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 17:14 UTC
+- **Last updated:** 14 July 2026, 17:16 UTC
 - **Turns:** 57
 - **Status:** Incomplete
