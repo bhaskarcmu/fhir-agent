@@ -3575,8 +3575,10 @@ Now the FHIR client (interface + HAPI impl with conditional-create idempotency +
 
 Updating the controller to persist via the service, mapping FHIR/system failures to 503 (R17.6, retry-safe since writes are atomic):
 
+Now the tests — FHIR artefact linkage (no server) and intake idempotency (fake client):
+
 <details>
-<summary>Execution details — 294 tool events</summary>
+<summary>Execution details — 295 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4229,6 +4231,7 @@ git branch -d…`
 - **Write** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/pipeline/AdjudicationService.java`
 - **Write** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/api/ClaimController.java`
 - **Edit** `/workspaces/fhir-agent/claims-service/src/main/resources/application.yml`
+- **Write** `/workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/FhirArtifactBuilderTest.java`
 
 </details>
 
@@ -4239,6 +4242,6 @@ git branch -d…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 16:55 UTC
+- **Last updated:** 14 July 2026, 16:56 UTC
 - **Turns:** 55
 - **Status:** Incomplete
