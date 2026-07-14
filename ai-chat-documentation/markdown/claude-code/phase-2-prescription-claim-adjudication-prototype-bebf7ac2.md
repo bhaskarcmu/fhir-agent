@@ -3861,8 +3861,10 @@ Now it's clear: triage's `medication_id` is a **FHIR MedicationRequest id**, not
 
 The fix is simple: call triage with **only** `patient_id` (its `medication_id` expects a MedicationRequest id, not an rxcui). The `qualitativeRisk` code (`high`/`moderate`) my parser reads is correct. Updating `HttpTriageClient`:
 
+That diagnostic is informational (non-project file). Rebuilding and re-running the full demo with triage pointed at the right host:
+
 <details>
-<summary>Execution details — 380 tool events</summary>
+<summary>Execution details — 381 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4735,6 +4737,10 @@ for i in $(seq 1 40); do curl -s --max-time 3 http://localhost:8080/fhir/metadat
 FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose up -d fhir triage >/dev/null 2>&1
 for i in $(seq 1 40); do curl -s --max-time 3 http://localhost:8080/fhir/metadata 2>/d…`
 - **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/client/HttpTriageClient.java`
+- **Bash** `cd /workspaces/fhir-agent
+mvn -q -f claims-service/pom.xml -DskipTests package 2>&1 | tail -2
+FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose up -d fhir triage >/dev/null 2>&1
+for i in $(seq 1 4…`
 
 </details>
 
