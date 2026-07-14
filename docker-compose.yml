@@ -77,3 +77,68 @@ services:
         condition: service_healthy
     stdin_open: true
     tty: true
+
+  # ══ Phase 2 (opt-in: `docker compose --profile phase2 up`) ═════════════════
+  # Additive only — none of the below start on a plain `docker compose up`.
+
+  # ── Legacy RxClaim / IBM i emulator (INTERNAL ONLY — no host port) ─────────
+  rxclaim-emulator:
+    build:
+      context: ./rxclaim-emulator
+    container_name: fhir-agent-rxclaim
+    profiles: ["phase2"]
+    # No published port: reachable only at rxclaim-emulator:8091 on the compose network,
+    # mirroring the cloud "ingress=internal" posture. Consumers go through claims-service.
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/127.0.0.1/8091"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 20s
+
+  # ── Claims adjudication façade (edge-facing) ──────────────────────────────
+  claims-service:
+    build:
+      context: ./claims-service
+    container_name: fhir-agent-claims
+    profiles: ["phase2"]
+    ports:
+      - "8090:8090"
+    volumes:
+      - ./data/payer-kb:/app/payer-kb:ro   # curated payer KB (C3 seam), read-only
+    # Spring program args (highest precedence) wire the downstream services on the network.
+    command:
+      - "--payer-kb.dir=/app/payer-kb"
+      - "--rxclaim.base-url=http://rxclaim-emulator:8091"
+      - "--triage.base-url=http://triage:8001"
+      - "--fhir.base-url=http://fhir:8080/fhir"
+    depends_on:
+      fhir:
+        condition: service_healthy
+      triage:
+        condition: service_healthy
+      rxclaim-emulator:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/127.0.0.1/8090"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 20s
+
+  # ── Claims explanation agent (run-once CLI) ───────────────────────────────
+  claims-agent:
+    build:
+      context: ./claims-agent
+    container_name: fhir-agent-claims-agent
+    profiles: ["phase2"]
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      CLAUDE_API_KEY: ${CLAUDE_API_KEY:-}     # falls back to deterministic explanation if unset
+      CLAIMS_GATEWAY_URL: http://claims-service:8090
+      CLAIMS_API_KEY: ${CLAIMS_API_KEY:-}     # Kong key for the gated setup; omit for direct
+    depends_on:
+      claims-service:
+        condition: service_healthy
+    stdin_open: true
+    tty: true
