@@ -1766,6 +1766,43 @@ What has been done and what is left?
 
 Switching to the data branch and taking stock.
 
+On `dataeng/phase2-prework` (synced with origin, one commit `9fa8d0f`). Here's the status.
+
+## ✅ Done (this branch)
+
+**Committed (small, tracked):**
+- `data/reference/README.md` — full source inventory (what's pulled vs pull-on-demand, licenses, adjudication mapping).
+- `data/scripts/fetch_reference_data.py` — reproducible fetcher (no-auth RxNav + NLM).
+- `data/reference/icd10/icd10cm_subset.csv` — 153 real ICD-10-CM codes across our clinical domains.
+- `data/reference/rxnorm/rxnorm_drug_classes.csv` — 20 drugs with real RxCUIs + ATC classes (grounds duplicate-therapy/formulary).
+- `data/reference/samples/example_pharmacy_claim.json` + `example_eob.json` — real Synthea `Claim`(type=pharmacy)/`EOB` shapes.
+
+**Local working tree (gitignored, regenerable):**
+- Synthea v4.0.0 JAR (188MB) — validated it emits Claim/EOB/Provenance.
+- Synthea sample output bundles.
+- CMS NCD extract (`ncd.mdb`, CSV) — medical-necessity source.
+
+**Also validated/decided (now baked into the merged plan):** Synthea as the synthesizer; the CMS Part D Formulary PUF as the real formulary/PA/tier/quantity source; the C3 repository seam; the `Coverage`-not-in-Synthea gotcha.
+
+## ⏳ Left — the payer knowledge base (plan **M1**) is the core remaining data-eng deliverable
+
+`data/payer-kb/` **does not exist yet.** That's the main job. Concretely:
+
+1. **Design the KB schema** — formulary keyed for the C3 access pattern (`plan_id + drug → {status, tier, PA, step-therapy, quantity-limit}`), so the Postgres→Bigtable swap stays a no-op.
+2. **4 plan definitions** (JSON/YAML) — Commercial Silver, Commercial Gold, Medicare Advantage Demo, Employer PPO.
+3. **Curated formulary + rules grounded in real data** — distill a slice from the CMS Part D Formulary PUF (documented, not yet pulled — 2.4GB, we take only a slice) → 20–50 formulary rules, 10–20 PA rules.
+4. **NDC ↔ RxCUI crosswalk** — real gap: our rules/triage key on **RxNorm**, but the formulary PUF keys on **NDC**. Need a small crosswalk (RxNav/openFDA) so formulary lookups line up with the clinical rules.
+5. **`Coverage` authoring inputs** — since Synthea omits `Coverage`, define the Coverage resources the demo seeds (tied to the 4 plans) — feeds `seed_claims_demo.py` later (M6).
+
+**Adjacent, not pure data-eng (dependencies to flag):**
+- **M0 recon** (read-only FHIR resource counts) is still undone — it needs a running FHIR server, and it tells us what to seed vs. what already exists. Worth doing before M6 seeding.
+- `seed_claims_demo.py` itself is M6 (integration), but the *data* it consumes is defined here.
+
+## Recommended next step
+Start **M1**: design the `data/payer-kb/` schema + author the **4 plan definitions** and a **curated formulary/PA rule set** grounded in the real RxNorm/ATC data we already have — pulling a targeted CMS formulary slice + building the NDC↔RxCUI crosswalk as I go.
+
+Want me to kick off M1 with the schema + the 4 plan definitions first (fast, reviewable), then layer in the formulary/PA rules from the CMS slice? Or would you rather I do the M0 read-only FHIR recon first if you have a server I can point at?
+
 <details>
 <summary>Execution details — 120 tool events</summary>
 
@@ -2077,6 +2114,6 @@ echo; echo "=== commits o…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 00:36 UTC
+- **Last updated:** 14 July 2026, 00:37 UTC
 - **Turns:** 16
 - **Status:** Complete
