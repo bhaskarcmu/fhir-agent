@@ -3893,8 +3893,10 @@ Found the real culprit: triage returned **422 "body missing"** — the RestClien
 
 Rebuilding and running the final demo:
 
+Still APPROVED — let me see the current error in the log:
+
 <details>
-<summary>Execution details — 399 tool events</summary>
+<summary>Execution details — 400 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4816,6 +4818,8 @@ echo "=== restart, seed, and probe triage wi…`
 mvn -q -f claims-service/pom.xml -DskipTests package 2>&1 | tail -2
 FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose up -d fhir triage >/dev/null 2>&1
 for i in $(seq 1 4…`
+- **Bash** `cd /workspaces/fhir-agent
+grep -iE "000000009|triage unavailable|no FHIR patient" /tmp/claims.log | grep -iE "000000009|unavailable" | tail -4`
 
 </details>
 
@@ -4826,6 +4830,6 @@ for i in $(seq 1 4…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 18:57 UTC
+- **Last updated:** 14 July 2026, 18:58 UTC
 - **Turns:** 60
 - **Status:** Incomplete
