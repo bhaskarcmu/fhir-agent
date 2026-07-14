@@ -3745,8 +3745,12 @@ Now the platform narrative. Let me find the right spot in the root README to add
 
 Let me validate the CI commands actually work — run the Phase-1 suite (hermetic), confirm the e2e self-skips with no stack, and the compose-default check:
 
+All CI commands validated: **Phase 1 = 86 passed** (hermetic, no Phase 2 packages → independence proven), **e2e = 6 skipped** (self-skips with no stack), and the **compose default = Phase 1 only**. Committing M7:
+
+M7 is up as PR [#33](https://github.com/bhaskarcmu/fhir-agent/pull/33). Updating memory, then summary.
+
 <details>
-<summary>Execution details — 344 tool events</summary>
+<summary>Execution details — 347 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4529,6 +4533,15 @@ grep -n "^## \|^### \|Microservices\|Current Status\|| \*\*fhir-service\|epic-em
 echo "=== Phase 1 suites (as the phase1 CI job runs them) ==="
 pytest client/clinical/tests triage-service/src/triage/tests mcp-agent/tests -q 2>&1 | tail -5
 echo "=== e2e wi…`
+- **Bash** `cd /workspaces/fhir-agent
+git add .github/workflows/tests.yml e2e/ README.md
+echo "=== staged ==="; git diff --cached --name-only
+git diff --cached --name-only | grep -E 'target/|__pycache__|\.jar$' &…`
+- **Bash** `cd /workspaces/fhir-agent
+gh pr create --base main --head feature/phase2-m7-tests-narrative \
+  --title "test+docs(phase2 M7): CI test matrix, e2e golden paths, platform narrative" \
+  --body "$(cat <…`
+- **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase2-planning-state.md`
 
 </details>
 
@@ -4539,6 +4552,6 @@ echo "=== e2e wi…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 18:02 UTC
+- **Last updated:** 14 July 2026, 18:03 UTC
 - **Turns:** 58
 - **Status:** Incomplete
