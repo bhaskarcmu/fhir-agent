@@ -3450,8 +3450,12 @@ End-to-end verified through the real fixed-width REST contract:
 
 Committing M2. Let me confirm `target/` is excluded and stage only sources:
 
+`target/` is ignored; only sources staged. Committing, pushing, and opening the M2 PR:
+
+M2 is up as PR [#27](https://github.com/bhaskarcmu/fhir-agent/pull/27). Updating memory, then the summary.
+
 <details>
-<summary>Execution details — 239 tool events</summary>
+<summary>Execution details — 241 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4011,6 +4015,12 @@ java -Dspring.datasource.url='jdbc:h2:mem:rxclaim;DB_CLOSE_DELAY=-1' \
 echo "=== untracked/changed under rxclaim-emulator (target should NOT appear) ==="
 git status --short rxclaim-emulator/ | head
 echo "=== confirm target ignored ==="; git chec…`
+- **Bash** `cd /workspaces/fhir-agent
+git commit -q -F - <<'EOF'
+feat(phase2 M2): rxclaim-emulator — simulated legacy IBM i / RxClaim core
+
+New Spring Boot service standing in for the legacy RxClaim adjudication…`
+- **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase2-planning-state.md`
 
 </details>
 
