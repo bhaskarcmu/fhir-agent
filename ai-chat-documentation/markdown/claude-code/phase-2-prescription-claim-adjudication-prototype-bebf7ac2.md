@@ -3292,8 +3292,12 @@ Found the full footprint. Three cleanups I can do now, plus one bigger item to f
 
 Verify docs (excluding the archived PRD) are now clean, then squash the #25 branch into one commit with a clean message and force-push:
 
+Squashed to one clean commit (the remaining "job" grep hits are "CI job" — durable, fine). Force-pushing the rewritten branch and cleaning the PR body:
+
+Immediate cleanups are done (branch history force-pushed clean, PR body clean, doc content clean). But there are **two bigger footprints already on `main`** I need to flag rather than unilaterally change. Let me check both:
+
 <details>
-<summary>Execution details — 174 tool events</summary>
+<summary>Execution details — 176 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3714,6 +3718,15 @@ grep -rniE 'interview|lead director|target role|hirin…`
 - **Bash** `cd /workspaces/fhir-agent
 echo "=== docs/phase2 (excl source-prd) role/interview check ==="
 grep -rniE 'interview|lead director|target role|hiring|\bjob\b|\bcareer\b|resume|janmeet|\bCVS\b' docs/phase…`
+- **Bash** `cd /workspaces/fhir-agent
+git push --force-with-lease 2>&1 | tail -2
+echo "=== rewrite PR #25 body (no role/interview mention) ==="
+gh pr edit 25 --body "$(cat <<'EOF'
+## What this is
+Second round of…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== (A) source-prd.md — role/interview references (archived PRD, on main) ==="
+grep -cniE 'interview|lead director|target role|adjudication as a service' docs/phase2/so…`
 
 </details>
 
@@ -3724,6 +3737,6 @@ grep -rniE 'interview|lead director|target role|hiring|\bjob\b|\bcareer\b|resume
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 15:26 UTC
+- **Last updated:** 14 July 2026, 15:27 UTC
 - **Turns:** 49
 - **Status:** Incomplete
