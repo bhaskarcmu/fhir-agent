@@ -3454,6 +3454,27 @@ Committing M2. Let me confirm `target/` is excluded and stage only sources:
 
 M2 is up as PR [#27](https://github.com/bhaskarcmu/fhir-agent/pull/27). Updating memory, then the summary.
 
+Cleanup and M2 are both done.
+
+## Branch cleanup
+Deleted **two** merged branches (local + remote): `feature/phase2-m1-payer-kb` and `dataeng/phase2-prework` — the latter's content came into `main` via #26, exactly as flagged, so it was redundant. Remaining: `main`, `ai-chat-history`, and the old `feature/walking-skeleton` (not mine — left alone).
+
+## M2 — `rxclaim-emulator` → PR [#27](https://github.com/bhaskarcmu/fhir-agent/pull/27)
+A real, tested Spring Boot service standing in for the legacy IBM i / RxClaim core:
+- **Authentic legacy contract** — fixed-width **DDS-style records** (46-char claim in, 59-char response out with implied-decimal packed amounts + NCPDP reject codes), backed by **DB2/SQL400-style tables** (`MBRMST`/`DRGMST`/`ACCMST`).
+- **`ADJRXCLM`** — member eligibility (NCPDP 65), unknown product (NCPDP 70), AWP×qty + dispensing + 20% coinsurance, accumulator update, deterministic auth number. Parameterized queries (R14).
+- **REST façade** `POST /rxclaim/adjudicate` on :8091, **internal-only** (per the strangler design — it owns pricing + member SOR + accumulators; formulary/PA/clinical stay modern).
+- **Cloud touchpoint** (design/stub per D8): Dockerfile + Terraform Cloud Run stub with `ingress=INTERNAL_ONLY` + IAM invoker scoped to claims-service.
+
+**Verified two ways:** 8 unit/integration tests pass, **and** an end-to-end runtime smoke through the real fixed-width endpoint (paid `P000…` with correct pricing; reject `R065` for a terminated member).
+
+One thing worth noting: I hit the documented **ambient `SPRING_DATASOURCE_URL`/`NEON_*`** quirk (same as fhir-service) — it overrode the app's H2 config with the Neon Postgres driver. Fixed robustly by pinning H2 in the tests via `@SpringBootTest(properties=…)` (test props outrank OS env), so it's CI-safe; local runs use `-Dspring.datasource.*`. Captured in the README and memory.
+
+## State
+- Open: **PR #27** (M2). `main` has #24/#25/#26. `phase1-v1` tagged. Memory updated.
+
+Next after you review/merge #27 is **M3 — `claims-service`** (Spring Boot façade + anti-corruption layer that builds/parses these fixed-width records + the layered rules engine + Decision Contract, calling the emulator and triage). Want me to proceed to M3, or pause here?
+
 <details>
 <summary>Execution details — 241 tool events</summary>
 
@@ -4031,6 +4052,6 @@ New Spring Boot service standing in for the legacy RxClaim adjudication…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 16:05 UTC
+- **Last updated:** 14 July 2026, 16:06 UTC
 - **Turns:** 52
 - **Status:** Incomplete
