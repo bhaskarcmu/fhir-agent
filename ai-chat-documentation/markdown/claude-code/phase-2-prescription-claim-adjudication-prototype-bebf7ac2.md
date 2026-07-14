@@ -2610,6 +2610,21 @@ First, the frame: **engineering standards are the "house rules" a Director sets 
 
 Want me to (a) do the same layperson deep-dive on any other cluster (e.g., the strangler/façade/ACL trio, or idempotency/determinism), (b) resume the mock, or (c) head back to the M1 payer-KB PR?
 
+## Turn 38
+
+### Prompt
+
+Further elaborate on this Q7 answer:
+
+""Transactional claim-of-record and accumulators → relational/ACID (Postgres/Db2). Formulary/PA lookup keyed on plan_id+NDC → NoSQL KV (Dynamo/Mongo/Bigtable) for high-cardinality reads. For spikes I'd buffer with a queue (SQS/Pub/Sub) and load-level, not just rate-limit. Idempotency = an idempotency key + a dedup store + conditional writes (If-None-Exist), so a retry returns the original decision — plus a circuit breaker on the legacy call and no partial persistence."
+That's the altitude an interviewer wants from someone who'll set architect standards."
+
+Satr with a laypersons definition of everything and then go deeper to help me understand everything!
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 120 tool events</summary>
 
@@ -2921,6 +2936,6 @@ echo; echo "=== commits o…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 11:57 UTC
-- **Turns:** 37
+- **Last updated:** 14 July 2026, 12:51 UTC
+- **Turns:** 38
 - **Status:** Incomplete
