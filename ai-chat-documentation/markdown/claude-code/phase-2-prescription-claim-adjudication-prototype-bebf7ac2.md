@@ -3169,8 +3169,10 @@ ACA sources fully verified — the QHP machine-readable chain gives us real per-
 
 MR-URL PUF is real (346 issuers). Now hops 2–3 — fetch an issuer index and range-sample its formulary:
 
+The full 3-hop chain works with **real** commercial data — and the first record is **Amoxicillin/Clavulanate (Augmentin)**, which ties straight into our penicillin scenario. Let me save a small tracked sample of complete records and clean up the raw downloads.
+
 <details>
-<summary>Execution details — 137 tool events</summary>
+<summary>Execution details — 138 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3515,6 +3517,9 @@ c…`
 - **Bash** `cd /workspaces/fhir-agent/data/reference/aca-commercial
 echo "=== Hop 2: issuer index.json (Premera/FormularyNavigator) ==="
 curl -s --max-time 45 "https://fm.formularynavigator.com/jsonFiles/publish/…`
+- **Bash** `cd /workspaces/fhir-agent/data/reference/aca-commercial
+# Pull full issuer formulary to a TEMP (gitignored), extract first 3 complete records, then delete the big file.
+curl -s --max-time 90 "https://…`
 
 </details>
 
@@ -3525,6 +3530,6 @@ curl -s --max-time 45 "https://fm.formularynavigator.com/jsonFiles/publish/…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 15:02 UTC
+- **Last updated:** 14 July 2026, 15:03 UTC
 - **Turns:** 46
 - **Status:** Incomplete
