@@ -3434,8 +3434,10 @@ Now the `ADJRXCLM` core (RPG/CL-style adjudication) and the REST façade:
 
 Now the tests — a plain unit test for the fixed-width records and a Spring test for the `ADJRXCLM` scenarios:
 
+Now build and run the tests (first run downloads Spring Boot dependencies):
+
 <details>
-<summary>Execution details — 228 tool events</summary>
+<summary>Execution details — 230 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3971,6 +3973,9 @@ mkdir -p rxclaim-emulator/src/main/java/com/payer/rxclaim/{api,legacy,core} \
 - **Write** `/workspaces/fhir-agent/rxclaim-emulator/src/main/java/com/payer/rxclaim/core/RxClaimCore.java`
 - **Write** `/workspaces/fhir-agent/rxclaim-emulator/src/main/java/com/payer/rxclaim/api/AdjudicationController.java`
 - **Write** `/workspaces/fhir-agent/rxclaim-emulator/src/test/java/com/payer/rxclaim/LegacyRecordTest.java`
+- **Write** `/workspaces/fhir-agent/rxclaim-emulator/src/test/java/com/payer/rxclaim/RxClaimCoreTest.java`
+- **Bash** `cd /workspaces/fhir-agent
+mvn -f rxclaim-emulator/pom.xml -B test 2>&1 | tail -45`
 
 </details>
 
