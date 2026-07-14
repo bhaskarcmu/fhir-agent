@@ -1,9 +1,9 @@
 # Phase 2 — Reference & Synthetic Data (data-engineering prework)
 
-> **Not part of the documentation PR.** This lives on the local `dataeng/phase2-prework`
-> branch. Raw downloads (Synthea jar, CMS zips, formulary PUF) are **gitignored**;
-> only small, public-domain, curated derivatives and this README are tracked.
-> Everything here is reproducible from the scripts noted below.
+> **Data-engineering working notes** (source catalog + synthesis tooling). Raw downloads
+> (Synthea jar, CMS zips, formulary PUF) are **gitignored**; only small, public-domain,
+> curated derivatives and this README are tracked. Everything here is reproducible from the
+> scripts noted below.
 >
 > All sources verified reachable & **no-auth** from this environment (terminology + Medicare
 > sources 2026-07-13; ACA/commercial sources 2026-07-14). Use `curl` for `www.cms.gov`
