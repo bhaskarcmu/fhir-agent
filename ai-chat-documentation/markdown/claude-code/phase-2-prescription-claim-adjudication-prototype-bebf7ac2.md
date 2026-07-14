@@ -3296,6 +3296,27 @@ Squashed to one clean commit (the remaining "job" grep hits are "CI job" — dur
 
 Immediate cleanups are done (branch history force-pushed clean, PR body clean, doc content clean). But there are **two bigger footprints already on `main`** I need to flag rather than unilaterally change. Let me check both:
 
+Cleaned up. Here's the state and the one decision left for you.
+
+## Done (all role/interview references removed from these)
+- **PR #25 body** — rewritten, verified clean.
+- **PR #25 commit history** — the old commit messages mentioned "role/interview-specific"; I **squashed the branch to one clean commit and force-pushed** (`4fc22a7`), so nothing role-related remains in the branch's history.
+- **Doc content** — fixed the one I'd missed (plan.md M7 said "interview narrative" → "platform narrative"); requirements/plan/README are clean.
+- **`main` commit history** — checked: **no** role/interview mentions. Clean.
+
+## One thing left — and it's your call, so I didn't touch it
+**`docs/phase2/source-prd.md`** (the archived PRD, already on `main`) is **inherently role-framed** — 16 references, e.g. *"prepare for a specific target role: a Lead Director position…"*, a whole **§3.1 Alignment to the Target Role**, and **§8 Stakeholder and Interview Narrative**. That's not stray editorializing like mine was — it's the PRD's core framing, because the document you wrote *is* about preparing for the role.
+
+It doesn't name CVS, the hiring manager, or "my interview" — it reads as generic "target role" rationale — but if you truly want **zero** role/interview content on GitHub, this is the remaining footprint. Options:
+
+1. **Leave it** — it's an archived source doc with generic "Lead Director / target role" language, no personal/employer identifiers.
+2. **Genericize it** — strip the role-prep framing (§1, §3.1, §4, §7, §8) and reframe the "why" as generic legacy-modernization rationale; keep all the technical/data/architecture content. I can fold this into PR #25 (which already touches that file).
+3. **Remove `source-prd.md` from the repo entirely** — cleanest for "nothing role-related," but you lose the archived PRD (could keep a copy locally, off GitHub).
+
+My lean: **#2** if you want it gone but want to preserve the substantive PRD content; **#3** if you'd rather it just not exist on GitHub. Which do you want?
+
+Going forward, my standing rule: **no role/interview/employer content in docs, commit messages, or PR text — ever.**
+
 <details>
 <summary>Execution details — 176 tool events</summary>
 
@@ -3737,6 +3758,6 @@ grep -cniE 'interview|lead director|target role|adjudication as a service' docs/
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 15:27 UTC
+- **Last updated:** 14 July 2026, 15:28 UTC
 - **Turns:** 49
 - **Status:** Incomplete
