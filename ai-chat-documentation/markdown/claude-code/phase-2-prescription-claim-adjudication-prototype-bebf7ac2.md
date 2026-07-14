@@ -3436,8 +3436,10 @@ Now the tests — a plain unit test for the fixed-width records and a Spring tes
 
 Now build and run the tests (first run downloads Spring Boot dependencies):
 
+`LegacyRecordTest` passed (3/3). The Spring context failed to load — I need the root cause (truncated above). Let me read the surefire report:
+
 <details>
-<summary>Execution details — 230 tool events</summary>
+<summary>Execution details — 231 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3976,6 +3978,10 @@ mkdir -p rxclaim-emulator/src/main/java/com/payer/rxclaim/{api,legacy,core} \
 - **Write** `/workspaces/fhir-agent/rxclaim-emulator/src/test/java/com/payer/rxclaim/RxClaimCoreTest.java`
 - **Bash** `cd /workspaces/fhir-agent
 mvn -f rxclaim-emulator/pom.xml -B test 2>&1 | tail -45`
+- **Bash** `cd /workspaces/fhir-agent
+f=rxclaim-emulator/target/surefire-reports/com.payer.rxclaim.RxClaimCoreTest.txt
+grep -m1 -A2 "Caused by" "$f" 2>/dev/null; echo "---- first failure detail ----"
+grep -iE "Ca…`
 
 </details>
 
