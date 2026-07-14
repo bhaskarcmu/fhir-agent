@@ -3532,7 +3532,7 @@ Verified end-to-end through the real façade — **APPROVED** (lisinopril), **PE
 Committing M3. Verifying `target/` is excluded, then commit + push + PR:
 
 <details>
-<summary>Execution details — 284 tool events</summary>
+<summary>Execution details — 285 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4166,6 +4166,10 @@ git check-ignore claims-service/target >/dev/null && echo "target/ ignored ✓"
 git add claims-service/
 echo "=== staged count ==="; git diff --cached --name-only | wc -l
 echo…`
+- **Bash** `cd /workspaces/fhir-agent
+gh pr create --base main --head feature/phase2-m3-claims-service \
+  --title "feat(phase2 M3): claims-service — façade + anti-corruption layer + rules engine" \
+  --body "$(c…`
 
 </details>
 
