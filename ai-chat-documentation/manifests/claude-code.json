@@ -30,10 +30,10 @@
     "present": true,
     "raw_filename": "49895199-bfa2-470d-ba8d-4bd7737fd12b.jsonl",
     "source_deleted_at": null,
-    "status": "incomplete",
+    "status": "complete",
     "title": "Use Claude.ai PRO for VS Code extension",
     "turns": 1,
-    "updated_at": "2026-07-14T17:33:49.220000+00:00"
+    "updated_at": "2026-07-14T17:34:32.757000+00:00"
   },
   "b19190df-fadc-43a7-a3b8-8ef78a5d944c": {
     "archived_at": "2026-07-13T15:07:16.770377+00:00",
