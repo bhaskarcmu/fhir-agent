@@ -2885,7 +2885,20 @@ Okay, now quickly summarize in 10 bullets or so, what we have queued up for docu
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Here's what's queued for documentation since PR #24 merged — tagged **[agreed]** (we explicitly said we'd add it) vs **[discussed]** (came up, not yet formally queued), with the target doc.
+
+1. **[agreed]** **Modernization-state "strangler snapshot"** — the "what's strangled → modern vs. still-legacy (pricing/accumulators/SOR)" table + migration trajectory → `plan.md` §5.
+2. **[agreed]** **PR-per-milestone delivery strategy** — one PR/milestone, M0 = no-PR, M3 splittable, tests-in-each, cloud-in-each, M8 = live → new "Delivery & PR strategy" section in `plan.md` (or `CONTRIBUTING.md`).
+3. **[discussed]** **Named Engineering Standards set** — contract-first, 12-factor, PHI-safe-by-default, test+review gates, observability/SLOs, ADRs (mapped to R14/R15/R19) → explicit "Standards" section in `plan.md`.
+4. **[discussed]** **Reliability design details** — circuit breaker on the legacy call, explicit relational-vs-NoSQL rationale, and queue-based **load-leveling** (vs. just rate-limiting) → `plan.md` §5/C3 (only partially there today).
+5. **[discussed]** **Commercial/private-payer data strategy** — private rules are proprietary; we model representative commercial plans (Silver/Gold/Employer PPO) on real CMS Part D structure; note **ACA/QHP marketplace formularies** + **Transparency-in-Coverage MRFs** as optional real sources; Synthea's commercial payers → `requirements.md` R13 + reference README.
+6. **[discussed]** **Expanded data-source catalog** — full acronym expansions + layperson descriptions (RxNorm/ATC/ICD-10/SNOMED/NDC/CMS/NPI/openFDA/Synthea/FHIR/Da Vinci PAS) → `data/reference/README.md`.
+7. **[queued as M1]** **NDC ↔ RxCUI crosswalk** — documented as an explicit M1 task (rules key on RxNorm; formulary keys on NDC) → M1 payer-KB PR.
+8. **[queued as M1]** **Payer-KB schema + 4 plan definitions** — the actual M1 build (Commercial Silver/Gold, Medicare Advantage Demo, Employer PPO) → M1 PR (code/data, not docs-only).
+9. **[offered, optional]** **Target-role alignment note** — short mapping of the prototype to the CVS RxClaim Lead Director JD → new doc or `README` (interview-facing).
+10. **[minor]** **Prework provenance pointer** — from main docs, reference that data-eng prework + reference inventory live on `dataeng/phase2-prework`.
+
+**Routing:** items **1–4, 9–10** → a new **docs PR** against `main`; items **5–8** → fold into the **M1 payer-KB PR** (data branch). Want me to start with the docs PR (1–4) or go straight into M1 (5–8)?
 
 <details>
 <summary>Execution details — 120 tool events</summary>
@@ -3198,6 +3211,6 @@ echo; echo "=== commits o…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 13:32 UTC
+- **Last updated:** 14 July 2026, 14:15 UTC
 - **Turns:** 43
 - **Status:** Incomplete
