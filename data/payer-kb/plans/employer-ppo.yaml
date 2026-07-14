@@ -1,0 +1,18 @@
+# Employer PPO — self-funded-style commercial plan with a tighter formulary.
+plan_id: EMP-PPO
+name: Employer PPO
+payer_type: employer
+metal_level: n/a
+formulary_id: FRM-EMP-PPO
+deductible_usd: 1500
+out_of_pocket_max_usd: 7000
+cost_share_tiers:
+  PREFERRED-GENERIC: { copay_usd: 10 }
+  GENERIC: { copay_usd: 25 }
+  PREFERRED-BRAND: { coinsurance_pct: 35 }
+  NON-PREFERRED-BRAND: { coinsurance_pct: 50 }
+  SPECIALTY: { coinsurance_pct: 40 }
+example_coverage:
+  active:   { effective: 2026-01-01, termination: 2026-12-31 }
+  inactive: { effective: 2025-01-01, termination: 2026-01-31 }
+grounding: "Employer/commercial structure; tighter formulary (e.g., GLP-1 excluded) — curated."

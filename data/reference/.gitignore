@@ -1,0 +1,19 @@
+# Reference-data area. Never commit large or license-gated RAW downloads.
+# Small, public-domain, curated text derivatives (CSV/JSON) ARE tracked so the
+# branch is self-contained and inspectable; regenerate via data/scripts/*.
+
+# Large / binary / license-gated raw downloads:
+*.zip
+*.mdb
+*.tgz
+*.gz
+*.txt
+*.xlsx
+cms-ncd/*
+cms-formulary/*
+npi/*
+openfda/*
+
+# Re-include docs and small curated derivatives:
+!.gitignore
+!**/README.md

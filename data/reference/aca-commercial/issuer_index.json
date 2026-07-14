@@ -1,0 +1,11 @@
+{
+  "provider_urls": [
+    "https://fm.formularynavigator.com/jsonFiles/publish/11/47/providers.json"
+  ],
+  "formulary_urls": [
+    "https://fm.formularynavigator.com/jsonFiles/publish/11/47/drugs.json"
+  ],
+  "plan_urls": [
+    "https://fm.formularynavigator.com/jsonFiles/publish/11/47/plans.json"
+  ]
+}

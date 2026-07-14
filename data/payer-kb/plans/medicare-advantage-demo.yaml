@@ -1,0 +1,19 @@
+# Medicare Advantage (Part D) demo plan.
+# Tiers/flags modeled on the real CMS Part D Formulary PUF (federal Layer-1 rules apply).
+plan_id: MA-DEMO
+name: Medicare Advantage Demo
+payer_type: medicare
+metal_level: n/a
+formulary_id: FRM-MA-DEMO
+deductible_usd: 545          # illustrative Part D-style deductible
+out_of_pocket_max_usd: 8000
+cost_share_tiers:
+  PREFERRED-GENERIC: { copay_usd: 0 }
+  GENERIC: { copay_usd: 10 }
+  PREFERRED-BRAND: { copay_usd: 45 }
+  NON-PREFERRED-BRAND: { coinsurance_pct: 50 }
+  SPECIALTY: { coinsurance_pct: 33 }
+example_coverage:
+  active:   { effective: 2026-01-01, termination: 2026-12-31 }
+  inactive: { effective: 2025-01-01, termination: 2026-01-31 }
+grounding: "Structure from CMS Part D Formulary PUF; federal NCD/LCD rules apply as Layer 1."
