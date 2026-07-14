@@ -1,0 +1,25 @@
+server:
+  port: 8091   # internal-only legacy core; fronted by claims-service, never the edge gateway
+
+spring:
+  application:
+    name: rxclaim-emulator
+  datasource:
+    # H2 in-memory stands in for Db2 for i. In cloud this maps to Cloud SQL / Postgres.
+    url: jdbc:h2:mem:rxclaim;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  sql:
+    init:
+      mode: always   # run schema.sql + data.sql on startup
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true   # liveness/readiness for Cloud Run / k8s
