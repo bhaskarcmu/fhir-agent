@@ -3881,8 +3881,10 @@ Now rewrite the seed to use fixed logical ids (upsert via PUT) and poll the exac
 
 Rebuilding (with tests) and re-running the full demo — the safety path should finally deny:
 
+The "seeded" line didn't print and it's still APPROVED — likely the build didn't pick up my change (compile issue) or the seed PUT failed. Let me check both explicitly:
+
 <details>
-<summary>Execution details — 392 tool events</summary>
+<summary>Execution details — 393 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4784,6 +4786,11 @@ sed -n '/def seed_safety_patient/,/print(f"seeded/p' data/scripts/seed_claims_de
 - **Bash** `cd /workspaces/fhir-agent
 mvn -q -f claims-service/pom.xml package 2>&1 | grep -E "Tests run: 2[0-9]|BUILD" | tail -3
 FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose up -d fhir triage >/dev/null…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== rebuild claims-service — full result ==="
+mvn -q -f claims-service/pom.xml -DskipTests package 2>&1 | tail -6
+echo "exit: $?"
+ls -la --time-style=+%H:%M:%S claims-s…`
 
 </details>
 
