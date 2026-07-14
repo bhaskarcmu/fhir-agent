@@ -74,6 +74,9 @@ The platform is built as a collection of microservices, designed to be cloud-agn
 | **athena-emulator** | Placeholder — will add Athena-specific customisations. | ⏳ Not yet implemented |
 | **triage-service** | FastAPI drug-allergy rule engine → FHIR `RiskAssessment` (HIGH/MODERATE/LOW) with audit trail. | ✅ Running (local + Docker Compose) |
 | **mcp-agent** | LLM-powered orchestration layer (Anthropic tool-use) that composes FHIR + triage tools. | ✅ Running (local + Docker Compose) |
+| **rxclaim-emulator** *(Phase 2)* | Simulated legacy IBM i / RxClaim adjudication core: fixed-width DDS-style records, DB2/SQL400-style tables, RPG/CL-style `ADJRXCLM`. Internal-only. | ✅ Running (`--profile phase2`) |
+| **claims-service** *(Phase 2)* | Spring Boot claims-adjudication façade: anti-corruption layer + layered rules engine + Decision Contract; persists a FHIR decision graph. | ✅ Running (`--profile phase2`) |
+| **claims-agent** *(Phase 2)* | Non-authoritative agent that explains adjudication decisions in plain language. | ✅ Running (`--profile phase2`) |
 
 ---
 
@@ -92,6 +95,58 @@ The FHIR R4 server is built on the **official HAPI FHIR JPA starter (8.8.0)**. I
 - FHIR `CapabilityStatement` at `GET /fhir/metadata`
 
 The server is intentionally generic — it does not emulate any specific EHR. The agent and MCP tooling are built against a standard FHIR R4 endpoint first, ensuring portability. EHR-specific authentication, profiles, and extensions will be added later in the emulator modules.
+
+---
+
+## Phase 2 — Claims Adjudication Modernisation Slice
+
+Phase 2 extends the platform into **prescription claim adjudication**, wrapping a simulated
+legacy RxClaim / IBM i core with modern services — an **API façade**, an **anti-corruption
+layer**, a deterministic **rules engine**, an auditable **FHIR decision graph**, and a
+plain-language **explanation agent**. Design, requirements, and architecture live in
+[`docs/phase2/`](docs/phase2/README.md).
+
+Request flow (opt-in `phase2` profile):
+
+```
+claims-agent ──▶ claims-service ──┬──▶ rxclaim-emulator   (legacy pricing/SOR, internal only)
+ (explains)        (façade + ACL   ├──▶ triage-service     (clinical safety, reused Phase 1)
+                    + rules engine) └──▶ fhir-service       (Claim/ClaimResponse/Task/Provenance)
+```
+
+The legacy core is **wrapped, not rewritten** (strangler pattern): the modern layer owns the
+rules, experience, and audit trail; pricing and the member system-of-record remain "legacy".
+Decisions are **deterministic** and **idempotent** — the same claim yields the same decision
+and never double-writes its artefacts.
+
+### Run the Phase 2 demo
+
+```bash
+# Bring up the full stack (Phase 1 services start automatically as dependencies)
+docker compose --profile phase2 up --build -d
+
+# Drive the golden paths (approved / pended / routed / denied / multi-reason)
+python3 data/scripts/seed_claims_demo.py
+
+# Explain a decision in plain language (deterministic without an API key)
+docker compose --profile phase2 run --rm claims-agent \
+  --no-llm --claim '{"claimId":"C1","memberId":"000000001","planId":"COM-SILVER","rxcui":"1991302","ndc":"63552-200","drugName":"semaglutide","quantity":1,"daysSupply":28,"dateOfService":"2026-06-01","prescriberNpi":"1234567890","coverageEffective":"2026-01-01","coverageTermination":"2026-12-31","priorAuthOnFile":false,"stepTherapyMet":false}'
+```
+
+A plain `docker compose up` (no profile) still runs **only** the Phase 1 stack — Phase 2 is
+strictly additive.
+
+### Tests
+
+```bash
+pytest client/clinical/tests triage-service/src/triage/tests mcp-agent/tests   # Phase 1
+mvn -f rxclaim-emulator/pom.xml test && mvn -f claims-service/pom.xml test      # Phase 2 (Java)
+pytest claims-agent/tests                                                       # Phase 2 (agent)
+pytest e2e/                                # golden-path e2e (needs the phase2 stack up; else skips)
+```
+
+CI (`.github/workflows/tests.yml`) runs a **Phase-1-only** job (proving independence) plus the
+Phase 2 suites.
 
 ---
 
