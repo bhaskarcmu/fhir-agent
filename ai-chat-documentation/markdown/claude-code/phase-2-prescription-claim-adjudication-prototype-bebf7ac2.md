@@ -3857,8 +3857,10 @@ Root cause: the ambient `FHIR_GATEWAY_URL=http://localhost:8080/fhir` (a dev-env
 
 Still no risk — triage's response structure likely differs from what `HttpTriageClient` parses. Let me restart cleanly, seed, and dump triage's **raw** response to see its actual shape:
 
+Now it's clear: triage's `medication_id` is a **FHIR MedicationRequest id**, not an RxNorm code — passing the rxcui caused a 404. For the clinical-safety check I should call triage with **just the patient id** (evaluate all active meds vs. allergies). Let me confirm the response shape with that call:
+
 <details>
-<summary>Execution details — 378 tool events</summary>
+<summary>Execution details — 379 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4724,6 +4726,9 @@ curl -s -X POST -H 'Content-Type: application/json' --data '{"patient_id":"1","m
 docker compose stop triage >/dev/null 2>&1
 # Override the ambient var ONLY for compose so triage reaches the fhir container.
 FHIR_GATEWAY_URL=http://fhir:8080/fhir docker com…`
+- **Bash** `cd /workspaces/fhir-agent
+FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose up -d fhir triage >/dev/null 2>&1
+for i in $(seq 1 40); do curl -s --max-time 3 http://localhost:8080/fhir/metadata 2>/d…`
 - **Bash** `cd /workspaces/fhir-agent
 FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose up -d fhir triage >/dev/null 2>&1
 for i in $(seq 1 40); do curl -s --max-time 3 http://localhost:8080/fhir/metadata 2>/d…`
