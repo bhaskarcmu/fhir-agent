@@ -1803,6 +1803,28 @@ Start **M1**: design the `data/payer-kb/` schema + author the **4 plan definitio
 
 Want me to kick off M1 with the schema + the 4 plan definitions first (fast, reviewable), then layer in the formulary/PA rules from the CMS slice? Or would you rather I do the M0 read-only FHIR recon first if you have a server I can point at?
 
+## Turn 17
+
+### Prompt
+
+List all the milestones (Ms) for me real quick please
+
+### Claude response
+
+Here are all the milestones from the plan:
+
+- **M0 — Recon** (read-only): FHIR resource counts against the live server; seed only the gap.
+- **M1 — Payer knowledge base**: curated `data/payer-kb/` (formulary, PA rules, 4 plans, RxNorm/ICD subset).
+- **M2 — `rxclaim-emulator`**: Spring Boot legacy core (DDS records, DB2/SQL400 tables, `ADJRXCLM`).
+- **M3 — `claims-service` core**: façade + anti-corruption layer + layered rules engine + Decision Contract.
+- **M4 — Pipeline & artefacts**: accumulate→resolve; emit the linked FHIR artefact graph (Claim/ClaimResponse/Task/Provenance/RiskAssessment/CoverageEligibilityResponse).
+- **M5 — `claims-agent`**: separate, non-authoritative explanation agent.
+- **M6 — Local wiring & demo**: compose `phase2` + `gateway` profiles, `seed_claims_demo.py`, 4–5 golden paths.
+- **M7 — Tests & narrative**: full test matrix, Phase-1-only CI job, README/interview narrative.
+- **M8 = Phase 2b — Live cloud** *(separate deliverable)*: Terraform apply to GCP (Cloud Run, Cloud SQL/Neon, Secret Manager), DB-less Kong live, OTel/Prometheus, gateway-strangler cutover.
+
+Cloud work (design + stub + test) is threaded through M2–M7; only the live deploy is M8.
+
 <details>
 <summary>Execution details — 120 tool events</summary>
 
@@ -2114,6 +2136,6 @@ echo; echo "=== commits o…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 00:37 UTC
-- **Turns:** 16
+- **Last updated:** 14 July 2026, 00:40 UTC
+- **Turns:** 17
 - **Status:** Complete
