@@ -3531,8 +3531,32 @@ Verified end-to-end through the real façade — **APPROVED** (lisinopril), **PE
 
 Committing M3. Verifying `target/` is excluded, then commit + push + PR:
 
+M3 is up as PR [#28](https://github.com/bhaskarcmu/fhir-agent/pull/28). Updating memory, then the summary.
+
+Cleanup and M3 both done.
+
+## Branch cleanup
+Deleted the merged M2 branch (`feature/phase2-m2-rxclaim-emulator`, local + remote). Remaining: `main`, `ai-chat-history`, and the old `feature/walking-skeleton` (not mine).
+
+## M3 — `claims-service` → PR [#28](https://github.com/bhaskarcmu/fhir-agent/pull/28)
+The modern **Claims Adjudication Modernisation Layer** — the façade that wraps the legacy core:
+- **`RulesEngine`** — the Decision Contract (R17) implemented for real: accumulate-then-resolve across eligibility/formulary/prior-auth/step-therapy/quantity/clinical-safety, precedence **DENY > PEND > REVIEW > approved**, deterministic `(severity, domain, ruleId)` ordering, winning-tier reasons + all-findings for multi-reason explanations.
+- **`LegacyAdapter` (ACL)** — the one class that speaks the legacy wire format: builds the 46-char claim record / parses the 59-char response, matching the M2 emulator contract exactly (asserted against the real M2 output).
+- **`FilePayerKb`** — the C3 repository seam, loading the M1 `data/payer-kb`.
+- **Resilient clients** to triage (→risk) and the legacy core (text/plain), degrading gracefully.
+- **`AdjudicationPipeline` + `ClaimController`** (`POST /claims/adjudicate`, :8090), Dockerfile, Terraform Cloud Run stub.
+
+**Verified two ways:** 20 unit tests (rules incl. precedence/tie-break/multi-reason, ACL round-trip, file KB, pipeline across all 5 R8 scenarios) **and** a runtime smoke through the real endpoint (APPROVED / PENDED-PA / DENIED-non-formulary). The smoke earned its keep — it caught a Spring constructor-injection bug the unit tests couldn't (two constructors on `FilePayerKb`), which I fixed.
+
+**Scope:** deterministic decisioning core. Deferred to **M4**: the FHIR artefact graph (Claim/ClaimResponse/Task/Provenance/RiskAssessment) + idempotency persistence (R18) + member→FHIR-patient resolution; **M6** wires it all into compose/gateway with the live emulator + triage.
+
+## State
+- Open: **PR #28** (M3). `main` has #24–#27. `phase1-v1` tagged. Memory updated.
+
+Next after review/merge is **M4 — pipeline & FHIR artefacts** (emit the linked FHIR decision graph + idempotency). Want me to proceed to M4, or pause here?
+
 <details>
-<summary>Execution details — 285 tool events</summary>
+<summary>Execution details — 286 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4170,6 +4194,7 @@ echo…`
 gh pr create --base main --head feature/phase2-m3-claims-service \
   --title "feat(phase2 M3): claims-service — façade + anti-corruption layer + rules engine" \
   --body "$(c…`
+- **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase2-planning-state.md`
 
 </details>
 
@@ -4180,6 +4205,6 @@ gh pr create --base main --head feature/phase2-m3-claims-service \
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 16:45 UTC
+- **Last updated:** 14 July 2026, 16:46 UTC
 - **Turns:** 54
 - **Status:** Incomplete
