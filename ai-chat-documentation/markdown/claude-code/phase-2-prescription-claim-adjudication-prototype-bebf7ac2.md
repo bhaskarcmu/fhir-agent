@@ -3849,8 +3849,10 @@ Wiring the seeding into the demo run (graceful if FHIR is unreachable):
 
 Now the runtime verification — rebuild the claims-service jar, bring up the stack, and confirm the safety path now denies (and the others are unchanged):
 
+The safety path returned APPROVED — the clinical risk didn't fire. Let me check the claims-service log, then debug the resolution/triage chain directly:
+
 <details>
-<summary>Execution details — 374 tool events</summary>
+<summary>Execution details — 375 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4705,6 +4707,10 @@ mvn -f claims-service/pom.xml -B test 2>&1 | grep -E "Tests run: [0-9]+, Fail|BU
 mvn -q -f claims-service/pom.xml -DskipTests package 2>&1 | tail -2
 docker compose up -d fhir triage 2>&1 | tail -2
 for i in $(seq 1 60); do curl -s --max-time 3 http://local…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== claims.log: triage/patient signals ==="
+grep -iE "no FHIR patient|triage|patient|DEMO-SAFETY|resolve" /tmp/claims.log | tail -10
+echo "=== restart fhir+triage, rese…`
 
 </details>
 
