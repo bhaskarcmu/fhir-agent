@@ -3869,8 +3869,10 @@ Resolution actually **works** once the patient is indexed — the demo's rapid s
 
 Re-running the full demo with the timing fix — the safety path should now deny:
 
+Let me check the log to see whether it was resolution or triage this time:
+
 <details>
-<summary>Execution details — 385 tool events</summary>
+<summary>Execution details — 386 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4755,6 +4757,10 @@ for i in $(seq 1 40); do curl -s --max-time 3 http://localhost:8080/fhir/metadat
 - **Bash** `cd /workspaces/fhir-agent
 FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose up -d fhir triage >/dev/null 2>&1
 for i in $(seq 1 40); do curl -s --max-time 3 http://localhost:8080/fhir/metadata 2>/d…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== resolution/triage signals for 000000009 in claims.log ==="
+grep -iE "000000009|triage|no FHIR" /tmp/claims.log | tail -6
+echo "=== was triage reachable? (any triage…`
 
 </details>
 
