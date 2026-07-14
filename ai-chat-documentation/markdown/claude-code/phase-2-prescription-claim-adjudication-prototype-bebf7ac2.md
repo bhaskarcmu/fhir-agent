@@ -2975,6 +2975,198 @@ Let me verify plan.md structure is clean and the change set is docs-only before 
 
 Structure is clean (§1–§15, no dupes). The `core` and `data/reference/` are untracked leftovers — I'll add only `docs/`. Committing and opening the docs PR:
 
+Docs PR is up. Here's where things stand while the ACA verification finishes.
+
+## Done — Docs PR [#25](https://github.com/bhaskarcmu/fhir-agent/pull/25) (against `main`, docs-only)
+Covers queued items **#1–#6 and #10**, per your instructions:
+- **#1** Modernization/**strangler snapshot** (what's modern vs. still-legacy + trajectory) → plan §5
+- **#4** **Reliability & scale patterns** (queue load-leveling, circuit breaker, no-partial-persistence) + explicit **relational-vs-NoSQL** rationale → plan §5
+- **#3** **Engineering standards** (contract-first, 12-factor, PHI-safe-by-default, gates, observability/SLOs, ADRs) → plan §14
+- **#2** **Delivery & PR strategy** → plan §15
+- **#5** **Commercial/ACA payer grounding** (R13.1: Medicare *and* commercial from real public disclosure data; engine payer-agnostic) → requirements
+- **#10** prework provenance pointer; README updated
+- **#9 omitted** entirely (role/interview-specific — agreed it'd date the project)
+- **#7–#8 deferred** to the M1 PR (noted in the docs)
+
+## In flight
+- **ACA source verification** is running (confirming current healthcare.gov/CMS QHP + EHB URLs and identifying a small formulary sample to pull).
+
+## Next (data branch, off the PRs) — once verification returns
+- **#6** Expand `data/reference/README.md` with full acronym expansions + the verified **ACA/commercial sources**.
+- Pull a small **QHP machine-readable formulary sample** (tier/PA/step-therapy/quantity-limit) the same way we pulled CMS Part D, and commit to `dataeng/phase2-prework` (no PR).
+
+I'll continue the data-branch piece as soon as the verification completes, then give you the final wrap-up.
+
+## Turn 46
+
+### Prompt
+
+<task-notification>
+<task-id>a006a77a0fb5d83fd</task-id>
+<tool-use-id>toolu_011ZH1cBpMU246ac4HGRbVWv</tool-use-id>
+<output-file>/tmp/claude-1000/-workspaces-fhir-agent/bebf7ac2-4f1b-4a70-8685-440da76db7e1/tasks/a006a77a0fb5d83fd.output</output-file>
+<status>completed</status>
+<summary>Agent "Verify ACA/commercial formulary sources" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result>All verified end-to-end. Here is the complete report.
+
+---
+
+# Public ACA / commercial formulary &amp; coverage data sources — verified 2026-07-14
+
+## Reachability from this sandbox (curl, honest results)
+
+| Host | curl HTTP | Notes |
+|---|---|---|
+| `download.cms.gov` | 200 | PUF zips download fine (this is where the real files live) |
+| `www.cms.gov` | 200 via curl | **WebFetch/automated fetchers get 403**, but `curl` works. Use curl. |
+| `data.cms.gov` | 200 | reachable |
+| `data.healthcare.gov` | 200 | reachable (alt PUF mirror) |
+| `www.healthcare.gov` | 200 | reachable |
+| `github.com` / `raw.githubusercontent.com` | 200 | schema repo lives here |
+| `transparency-in-coverage.uhc.com` | 200 | TiC payer index reachable |
+
+Everything below was fetched/sampled live, not assumed.
+
+---
+
+## #1 — QHP machine-readable formulary files (THE core adjudication metadata)
+
+This is a 3-hop chain: **MR-URL PUF (issuer index URLs) → issuer `index.json` → `drugs`/formulary JSON**. I verified all three hops with live data.
+
+### Hop 1 — Machine-Readable URL PUF (lists every issuer's index URL)
+- **(a) URL:** `https://download.cms.gov/marketplace-puf/2026/machine-readable-url-puf.zip`
+- **(b) Auth:** none
+- **(c) Format:** ZIP → single `.xlsx`
+- **(d) Size:** **18,858 bytes** zip / 21,164 bytes xlsx — tiny. **347 rows (346 issuers).**
+- **(e) Sample curl (safe, whole file is tiny):**
+  ```bash
+  curl -s -o mrurl.zip "https://download.cms.gov/marketplace-puf/2026/machine-readable-url-puf.zip"
+  unzip -o mrurl.zip &amp;&amp; python3 -c "import openpyxl;print([r for r in openpyxl.load_workbook('machine-readable-url-puf.xlsx').active.iter_rows(values_only=True)][:3])"
+  ```
+- **Verified columns:** `State`, `Issuer ID`, `URL Submitted`, `Tech POC Email`. Real rows:
+  - `AK, 21989, https://cms.deltadental.com/index.json`
+  - `AK, 38344, https://fm.formularynavigator.com/jsonFiles/publish/11/47/cms-data-index.json`
+- The `URL Submitted` column is the issuer's index document.
+
+### Hop 2 — Issuer `index.json` (well-known path `/cms-data-index.json`)
+- Verified live (Alliant Health Plans, a real ACA issuer): `https://alliantplans.com/cms-data-index.json`
+- **Schema (3 required arrays), actual content:**
+  ```json
+  {
+    "provider_urls":  ["https://www.alliantplans.com/json/ProvidersTN.json", ...],
+    "formulary_urls": ["https://www.alliantplans.com/json/Formulary_TN_2026.json"],
+    "plan_urls":      ["https://www.alliantplans.com/json/Plans_TN_2026.json", ...]
+  }
+  ```
+- Follow `formulary_urls[]` to the drug file.
+
+### Hop 3 — Drug / formulary JSON (the adjudication payload)
+- Verified sample: `https://www.alliantplans.com/json/Formulary_TN_2026.json` (Content-Type `application/json`, ~15 MB — **so range-sample, don't full-download**).
+- **(e) Small-sample curl (first 900 bytes only):**
+  ```bash
+  curl -s -r 0-900 "https://www.alliantplans.com/json/Formulary_TN_2026.json"
+  ```
+- **Actual sampled record:**
+  ```json
+  {"rxnorm_id":"1431982","drug_name":"ASTAGRAF XL  CAP 1MG",
+   "plans":[{"plan_id_type":"HIOS-PLAN-ID","plan_id":"29854TN0010001",
+             "drug_tier":"NON-PREFERRED-BRAND","prior_authorization":false,
+             "step_therapy":false,"quantity_limit":false,"years":[2026]}]}
+  ```
+
+### Exact drug JSON schema (from CMSgov spec, confirmed against live data)
+Repo: `https://github.com/CMSgov/QHP-provider-formulary-APIs` (schemas: `drug_schema.json`, `index_document_schema.json`; docs `README.md`, `index_document.md`).
+
+Top level (array of drugs):
+- `rxnorm_id` (required) — RxCUI from RxNorm
+- `drug_name` (required)
+- `plans[]` (required), each element:
+  - `plan_id_type` (required) — `"HIOS-PLAN-ID"` for marketplace
+  - `plan_id` (required) — 14-char HIOS plan ID
+  - `drug_tier` (required) — enum: `GENERIC`, `PREFERRED-GENERIC`, `NON-PREFERRED-GENERIC`, `SPECIALTY`, `BRAND`, `PREFERRED-BRAND`, `NON-PREFERRED-BRAND`, `ZERO-COST-SHARE-PREVENTIVE`, `MEDICAL-SERVICE`
+  - `prior_authorization` (optional bool)
+  - `step_therapy` (optional bool)
+  - `quantity_limit` (optional bool)
+  - (`years` seen in live data — an issuer extension, not in base spec)
+
+**(f) Adjudication mapping — this is the money source.** For a given RxNorm drug + HIOS plan_id you get directly: covered (present in file) vs not-covered (absent) → `drug_tier` = **cost tier**; `prior_authorization` → **PA flag**; `step_therapy` → **step-therapy flag**; `quantity_limit` → **quantity-limit flag**. This is exactly the per-drug adjudication metadata you asked for, keyed by RxNorm — maps cleanly onto a FHIR-based rule engine.
+
+Data dictionary: `https://www.cms.gov/files/document/machinereadable-datadictionary-py26.pdf`
+
+---
+
+## #2 — CMS Marketplace PUFs (landing page + verified direct downloads)
+
+- **Landing page:** `https://www.cms.gov/marketplace/resources/data/public-use-files` (curl 200; WebFetch 403). Alt mirror: `https://data.healthcare.gov/public-use-files` (200).
+- Direct download pattern (verified via HEAD, plan year 2026; swap `/2026/` for 2014–2026):
+
+| PUF | URL | Size (2026) | Adjudication relevance |
+|---|---|---|---|
+| **Benefits and Cost Sharing PUF** | `https://download.cms.gov/marketplace-puf/2026/benefits-and-cost-sharing-puf.zip` | **12.45 MB** | **Highest value after #1.** Plan-variant EHB coverage, coverage limits, copay/coinsurance cost-sharing, quantity limits, exclusions, `IsEHB` flags. Benefit-level (not per-drug) but covers "is X covered + cost share." |
+| **Plan Attributes PUF** | `https://download.cms.gov/marketplace-puf/2026/plan-attributes-puf.zip` | 1.00 MB | Plan-level: deductibles, MOOP, HSA eligibility, metal level, **the `FormularyId`/`FormularyURL` linkage** |
+| **Business Rules PUF** | `https://download.cms.gov/marketplace-puf/2026/business-rules-puf.zip` | 32.7 KB | Enrollment/eligibility rules (dependent rules, age). Minor for adjudication. |
+| **Machine-Readable URL PUF** | `https://download.cms.gov/marketplace-puf/2026/machine-readable-url-puf.zip` | 18.9 KB | Entry point for #1 (see above) |
+| **Transparency in Coverage PUF** | `https://download.cms.gov/marketplace-puf/2026/transparency-in-coverage-puf.zip` | 999 KB | Issuer-level TiC reporting URLs (not the huge rate files themselves) |
+| Rate / Service-Area / Network / Plan-ID-Crosswalk PUFs | `.../2026/{rate,service-area,network,plan-id-crosswalk}-puf.zip` | — | supporting dimensions |
+
+- **(e) Safe sample** (Plan Attributes is only 1 MB — OK to grab; BenCS is 12 MB — HEAD or stream):
+  ```bash
+  # size check without download:
+  curl -sI "https://download.cms.gov/marketplace-puf/2026/benefits-and-cost-sharing-puf.zip" | grep -i content-length
+  # small one, safe to pull + peek:
+  curl -s -o pa.zip "https://download.cms.gov/marketplace-puf/2026/plan-attributes-puf.zip" &amp;&amp; unzip -l pa.zip
+  ```
+- Data dictionaries: `benefitscostsharing-datadictionary-py26.pdf`, `businessrules-datadictionary-py26.pdf`, `machinereadable-datadictionary-py26.pdf`, `transparency-coverage-puf-datadictionary-py26.pdf` — all under `https://www.cms.gov/files/document/`.
+
+---
+
+## #3 — ACA Essential Health Benefits (EHB) benchmark plans
+- **(a) Landing page:** `https://www.cms.gov/marketplace/resources/data/essential-health-benefits` (curl 200). Section anchor `#ehb-benchmark`.
+- **(b) Auth:** none. **(c) Format:** per-state ZIP (PDF/XLS benchmark summaries + Rx drug-count templates).
+- **(d) Size:** small per-state zips. **(e) Sample curl (verified links present on page):**
+  ```bash
+  curl -sI "https://www.cms.gov/cciio/resources/data-resources/downloads/2017-benchmark-summary_ak.zip"
+  # other verified: .../2017-bmp_ca.zip, .../2017-bmp-summary_al-4816.zip, .../2017-bmp_nc.zip
+  ```
+- **(f) Mapping:** defines the *floor* of what every ACA plan in a state must cover, including the Rx category/class count a formulary must meet. Use as the "must-be-covered" baseline for adjudication. Note: most states' benchmark is still the 2017-based set; per-state updates (e.g., AK for 2026) are listed on the page.
+
+---
+
+## #4 — Transparency in Coverage (TiC) machine-readable files
+- **Exists, confirmed, but pricing-focused and enormous — do NOT download.**
+- **(a) Payer index example:** `https://transparency-in-coverage.uhc.com/` (curl 200). Anthem/Cigna/etc. publish similar. CMS-side reporting URLs are in the TiC PUF (#2).
+- **(b) Auth:** none by rule (no account/PII allowed). **(c) Format:** JSON (often gzipped), monthly. **(d) Size:** in-network rate files run to **GBs each**; index files alone list thousands of plans.
+- **(f) Mapping:** in-network negotiated rates + historical out-of-network allowed amounts by billing code; Rx pricing under enforcement discretion (patchy). Useful for *allowed-amount/pricing* side of adjudication, **not** tier/PA/step/QL. Confirm-only, don't ingest for the prototype.
+
+---
+
+## #5 — Summary of Benefits and Coverage (SBC)
+- **(a) Template:** `https://www.cms.gov/CCIIO/Resources/Regulations-and-Guidance/Downloads/SBC-Template.pdf`; resource hub `https://www.cms.gov/marketplace/resources/forms-reports-other`; program page `https://www.cms.gov/cciio/resources/fact-sheets-and-faqs/indexsummarybenefitscoverage`.
+- **(b) Auth:** none. **(c) Format:** PDF template + Excel Coverage-Examples Calculator + Word instructions (a *standardized human-readable format*, not a per-drug dataset).
+- **(f) Mapping:** standardized cost-sharing summary (deductible, copays, coverage examples). Structural/templating reference for presenting adjudication results; not a bulk drug data feed.
+
+---
+
+## #6 — Other useful public sources for commercial adjudication rules
+- **CMSgov QHP schema repo** — `https://github.com/CMSgov/QHP-provider-formulary-APIs` (JSON schemas + validator; the authoritative spec for #1). GitHub reachable.
+- **State Medicaid Preferred Drug Lists (PDLs)** — public per-state (e.g., state Medicaid/DHHS or Magellan/Gainwell portals). Non-Medicare public example of formulary + PA/step-therapy/QL and preferred/non-preferred status. Format varies (PDF/CSV/searchable). Good secondary public example of PA/step criteria structure.
+- **State DOI / SERFF filings (rate &amp; form filings)** — via `filingaccess.serff.com` per-state instances or state DOI sites; include plan forms and formulary/EOC documents for commercial plans. Public, no login, but semi-structured PDFs — heavy parsing.
+- **data.healthcare.gov** (200) — mirrors/hosts many of the same PUFs with a dataset UI/API if you prefer a queryable endpoint over raw zips.
+
+---
+
+## Bottom line for the prototype
+Prioritize the verified chain in **#1** (MR-URL PUF → `index.json` → drugs JSON) for real per-drug **tier / PA / step-therapy / quantity-limit** keyed by RxNorm+HIOS plan_id, and **#2 Benefits-and-Cost-Sharing PUF** for benefit-level coverage + cost-sharing. Both are public, no-auth, and confirmed downloading today from `download.cms.gov`. Use `curl` (not WebFetch) for `www.cms.gov`. Range-sample the multi-MB issuer formulary JSONs; the MR-URL PUF and Business Rules PUF are small enough to pull whole.
+
+Sources: [CMS Exchange PUFs](https://www.cms.gov/marketplace/resources/data/public-use-files) · [CMSgov QHP schema repo](https://github.com/CMSgov/QHP-provider-formulary-APIs) · [index_document.md](https://github.com/CMSgov/QHP-provider-formulary-APIs/blob/master/index_document.md) · [MR data dictionary PY26](https://www.cms.gov/files/document/machinereadable-datadictionary-py26.pdf) · [EHB benchmark page](https://www.cms.gov/marketplace/resources/data/essential-health-benefits) · [SBC template](https://www.cms.gov/CCIIO/Resources/Regulations-and-Guidance/Downloads/SBC-Template.pdf) · [UHC TiC](https://transparency-in-coverage.uhc.com/) · [data.healthcare.gov PUFs](https://data.healthcare.gov/public-use-files)</result>
+<usage><subagent_tokens>35880</subagent_tokens><tool_uses>22</tool_uses><duration_ms>240324</duration_ms></usage>
+</task-notification>
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 135 tool events</summary>
 
@@ -3320,5 +3512,5 @@ gh pr create --base main --head feature/phase2-docs-refinements \
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
 - **Last updated:** 14 July 2026, 15:01 UTC
-- **Turns:** 45
+- **Turns:** 46
 - **Status:** Incomplete
