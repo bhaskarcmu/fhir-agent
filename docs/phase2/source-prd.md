@@ -1,11 +1,12 @@
 # Source PRD (archived) — Prescription Claim Adjudication Modernization Platform
 
-> **Provenance.** This is a faithful, verbatim-content reconstruction of the
-> **source DRAFT PRD** that seeded the Phase 2 work, preserved here for posterity.
-> The original was supplied as a chat prompt (plus an identical PDF) and was later
-> lost from the author's chat archive due to a sync bug; this Markdown copy was
-> reconstructed from that prompt's content and committed so the planning set is
-> self-contained.
+> **Provenance.** This is a content reconstruction of the **source DRAFT PRD** that seeded
+> the Phase 2 work, preserved here for posterity. The original was supplied as a chat prompt
+> (plus an identical PDF) and was later lost from the author's chat archive due to a sync bug;
+> this Markdown copy was reconstructed from that prompt's content and committed so the planning
+> set is self-contained. **Lightly edited:** some framing has been reworded to generic
+> enterprise-modernization rationale; all technical, data, architecture, and regulatory
+> content is preserved.
 >
 > **Status of the original:** DRAFT — WORK IN PROGRESS.
 >
@@ -33,13 +34,13 @@
 
 This document is a working draft of the Phase 2 scope for a prescription claim adjudication modernization prototype. It is a living Product Requirements Document (PRD) and will continue to evolve as decisions are finalized; open items are flagged explicitly in Section 14, Open Questions, Risks and Next Steps.
 
-The prototype itself is to be built to prepare for a specific target role: a Lead Director position whose job description centers on claims adjudication platform transformation, the vision of "Adjudication as a Service," Java/API development around IBM i and AS/400 systems, modularization, scalability, regulatory compliance, and the leadership of a technology organization of 50 or more professionals. Every scoping decision in this document is made with that target role in mind and is deliberately framed to demonstrate the kind of modernization leadership the role requires, rather than to build a generic healthcare-AI showcase.
+The prototype is built to demonstrate enterprise claims-adjudication modernization leadership — centered on claims adjudication platform transformation, the vision of "Adjudication as a Service," Java/API development around IBM i and AS/400 systems, modularization, scalability, regulatory compliance, and the leadership of a large technology organization. Every scoping decision in this document is made with that modernization intent in mind and is deliberately framed to demonstrate that kind of leadership, rather than to build a generic healthcare-AI showcase.
 
 ## 2. Executive Summary
 
 Phase 2 extends an existing Agentic Healthcare Platform — which already provides a FHIR R4 backend, a Kong API gateway, a triage service, a Model Context Protocol (MCP) agent, audit-oriented RiskAssessment output, a GKE/Kong/Neon deployment architecture, and an existing suite of test cases — into a focused Prescription Claim Adjudication Modernization Slice.
 
-Rather than positioning Phase 2 as "payer operations" in the abstract, it is deliberately scoped as an API façade, a rules service, an audit trail, and an MCP explanation layer wrapped around a simulated legacy adjudication core, applied strictly to medication-prescription payer workflows. This keeps the project credible, prevents it from growing into an unfocused conceptual platform, and mirrors the "Adjudication as a Service" vision described in the target role.
+Rather than positioning Phase 2 as "payer operations" in the abstract, it is deliberately scoped as an API façade, a rules service, an audit trail, and an MCP explanation layer wrapped around a simulated legacy adjudication core, applied strictly to medication-prescription payer workflows. This keeps the project credible, prevents it from growing into an unfocused conceptual platform, and mirrors an "Adjudication as a Service" vision.
 
 At minimum, the Minimum Viable Product (MVP) will:
 
@@ -51,9 +52,9 @@ At minimum, the Minimum Viable Product (MVP) will:
 
 ## 3. Background and Strategic Rationale
 
-### 3.1 Alignment to the Target Role
+### 3.1 Strategic Framing
 
-The purpose of this prototype is to prepare for a specific role whose job description is centered on claims adjudication platform transformation, the "Adjudication as a Service" strategy, Java/API development around IBM i/AS400 systems, modularization, scalability, regulatory compliance, and the leadership of 50 or more technology professionals. Because of that, Phase 2 must speak the language of that role rather than presenting a broad, generic "payer operations" concept.
+The purpose of this prototype is to demonstrate leadership of enterprise claims-adjudication modernization — claims adjudication platform transformation, the "Adjudication as a Service" strategy, Java/API development around IBM i/AS400 systems, modularization, scalability, regulatory compliance, and the leadership of large technology organizations. Because of that, Phase 2 must speak the language of that domain rather than presenting a broad, generic "payer operations" concept.
 
 ### 3.2 Why the Scope Is Deliberately Narrow
 
@@ -73,7 +74,7 @@ Phase 2 does not start from zero. It builds naturally on the existing Agentic He
 
 ## 4. Product Framing and Naming
 
-How this initiative is named and introduced matters as much as what it contains, particularly because peer Lead Directors evaluating the project may be skeptical of AI-first framing. The role calls for modernization and execution ownership first, with AI as a secondary enabler — and the naming should reflect that ordering.
+How this initiative is named and introduced matters as much as what it contains, particularly because senior technical leaders evaluating the work may be skeptical of AI-first framing. The work calls for modernization and execution ownership first, with AI as a secondary enabler — and the naming should reflect that ordering.
 
 **Avoid:** "Payer Operations MCP Agent" as a headline. This framing sounds AI-first and undersells the modernization and platform-engineering substance of the work.
 
@@ -81,7 +82,7 @@ How this initiative is named and introduced matters as much as what it contains,
 - **Headline:** "Claims Adjudication Modernisation Layer"
 - **Subtitle:** "with an MCP-powered explanation and workflow assistant"
 
-**Full descriptive name:** "Prescription Claim Adjudication Modernisation Slice: API façade + rules service + audit trail + MCP explanation layer." This framing is much closer to the target role than a broad "payer operations" description.
+**Full descriptive name:** "Prescription Claim Adjudication Modernisation Slice: API façade + rules service + audit trail + MCP explanation layer." This framing is much closer to the modernization intent than a broad "payer operations" description.
 
 ## 5. Scope Definition
 
@@ -115,7 +116,7 @@ Within the boundary of medication-prescription payer workflows, Phase 2 explicit
 
 ### 6.1 Legacy Integration Strategy: IBM i / AS400
 
-The target role explicitly requires IBM i fundamentals, AS/400 integration, Control Language (CL), the Integrated File System (IFS), SQL/400, Data Description Specifications (DDS), Java APIs, and experience connecting front-end/API layers to backend IBM i systems.
+This modernization explicitly involves IBM i fundamentals, AS/400 integration, Control Language (CL), the Integrated File System (IFS), SQL/400, Data Description Specifications (DDS), Java APIs, and connecting front-end/API layers to backend IBM i systems.
 
 Building an actual IBM i environment is **not** necessary for this prototype. Instead, the plan calls for a simulated legacy adjudication core — a **"Legacy RxClaim / IBM i Emulator"** — consisting of:
 
@@ -124,17 +125,17 @@ Building an actual IBM i environment is **not** necessary for this prototype. In
 - A REST façade implemented in Java/Spring Boot.
 - An anti-corruption layer that converts legacy claim fields into canonical FHIR/claim domain objects.
 
-This design choice is what makes the project sound tailored to the target role, rather than presenting as a generic healthcare-AI demo.
+This design choice is what makes the project a credible enterprise-modernization slice, rather than a generic healthcare-AI demo.
 
 ### 6.2 Technology Stack
 
-The target role has a strong Java requirement — Core Java, Java EE, Spring, Spring Boot, JDBC, and Hibernate — and the technology split should foreground that rather than a Python-only prototype. The stack divides as follows:
+The domain has a strong Java emphasis — Core Java, Java EE, Spring, Spring Boot, JDBC, and Hibernate — and the technology split should foreground that rather than a Python-only prototype. The stack divides as follows:
 
 - **Spring Boot:** the claims-adjudication façade, benefit rules, legacy adapter, and claim domain APIs.
 - **Python/FastAPI:** MCP/agent orchestration and optional CDS support.
 - **Existing HAPI FHIR:** persistence and the clinical-resource backbone.
 
-For interview purposes, this stack division is intended to position the candidate as a Java/Spring modernization leader rather than a Python-only prototype builder.
+This stack division foregrounds Java/Spring modernization leadership rather than a Python-only prototype.
 
 ### 6.3 Service Decomposition — Three Deployable Slices
 
@@ -168,7 +169,7 @@ The legacy core is **wrapped, not rewritten** — a distinction that matters bot
 
 ## 7. "Adjudication as a Service" Value Proposition
 
-The target role's job description explicitly states that it will help develop and execute the vision for **"Adjudication as a Service."**² The Phase 2 plan should repeatedly connect back to that language:
+This initiative develops and executes a vision for **"Adjudication as a Service."**² The Phase 2 plan should repeatedly connect back to that language:
 
 - API façade over legacy adjudication.
 - Modular benefit/prior-authorization rules.
@@ -180,13 +181,13 @@ The target role's job description explicitly states that it will help develop an
 
 This is the vocabulary of the role, and the prototype's architecture and narrative should consistently reinforce it.
 
-## 8. Stakeholder and Interview Narrative
+## 8. Stakeholder Narrative
 
-Suggested framing for a first-round interview conversation:
+Suggested framing when presenting this work to senior stakeholders:
 
 > "For Phase 2, I am extending my existing FHIR/MCP healthcare platform into a prescription claims adjudication modernisation slice. The goal is not to build a full PBM, but to demonstrate how I would wrap a legacy adjudication core with Spring Boot APIs, isolate benefit and prior-auth rules, persist auditable FHIR-aligned decision artefacts, and use an MCP agent only as an explanation/orchestration layer. The clinical and business logic stays deterministic and testable."
 
-This framing is intended to read at a Lead-Director level. Supporting statements to reinforce it include:
+This framing is intended to read at a senior-leadership level. Supporting statements to reinforce it include:
 
 - "AI helps explain and orchestrate; deterministic services make decisions."
 - "FHIR is used where appropriate for interoperability and audit artefacts."
@@ -315,7 +316,7 @@ Data should flow: **FHIR Patient → Coverage → Eligibility Service → Rules 
 > archived PRD. They use `Authorization: Bearer` whereas this platform's gateway expects
 > the `apikey` header, and some hosts/URLs are stale. For verified, no-auth sources and
 > working commands, use the data-engineering prework (`data/reference/README.md` +
-> `data/scripts/fetch_reference_data.py` on branch `dataeng/phase2-prework`).
+> `data/scripts/fetch_reference_data.py`).
 
 This section answers "how do we actually obtain this reference data, and how do we check what already exists on the platform before importing anything new?" The recommended approach treats these sources as reference/terminology and plan-rule inputs — not as a full production database. Importantly, the existing platform already runs a HAPI FHIR JPA R4 server on a Neon PostgreSQL database named "fhirdb," and already has Synthea-generated bundles and loading scripts, so existing data should be checked first before any new import.
 
@@ -457,7 +458,7 @@ This section is written to stand on its own for readers who want discipline-spec
 ### 12.1 For Business and Executive Stakeholders
 
 **Q: Why is the scope limited to medication-prescription payer workflows instead of the full breadth of payer operations?**
-A: A narrow scope keeps the prototype credible and demonstrable within the time available, and it maps directly onto the target role's emphasis on claims adjudication and "Adjudication as a Service." A broad "payer operations" framing would dilute the story and make the project harder to evaluate on its merits. See Section 3.2 and Section 5.
+A: A narrow scope keeps the prototype credible and demonstrable within the time available, and it maps directly onto enterprise claims-adjudication modernization and "Adjudication as a Service." A broad "payer operations" framing would dilute the story and make the project harder to evaluate on its merits. See Section 3.2 and Section 5.
 
 **Q: How does wrapping a legacy IBM i/AS400 system, rather than replacing it, reduce risk?**
 A: The design applies the strangler (fig) pattern: new functionality is introduced behind an API façade while the legacy adjudication core continues running underneath, and functionality migrates incrementally rather than through a single high-risk cutover. This is the same pattern recommended by mainstream cloud architecture guidance for legacy modernization. See Section 6.5.
@@ -488,7 +489,7 @@ A: The "Mini Payer Knowledge Base" outlined in Section 10.7 — roughly 500–1,
 A: Together, these three patterns let the platform introduce new, testable services in front of a legacy adjudication core without a risky rewrite: the strangler pattern governs the migration path, the API façade gives consumers one stable interface, and the anti-corruption layer keeps legacy data shapes from leaking into the canonical FHIR-aligned domain model. See Section 6.1 and Section 6.5.
 
 **Q: Why split the stack between Spring Boot and Python/FastAPI instead of building everything in one language?**
-A: Spring Boot carries the claims façade, benefit rules, legacy adapter, and claim domain APIs — directly matching the target role's Java/Spring/JDBC/Hibernate requirements — while Python/FastAPI is reserved for MCP/agent orchestration and optional CDS support. This keeps deterministic business logic in a strongly-typed, enterprise-standard stack while isolating AI orchestration in a separate, clearly-labeled layer. See Section 6.2.
+A: Spring Boot carries the claims façade, benefit rules, legacy adapter, and claim domain APIs — directly matching the platform's Java/Spring/JDBC/Hibernate needs — while Python/FastAPI is reserved for MCP/agent orchestration and optional CDS support. This keeps deterministic business logic in a strongly-typed, enterprise-standard stack while isolating AI orchestration in a separate, clearly-labeled layer. See Section 6.2.
 
 **Q: How does the rules engine avoid becoming an unmaintainable pile of conditional logic?**
 A: Rules are organized into three explicit layers: federal/public policy (CMS NCD/LCD), plan configuration (e.g., Commercial Silver, Commercial Gold, Employer Plan A, Medicare Advantage Demo), and customer-specific overrides. Each layer can change independently without destabilizing the others. See Section 9.5.

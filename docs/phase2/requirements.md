@@ -132,8 +132,27 @@ Use **curated fixtures** (small RxNorm/ICD subset, formulary, PA rules, 4 plan
 definitions) checked into a `data/payer-kb/` folder; **check existing FHIR data
 first** before seeding. No full terminology loads. No AMA-licensed CPT beyond the
 tiny curated sample. Sources are confirmed (RxNav, NLM/CDC ICD-10, CMS Part D
-Formulary PUF, Synthea) and captured in the data-engineering prework (`data/reference/README.md`
-on the local `dataeng/phase2-prework` branch — kept off this docs PR).
+Formulary PUF, Synthea) and catalogued under `data/reference/`. Grounding is
+**real published data, never fabricated** (per PRD §10.5).
+
+**R13.1 — Payer coverage grounding (Medicare *and* commercial).** Both plan types are
+grounded in real public disclosure data so the demo isn't Medicare-only:
+- **Medicare:** the **CMS Part D Formulary PUF** — real per-NDC tier / PA / step-therapy /
+  quantity-limit.
+- **Commercial / private:** the *internal* PA criteria and pricing of private insurers are
+  proprietary, but ACA-mandated *disclosure* data is **public and downloadable** and carries
+  the adjudication metadata we need. Ground representative commercial plans (Commercial
+  Silver/Gold, Employer PPO) in:
+  - **ACA Essential Health Benefits (EHB)** benchmark plans — what must be covered.
+  - **QHP (Qualified Health Plan) machine-readable formulary files** (healthcare.gov / CMS
+    Marketplace PUFs) — per-drug **tier + prior-auth + step-therapy + quantity-limit** flags.
+  - *(Optional)* **Transparency-in-Coverage** MRFs for pricing/network realism (large; pricing-focused).
+- **The engine stays payer-agnostic:** plan type is a **configuration layer** (federal →
+  plan → customer), so Medicare and commercial are the *same* engine with different config —
+  mirroring how a real PBM adjudicates both. We ground the *structure*; proprietary PA
+  criteria/pricing internals remain out of scope. Exact verified source URLs live in the
+  `data/reference/` catalog; the commercial plan definitions + NDC↔RxCUI crosswalk are
+  built in **M1**.
 
 ### R14 — Security & privacy (treat claims data as if PHI)
 - **PHI-safe logging:** do not emit patient/member identifiers to logs. (Fix the
