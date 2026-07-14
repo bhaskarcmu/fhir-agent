@@ -122,8 +122,15 @@ Core file deleted, `main` is up to date. Now creating the branch and adding the 
 
 Diff looks correct and scoped. Committing and pushing.
 
+Both done, no key rotation performed as requested.
+
+1. **Core dump deleted** — the 4.9 GB `core` file is gone from the working tree.
+2. **`.gitignore` updated** — added `core`/`core.*` entries, committed on new branch `chore/gitignore-core-dump`, pushed, and opened **PR #32**: https://github.com/bhaskarcmu/fhir-agent/pull/32
+
+Back on `feature/phase2-m6-wiring-demo` (your original branch, untouched). Let me know once #32 is merged and I'll ask about deleting the branch per usual.
+
 <details>
-<summary>Execution details — 23 tool events</summary>
+<summary>Execution details — 24 tool events</summary>
 
 ### Turn 1 activity
 
@@ -165,6 +172,7 @@ A 4.9GB core dump was found untracke…`
 - **Bash** `gh pr create --base main --head chore/gitignore-core-dump --title "chore: ignore core dumps" --body "$(cat <<'EOF'
 ## Summary
 - Found a 4.9GB untracked core dump at the repo root containing the Anthro…`
+- **Bash** `git -C /workspaces/fhir-agent checkout feature/phase2-m6-wiring-demo`
 
 </details>
 
@@ -175,6 +183,6 @@ A 4.9GB core dump was found untracke…`
 - **Source:** Claude Code
 - **Session ID:** `49895199-bfa2-470d-ba8d-4bd7737fd12b`
 - **Created:** 14 July 2026, 17:33 UTC
-- **Last updated:** 14 July 2026, 17:54 UTC
+- **Last updated:** 14 July 2026, 17:55 UTC
 - **Turns:** 5
 - **Status:** Complete
