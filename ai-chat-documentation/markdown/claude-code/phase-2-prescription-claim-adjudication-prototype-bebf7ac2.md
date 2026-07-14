@@ -1884,7 +1884,118 @@ Teach me patiently!
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Love this — let me teach each one from the ground up, then anchor it in exactly what we're building so you can speak to it as *your* work, not theory. I'll go slow and give you interview-ready phrasing at the end of each.
+
+---
+
+# 1. Idempotency
+
+## The plain idea
+An operation is **idempotent** if doing it **once** and doing it **five times** leave the system in the **same state**. Pressing a normal elevator button twice doesn't summon two elevators — that button is idempotent. Withdrawing $100 from an ATM is *not* idempotent — do it twice and you're out $200.
+
+## Why it matters (the real problem)
+In distributed systems, **you can never be sure a request succeeded.** A claim submission travels client → gateway → claims-service → legacy core → FHIR store. Any hop can time out *after* the work was done but *before* the "OK" got back. The caller, seeing no answer, **retries**. Without idempotency, that retry adjudicates the claim twice → duplicate `ClaimResponse`, duplicate payment, a corrupted audit trail. Networks guarantee *at-least-once* delivery, not *exactly-once* — so **idempotency is how you manufacture "exactly-once" behavior on top of unreliable delivery.**
+
+This is doubly true in claims: pharmacy adjudication (NCPDP) literally has *reversal* transactions (a "B2" reverses a "B1") — the domain already assumes messages get resent, so safe replay is table stakes.
+
+## The mechanism
+You give each logical operation a **stable key**, and the system remembers "I've already done this key." A retry with the same key returns the *original* result instead of doing the work again.
+
+## How **we** apply it (this is our R18)
+We defined a single **`decisionId` per adjudication** stamped on every artifact, and required idempotency at **four distinct sites** — because a retry can happen at any hop:
+
+| Site | Key | Behavior on retry |
+|---|---|---|
+| **Claim intake** | client idempotency key / claim business identifier | return the **existing** `ClaimResponse`, never create a second |
+| **FHIR writes** | `identifier`/`decisionId` via **conditional create** (`If-None-Exist`) | HAPI won't double-persist the same `Claim`/`ClaimResponse` |
+| **Legacy emulator (`ADJRXCLM`)** | `decisionId` | same legacy result returned, no double side-effect |
+| **Async (if we add Pub/Sub)** | `decisionId` as dedupe key | at-least-once delivery becomes safe |
+
+Plus **R18.4 — no partial persistence**: one decision's writes are all-or-nothing, so a mid-flight system error leaves *nothing* half-written (and R17.6 makes system errors return 502/503 with **no** `ClaimResponse` — explicitly safe to retry).
+
+## Say it like this in the interview
+> "Because delivery is at-least-once, I made adjudication idempotent at every hop keyed on a single decision id — intake dedupe, FHIR conditional-create, and a replay-safe legacy call — so a client retry after a timeout returns the original decision instead of double-adjudicating. That protects both payment integrity and the audit trail."
+
+**If they push** ("where's the state stored?"): an idempotency key → result mapping (a table/cache); on IBM i the analogous mechanism is **commitment control + journaling** — worth name-dropping to show you connect modern and legacy.
+
+---
+
+# 2. The Façade
+
+## The plain idea
+A **façade** is a *single, clean front door* over a messy or complicated set of rooms behind it. Think of a hotel concierge: you say "I need a taxi and dinner reservations," and they deal with the drivers, restaurants, and phone systems. You never touch that complexity.
+
+In software (it's one of the classic Gang-of-Four **structural patterns**), a façade is **one simplified interface that hides a complex subsystem** so callers depend on the simple thing, not the mess.
+
+## Why it matters
+Two payoffs:
+1. **Decoupling** — consumers bind to your stable interface, not to the volatile legacy behind it. You can change or replace the legacy without breaking anyone.
+2. **Control point** — one place to enforce validation, auth, logging, translation, and — crucially — to **incrementally reroute** calls (that's what makes the strangler pattern possible; see §3).
+
+## Don't confuse it with its cousins (interviewers love this)
+- **Façade** = simplify *one subsystem* behind a nicer interface (structural, in-process or a service).
+- **Adapter** = make two *incompatible* interfaces fit (a plug converter).
+- **Anti-corruption layer (ACL)** = a *translation boundary* that stops a legacy model's concepts from leaking into your clean domain model (a DDD term).
+- **API gateway** = an *edge* façade for a whole system — cross-cutting concerns (auth, rate-limit) at the network boundary.
+
+You'll sound sharp if you note these overlap but aren't synonyms.
+
+## How **we** apply it (we actually use it at two levels)
+1. **`claims-service` is the API façade** over the legacy adjudication core. Consumers submit a claim to *one* clean REST interface; they **never call the `rxclaim-emulator` directly** — it's private (`ingress=internal`, no gateway route). Behind the façade sits our **anti-corruption layer** (R3) translating the legacy record shapes into canonical FHIR/claim objects, so DB2/DDS quirks never leak upward.
+2. **Kong is the edge/API-gateway façade** for the platform — one front door (`/claims`, `/fhir`, `/triage`) with auth, rate-limiting, and logging.
+
+So we can say we apply *façade* both in-service (over the legacy core) and at the edge (Kong).
+
+## Say it like this in the interview
+> "Consumers hit one Spring Boot façade; behind it an anti-corruption layer translates the legacy RxClaim record shapes into our canonical FHIR domain, and the legacy core is never called directly. That single seam is what lets me evolve or replace the legacy without touching any consumer — and it's the anchor point for the strangler migration."
+
+---
+
+# 3. IBM i / AS/400 — and how we "strangle" it
+
+## What IBM i / AS/400 actually is
+- **AS/400** (1988) was IBM's midrange business computer. It evolved in name: AS/400 → iSeries → System i → today **IBM i**, the OS running on **IBM Power Systems**. (OS lineage: OS/400 → i5/OS → IBM i.) Interviewers use "AS/400" and "IBM i" loosely — you should show you know it's the same lineage.
+- What makes it distinctive (and why payers still run on it): it's an **integrated stack** — the OS, and **Db2 for i** (a *built-in* relational database), come as one. Key concepts you should be able to name:
+  - **RPG** and **CL (Control Language)** — the native programming languages. RPG is the workhorse business language (modernized into free-form RPGLE); CL is the scripting/control glue.
+  - **DDS (Data Description Specifications)** — the older way to define **physical files** (≈ tables) and **logical files** (≈ views/indexes), often as **fixed-width records**. Increasingly replaced by SQL DDL, but tons of legacy is still DDS.
+  - **Db2 for i / SQL for i (a.k.a. "SQL/400")**, **IFS** (Integrated File System — POSIX-like stream files), **single-level storage**, **journaling & commitment control** (transactional integrity — the idempotency tie-in), **data queues** (async messaging), and the **5250 "green screen"** terminal UI.
+- **Why it's relevant here:** major PBM adjudication engines — notably **RxClaim** (SS&C Health, née Argus/DST) — run on **IBM i**. That's not a coincidence in the target role; "Adjudication as a Service" around IBM i/AS400 is describing exactly this world.
+
+## How you actually connect Java/APIs to IBM i (great detail for this role)
+The standard bridge is the **JTOpen / jt400 toolkit** — an open-source Java library that lets Java call **RPG/CL programs**, read/write **Db2 for i** over JDBC, and use **data queues**. Alternatives: stored procedures, IBM MQ, ODBC, or exposing RPG via the **Integrated Web Services** server. The role's "Java APIs connecting front-end/API layers to backend IBM i" is describing precisely this.
+
+## What **we** are doing about it
+We **don't stand up a real IBM i** — we **simulate a credible one** so the modernization story is real, not cosmetic. Our `rxclaim-emulator` deliberately mimics the legacy shape:
+- **DDS-style fixed-width records** for its request/response,
+- **Db2/SQL400-flavored table naming**,
+- an **RPG/CL-style adjudication function** (`ADJRXCLM`),
+- backed by Postgres standing in for Db2 for i.
+
+Then we **wrap, don't rewrite** it:
+- a **Spring Boot façade** in front (§2),
+- an **anti-corruption layer** translating legacy fields → canonical FHIR/claim objects,
+- and the emulator kept **strictly private** (consumers only reach the façade).
+
+## The Strangler (Fig) pattern — the migration story
+- **Where the name comes from:** the strangler fig is a vine that grows *around* a host tree, gradually taking over until the original tree is gone. Martin Fowler used it as a metaphor (and Azure's Architecture Center documents it) for legacy modernization.
+- **The pattern:** put a **façade/routing layer** in front of the legacy system; **incrementally build new functionality behind it** and route those calls to the new implementations; the legacy footprint **shrinks over time** until it can be safely retired. The opposite of a risky **big-bang rewrite**.
+- **Why leaders love it:** it **de-risks** modernization — you migrate feature-by-feature, each step reversible, the system always shippable. That's a *risk* message to stakeholders, not just a technical one.
+
+**How we apply it (twice — this is a strong point):**
+1. **The adjudication core:** the façade fronts the RxClaim/IBM i emulator; new deterministic rules services (benefit, formulary, prior-auth) live in front of it and progressively take over responsibilities, so the legacy core is *wrapped now, replaceable later* — never rewritten in a single cutover.
+2. **The gateway itself:** we designed a literal strangler for Kong — states **S0 → S1 → S2** where the new DB-less Kong incrementally takes over routes (including `/fhir`) from the Phase 1 KIC Kong, **with a rollback path**, and the old one is retired only after the new one is proven. This shows you apply the pattern *recursively*, even to infrastructure.
+
+## Say it like this in the interview
+> "The legacy RxClaim core runs on IBM i — Db2 for i, RPG/CL, DDS-defined files. Rather than a big-bang rewrite, I wrap it behind a Spring Boot façade with an anti-corruption layer, and apply the strangler-fig pattern: new benefit and prior-auth rules run in front of the legacy core and progressively assume its responsibilities, each step reversible. In production you'd bridge to IBM i with the JTOpen toolkit — calling RPG programs and Db2 for i from Java. I even applied the same strangler approach to the gateway migration itself, with an explicit rollback state."
+
+**If they push** ("why keep the legacy at all?"): because a working adjudication engine encodes decades of edge cases and regulatory rules; the strangler lets you capture that value while modernizing the *interface, testability, and scalability* around it — lower risk, faster time-to-value.
+
+---
+
+## The 30-second synthesis (ties all three together)
+> "I'm modernizing a legacy IBM i / RxClaim adjudication core using three patterns: an **API façade** so consumers depend on a stable interface, an **anti-corruption layer** so legacy data shapes don't leak into my FHIR domain, and the **strangler-fig pattern** to migrate incrementally instead of a risky rewrite. Throughout, decisions are **deterministic and idempotent** — keyed on a single decision id so retries never double-adjudicate — which keeps payments and the audit trail correct."
+
+Want me to (a) drill deeper on any one of these, (b) run a mock Q&A where I play the interviewer, or (c) get back to building the M1 payer-KB PR?
 
 <details>
 <summary>Execution details — 120 tool events</summary>
@@ -2197,6 +2308,6 @@ echo; echo "=== commits o…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 08:59 UTC
+- **Last updated:** 14 July 2026, 09:04 UTC
 - **Turns:** 19
-- **Status:** Incomplete
+- **Status:** Complete

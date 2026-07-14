@@ -42,9 +42,9 @@
     "present": true,
     "raw_filename": "bebf7ac2-4f1b-4a70-8685-440da76db7e1.jsonl",
     "source_deleted_at": null,
-    "status": "incomplete",
+    "status": "complete",
     "title": "Phase 2 - prescription claim adjudication prototype",
     "turns": 19,
-    "updated_at": "2026-07-14T08:59:05.766000+00:00"
+    "updated_at": "2026-07-14T09:04:27.761000+00:00"
   }
 }
