@@ -1997,6 +1997,16 @@ Then we **wrap, don't rewrite** it:
 
 Want me to (a) drill deeper on any one of these, (b) run a mock Q&A where I play the interviewer, or (c) get back to building the M1 payer-KB PR?
 
+## Turn 20
+
+### Prompt
+
+What part of the functionality are we assuming still live in IBM legacy world, and what part has been "Strangled" already into modern JAva/Springboot? In orher wirds, what status of modernization process are we assume the super-system is at while building this prototype system?
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 120 tool events</summary>
 
@@ -2308,6 +2318,6 @@ echo; echo "=== commits o…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 09:04 UTC
-- **Turns:** 19
-- **Status:** Complete
+- **Last updated:** 14 July 2026, 09:19 UTC
+- **Turns:** 20
+- **Status:** Incomplete
