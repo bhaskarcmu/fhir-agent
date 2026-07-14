@@ -123,7 +123,7 @@ Core file deleted, `main` is up to date. Now creating the branch and adding the 
 Diff looks correct and scoped. Committing and pushing.
 
 <details>
-<summary>Execution details — 22 tool events</summary>
+<summary>Execution details — 23 tool events</summary>
 
 ### Turn 1 activity
 
@@ -162,6 +162,9 @@ chore: ignore core dumps (may leak secrets via process env)
 
 A 4.9GB core dump was found untracke…`
 - **Bash** `git -C /workspaces/fhir-agent push -u origin chore/gitignore-core-dump`
+- **Bash** `gh pr create --base main --head chore/gitignore-core-dump --title "chore: ignore core dumps" --body "$(cat <<'EOF'
+## Summary
+- Found a 4.9GB untracked core dump at the repo root containing the Anthro…`
 
 </details>
 
