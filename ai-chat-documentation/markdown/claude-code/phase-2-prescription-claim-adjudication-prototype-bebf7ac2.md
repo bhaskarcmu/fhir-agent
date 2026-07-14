@@ -3589,8 +3589,10 @@ Adjudication succeeded both times (APPROVED, DEC-SMOKE1) — persistence didn't 
 
 Let me stop the FHIR container, update the README to reflect M4, and commit:
 
+M4 is up as PR [#29](https://github.com/bhaskarcmu/fhir-agent/pull/29). Updating memory, then summary.
+
 <details>
-<summary>Execution details — 302 tool events</summary>
+<summary>Execution details — 304 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4265,6 +4267,12 @@ docker compose stop fhir 2>&1 | tail -1
 git check-ignore claims-service/target >/dev/null && echo "target ignored ✓"
 git add claims-service/
 echo "=== staged (must be no targ…`
+- **Bash** `cd /workspaces/fhir-agent
+git commit -q -F - <<'EOF'
+feat(phase2 M4): FHIR decision artefact graph + idempotency
+
+Persist each adjudication as an auditable FHIR R4 transaction bundle and make the whol…`
+- **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase2-planning-state.md`
 
 </details>
 
@@ -4275,6 +4283,6 @@ echo "=== staged (must be no targ…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 17:00 UTC
+- **Last updated:** 14 July 2026, 17:01 UTC
 - **Turns:** 55
 - **Status:** Incomplete
