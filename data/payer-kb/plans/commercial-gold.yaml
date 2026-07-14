@@ -1,0 +1,18 @@
+# Commercial Gold — richer ACA marketplace-style plan (lower cost-share, fewer barriers).
+plan_id: COM-GOLD
+name: Commercial Gold
+payer_type: commercial
+metal_level: gold
+formulary_id: FRM-COM-GOLD
+deductible_usd: 1000
+out_of_pocket_max_usd: 6000
+cost_share_tiers:
+  PREFERRED-GENERIC: { copay_usd: 5 }
+  GENERIC: { copay_usd: 15 }
+  PREFERRED-BRAND: { coinsurance_pct: 20 }
+  NON-PREFERRED-BRAND: { coinsurance_pct: 40 }
+  SPECIALTY: { coinsurance_pct: 30 }
+example_coverage:
+  active:   { effective: 2026-01-01, termination: 2026-12-31 }
+  inactive: { effective: 2025-01-01, termination: 2026-01-31 }
+grounding: "Structure from ACA QHP machine-readable formularies + CMS Part D; values curated."

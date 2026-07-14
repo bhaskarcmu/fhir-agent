@@ -1,0 +1,50 @@
+# Prior-authorization & utilization rules — deterministic, LAYERED (federal → plan → customer
+# per requirements §9.5). Each rule's `effect` maps to a Decision-Contract severity (R17):
+#   DENY | PEND | REVIEW  (INFO reserved for annotations).
+# The rules engine (M3) evaluates ALL applicable rules and resolves by precedence
+# (DENY > PEND > REVIEW > approved), aggregating reasons (accumulate-then-resolve, R17.3).
+#
+# `when` conditions are matched against the formulary row for (plan_id, rxcui) plus the
+# submitted claim (e.g., requested quantity vs. quantity_limit_qty).
+
+version: 1
+rules:
+  - id: NON-FORMULARY
+    layer: plan
+    description: A non-formulary drug without an approved exception is denied.
+    when: { covered: false }
+    effect: DENY
+    reason_code: non-formulary
+
+  - id: PA-REQUIRED
+    layer: federal
+    description: >
+      Drugs flagged prior_authorization (typically SPECIALTY / high-cost) require an approved
+      PA on file; absent one, the claim is pended for prior authorization.
+    when: { prior_auth: true, pa_on_file: false }
+    effect: PEND
+    reason_code: prior-auth-required
+
+  - id: STEP-THERAPY
+    layer: plan
+    description: >
+      Step-therapy drugs require a documented try/fail of a first-line agent
+      (e.g., adalimumab after methotrexate); without it, route to manual review.
+    when: { step_therapy: true, step_therapy_met: false }
+    effect: REVIEW
+    reason_code: step-therapy-required
+
+  - id: QUANTITY-LIMIT
+    layer: plan
+    description: Requested quantity exceeding the plan quantity limit routes to manual review.
+    when: { quantity_limit: true, requested_qty_over_limit: true }
+    effect: REVIEW
+    reason_code: quantity-limit-exceeded
+
+# Notes:
+# - Clinical safety (drug-allergy, duplicate-therapy) is NOT here — it is delegated to the
+#   reused triage-service and mapped to a finding per R17.5 (HIGH→DENY, MODERATE→REVIEW).
+# - Eligibility (coverage active on date of service) is evaluated from the member Coverage +
+#   plan example_coverage, not from this file.
+# - Layer semantics: `federal` rules apply to all plans; `plan` rules may be overridden by a
+#   `customer` layer (none defined yet in this curated set).
