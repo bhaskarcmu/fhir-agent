@@ -2973,8 +2973,10 @@ Now update the phase2 README to surface the new material. Let me read it:
 
 Let me verify plan.md structure is clean and the change set is docs-only before committing the docs PR.
 
+Structure is clean (§1–§15, no dupes). The `core` and `data/reference/` are untracked leftovers — I'll add only `docs/`. Committing and opening the docs PR:
+
 <details>
-<summary>Execution details — 133 tool events</summary>
+<summary>Execution details — 135 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3298,6 +3300,15 @@ echo "on: $(git rev-parse --abbrev-ref HEAD)…`
 - **Bash** `cd /workspaces/fhir-agent
 echo "=== plan.md section headers ==="; grep -n "^## " docs/phase2/plan.md
 echo "=== duplicate ## headers? ==="; grep "^## " docs/phase2/plan.md | sort | uniq -d || echo "(no…`
+- **Bash** `cd /workspaces/fhir-agent
+git add docs/phase2
+git commit -q -F - <<'EOF'
+docs(phase2): strangler snapshot, standards, delivery strategy, ACA grounding
+
+Second round of documentation refinements (post-…`
+- **Bash** `cd /workspaces/fhir-agent
+gh pr create --base main --head feature/phase2-docs-refinements \
+  --title "docs(phase2): strangler snapshot, engineering standards, delivery strategy, ACA payer grounding"…`
 
 </details>
 
@@ -3308,6 +3319,6 @@ echo "=== duplicate ## headers? ==="; grep "^## " docs/phase2/plan.md | sort | u
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 15:00 UTC
+- **Last updated:** 14 July 2026, 15:01 UTC
 - **Turns:** 45
 - **Status:** Incomplete
