@@ -2908,7 +2908,36 @@ I feel like we can pull published information fro ACA about what private insurer
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Strong instinct — and it actually **refines** what I said earlier. Let me draw the precise line, because it's a great one to have straight (and it plays well in a compliance-heavy Director interview).
+
+## The refined truth: *disclosure-mandated* commercial data IS public — only the *internal logic* is proprietary
+
+My earlier "private rules are proprietary" was too broad. The accurate split:
+
+- **Publicly mandated & downloadable** (for ACA marketplace plans): **what must be covered**, and the **formulary with the exact adjudication metadata** — covered/not, **tier**, and **prior-auth / step-therapy / quantity-limit flags.** That's the stuff our rules engine actually consumes.
+- **Still proprietary:** the *detailed PA clinical criteria* (the precise medical logic to approve a PA), *negotiated/rebate/MAC pricing internals*, and the adjudication engine's internal code. Also, **self-funded employer/ERISA plans** disclose less than marketplace plans.
+
+So for **coverage requirements and formulary rule structure**, you can absolutely ground commercial modeling in **real published data** — same rigor we used for Medicare Part D.
+
+## Concrete public sources (all real, mandated by law)
+- **ACA Essential Health Benefits (EHB)** — the ACA requires individual/small-group plans to cover 10 benefit categories *including prescription drugs*; CMS publishes each **state's EHB-benchmark plan**. → "what must be covered."
+- **QHP (Qualified Health Plan) machine-readable formulary files** — marketplace issuers on **healthcare.gov** must publish JSON files listing **drugs (by RxNorm/NDC) with tier + PA/step-therapy/quantity-limit booleans.** → *real commercial formulary adjudication metadata.*
+- **CMS Marketplace PUFs** — annual **Benefits & Cost-Sharing PUF, Plan Attributes PUF, Business Rules PUF, Rate PUF, Machine-Readable-URL PUF.** → plan structures + cost-sharing + the index of issuer formulary URLs.
+- **SBC — Summary of Benefits and Coverage** — the standardized coverage/cost-sharing summary every plan must provide. → cost-sharing structure.
+- **Transparency in Coverage (TiC) MRFs** — payers must publish in-network negotiated rates + allowed amounts (Rx pricing file under enforcement discretion). → *pricing/network* realism (huge files; optional).
+
+## Why this upgrades the prototype
+It moves our commercial plans from **"authored-representative"** to **"grounded in a real published marketplace formulary,"** so we can say **both** Medicare *and* commercial are backed by real disclosure data — strengthening the "no fabricated data" story. And it's a **regulatory-savvy** talking point (EHB, marketplace transparency, TiC) that signals you understand payer compliance — exactly this role's world.
+
+## Caveats to keep it honest
+- Keep it a **curated slice** (per R13) — these files are large.
+- We're grounding **structure**, not the proprietary **PA criteria/pricing** — which is fine; CVS's own RxClaim owns those. We model the *shape*.
+- **Marketplace ≠ all commercial:** large employer/self-funded plans disclose less, so we'd extend from marketplace patterns by modeling.
+
+## Suggested next step
+Fold this into the **commercial-data-strategy doc item (#5)** and, in **M1**, pull **one representative QHP formulary slice** the same way we pulled CMS Part D. I can run a quick **verification + sample-pull pass** (confirm current healthcare.gov / CMS marketplace URLs are live and grab a small formulary sample) — like I did for the Part D / RxNorm sources — so the M1 payer-KB is grounded in *real* commercial data, not just authored plans.
+
+Want me to (a) do that verification/pull pass now (data branch, off the PR), (b) just document the strategy in the next docs update, or (c) both?
 
 <details>
 <summary>Execution details — 120 tool events</summary>
@@ -3221,6 +3250,6 @@ echo; echo "=== commits o…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 14:32 UTC
+- **Last updated:** 14 July 2026, 14:38 UTC
 - **Turns:** 44
 - **Status:** Incomplete
