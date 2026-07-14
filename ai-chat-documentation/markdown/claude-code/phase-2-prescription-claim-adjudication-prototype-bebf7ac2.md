@@ -3375,8 +3375,10 @@ M1 branch ready with both prework and docs. Let me build the payer-KB. First, ge
 
 The ingredient RxCUI has no direct NDCs (NDCs attach to drug *products*). openFDA maps generic name → product NDC cleanly, so I'll build the crosswalk from there. Writing and running the crosswalk builder:
 
+20/20 real NDCs mapped. Now building the payer-KB files — schema README, 4 plan definitions, curated formulary (grounded in real tiers, driving the R8 demo scenarios), and layered PA rules.
+
 <details>
-<summary>Execution details — 204 tool events</summary>
+<summary>Execution details — 209 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3860,6 +3862,11 @@ curl -s --ma…`
 - **Write** `/workspaces/fhir-agent/data/scripts/build_ndc_rxcui_crosswalk.py`
 - **Bash** `cd /workspaces/fhir-agent
 python3 data/scripts/build_ndc_rxcui_crosswalk.py 2>&1 | tail -24`
+- **Write** `/workspaces/fhir-agent/data/payer-kb/README.md`
+- **Write** `/workspaces/fhir-agent/data/payer-kb/plans/commercial-silver.yaml`
+- **Write** `/workspaces/fhir-agent/data/payer-kb/plans/commercial-gold.yaml`
+- **Write** `/workspaces/fhir-agent/data/payer-kb/plans/medicare-advantage-demo.yaml`
+- **Write** `/workspaces/fhir-agent/data/payer-kb/plans/employer-ppo.yaml`
 
 </details>
 
@@ -3870,6 +3877,6 @@ python3 data/scripts/build_ndc_rxcui_crosswalk.py 2>&1 | tail -24`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 15:40 UTC
+- **Last updated:** 14 July 2026, 15:42 UTC
 - **Turns:** 51
 - **Status:** Incomplete
