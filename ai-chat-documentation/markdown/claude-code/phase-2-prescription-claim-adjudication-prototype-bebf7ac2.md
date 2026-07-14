@@ -2957,8 +2957,10 @@ Good — (c) both, document #1–6 and #10 in detail, **skip #9** (agreed — it
 
 On `dataeng/phase2-prework`; the ACA research is running. Let me set up the docs branch off `main` and start on the items that don't depend on the ACA findings (#1–#4).
 
+On the docs branch. Let me read §5 to insert the strangler-snapshot (#1) and reliability patterns (#4) cleanly.
+
 <details>
-<summary>Execution details — 123 tool events</summary>
+<summary>Execution details — 124 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3270,6 +3272,7 @@ echo "main vs origin/main:"; git rev-parse --short main origin/main 2>/dev/n…`
 git switch main >/dev/null 2>&1 && git pull --ff-only 2>&1 | tail -1
 git switch -c feature/phase2-docs-refinements 2>&1 | tail -1
 echo "on: $(git rev-parse --abbrev-ref HEAD)…`
+- **Read** `/workspaces/fhir-agent/docs/phase2/plan.md`
 
 </details>
 
@@ -3280,6 +3283,6 @@ echo "on: $(git rev-parse --abbrev-ref HEAD)…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 14:57 UTC
+- **Last updated:** 14 July 2026, 14:58 UTC
 - **Turns:** 45
 - **Status:** Incomplete
