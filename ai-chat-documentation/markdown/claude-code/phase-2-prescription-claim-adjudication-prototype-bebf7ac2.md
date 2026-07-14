@@ -3444,8 +3444,14 @@ All 8 tests pass. Now the cloud touchpoint + docs for M2 — Dockerfile, a Terra
 
 Tests pass; now a real end-to-end runtime smoke (drive the actual endpoint, not just tests). Packaging first:
 
+End-to-end verified through the real fixed-width REST contract:
+- **PAID** → `P000` + `000024000`(240.00 ingredient) `0000150`(1.50) `000024150`(241.50 total) `000004830`(48.30 patient) `000019320`(193.20 plan) `RX…` — matches the pricing exactly.
+- **REJECT** (terminated member) → `R065` + zeros (NCPDP 65, patient not covered).
+
+Committing M2. Let me confirm `target/` is excluded and stage only sources:
+
 <details>
-<summary>Execution details — 237 tool events</summary>
+<summary>Execution details — 239 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3997,6 +4003,14 @@ mvn -f rxclaim-emulator/pom.xml -B test 2>&1 | grep -E "Tests run|BUILD|ERROR.*T
 - **Bash** `cd /workspaces/fhir-agent
 mvn -q -f rxclaim-emulator/pom.xml -DskipTests package 2>&1 | tail -5
 ls -lh rxclaim-emulator/target/rxclaim-emulator-*.jar 2>/dev/null`
+- **Bash** `cd /workspaces/fhir-agent
+# Launch with system props forcing H2 (override ambient SPRING_DATASOURCE_URL).
+java -Dspring.datasource.url='jdbc:h2:mem:rxclaim;DB_CLOSE_DELAY=-1' \
+     -Dspring.datasourc…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== untracked/changed under rxclaim-emulator (target should NOT appear) ==="
+git status --short rxclaim-emulator/ | head
+echo "=== confirm target ignored ==="; git chec…`
 
 </details>
 
@@ -4007,6 +4021,6 @@ ls -lh rxclaim-emulator/target/rxclaim-emulator-*.jar 2>/dev/null`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 16:04 UTC
+- **Last updated:** 14 July 2026, 16:05 UTC
 - **Turns:** 52
 - **Status:** Incomplete
