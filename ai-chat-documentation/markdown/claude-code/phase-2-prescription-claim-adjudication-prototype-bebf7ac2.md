@@ -1674,8 +1674,20 @@ Now rewriting the milestones (§6) to thread cloud through each and rebrand M8 �
 
 Now update §8 risks, and append the four new normative sections (§10 Decision Contract, §11 Audit/idempotency, §12 Test matrix, §13 Stakeholder matrix). Let me read the end first:
 
+Now update the Definition of Done and append the four new normative sections (§10–§13):
+
+plan.md done. Now README.md — update the C-table to reflect the hybrid/gateway-strangler and point to the new normative sections:
+
+Now source-prd.md — strengthen the archival banner and add the "not executable as-is" warning near the command sections. Let me read the current banner and locate §11.
+
+Let me add a short inline warning right before the §11 command blocks too, as requested:
+
+All manifest edits applied. Let me verify structural integrity (section numbering, no dupes, docs-only diff) before committing.
+
+Structure is clean — plan.md §1–§13 sequential, requirements R1–R19 sequential, no duplicate headers, and only `docs/phase2/` changed (the `data/` untracked leftovers are excluded). Committing in the two logical commits I described, then pushing:
+
 <details>
-<summary>Execution details — 105 tool events</summary>
+<summary>Execution details — 115 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1934,6 +1946,21 @@ grep -n "### Gotchas\|## 4. Isolation" docs/phase2/plan.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
 - **Read** `/workspaces/fhir-agent/docs/phase2/plan.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Read** `/workspaces/fhir-agent/docs/phase2/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/README.md`
+- **Read** `/workspaces/fhir-agent/docs/phase2/source-prd.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/source-prd.md`
+- **Bash** `cd /workspaces/fhir-agent
+grep -n "^## 11. Data Acquisition" docs/phase2/source-prd.md`
+- **Read** `/workspaces/fhir-agent/docs/phase2/source-prd.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/source-prd.md`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== plan.md section headers ==="; grep -n "^## " docs/phase2/plan.md
+echo; echo "=== requirements.md R-headers ==="; grep -nE "^### R[0-9]+" docs/phase2/requirements.md…`
+- **Bash** `cd /workspaces/fhir-agent
+# Commit 1: reconciliation fixes (gateway hybrid/strangler, isolation controls, dev key, D8)
+git add docs/phase2/requirements.md docs/phase2/plan.md docs/phase2/README.md doc…`
 
 </details>
 
@@ -1944,6 +1971,6 @@ grep -n "### Gotchas\|## 4. Isolation" docs/phase2/plan.md`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 00:29 UTC
+- **Last updated:** 14 July 2026, 00:31 UTC
 - **Turns:** 14
 - **Status:** Complete
