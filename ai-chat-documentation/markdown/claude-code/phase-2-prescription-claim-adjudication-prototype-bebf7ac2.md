@@ -4048,7 +4048,7 @@ Diffs are clean and consistent. Per the repo's Git rules, let me confirm worktre
 On `feature/phase2-clinical-safety` (off the merged main). **Worktree** `/workspaces/fhir-agent`, **current branch** `feature/phase2-clinical-safety`, **target** `main` via PR. Staging only the slice's files (excluding the stray `core`), then committing:
 
 <details>
-<summary>Execution details — 417 tool events</summary>
+<summary>Execution details — 420 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5020,6 +5020,19 @@ git log --oneline -1`
 - **Bash** `cd /workspaces/fhir-agent
 git add claims-service/ data/scripts/seed_claims_demo.py
 git status --short`
+- **Bash** `cd /workspaces/fhir-agent
+git commit -q -F - <<'EOF'
+feat(claims): wire clinical-safety patient resolution end-to-end
+
+The clinical-safety leg of adjudication now runs for real. The pipeline
+resolves…`
+- **Bash** `cd /workspaces/fhir-agent
+git push -u origin feature/phase2-clinical-safety 2>&1 | tail -4`
+- **Bash** `cd /workspaces/fhir-agent
+gh pr create --base main --head feature/phase2-clinical-safety \
+  --title "feat(claims): wire clinical-safety patient resolution end-to-end" \
+  --body "$(cat <<'EOF'
+## Wha…`
 
 </details>
 
