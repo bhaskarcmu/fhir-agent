@@ -3681,8 +3681,10 @@ PR #30 merged. Cleaning up and moving to **M6 — local wiring & demo** (bring t
 
 Now I'll add the three Phase 2 services under a `phase2` profile (default `docker compose up` stays exactly Phase 1). Appending to the compose file:
 
+Compose wired additively (Phase 2 services are `profiles: ["phase2"]`). Now the demo driver and a small emulator data top-up so the quantity-limit path prices cleanly:
+
 <details>
-<summary>Execution details — 326 tool events</summary>
+<summary>Execution details — 327 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4415,6 +4417,7 @@ git switch main >/dev/null 2>&1 && git pull --ff-only 2>&1 | tail -1
 git branch --merged main | grep -q 'feature/phase2-m5-claims-agent' && echo "M5 merged ✓"
 git branch -d f…`
 - **Edit** `/workspaces/fhir-agent/docker-compose.yml`
+- **Edit** `/workspaces/fhir-agent/rxclaim-emulator/src/main/resources/data.sql`
 
 </details>
 
@@ -4425,6 +4428,6 @@ git branch -d f…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 17:16 UTC
+- **Last updated:** 14 July 2026, 17:17 UTC
 - **Turns:** 57
 - **Status:** Incomplete
