@@ -3373,8 +3373,10 @@ Branch deleted. Now **M1 — build the payer knowledge base.** I'll base it on `
 
 M1 branch ready with both prework and docs. Let me build the payer-KB. First, generate a real **NDC↔RxCUI crosswalk** from RxNav (grounds the formulary). Let me check the drug list I have:
 
+The ingredient RxCUI has no direct NDCs (NDCs attach to drug *products*). openFDA maps generic name → product NDC cleanly, so I'll build the crosswalk from there. Writing and running the crosswalk builder:
+
 <details>
-<summary>Execution details — 202 tool events</summary>
+<summary>Execution details — 204 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3855,6 +3857,9 @@ echo "=== merge current main into the M1 branch (bring docs current)…`
 echo "=== demo drugs (rxcui) available ==="; cat data/reference/rxnorm/rxnorm_drug_classes.csv
 echo; echo "=== RxNav NDC lookup smoke test (amoxicillin 723) ==="
 curl -s --ma…`
+- **Write** `/workspaces/fhir-agent/data/scripts/build_ndc_rxcui_crosswalk.py`
+- **Bash** `cd /workspaces/fhir-agent
+python3 data/scripts/build_ndc_rxcui_crosswalk.py 2>&1 | tail -24`
 
 </details>
 
