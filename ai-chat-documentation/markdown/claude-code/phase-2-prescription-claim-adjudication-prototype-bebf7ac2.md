@@ -3185,8 +3185,10 @@ Now refine the commercial note and append the full glossary (#6):
 
 Let me verify what's staged on the data branch — only small curated files, no raw/xlsx:
 
+Only small curated files staged (largest 12K); the raw `.xlsx` is correctly gitignored. Committing to the data branch and pushing (no PR):
+
 <details>
-<summary>Execution details — 151 tool events</summary>
+<summary>Execution details — 152 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3550,6 +3552,11 @@ curl -s --max-time 90 "https://…`
 git add -A data/
 echo "=== staged data files + sizes ==="
 git diff --cached --name-only -- data/ | while read f; do [ -f "$f" ] && printf "%8s  %s\n" "$(du -h "$f"|cut -f1)"…`
+- **Bash** `cd /workspaces/fhir-agent
+git commit -q -F - <<'EOF'
+data(phase2): add real ACA/commercial formulary sample + data-source glossary
+
+Extends the reference-data prework with commercial (private-payer) g…`
 
 </details>
 
