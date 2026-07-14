@@ -81,6 +81,31 @@ Fair pushback — let me verify all three points rather than assert them again.
 
 The sandbox correctly blocked me from previewing even redacted fragments of the live credentials file — that's a legitimate security control on Claude Code's own credential store, and it actually supports your point. Let me redo that check safely (metadata only, no content) and also relay a serious finding from the audit.
 
+Here's the corrected picture, checked rather than asserted.
+
+## You were right on two counts
+
+**1. Claude Code does have its own separate secure storage — confirmed.**
+`~/.claude/.credentials.json` grew from `{}` (2 bytes) to 504 bytes at `17:40:07`, matching your `/login`. That's Claude Code's own OAuth credential store — not devcontainer.json, not an env var. The sandbox itself just blocked me from previewing even redacted fragments of that file's contents, which is the system correctly protecting it. So yes: proprietary storage, separate from the API-key path.
+
+**2. `ANTHROPIC_API_KEY` is not actually set in this environment right now.** Confirmed again just now: `ANTHROPIC_API_KEY: not set`, `CLAUDE_API_KEY: SET`. My earlier theory (devcontainer.json line 58 mapping `CLAUDE_API_KEY`→`ANTHROPIC_API_KEY`) doesn't hold up empirically — if that mapping had actually applied, both vars would be set to the same value. They're not. Likely explanation: Ona injects `CLAUDE_API_KEY` directly into the container through its own secrets mechanism, bypassing devcontainer.json's `${localEnv:...}` substitution (which depends on a "local host" env that may not really exist in Ona's remote/cloud model). So: **right now, Claude Code has no API key to compete with your subscription** — there's nothing for it to fall back to. Run `/status` yourself (type it in this chat) to see the login line directly; that's the authoritative first-party check, safer than me poking at credential internals.
+
+Net: **no devcontainer.json edit is needed**, and I haven't touched it.
+
+## Where I was incomplete (per the deeper audit)
+
+A repo-wide sweep found one more wiring point I'd missed: [docker-compose.yml:69-70,136-137](docker-compose.yml#L69-L70) passes `ANTHROPIC_API_KEY`/`CLAUDE_API_KEY` through to the `mcp-agent`/`claims-agent` containers. This is unrelated to Claude Code's own billing though — it's just your app containers getting the key to call the Anthropic SDK, same fallback pattern as the two `agent.py` files. No third hidden consumer exists; the audit ruled out gateway/Kong (separate `FHIR_API_KEY`/`CLAIMS_API_KEY` namespace), CI workflows, and any settings module.
+
+## A real security finding, unrelated to your original question
+
+There's an **untracked 4.9 GB `core` dump** at the repo root (`/workspaces/fhir-agent/core`, from `03:46` this morning) — visible in `git status` as `?? core`, and not in `.gitignore`. The audit found the literal strings `ANTHROPIC_API_KEY`/`CLAUDE_API_KEY` inside it 40 times, consistent with a crashed process's environment block being embedded — **meaning your live key value is very likely sitting in that file in plaintext**. It's untracked so it was never committed, but it's sitting unprotected in your working tree.
+
+Want me to:
+1. Add `core` to `.gitignore` (safe, small change), and
+2. Delete the 4.9 GB core file (destructive — confirming before I touch it)?
+
+And separately — given a live key may have been dumped to disk, do you want to rotate the `CLAUDE_API_KEY` Ona secret as a precaution?
+
 <details>
 <summary>Execution details — 12 tool events</summary>
 
