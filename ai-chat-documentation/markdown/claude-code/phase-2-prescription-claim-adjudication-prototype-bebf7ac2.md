@@ -3873,8 +3873,10 @@ Let me check the log to see whether it was resolution or triage this time:
 
 Resolution fails specifically in the demo (claims-service already running when the patient is seeded) but works in my controlled test (claims-service started after). That points at the search itself. Let me add diagnostic logging to `resolvePatientId` to see exactly what claims-service gets:
 
+Rebuilding with the diagnostic and re-running the demo to see exactly what the search returns:
+
 <details>
-<summary>Execution details — 387 tool events</summary>
+<summary>Execution details — 388 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4764,6 +4766,10 @@ echo "=== resolution/triage signals for 000000009 in claims.log ==="
 grep -iE "000000009|triage|no FHIR" /tmp/claims.log | tail -6
 echo "=== was triage reachable? (any triage…`
 - **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/fhir/HapiFhirClient.java`
+- **Bash** `cd /workspaces/fhir-agent
+mvn -q -f claims-service/pom.xml -DskipTests package 2>&1 | tail -2
+FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose up -d fhir triage >/dev/null 2>&1
+for i in $(seq 1 4…`
 
 </details>
 
