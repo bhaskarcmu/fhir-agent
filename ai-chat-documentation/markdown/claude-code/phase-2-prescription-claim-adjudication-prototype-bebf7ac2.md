@@ -3885,8 +3885,10 @@ The "seeded" line didn't print and it's still APPROVED — likely the build didn
 
 HAPI rejects **purely-numeric** client-assigned ids (they're reserved for the server) → 400. Fix: use a non-numeric logical id `member-<memberId>` for the patient, and read that. Updating the resolver and the seed:
 
+Rebuilding and running the demo — this should land the clinical-safety denial:
+
 <details>
-<summary>Execution details — 395 tool events</summary>
+<summary>Execution details — 396 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4795,6 +4797,10 @@ echo "exit: $?"
 ls -la --time-style=+%H:%M:%S claims-s…`
 - **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/fhir/HapiFhirClient.java`
 - **Edit** `/workspaces/fhir-agent/data/scripts/seed_claims_demo.py`
+- **Bash** `cd /workspaces/fhir-agent
+mvn -q -f claims-service/pom.xml -DskipTests package 2>&1 | tail -2
+FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose up -d fhir triage >/dev/null 2>&1
+for i in $(seq 1 4…`
 
 </details>
 
