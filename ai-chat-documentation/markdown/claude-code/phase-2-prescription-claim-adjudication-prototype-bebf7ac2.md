@@ -3739,8 +3739,12 @@ Only a secret-scan workflow exists — no test CI yet. Let me check whether the 
 
 The mcp-agent test mocks httpx — it's hermetic. So the Phase-1 CI job can run all three Phase 1 suites. Writing the CI workflow (Phase-1-only job proving independence + Phase 2 jobs):
 
+Now the on-demand e2e golden-path contract test (self-skips when the stack isn't running):
+
+Now the platform narrative. Let me find the right spot in the root README to add a Phase 2 section and update the services table:
+
 <details>
-<summary>Execution details — 338 tool events</summary>
+<summary>Execution details — 342 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4513,6 +4517,11 @@ git branch -d fe…`
 echo "=== mcp-agent test — does it need live services / skip? ==="
 grep -nE "skip|requires|localhost|httpx|def test|@pytest|connect" mcp-agent/tests/test_e2e_demo_flow.py | h…`
 - **Write** `/workspaces/fhir-agent/.github/workflows/tests.yml`
+- **Write** `/workspaces/fhir-agent/e2e/test_golden_paths.py`
+- **Bash** `cd /workspaces/fhir-agent
+grep -n "^## \|^### \|Microservices\|Current Status\|| \*\*fhir-service\|epic-emulator\|athena-emulator" README.md | head -40`
+- **Read** `/workspaces/fhir-agent/README.md`
+- **Edit** `/workspaces/fhir-agent/README.md`
 
 </details>
 
@@ -4523,6 +4532,6 @@ grep -nE "skip|requires|localhost|httpx|def test|@pytest|connect" mcp-agent/test
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 18:01 UTC
+- **Last updated:** 14 July 2026, 18:02 UTC
 - **Turns:** 58
 - **Status:** Incomplete
