@@ -27,19 +27,21 @@ layer."*
 | Legacy emulator realism | **Convincing legacy shape** (DDS-style records, DB2/SQL400 table naming, RPG/CL-flavoured adjudication function) |
 | FHIR ambition | **Da Vinci-aware but generic** R4 resources (not full PAS conformance) |
 
-## Cloud, security & scalability decisions (build deferred; shape the code now)
+## Cloud, security & scalability decisions (designed + stubbed + tested throughout; live deploy = Phase 2b)
 
 | # | Area | Choice |
 |---|---|---|
-| C1 | Compute | **Cloud Run** for stateless services (scale-to-zero); **HAPI always-on** (cold start). |
-| C2 | Gateway | **DB-less Kong everywhere** — one `kong.yml` for local + cloud (removes config drift). |
+| C1 | Compute | **Hybrid: GKE for Phase 1 (untouched) + Cloud Run for new Phase 2 services**; HAPI always-on. No Phase 1 rework. |
+| C2 | Gateway | **DB-less Kong** as the canonical Phase 2 gateway (one `kong.yml`, local + cloud); Phase 1 KIC Kong untouched, unified later via a **gateway-strangler** (plan §3). |
 | C3 | Rules data | **Postgres behind a repository interface** now; Bigtable/Firestore is the documented scale swap. |
-| C4 | Audit | **FHIR `Provenance`** now; BigQuery analytics plane deferred. |
+| C4 | Audit | **FHIR `Provenance`** now (with R18 invariants); BigQuery analytics plane deferred to Phase 2b. |
 
-Security (R14), observability (R15), deployability (R16) requirements added — see
-[`plan.md` §5](./plan.md) and [`requirements.md`](./requirements.md). Data-engineering
-prework (sources, Synthea, curated fixtures) lives on the local `dataeng/phase2-prework`
-branch (kept off this docs PR by design).
+**Cloud is a first-class concern from every milestone** (design + stub + test); only the
+live/paid GCP deploy is late (**Phase 2b**). Added normative sections: **Decision Contract
+(R17)**, **audit invariants + idempotency (R18)**, **test matrix (R19)**, plus security
+(R14), observability (R15), deployability (R16), and a **stakeholder × milestone** matrix
+(plan §13). Data-engineering prework (sources, Synthea, curated fixtures) lives on branch
+`dataeng/phase2-prework` (off this docs PR by design).
 
 ## Non-negotiable constraint
 

@@ -104,15 +104,23 @@ zero Phase 2 components present.
 ### R10 — Local ↔ cloud parity, easily switchable
 - The **same logical topology** exists locally and in cloud; switching is config-only.
 - **Local default is Kong-less** (fast inner loop, no API keys, no setup).
-- An **opt-in** `--profile gateway` runs a **DB-less Kong** locally with **zero
-  setup** (no Helm, no Neon, no key provisioning; a committed local-only dev key).
-- Cloud continues to use the existing KIC/Helm Kong.
+- An **opt-in** `--profile gateway` runs a **DB-less Kong** locally with **zero manual
+  setup** (no Helm, no Neon). The dev API key is **generated at `docker compose up`** by
+  a bootstrap entrypoint and templated into both `kong.yml` and the client env — it is
+  **never committed to git** (keeps the repo gitleaks-clean; see R14).
+- **Gateway model is hybrid, not one-Kong-for-all** (see plan §5, C2 + gateway-strangler):
+  Phase 1's KIC/Helm Kong keeps serving `/fhir` in cloud **untouched**; the **DB-less
+  Kong is the canonical Phase 2 gateway**, using the same declarative `kong.yml` locally
+  and in cloud. Folding Phase 1's route onto the DB-less Kong is a later, reversible
+  migration — **not** a Phase 1 rework.
 
-### R11 — Gateway placement
-- **One** Kong gateway on the **edge plane**, fronting `claims-service`,
-  `fhir-service`, and `triage-service`.
-- The `rxclaim-emulator` is on the **internal plane** and has **no gateway route**
-  (enforced by NetworkPolicy in cloud; not exposed in compose).
+### R11 — Gateway placement & internal isolation
+- The **edge Kong** fronts `claims-service`, `fhir-service`, and `triage-service`.
+- The `rxclaim-emulator` is on the **internal plane** with **no gateway route**.
+  **Isolation controls follow the platform each component runs on** (hybrid, per C1):
+  on **Cloud Run** (the Phase 2 target) the emulator uses **`ingress=internal` + IAM
+  invoker + VPC connector**; the GKE equivalent (ClusterIP + NetworkPolicy) applies only
+  to any component that actually runs on GKE. Locally it is simply not exposed.
 - The agent reaches services **through the façade / gateway**, never the legacy core.
 
 ### R12 — Data integrity & provenance
@@ -155,9 +163,100 @@ on the local `dataeng/phase2-prework` branch — kept off this docs PR).
 ### R16 — Deployability
 - **Container-first**: every service is a container, runnable locally via Compose and
   deployable to cloud with config-only differences.
-- **IaC + CI/CD** for the (deferred) cloud phase: **Terraform** for GCP infra
-  (Cloud Run, Cloud SQL/Neon, Secret Manager, Artifact Registry, networking) and
-  **GitHub Actions** (build → scan → push → deploy). Supersedes hand-run bash.
+- **IaC + CI/CD**: **Terraform** for GCP infra (Cloud Run, Cloud SQL/Neon, Secret
+  Manager, Artifact Registry, networking) and **GitHub Actions** (build → scan → push →
+  deploy). Supersedes hand-run bash. Cloud artifacts + tests are produced **from each
+  milestone** (design + stub + test throughout); **live** deploy is Phase 2b (see D8).
+
+### R17 — Decision Contract (normative)
+Adjudication must be **deterministic and reproducible**: the same claim + same reference
+data ⇒ the same decision, every time. Because multiple checks can fail at once, the
+engine is **accumulate-then-resolve**, *not* the triage service's first-match-wins.
+
+**R17.1 — Outcome set.** `ClaimResponse.outcome` is exactly one of:
+`approved` · `denied` · `pended` (needs PA / info) · `routed-for-review` (manual).
+Mapped to FHIR `ClaimResponse.outcome` (`complete` | `error` | `partial`) with a
+platform `decision` code in `ClaimResponse.disposition` + a coded reason list.
+
+**R17.2 — Rule evaluation.** Every applicable rule in the catalog is evaluated (no
+short-circuit); each emits zero or more **findings**: `{rule_id, domain, severity, code,
+message, basis[]}`. `severity ∈ {DENY, PEND, REVIEW, INFO}`.
+
+**R17.3 — Outcome precedence (deterministic resolution).** After collecting all findings:
+1. any `DENY` finding ⇒ **denied**;
+2. else any `PEND` finding ⇒ **pended**;
+3. else any `REVIEW` finding ⇒ **routed-for-review**;
+4. else ⇒ **approved**.
+`INFO` findings never change the outcome (annotation only). All findings of the winning
+tier are returned as reasons (multi-reason aggregation, per PRD §9.4).
+
+**R17.4 — Tie-breaks / determinism.** Findings are ordered by
+`(severity_rank, domain_order, rule_id)` — a total order — so the reason list is stable
+across runs and implementations. `domain_order` is the fixed pipeline order
+(eligibility → provider → formulary → PA → clinical → coding → medical-necessity →
+quantity). No wall-clock, map-iteration, or set ordering may affect output.
+
+**R17.5 — Triage → finding mapping.** The reused triage `RiskAssessment` maps to a
+clinical-domain finding: `HIGH` ⇒ `DENY`; `MODERATE` ⇒ `REVIEW`; `LOW` ⇒ no finding.
+(Known limitation: triage returns only its first match — sufficient for a safety gate;
+documented in the plan.)
+
+**R17.6 — Error taxonomy (distinct from denials).** Three disjoint response classes:
+- **Validation error** (malformed/unresolvable claim) → HTTP 400 + `OperationOutcome`;
+  **no** `ClaimResponse` persisted.
+- **Adjudication decision** (approved/denied/pended/routed) → HTTP 200 + `ClaimResponse`.
+- **System error** (emulator/triage/FHIR unavailable) → HTTP 502/503 + `OperationOutcome`;
+  **no partial decision** persisted; safe to retry (see R18).
+
+**R17.7 — Canonical schemas.** The request (canonical claim) and `ClaimResponse` have
+fixed schemas with committed example payloads for every golden path, grounded in the
+Da Vinci PAS shapes and the real Synthea `Claim`/`EOB` samples from the data prework.
+
+**R17.8 — Agent is non-authoritative.** The `claims-agent` explanation is **never** part
+of the decision and can never alter an outcome; it only narrates a persisted
+`ClaimResponse`. The deterministic services are the sole source of decisions.
+
+### R18 — Audit referential invariants & idempotency (normative)
+**R18.1 — One decision id.** Each adjudication has a single `decisionId` stamped on every
+artefact (as `identifier`/`meta.tag`) so the full chain is queryable by that id.
+
+**R18.2 — Mandatory links.** Every decision persists a connected graph:
+`ClaimResponse.request → Claim`; `ClaimResponse.outcome`/reasons present; if routed,
+`Task.focus → ClaimResponse` and `Task.reasonReference`; `Provenance.target →
+[Claim, ClaimResponse, Task?]` with `agent` = the adjudicating service; `RiskAssessment`
+(clinical) linked via `basis`/`decisionId`. A decision missing any mandatory link is a
+defect (enforced by tests, R19).
+
+**R18.3 — Idempotency (four sites, all required).**
+- **Intake:** the client supplies an idempotency key (or a claim business identifier);
+  re-submitting the same key returns the **existing** `ClaimResponse`, never a duplicate.
+- **FHIR writes:** use conditional create (`If-None-Exist` on `identifier`/`decisionId`)
+  so a retried write never double-persists artefacts.
+- **Legacy emulator call:** `ADJRXCLM` is invoked idempotently (keyed by `decisionId`);
+  a retry returns the same legacy result, no double side-effects.
+- **Async (if the C3 Pub/Sub path is adopted):** consumers are idempotent because
+  delivery is at-least-once; `decisionId` is the dedupe key.
+
+**R18.4 — No partial persistence.** Artefact writes for one decision are all-or-nothing
+from the caller's perspective (transaction bundle or compensating cleanup); a system
+error leaves **no** half-written decision (per R17.6).
+
+### R19 — Test matrix & golden-fixture governance (normative)
+"Per-service tests" is insufficient. The minimum matrix:
+- **API contract tests** — request/`ClaimResponse` schema + the R17.6 error taxonomy.
+- **Rules golden tests** — input claim → expected findings/outcome, **per rule and for
+  combinations** that exercise R17.3 precedence + R17.4 tie-breaks.
+- **End-to-end golden paths** — the 4–5 R8 scenarios, asserting `ClaimResponse` **and**
+  the R18.2 audit graph.
+- **Non-regression snapshots** — stored `ClaimResponse` snapshots; catalogue growth must
+  not silently change existing decisions.
+- **Idempotency / replay tests** — resubmit + retry at each R18.3 site; assert no
+  duplicates and stable output.
+- **Phase-1-independence test** — `docker compose up` (no profiles) starts only Phase 1.
+
+**Golden-fixture governance:** fixtures live under `data/payer-kb/` + per-service
+`testdata/`; each is generated by a committed script (reproducible), and any change to an
+expected decision requires an explicit fixture-update commit with rationale (review gate).
 
 ---
 
@@ -166,13 +265,15 @@ on the local `dataeng/phase2-prework` branch — kept off this docs PR).
 - Coordination of Benefits (COB) and a full PBM platform (per PRD §5.3).
 - Full **Da Vinci PAS** profile conformance (we only *nod* to it — see D6).
 - Full terminology loads (RxNorm/ICD-10 at 500–1,000+); curated subsets only.
-- **Phase 2 cloud deployment** — this phase is **local-first**; Phase 2 cloud
-  tooling comes later so Phase 1's proven cloud path stays untouched (see D8).
+- **Live cloud deployment (real GCP spend)** — deferred to **Phase 2b** (D8). Cloud is
+  *not* out of scope: cloud **design, IaC, stubs, and tests are produced from each
+  milestone**; only the live/paid deploy is late. Phase 1's proven cloud path stays untouched.
 - Any modification to Phase 1 behaviour, contracts, or deploy path.
-- **Deferred to the cloud phase (scale path documented, not built now):** NoSQL
-  formulary store (Bigtable/Firestore) — Postgres-behind-a-repository-interface now
-  (C3); a BigQuery decision-analytics plane — FHIR `Provenance` only now (C4);
-  Pub/Sub async claim intake; Memorystore/Redis caching; OIDC (API keys now).
+- **Deferred to Phase 2b (scale path documented + stubbed, not live now):** NoSQL
+  formulary store (Bigtable/Firestore) — Postgres-behind-a-repository-interface now,
+  tested against a NoSQL emulator (C3); a BigQuery decision-analytics plane — FHIR
+  `Provenance` only now (C4); Pub/Sub async intake; Memorystore/Redis caching; OIDC
+  (API keys now).
 
 ---
 
@@ -186,11 +287,11 @@ Each is intentional.
 | **D1** | Benefit + Prior-Auth **Rules Service in Spring Boot** (§6.2/6.3), implying all rules in Java | **Hybrid**: new adjudication rules (eligibility/formulary/PA/benefit) in Java; **reuse existing Python `triage-service`** for drug-allergy + duplicate-therapy | Those two domains are already built and tested in Python (rules 9 & 10). Rebuilding in Java duplicates logic and risks Phase 1 independence. Still gives a strong Java/Spring modernization story for the façade + emulator + ACL + new rules. |
 | **D2** | Legacy emulator described as part of the claims stack | Legacy emulator is its **own top-level module** `rxclaim-emulator/`, a **sibling** to (not a member of) the EHR emulators (`epic-`/`athena-emulator`) | The existing emulators are **EHR FHIR sandboxes**; a legacy claims-adjudication core is a **different category** (non-FHIR, transactional). Keeping it separate avoids muddying that concept. |
 | **D3** | "MCP Explanation Agent" as slice 3 (§6.3) | A **separate `claims-agent`**, not an extension of the Phase 1 `mcp-agent` | Keeps Phase 1 independent (no feature-flagging/coupling in the refill agent). Shares only non-clinical plumbing. |
-| **D4** | Kong "exists"; local gateway unspecified | **One edge Kong** fronting claims+fhir+triage; emulator strictly private; **new opt-in DB-less Kong compose profile** for local parity; **default local stays Kong-less** | Closes the parity gap (local never exercised Kong before) without imposing any setup burden on the daily dev loop. |
+| **D4** | Kong "exists"; local gateway unspecified | **Edge Kong** fronting claims+fhir+triage; emulator strictly private; **opt-in DB-less Kong compose profile** for local parity (default local stays Kong-less); **hybrid gateway** — Phase 1 KIC Kong untouched, DB-less Kong canonical for Phase 2, unified via a gateway-strangler migration | Closes the parity gap without setup burden, and modernizes the gateway without reworking Phase 1's proven cloud path. |
 | **D5** | Three scope numbers coexist: "4 checks" (§12.2) vs "15 domains" (§9.2) vs "15–20 rules / 8 domains" (§9.3) | **Canonical:** rule catalog **15–20 rules / ~8 domains**; **4–5 paths** exercised end-to-end by the demo | Removes the internal contradiction; sizes the build to a convincing demo. |
 | **D6** | "Anticipates CMS-0057-F"; cites Da Vinci PAS/CRD (§12.1, refs) | **Generic FHIR R4** resources, **structured/named to nod to** Da Vinci PAS/CRD; **no PAS conformance** | Full PAS conformance is weeks of work and over-scoped for a prototype; the nod preserves the talking point cheaply. |
 | **D7** | Sizing suggests 500–1,000 ICD/RxNorm (§10.7, §11) | **Curated fixtures** + check-existing-first (PRD's own §11.6 "recommended next move") | Faster, avoids CPT/AMA licensing risk on a public repo, sufficient for a believable demo. |
-| **D8** | Implies a GKE/Kong/Neon deployment for the slice | **Phase 2 is local-first; cloud deferred** | Phase 1 is already cloud-tested; Phase 2 cloud maturity comes later. Deferring keeps Phase 1's proven cloud path unmodified. |
+| **D8** | Implies a GKE/Kong/Neon deployment for the slice | **Hybrid cloud, designed & tested throughout, deployed late:** Phase 1 stays on **GKE (untouched)**; new Phase 2 services target **Cloud Run** (C1); cloud IaC/stubs/tests ship from each milestone; **live** GCP deploy is **Phase 2b** | Adds Cloud Run *alongside* GKE (no Phase 1 rework); keeps cloud a first-class, continuously-tested concern while avoiding GCP spend until the platform is proven locally. Supersedes the earlier "cloud-deferred" framing. |
 
 ### Still-open PRD questions (unchanged, tracked)
 Carried forward from PRD §13 for later resolution: COB inclusion, CPT licensing

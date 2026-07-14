@@ -9,10 +9,16 @@
 >
 > **Status of the original:** DRAFT — WORK IN PROGRESS.
 >
-> **This is the input, not the contract.** The requirements we actually agreed to
-> build — which deviate from this document — live in
-> [`requirements.md`](./requirements.md); the deviation table (D1–D8) maps each
-> change back to the PRD sections below. See also [`plan.md`](./plan.md).
+> **⚠️ ARCHIVAL — NON-NORMATIVE — DO NOT EXECUTE AS-IS.** This is the **input, not the
+> contract**, and it has been **superseded** by the working documents. The requirements we
+> actually build (which deviate from this) live in [`requirements.md`](./requirements.md)
+> (deviation table D1–D8 maps changes back to the sections below), and the design in
+> [`plan.md`](./plan.md). **Do not implement from this file.**
+>
+> **Commands here are illustrative only** — several will not work against this platform
+> as-is (e.g. §11 uses `Authorization: Bearer` while our gateway uses the `apikey` header;
+> hosts/URLs may be stale). For runnable steps, use the repo's authoritative scripts and
+> runbooks, not the snippets below.
 
 ---
 
@@ -304,6 +310,12 @@ Data should flow: **FHIR Patient → Coverage → Eligibility Service → Rules 
 | Configurable insurance plans | 5–10 plans (e.g., Commercial Silver, Commercial Gold, Medicare Advantage Demo, Medicaid Demo, Employer PPO), defined in JSON or YAML |
 
 ## 11. Data Acquisition and Validation Plan
+
+> **⚠️ Illustrative commands — not runnable as-is.** The snippets below are from the
+> archived PRD. They use `Authorization: Bearer` whereas this platform's gateway expects
+> the `apikey` header, and some hosts/URLs are stale. For verified, no-auth sources and
+> working commands, use the data-engineering prework (`data/reference/README.md` +
+> `data/scripts/fetch_reference_data.py` on branch `dataeng/phase2-prework`).
 
 This section answers "how do we actually obtain this reference data, and how do we check what already exists on the platform before importing anything new?" The recommended approach treats these sources as reference/terminology and plan-rule inputs — not as a full production database. Importantly, the existing platform already runs a HAPI FHIR JPA R4 server on a Neon PostgreSQL database named "fhirdb," and already has Synthea-generated bundles and loading scripts, so existing data should be checked first before any new import.
 
