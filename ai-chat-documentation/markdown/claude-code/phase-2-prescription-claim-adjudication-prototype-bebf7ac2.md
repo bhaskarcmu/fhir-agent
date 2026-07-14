@@ -2854,7 +2854,28 @@ What about adjudication rules for private insurers? Did we get sample representa
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Sharp question — and the honest answer has an important nuance.
+
+## The key fact: private-insurer adjudication rules are **not public**
+Unlike Medicare, **commercial/private formularies and prior-auth rules are proprietary trade secrets.** Each PBM and health plan (including CVS Caremark) treats its formulary, tiering, PA criteria, and step-therapy logic as confidential competitive IP. So there is **no "download" equivalent** for private insurers the way CMS publishes its Medicare Part D file. We did **not** — and realistically **could not** — pull real private-insurer rule sets. Nobody outside the plan has them.
+
+## So what do we use to represent private plans? (three things, all legitimate)
+1. **Real *structure* from the public CMS Part D file.** This is the crucial point: commercial plans use the **exact same mechanics** — covered/not-covered, cost tier, PA flag, step-therapy flag, quantity limit. The Medicare file gives us the *real shape* of those rules; only the specific choices differ by plan. So the structure transfers directly.
+2. **Curated, representative commercial plan definitions** — this is our planned **M1** work (`data/payer-kb/`, not yet built): a small set like **Commercial Silver, Commercial Gold, and Employer PPO**, authored by us following the *real* Part D structure and using *real* drugs (RxNorm) and diagnoses (ICD-10). These are **representative synthetic plans** — modeled on real patterns, not fabricated nonsense — the same discipline as Synthea.
+3. **Synthea** already generates **commercial/private payers and coverage** in its synthetic population (its payer model isn't just Medicare), so we get privacy-safe synthetic *members* enrolled in commercial plans.
+
+## Why this is credible, not a gap
+Our **layered rules architecture** is designed exactly for this: **plan type is a configuration layer**, not new code. Federal rules (Medicare NCD/LCD) sit at the base; **a commercial plan is just another "plan configuration"** on top of the same engine. So demonstrating Medicare + a couple of representative commercial plans *proves the engine is payer-agnostic* — which is the real requirement. And it mirrors reality: **CVS Caremark's RxClaim adjudicates Medicare Part D *and* commercial/employer plans on the same platform.**
+
+## If we wanted *more* real commercial grounding (optional, real public sources)
+- **ACA / QHP (Qualified Health Plan) marketplace data** on healthcare.gov / CMS — marketplace plans publish **machine-readable formularies** (real commercial-style formulary data).
+- **Transparency in Coverage (TiC) machine-readable files** — payers are federally required to publish negotiated rates (useful for *pricing/network*, less for clinical rule logic).
+
+## Honest status right now
+We have the **terminologies + the real structural template (CMS Part D) + Synthea's commercial members**. The **commercial plan definitions themselves are pending M1** — that's precisely the next data-engineering task.
+
+**One-line interview version:**
+> "Private-insurer rules are proprietary, so there's no public dataset to pull — but the *mechanics* are identical to Medicare's, which *is* public. So I ground the structure in the real CMS Part D formulary, then model a few representative commercial plans — Silver, Gold, Employer PPO — as configuration on the same layered engine. That's exactly how RxClaim serves both Medicare and commercial: plan type is configuration, not a different codebase. If I needed more real commercial data, ACA marketplace formularies and Transparency-in-Coverage files are public."
 
 <details>
 <summary>Execution details — 120 tool events</summary>
@@ -3167,6 +3188,6 @@ echo; echo "=== commits o…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 13:28 UTC
+- **Last updated:** 14 July 2026, 13:29 UTC
 - **Turns:** 42
 - **Status:** Incomplete
