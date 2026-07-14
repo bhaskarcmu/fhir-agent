@@ -3513,8 +3513,14 @@ Now the pipeline orchestration, controller, application entry point, and config:
 
 Now the tests — rules engine, ACL round-trip, file KB, and the pipeline across all five scenarios:
 
+All tests written. Building and testing claims-service:
+
+`leadingInt` is package-private but the test is in a different package. Making it public:
+
+Close — 18/20 pass, 2 failures. Let me see them:
+
 <details>
-<summary>Execution details — 266 tool events</summary>
+<summary>Execution details — 272 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4110,6 +4116,18 @@ git branch --merged main | grep -q 'feature/phase2-m2-rxclaim-emulator' && echo 
 - **Write** `/workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/RulesEngineTest.java`
 - **Write** `/workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/LegacyAdapterTest.java`
 - **Write** `/workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/FilePayerKbTest.java`
+- **Write** `/workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/AdjudicationPipelineTest.java`
+- **Bash** `cd /workspaces/fhir-agent
+mvn -f claims-service/pom.xml -B test 2>&1 | grep -E "Tests run|BUILD|ERROR" | head -30`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/kb/FilePayerKb.java`
+- **Bash** `cd /workspaces/fhir-agent
+mvn -f claims-service/pom.xml -B test 2>&1 | grep -E "Tests run:|BUILD" | tail -12`
+- **Bash** `cd /workspaces/fhir-agent
+grep -h -A6 "FAILED\|AssertionError\|expected:" claims-service/target/surefire-reports/*.txt 2>/dev/null | grep -iE "Test|expected|but was|Error" | head -30`
+- **Bash** `cd /workspaces/fhir-agent
+for c in RulesEngineTest AdjudicationPipelineTest; do
+  echo "=== $c ==="
+  grep -B1 -A8 "AssertionError" claims-service/target/surefire-reports/com.payer.claims.$c.txt 2>/de…`
 
 </details>
 
@@ -4120,6 +4138,6 @@ git branch --merged main | grep -q 'feature/phase2-m2-rxclaim-emulator' && echo 
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 16:39 UTC
+- **Last updated:** 14 July 2026, 16:40 UTC
 - **Turns:** 54
 - **Status:** Incomplete
