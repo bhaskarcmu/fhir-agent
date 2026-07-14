@@ -1441,6 +1441,58 @@ Current branch state on origin:
 
 Nothing else pushed or merged. Whenever you're ready, the next natural step is **M0 (read-only FHIR recon)** or reviewing/merging PR #24 — your call.
 
+## Turn 12
+
+### Prompt
+
+My review of the documents (intended for you to critique and discuss with me, not at all to blindly accept so dont change anything yet):
+
+1. Critical: Gateway target architecture is internally contradictory, so implementation could head in two incompatible directions.
+Evidence: requirements.md:109 says cloud continues existing KIC/Helm Kong, while plan.md:85, plan.md:128, and plan.md:190 define DB-less Kong everywhere with one kong.yml as source of truth.
+Risk: Teams can build different gateway models and both claim compliance with docs.
+Recommendation: Pick one canonical cloud gateway model for Phase 2 and add an explicit migration path section (state transition, rollback, and ownership).
+
+2. High: Cloud isolation model for the legacy emulator is inconsistent across docs.
+Evidence: requirements.md:115 specifies NetworkPolicy enforcement in cloud, but plan.md:124 specifies Cloud Run internal ingress + IAM as the control plane.
+Risk: Security controls and deployment artifacts will diverge (Kubernetes policy vs Cloud Run IAM model).
+Recommendation: Split requirements into “if GKE” and “if Cloud Run” controls, or lock one compute target. Or just clarify where GKE will be used and where Cloud Run will be used very, very clearly and justify.
+
+3. High: “Committed local-only dev key” is a security bad practice, even for prototype docs.
+Evidence: requirements.md:108, plan.md:79.
+Risk: Secret leakage, scanner noise, accidental reuse beyond local, and normalization of insecure patterns.
+Recommendation: Replace with generated-at-startup dev credentials (scripted bootstrap) and keep secrets out of git.
+
+4. Medium: Local-first scope is clear, but the plan still embeds substantial cloud implementation detail that can blur execution focus or dissappoint stakeholders.
+Evidence: requirements.md:169 says cloud deployment is out of scope now, while plan.md:111 and plan.md:177 provide deep cloud design and a full cloud milestone.
+Risk: Scope mismatch and underestimation during “planning-only” phase.
+Recommendation: Be very clear what cloud related work, including stubbing and testing, will be done in each milestone. For an actual deliverable, highlight the full cloud deployment and testing to a separate milestone , perhaps sometime after M7.
+
+5. Medium: Deterministic adjudication behavior is underspecified at the contract level.
+Evidence: Rules/pipeline are described, but no canonical request/response schema, error taxonomy, or rule-precedence conflict resolution in requirements.md:25, requirements.md:54, and plan.md:49.
+Risk: Different implementations can produce different outcomes for the same claim.
+Recommendation: Add a “Decision Contract” section with precedence matrix, deterministic tie-break rules, and example payloads.
+
+6. Medium: Audit trail requirements are strong conceptually but missing explicit referential invariants.
+Evidence: Resource list in requirements.md:63 and provenance statement in requirements.md:118 do not define mandatory links among Claim, ClaimResponse, Task, RiskAssessment, Provenance.
+Risk: Partial traceability and hard-to-audit chains in demos and later productionization.
+Recommendation: Specify minimum linkage rules (for example: one decision id per adjudication, mandatory references, and idempotency behavior). Idempotency is important wherever it applies, by the way whether in requirements or design. Check that thoroughly because I did not.
+
+7. Low: Archived PRD includes command patterns likely to mislead if copied directly.
+Evidence: source-prd.md:353 through source-prd.md:371 mixes gateway key setup language but uses Authorization Bearer in examples.
+Risk: Reader confusion during manual validation.
+Recommendation: Add a short “archived, not executable as-is” warning block near command sections or a pointer to authoritative runbooks.
+
+8. Critical: Test strategy is present but not complete enough for deterministic adjudication confidence.
+Evidence: plan.md:176 says “per-service tests” but does not define contract tests, golden fixtures governance, or replay/idempotency checks.
+Risk: Regression detection gaps when rule catalog expands.
+Recommendation: Add a minimum test matrix: API contract tests, rules golden tests, end-to-end golden paths, and non-regression snapshot tests.
+
+One more point: I know the source-prd.md is intentionally archival and non-normative, but it still needs stronger “do not execute directly, has been replaced by other requirements documents” guidance to avoid misuse.
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 79 tool events</summary>
 
@@ -1669,6 +1721,6 @@ git l…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 13 July 2026, 23:43 UTC
-- **Turns:** 11
-- **Status:** Complete
+- **Last updated:** 14 July 2026, 00:03 UTC
+- **Turns:** 12
+- **Status:** Incomplete
