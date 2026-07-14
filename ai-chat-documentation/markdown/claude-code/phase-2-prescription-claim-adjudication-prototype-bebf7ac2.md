@@ -3337,8 +3337,10 @@ All edits done. Let me verify the entire `docs/phase2/` is now free of role/inte
 
 One left — and it's the same trap you flagged earlier: my banner note *says* what was removed, reintroducing the concept. Fixing it:
 
+Fully clean and pushed. Let me record this as a standing preference so it never recurs, then summarize.
+
 <details>
-<summary>Execution details — 196 tool events</summary>
+<summary>Execution details — 198 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3798,6 +3800,8 @@ grep -rniE 'target role|lead director|lead-director|interview|the candidate|for 
 - **Bash** `cd /workspaces/fhir-agent
 echo "=== final scan (should be fully clean) ==="
 grep -rniE 'target role|lead director|lead-director|interview|the candidate|for interview|job description|hiring|janmeet|\br…`
+- **Write** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/no-role-interview-content-in-repo.md`
+- **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/MEMORY.md`
 
 </details>
 
