@@ -3165,10 +3165,12 @@ Sources: [CMS Exchange PUFs](https://www.cms.gov/marketplace/resources/data/publ
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+ACA sources fully verified — the QHP machine-readable chain gives us real per-drug **tier/PA/step-therapy/quantity-limit keyed by RxNorm**, exactly matching our engine. Let me switch to the data branch and pull small real samples.
+
+MR-URL PUF is real (346 issuers). Now hops 2–3 — fetch an issuer index and range-sample its formulary:
 
 <details>
-<summary>Execution details — 135 tool events</summary>
+<summary>Execution details — 137 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3502,6 +3504,18 @@ Second round of documentation refinements (post-…`
 gh pr create --base main --head feature/phase2-docs-refinements \
   --title "docs(phase2): strangler snapshot, engineering standards, delivery strategy, ACA payer grounding"…`
 
+### Turn 46 activity
+
+- **Bash** `cd /workspaces/fhir-agent
+git switch dataeng/phase2-prework 2>&1 | tail -1
+mkdir -p data/reference/aca-commercial
+cd data/reference/aca-commercial
+echo "=== Hop 1: MR-URL PUF (tiny, pull whole) ==="
+c…`
+- **Bash** `cd /workspaces/fhir-agent/data/reference/aca-commercial
+echo "=== Hop 2: issuer index.json (Premera/FormularyNavigator) ==="
+curl -s --max-time 45 "https://fm.formularynavigator.com/jsonFiles/publish/…`
+
 </details>
 
 ---
@@ -3511,6 +3525,6 @@ gh pr create --base main --head feature/phase2-docs-refinements \
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 15:01 UTC
+- **Last updated:** 14 July 2026, 15:02 UTC
 - **Turns:** 46
 - **Status:** Incomplete
