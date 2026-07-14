@@ -1563,10 +1563,55 @@ On #4, there was a misunderstanding. I want even more focus on cloud, and if pos
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Both are good refinements. Let me address #2 first (reassurance + a reframe), then #4 (you've flipped the ask — I want to make sure I intensify in the direction you actually mean).
+
+## On #2 — you will NOT rework Phase 1. My "fallback" wording caused this; let me fix the framing.
+
+The worry is well-placed *given how I phrased it*, but the actual design has **zero Phase 1 rework**. "Cloud Run canonical" was never meant as "rip out GKE." Here's the real shape:
+
+- **Phase 1 stays exactly as it is on GKE** — `deploy.sh`, the KIC/Helm Kong, and the HAPI `fhir-service` Deployment are untouched. That's the whole isolation principle, and it's what `phase1-v1` protects.
+- **Cloud Run is purely additive for the *new* Phase 2 services** (`claims-service`, `rxclaim-emulator`, `claims-agent`). Nothing existing moves.
+- Key fact that dissolves most of the worry: **`triage` and `mcp-agent` are not in the cloud today at all.** `deploy.sh` only deploys Kong + `fhir-service`; triage/agent are local-compose-only. So putting `triage` on Cloud Run for Phase 2 is **greenfield, not a migration.**
+- **HAPI stays on GKE** (always-on, per C1's cold-start reasoning) — no change.
+
+So the correct model isn't "Cloud Run vs GKE" (which implied migrating Phase 1). It's a deliberate **hybrid, split by phase/component**:
+
+| Plane | Runs on | Rework? |
+|---|---|---|
+| Phase 1: KIC Kong + HAPI | **GKE (as today)** | none |
+| Phase 2: claims-service, rxclaim-emulator, claims-agent, triage-in-cloud | **Cloud Run (new)** | greenfield |
+
+And this **also resolves your point-2 inconsistency cleanly, without a dual control model:** each component uses its *own platform's* native control — GKE workloads (Phase 1) keep GKE controls; Cloud Run workloads (Phase 2) use `ingress=internal` + IAM. NetworkPolicy simply doesn't apply to the emulator because the emulator runs on Cloud Run, not GKE. There's no component with two competing control models — the docs just need to say "controls follow the platform each component runs on," and stop asserting NetworkPolicy for a Cloud Run service.
+
+The **one genuine cross-phase artifact is the gateway**: during transition you'd have KIC Kong (Phase 1, `/fhir`) *and* DB-less Kong (Phase 2). That's the gateway-strangler I described in point 1 — Phase 1's Kong keeps working untouched; a later, reversible step folds `/fhir` onto the DB-less Kong only when you choose. So even the gateway involves no *forced* Phase 1 rework.
+
+Net: I'd rewrite the docs to say **"hybrid: GKE for Phase 1 (untouched) + Cloud Run for Phase 2 (new)"** instead of "canonical/fallback." Does that fully address the rework concern? If so, I'll drop the "GKE fallback" framing entirely.
+
+## On #4 — understood, you want MORE cloud, pulled earlier. This reverses D8, so let me pin the intensity precisely.
+
+Two things to flag before I expand:
+
+1. **This changes decision D8** ("Phase 2 is local-first; cloud deferred"). Intensifying cloud and pulling stubs/tests earlier means cloud becomes a **first-class thread through every milestone**, not a back-loaded M8. That's fine and compatible with Phase 1 independence (still additive) — but D8 needs to be rewritten, and I want to be explicit that we're doing that.
+
+2. **"Intensify cloud" spans a wide cost/complexity range**, and you invited me to push on where you might be vacillating — this is exactly that spot. There's a big difference between *designing/stubbing/testing* cloud continuously versus *actually deploying live* to GCP from early milestones (real spend, secrets, CI-to-cloud, teardown discipline). I don't want to guess.
+
+Here's the concrete shape I'd propose regardless of intensity — cloud woven through each milestone:
+- Every service ships its **Terraform + Cloud Run config** from *its own* milestone (not M8).
+- **Cloud contract + smoke tests** per service run in CI from M2 onward.
+- The **C3 repository seam** is tested against Postgres *and* a NoSQL emulator early, proving the scale-swap.
+- **OpenTelemetry tracing + health/readiness** wired from M3, not retrofitted.
+- A **stakeholder × milestone deliverables matrix** so each audience knows what they get when. Illustrative sliver:
+
+| After… | Exec/Business | Solution Architect | Developer | Security/Compliance | SRE/Platform |
+|---|---|---|---|---|---|
+| **M2** | "legacy core is wrapped" narrative | ACL boundary + emulator contract | emulator API + golden fixtures | injection-safe queries reviewed | Terraform module + Cloud Run stub deploys in CI |
+| **M4** | first adjudicated claim demo | decision contract + trace of one claim | ClaimResponse schema + rules golden tests | PHI-safe logging verified | OTel traces in Cloud Trace; smoke test green |
+| **M7** | full local demo, all golden paths | end-to-end architecture proof | full test matrix passing | audit-chain + idempotency evidence | preview-env deploy runbook |
+
+To fill that in properly, I need two calls from you:
 
 <details>
-<summary>Execution details — 80 tool events</summary>
+<summary>Execution details — 81 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1791,6 +1836,10 @@ git switch feature/phase2-planning >/dev/null 2>&1
 echo "=== R10 cloud bullet vs C2 (point 1) ==="
 grep -n "KIC/Helm\|DB-less Kong everywhere\|one .kong.yml\|source of truth\…`
 
+### Turn 13 activity
+
+- **AskUserQuestion** `{"questions": [{"question": "How intense should the cloud focus actually be through the milestones? (This resets D8 'cloud-deferred'.)", "header": "Cloud intensity", "multiSelect": false, "options": […`
+
 </details>
 
 ---
@@ -1800,6 +1849,6 @@ grep -n "KIC/Helm\|DB-less Kong everywhere\|one .kong.yml\|source of truth\…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 00:15 UTC
+- **Last updated:** 14 July 2026, 00:17 UTC
 - **Turns:** 13
-- **Status:** Incomplete
+- **Status:** Complete
