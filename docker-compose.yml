@@ -142,3 +142,39 @@ services:
         condition: service_healthy
     stdin_open: true
     tty: true
+
+  # ══ Gateway (opt-in: `docker compose --profile phase2 --profile gateway up`) ═
+  # DB-less Kong edge gateway (decision C2). Fronts /claims, /fhir, /triage with key-auth.
+  # A dev apikey is GENERATED at startup and printed to the logs (never committed):
+  #   docker compose logs kong | grep 'DEV APIKEY'
+  # Then call the gated edge, e.g.:  curl -H "apikey: <key>" http://localhost:8000/fhir/metadata
+  kong:
+    image: kong:3.7
+    container_name: fhir-agent-kong
+    profiles: ["gateway"]
+    ports:
+      - "8000:8000"          # proxy (matches the cloud port-forward convention)
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /tmp/kong.yml
+      KONG_ADMIN_LISTEN: "off"
+      KONG_PROXY_LISTEN: "0.0.0.0:8000"
+    volumes:
+      - ./gateway/kong/kong.tmpl.yml:/kong/kong.tmpl.yml:ro
+    # Generate a key, render the declarative config, print the key, then start Kong.
+    # ($$ escapes $ for the container shell; compose would otherwise interpolate it.)
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        KEY=$$(cat /proc/sys/kernel/random/uuid | tr -d '-')
+        sed "s/__DEV_KEY__/$$KEY/" /kong/kong.tmpl.yml > /tmp/kong.yml
+        echo "[kong] DEV APIKEY: $$KEY"
+        exec /docker-entrypoint.sh kong docker-start
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 15s
