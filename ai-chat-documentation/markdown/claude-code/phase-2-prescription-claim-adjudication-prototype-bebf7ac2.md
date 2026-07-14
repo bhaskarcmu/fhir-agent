@@ -1654,8 +1654,18 @@ Executing the full manifest now. Let me re-read the current state of both docs s
 
 Now applying the manifest. Starting with `requirements.md` — R10 (gateway reconcile + generated dev key), R11 (platform-follows-controls):
 
+Now insert R17 (Decision Contract), R18 (Audit invariants + idempotency), R19 (Test matrix) after R16:
+
+Now update the out-of-scope cloud bullet and rewrite D8 in the deviations table:
+
+requirements.md done. Now plan.md — let me read the full current file to edit precisely.
+
+Now let me read §3–§6 of plan.md to update the gateway/cloud/milestones sections:
+
+Updating §3 (placement, dev key, gateway-strangler) and §5 (hybrid framing, remove "fallback"/"deferred"):
+
 <details>
-<summary>Execution details — 85 tool events</summary>
+<summary>Execution details — 93 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1893,6 +1903,14 @@ echo "=== plan.md line count ==="; wc -l docs/phase…`
 - **Read** `/workspaces/fhir-agent/docs/phase2/requirements.md`
 - **Read** `/workspaces/fhir-agent/docs/phase2/requirements.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase2/requirements.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/requirements.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/requirements.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/requirements.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/requirements.md`
+- **Read** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Read** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
 
 </details>
 
@@ -1903,6 +1921,6 @@ echo "=== plan.md line count ==="; wc -l docs/phase…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 00:25 UTC
+- **Last updated:** 14 July 2026, 00:27 UTC
 - **Turns:** 14
 - **Status:** Complete
