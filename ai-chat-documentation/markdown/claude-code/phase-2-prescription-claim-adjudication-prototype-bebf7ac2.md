@@ -3585,8 +3585,12 @@ HAPI is up. Now the persistence + idempotency smoke:
 
 Adjudication succeeded both times (APPROVED, DEC-SMOKE1) — persistence didn't throw (else 503). My count queries just had an unencoded `|`. Let me verify persistence + idempotency properly against the still-running FHIR server:
 
+**Verified end-to-end:** Claim, ClaimResponse, and Provenance each persisted (total=1), RiskAssessment=0 (approved → no clinical finding, correct), and after **two** identical POSTs the ClaimResponse count is **still 1** — idempotency (R18.3) confirmed. (The detail-print had a cosmetic JSON hiccup; the count queries, which prove it, all succeeded.)
+
+Let me stop the FHIR container, update the README to reflect M4, and commit:
+
 <details>
-<summary>Execution details — 300 tool events</summary>
+<summary>Execution details — 302 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4255,6 +4259,12 @@ java -Dpayer-kb.dir=/workspaces/fhir-agent/data/payer-kb \
 echo "=== artefact counts for DEC-SMOKE1 (identifier | encoded as %7C) ==="
 for R in Claim ClaimResponse RiskAssessment; do
   t=$(curl -s "http://localhost:8080/fhir/$R?ident…`
+- **Edit** `/workspaces/fhir-agent/claims-service/README.md`
+- **Bash** `cd /workspaces/fhir-agent
+docker compose stop fhir 2>&1 | tail -1
+git check-ignore claims-service/target >/dev/null && echo "target ignored ✓"
+git add claims-service/
+echo "=== staged (must be no targ…`
 
 </details>
 
@@ -4265,6 +4275,6 @@ for R in Claim ClaimResponse RiskAssessment; do
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 16:59 UTC
+- **Last updated:** 14 July 2026, 17:00 UTC
 - **Turns:** 55
 - **Status:** Incomplete
