@@ -1668,8 +1668,10 @@ I duplicated the Gotchas block. Let me check and remove the stray one.
 
 Now update §5 (hybrid framing, remove "deferred"/"fallback") and the §4 cloud-deploy isolation row:
 
+Now let me read the milestones (§6) through the end to update them and append the new normative sections:
+
 <details>
-<summary>Execution details — 98 tool events</summary>
+<summary>Execution details — 102 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1921,6 +1923,10 @@ grep -n "### Gotchas\|## 4. Isolation" docs/phase2/plan.md`
 - **Read** `/workspaces/fhir-agent/docs/phase2/plan.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Read** `/workspaces/fhir-agent/docs/phase2/plan.md`
 
 </details>
 
