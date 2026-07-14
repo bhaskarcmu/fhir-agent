@@ -3631,8 +3631,14 @@ The deterministic explanation renderer (§9.4-style; the no-LLM fallback and the
 
 Now the tool layer — the client to the claims façade and the Anthropic tool definition:
 
+Now the agent orchestrator (tool-use loop + deterministic fallback + CLI):
+
+Adding the module entrypoint and tests:
+
+Installing the package and running the tests:
+
 <details>
-<summary>Execution details — 311 tool events</summary>
+<summary>Execution details — 316 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4331,6 +4337,13 @@ echo "created package dirs"`
 - **Write** `/workspaces/fhir-agent/claims-agent/src/claims_agent/format.py`
 - **Write** `/workspaces/fhir-agent/claims-agent/src/claims_agent/explain.py`
 - **Write** `/workspaces/fhir-agent/claims-agent/src/claims_agent/tools.py`
+- **Write** `/workspaces/fhir-agent/claims-agent/src/claims_agent/agent.py`
+- **Write** `/workspaces/fhir-agent/claims-agent/src/claims_agent/__main__.py`
+- **Write** `/workspaces/fhir-agent/claims-agent/tests/test_explain.py`
+- **Write** `/workspaces/fhir-agent/claims-agent/tests/test_tools.py`
+- **Bash** `cd /workspaces/fhir-agent
+python -m pip install -e "claims-agent[dev]" -q 2>&1 | tail -3
+python -m pytest claims-agent/tests -q 2>&1 | tail -15`
 
 </details>
 
@@ -4341,6 +4354,6 @@ echo "created package dirs"`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 17:07 UTC
+- **Last updated:** 14 July 2026, 17:09 UTC
 - **Turns:** 56
 - **Status:** Incomplete
