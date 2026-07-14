@@ -3369,8 +3369,12 @@ PR #25 merged. Let me delete that merged branch, then set up M1.
 
 Merged into `main` (`c775d14`), and `source-prd.md` on `main` is now clean (0 references). Deleting the merged branch:
 
+Branch deleted. Now **M1 — build the payer knowledge base.** I'll base it on `dataeng/phase2-prework` (which holds the reference catalog + samples + fetch scripts) and bring `main` current into it, so the eventual M1 PR is a clean, self-contained data contribution.
+
+M1 branch ready with both prework and docs. Let me build the payer-KB. First, generate a real **NDC↔RxCUI crosswalk** from RxNav (grounds the formulary). Let me check the drug list I have:
+
 <details>
-<summary>Execution details — 200 tool events</summary>
+<summary>Execution details — 202 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3843,6 +3847,14 @@ echo "=== is feature/phase2-docs-refinements merged into main…`
 git branch -d feature/phase2-docs-refinements
 git push origin --delete feature/phase2-docs-refinements 2>&1 | tail -1
 echo "=== remaining branches ==="; git branch -a | grep…`
+- **Bash** `cd /workspaces/fhir-agent
+git switch dataeng/phase2-prework >/dev/null 2>&1
+git switch -c feature/phase2-m1-payer-kb 2>&1 | tail -1
+echo "=== merge current main into the M1 branch (bring docs current)…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== demo drugs (rxcui) available ==="; cat data/reference/rxnorm/rxnorm_drug_classes.csv
+echo; echo "=== RxNav NDC lookup smoke test (amoxicillin 723) ==="
+curl -s --ma…`
 
 </details>
 
@@ -3853,6 +3865,6 @@ echo "=== remaining branches ==="; git branch -a | grep…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 15:37 UTC
+- **Last updated:** 14 July 2026, 15:39 UTC
 - **Turns:** 51
 - **Status:** Incomplete
