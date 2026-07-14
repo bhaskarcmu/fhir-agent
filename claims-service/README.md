@@ -42,12 +42,23 @@ java -Dpayer-kb.dir=/abs/path/to/data/payer-kb \
 `payer-kb.dir` must resolve to the repo's `data/payer-kb` (default `../data/payer-kb` works when
 run from this module directory).
 
+## FHIR artefacts & idempotency (M4)
+On each adjudication the service persists an auditable **FHIR R4 artefact graph** to the
+platform FHIR server as one **transaction bundle** (`fhir/FhirArtifactBuilder`): `Claim`,
+`ClaimResponse` (`request` → Claim), `Task` (when routed), `Provenance` (`target` → all), and
+`RiskAssessment` (on a clinical finding). One `decisionId` is stamped on every resource
+(identifier + `meta.tag`), giving the R18.2 mandatory links.
+
+Idempotency (R18): each entry is a conditional create (`ifNoneExist=_tag=…|decisionId`) and the
+bundle is atomic, so a retry never duplicates or half-writes the graph; an intake check
+(`existingDecision`) returns the prior decision instead of re-adjudicating. A FHIR outage
+surfaces as **503** (retry-safe — nothing is half-persisted, R17.6). `fhir.base-url` configures
+the server.
+
 ## Scope
-M3 delivers the deterministic decisioning core (façade + ACL + rules + Decision Contract +
-resilient clients). **Deferred to M4:** emitting the FHIR artefact graph
-(Claim/ClaimResponse/Task/Provenance/RiskAssessment) + idempotency persistence (R18), and
-member→FHIR-patient resolution for triage. **M6** wires it into compose/gateway with the real
-emulator + triage.
+M3+M4 deliver the deterministic decisioning core **and** the persisted, idempotent FHIR
+artefact graph. **Deferred:** member→FHIR-patient resolution for triage, and a BigQuery audit
+plane (C4). **M6** wires it into compose/gateway with the real emulator + triage.
 
 ## Cloud (design/stub — Phase 2b)
 `Dockerfile` + `infra/main.tf` Cloud Run stub — edge-facing (behind Kong), the only caller of

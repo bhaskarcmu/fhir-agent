@@ -16,6 +16,10 @@ rxclaim:
 triage:
   base-url: http://localhost:8001
 
+# Platform FHIR server (HAPI) — persists the decision artefact graph.
+fhir:
+  base-url: http://localhost:8080/fhir
+
 management:
   endpoints:
     web:
