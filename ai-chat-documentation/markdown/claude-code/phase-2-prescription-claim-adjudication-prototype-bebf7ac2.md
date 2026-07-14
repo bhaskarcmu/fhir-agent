@@ -3339,6 +3339,22 @@ One left — and it's the same trap you flagged earlier: my banner note *says* w
 
 Fully clean and pushed. Let me record this as a standing preference so it never recurs, then summarize.
 
+Done — everything role/interview-related is out of GitHub, and I've recorded it as a standing rule.
+
+## What I removed
+- **PR #25 body** — reworded, no role/interview language.
+- **PR #25 commit history** — the old commit messages named "role/interview-specific"; I squashed to a clean commit and force-pushed, so the branch history is clean.
+- **Doc content** — fixed the stray "interview narrative" (plan §13/M7) and, per your #2 choice, **genericized `source-prd.md`**: "target role / Lead Director / interview" framing → generic *enterprise claims-adjudication modernization* rationale (§1, §3.1, §4, §6, §7, §8, §12), banner updated to note it's lightly edited (no longer verbatim). All technical, data, architecture, and regulatory content preserved.
+- Even fixed my own banner note that *described* the removal (same trap you flagged).
+
+**Verified:** `docs/phase2/` is now fully free of role/interview/job/employer references (only the platform concept "Adjudication as a Service" remains, which is a legitimate architecture vision, not a role reference). `main` commit history was already clean.
+
+## State
+- **PR [#25](https://github.com/bhaskarcmu/fhir-agent/pull/25)** now carries the refinements + the genericization (`32fd66d`). When it merges, `main`'s `source-prd.md` becomes clean too.
+- Saved a **standing preference** to memory: *no interview/job-role/employer content in the repo, commits, or PR text — ever; interview prep stays in chat only.*
+
+Going forward I'll keep all of that strictly in our conversation. Ready for **M1** whenever you are, or anything else first?
+
 <details>
 <summary>Execution details — 198 tool events</summary>
 
@@ -3812,6 +3828,6 @@ grep -rniE 'target role|lead director|lead-director|interview|the candidate|for 
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 15:33 UTC
+- **Last updated:** 14 July 2026, 15:34 UTC
 - **Turns:** 50
 - **Status:** Incomplete
