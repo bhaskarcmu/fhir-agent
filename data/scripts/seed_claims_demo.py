@@ -19,11 +19,16 @@ from __future__ import annotations
 
 import os
 import sys
+import time
 
 import httpx
 
 CLAIMS_URL = os.environ.get("CLAIMS_GATEWAY_URL", "http://localhost:8090").rstrip("/")
 API_KEY = os.environ.get("CLAIMS_API_KEY", "")
+# FHIR server — used only to seed the clinical-safety demo patient (member 000000009).
+FHIR_BASE = os.environ.get("FHIR_GATEWAY_URL", "http://localhost:8080/fhir").rstrip("/")
+FHIR_API_KEY = os.environ.get("FHIR_API_KEY", "")
+SAFETY_MEMBER = "000000009"
 
 _ACTIVE = {"coverageEffective": "2026-01-01", "coverageTermination": "2026-12-31"}
 _INACTIVE = {"coverageEffective": "2025-01-01", "coverageTermination": "2026-01-31"}
@@ -55,7 +60,64 @@ CLAIMS = [
     ("DENIED    — non-formulary + quantity (multi-reason)", _claim(
         claimId="DEMO-MULTI", planId="EMP-PPO", rxcui="1991302", ndc="63552-200",
         drugName="semaglutide", quantity=8)),
+    ("DENIED    — clinical safety (penicillin allergy + amoxicillin)", _claim(
+        claimId="DEMO-SAFETY", memberId=SAFETY_MEMBER, planId="COM-SILVER", rxcui="723",
+        ndc="0093-8675", drugName="amoxicillin", quantity=30)),
 ]
+
+
+def _fhir_headers() -> dict:
+    h = {"Content-Type": "application/fhir+json"}
+    if FHIR_API_KEY:
+        h["apikey"] = FHIR_API_KEY
+    return h
+
+
+def seed_safety_patient(client: httpx.Client) -> None:
+    """Seed member 000000009 as a FHIR patient with a penicillin allergy + amoxicillin med,
+    so the reused triage service flags the drug-allergy conflict (→ HIGH → clinical DENY).
+
+    Uses PUT with fixed logical ids (idempotent upsert): the Patient's logical id IS the member
+    id, so claims-service resolves it with a consistent READ (no search-index race)."""
+    pid = f"member-{SAFETY_MEMBER}"   # non-numeric logical id (HAPI requires this for PUT)
+
+    def put(rt, rid, body):
+        r = client.put(f"{FHIR_BASE}/{rt}/{rid}", json={**body, "id": rid},
+                       headers=_fhir_headers())
+        r.raise_for_status()
+
+    put("Patient", pid, {
+        "resourceType": "Patient", "identifier": [{"value": SAFETY_MEMBER}],
+        "name": [{"family": "Mraz", "given": ["Kristle"]}],
+        "gender": "female", "birthDate": "1985-04-12"})
+    put("AllergyIntolerance", f"pcn-{pid}", {
+        "resourceType": "AllergyIntolerance", "patient": {"reference": f"Patient/{pid}"},
+        "criticality": "high", "category": ["medication"],
+        "clinicalStatus": {"coding": [{
+            "system": "http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical",
+            "code": "active"}]},
+        "code": {"coding": [{"system": "http://snomed.info/sct",
+                             "code": "764146007", "display": "Penicillin"}]}})
+    put("MedicationRequest", f"amox-{pid}", {
+        "resourceType": "MedicationRequest", "status": "active", "intent": "order",
+        "subject": {"reference": f"Patient/{pid}"},
+        "medicationCodeableConcept": {"coding": [{
+            "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+            "code": "723", "display": "amoxicillin"}]}})
+
+    # Wait until triage's own inputs (the patient's active meds + allergies) are indexed,
+    # so the very first adjudication sees the conflict.
+    def _count(q):
+        return client.get(f"{FHIR_BASE}/{q}", headers=_fhir_headers()).json().get("total") or 0
+    med = alg = 0
+    for _ in range(30):
+        med = _count(f"MedicationRequest?patient={pid}&status=active&_summary=count")
+        alg = _count(f"AllergyIntolerance?patient={pid}&_summary=count")
+        if med and alg:
+            break
+        time.sleep(0.5)
+    print(f"seeded clinical-safety patient (Patient/{pid}); triage inputs indexed "
+          f"(meds={med}, allergies={alg})")
 
 
 def main() -> int:
@@ -63,9 +125,13 @@ def main() -> int:
     if API_KEY:
         headers["apikey"] = API_KEY
 
-    print(f"Submitting {len(CLAIMS)} demo claims to {CLAIMS_URL}\n" + "─" * 72)
     failures = 0
     with httpx.Client(timeout=30) as client:
+        try:
+            seed_safety_patient(client)
+        except httpx.HTTPError as e:
+            print(f"(could not seed safety patient: {e} — that path will show LOW risk)")
+        print(f"Submitting {len(CLAIMS)} demo claims to {CLAIMS_URL}\n" + "─" * 72)
         for label, claim in CLAIMS:
             try:
                 r = client.post(f"{CLAIMS_URL}/claims/adjudicate", json=claim, headers=headers)

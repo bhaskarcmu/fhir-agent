@@ -32,9 +32,16 @@ class AdjudicationPipelineTest {
 
     private AdjudicationPipeline pipeline(FormularyEntry formulary, RiskLevel risk) {
         PayerKb kb = (planId, rxcui) -> Optional.ofNullable(formulary);
-        TriageClient triage = claim -> risk;
+        TriageClient triage = (claim, patientId) -> risk;
         LegacyClient legacy = record -> PAID_RESPONSE;
-        return new AdjudicationPipeline(kb, rules, triage, legacy, acl);
+        return new AdjudicationPipeline(kb, rules, triage, legacy, acl, new StubFhir());
+    }
+
+    /** Minimal FHIR stub: resolves a member to a patient id; other ops unused here. */
+    private static final class StubFhir implements com.payer.claims.fhir.FhirClient {
+        public void submit(org.hl7.fhir.r4.model.Bundle tx) { }
+        public Optional<AdjudicationDecision> existingDecision(String id) { return Optional.empty(); }
+        public Optional<String> resolvePatientId(String memberId) { return Optional.of("P1"); }
     }
 
     private static CanonicalClaim claim(String rxcui, int qty, LocalDate dos, boolean paOnFile) {

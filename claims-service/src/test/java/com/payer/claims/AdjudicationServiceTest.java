@@ -40,6 +40,9 @@ class AdjudicationServiceTest {
                             List.of(), List.of(), null))
                     : Optional.empty();
         }
+        @Override public Optional<String> resolvePatientId(String memberId) {
+            return Optional.empty();
+        }
     }
 
     private static CanonicalClaim claim() {
@@ -53,10 +56,9 @@ class AdjudicationServiceTest {
         FormularyEntry covered = new FormularyEntry("COM-SILVER", "29046", "lisinopril",
                 "PREFERRED-GENERIC", false, false, false, null, true);
         PayerKb kb = (planId, rxcui) -> Optional.of(covered);
-        AdjudicationPipeline pipeline = new AdjudicationPipeline(
-                kb, new RulesEngine(), c -> RiskLevel.LOW, record -> PAID, new LegacyAdapter());
-
         FakeFhir fhir = new FakeFhir();
+        AdjudicationPipeline pipeline = new AdjudicationPipeline(
+                kb, new RulesEngine(), (c, p) -> RiskLevel.LOW, record -> PAID, new LegacyAdapter(), fhir);
         AdjudicationService service =
                 new AdjudicationService(pipeline, new FhirArtifactBuilder(), fhir);
 

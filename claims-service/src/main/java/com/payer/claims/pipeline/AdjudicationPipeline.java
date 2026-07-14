@@ -34,19 +34,24 @@ public class AdjudicationPipeline {
     private final TriageClient triage;
     private final LegacyClient legacy;
     private final LegacyAdapter acl;
+    private final com.payer.claims.fhir.FhirClient fhir;
 
     public AdjudicationPipeline(PayerKb payerKb, RulesEngine rules, TriageClient triage,
-                                LegacyClient legacy, LegacyAdapter acl) {
+                                LegacyClient legacy, LegacyAdapter acl,
+                                com.payer.claims.fhir.FhirClient fhir) {
         this.payerKb = payerKb;
         this.rules = rules;
         this.triage = triage;
         this.legacy = legacy;
         this.acl = acl;
+        this.fhir = fhir;
     }
 
     public AdjudicationDecision adjudicate(CanonicalClaim claim) {
         FormularyEntry formulary = payerKb.formularyEntry(claim.planId(), claim.rxcui()).orElse(null);
-        RiskLevel risk = triage.assess(claim);                       // clinical safety (reused)
+        // Resolve the member to a FHIR Patient so triage can read allergies/meds (else LOW).
+        String patientId = fhir.resolvePatientId(claim.memberId()).orElse(null);
+        RiskLevel risk = triage.assess(claim, patientId);            // clinical safety (reused)
         RulesEngine.Resolution res = rules.evaluate(claim, formulary, risk);
 
         LegacyPricing pricing = null;
