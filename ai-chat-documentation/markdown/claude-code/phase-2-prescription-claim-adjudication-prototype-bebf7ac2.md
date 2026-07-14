@@ -2961,8 +2961,12 @@ On the docs branch. Let me read §5 to insert the strangler-snapshot (#1) and re
 
 Inserting the modernization-state strangler snapshot (#1) after C1:
 
+Now the reliability & scale patterns (#4) after C3:
+
+Now append the Engineering Standards (#3) and Delivery & PR strategy (#2) sections. Let me see the end of plan.md:
+
 <details>
-<summary>Execution details — 125 tool events</summary>
+<summary>Execution details — 127 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3276,6 +3280,8 @@ git switch -c feature/phase2-docs-refinements 2>&1 | tail -1
 echo "on: $(git rev-parse --abbrev-ref HEAD)…`
 - **Read** `/workspaces/fhir-agent/docs/phase2/plan.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Read** `/workspaces/fhir-agent/docs/phase2/plan.md`
 
 </details>
 
@@ -3286,6 +3292,6 @@ echo "on: $(git rev-parse --abbrev-ref HEAD)…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 14:58 UTC
+- **Last updated:** 14 July 2026, 14:59 UTC
 - **Turns:** 45
 - **Status:** Incomplete
