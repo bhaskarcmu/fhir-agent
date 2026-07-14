@@ -3529,8 +3529,10 @@ The runtime smoke caught a DI bug the unit tests couldn't: `FilePayerKb` has two
 
 Verified end-to-end through the real façade — **APPROVED** (lisinopril), **PENDED** (semaglutide PA), **DENIED** (non-formulary) — with the payer-KB loaded from disk and graceful degradation when triage/legacy are down. The runtime smoke caught a DI bug the unit tests couldn't. Now the Dockerfile, infra stub, and README to round out M3:
 
+Committing M3. Verifying `target/` is excluded, then commit + push + PR:
+
 <details>
-<summary>Execution details — 282 tool events</summary>
+<summary>Execution details — 284 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4158,6 +4160,12 @@ java -Dpayer-kb.dir=/workspaces/fhir-agent/data/payer-kb \
      -jar claims-service/target/claims-service-…`
 - **Write** `/workspaces/fhir-agent/claims-service/Dockerfile`
 - **Write** `/workspaces/fhir-agent/claims-service/infra/main.tf`
+- **Write** `/workspaces/fhir-agent/claims-service/README.md`
+- **Bash** `cd /workspaces/fhir-agent
+git check-ignore claims-service/target >/dev/null && echo "target/ ignored ✓"
+git add claims-service/
+echo "=== staged count ==="; git diff --cached --name-only | wc -l
+echo…`
 
 </details>
 
@@ -4168,6 +4176,6 @@ java -Dpayer-kb.dir=/workspaces/fhir-agent/data/payer-kb \
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 16:44 UTC
+- **Last updated:** 14 July 2026, 16:45 UTC
 - **Turns:** 54
 - **Status:** Incomplete
