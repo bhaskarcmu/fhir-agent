@@ -3189,6 +3189,28 @@ Only small curated files staged (largest 12K); the raw `.xlsx` is correctly giti
 
 Both scripts syntax-check and the memory note should reflect the new state. Let me verify the scripts and update memory.
 
+Both parts of (c) are complete. Here's the wrap-up.
+
+## Documentation — PR [#25](https://github.com/bhaskarcmu/fhir-agent/pull/25) (docs-only, against `main`)
+Covered queued items **#1–#6 and #10**; **#9 omitted** (role/interview-specific — would date the project); **#7–#8 deferred** to the M1 PR.
+- **plan.md** — added the **modernization/strangler snapshot** (§5), **reliability & scale patterns** + explicit **relational-vs-NoSQL** rationale (§5), **Engineering standards** (§14), **Delivery & PR strategy** (§15); scrubbed an interview-specific phrase from §13.
+- **requirements.md** — **R13.1**: coverage grounded in **real public data for both Medicare *and* commercial** (ACA EHB + QHP formularies); engine stays payer-agnostic.
+- **README.md** — surfaces the new sections + Medicare-and-commercial grounding.
+
+## ACA data pull — data branch `dataeng/phase2-prework` (pushed, **no PR**)
+- Verified the full **ACA QHP machine-readable chain** live and pulled a **real commercial formulary sample** (3 records from a live 3,678-record issuer file) — per-drug **tier / PA / step-therapy / quantity-limit keyed by RxNorm + HIOS plan id**. Fittingly, the first sampled drug is **Amoxicillin/Clavulanate**, tying straight into our penicillin scenario.
+- Added a reproducible **`fetch_aca_formulary_sample.py`** (compiles clean).
+- Expanded `data/reference/README.md`: ACA/Marketplace-PUF/EHB/TiC/schema inventory rows, refined the "public disclosure vs. proprietary criteria" note, and a **full glossary** expanding every abbreviation (#6).
+- Raw `.xlsx`/large files gitignored; only tiny curated samples tracked (largest 12K).
+
+## Enhanced approach (the ACA upgrade)
+The prototype now grounds **both** payer types in **real, published data** — Medicare (CMS Part D) and commercial (ACA disclosure) — so the demo isn't Medicare-only, and it reinforces the payer-agnostic design (plan type = configuration). The proprietary line is clean: we model **structure**, not secret PA criteria/pricing.
+
+## State
+- Open: **PR #25** (docs). Data branch updated (`6c3e570`, no PR). `main` has #24. Memory updated.
+
+Next up per your plan: **M1** — build `data/payer-kb/` (schema + the 4 plan definitions grounded in these real Medicare + commercial samples, plus the NDC↔RxCUI crosswalk) as its own PR. Want me to start M1, or pause here?
+
 <details>
 <summary>Execution details — 155 tool events</summary>
 
