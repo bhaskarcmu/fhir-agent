@@ -3627,8 +3627,10 @@ Let me read the rest of the agent loop, tools, and format to mirror precisely:
 
 I have the conventions. Building `claims-agent` as a standalone package mirroring mcp-agent's idioms (Anthropic tool-use + `--query`), with a deterministic fallback so it runs/tests without an API key. Starting with packaging:
 
+The deterministic explanation renderer (§9.4-style; the no-LLM fallback and the LLM's grounding):
+
 <details>
-<summary>Execution details — 309 tool events</summary>
+<summary>Execution details — 310 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4325,6 +4327,7 @@ mkdir -p claims-agent/src/claims_agent claims-agent/tests
 touch claims-agent/src/claims_agent/__init__.py claims-agent/tests/__init__.py
 echo "created package dirs"`
 - **Write** `/workspaces/fhir-agent/claims-agent/src/claims_agent/format.py`
+- **Write** `/workspaces/fhir-agent/claims-agent/src/claims_agent/explain.py`
 
 </details>
 
@@ -4335,6 +4338,6 @@ echo "created package dirs"`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 17:06 UTC
+- **Last updated:** 14 July 2026, 17:07 UTC
 - **Turns:** 56
 - **Status:** Incomplete
