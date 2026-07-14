@@ -4027,8 +4027,12 @@ Member 000000009 got past resolution and hit triage, but still 422 — which mea
 
 Confirmed the source has the JSON string body and the jar is freshly built (19:03:30). The 19:00:45 run must have used a stale jar (the earlier non-clean `package` output was truncated, likely no repackage). Re-running the demo with the confirmed-fresh jar:
 
+Fresh jar, JSON string body, still 422. Legacy's string body works via the same RestClient (M6 priced $241.50), so this is specific to how RestClient's request factory talks to uvicorn/FastAPI. Rather than keep guessing at RestClient internals, I'll use the JDK's `java.net.http.HttpClient` for this one call — fully deterministic, exactly matching the curl that works:
+
+Now rewrite the constructor and the `assess` body to use the JDK HttpClient:
+
 <details>
-<summary>Execution details — 405 tool events</summary>
+<summary>Execution details — 407 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4968,6 +4972,8 @@ echo "---- jar built at:"; ls -la --time-style=+%H:%M:%S claims-service/target/c
 - **Bash** `cd /workspaces/fhir-agent
 FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose up -d fhir triage >/dev/null 2>&1
 for i in $(seq 1 40); do curl -s --max-time 3 http://localhost:8080/fhir/metadata 2>/d…`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/client/HttpTriageClient.java`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/client/HttpTriageClient.java`
 
 </details>
 
@@ -4978,6 +4984,6 @@ for i in $(seq 1 40); do curl -s --max-time 3 http://localhost:8080/fhir/metadat
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 19:05 UTC
+- **Last updated:** 14 July 2026, 19:06 UTC
 - **Turns:** 61
 - **Status:** Incomplete
