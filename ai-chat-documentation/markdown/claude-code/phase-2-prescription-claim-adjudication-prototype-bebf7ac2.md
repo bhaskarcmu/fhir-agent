@@ -3798,8 +3798,10 @@ Permissions on a bind-mounted key file across container UIDs are fragile, so I'l
 
 Appending the DB-less Kong service under the `gateway` profile (generates the key at startup, prints it to logs):
 
+Validating the compose config and the service sets:
+
 <details>
-<summary>Execution details — 352 tool events</summary>
+<summary>Execution details — 353 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4605,6 +4607,10 @@ rm -rf gateway/kong/.runtime
 echo "removed .runtime"`
 - **Edit** `/workspaces/fhir-agent/gateway/kong/kong.tmpl.yml`
 - **Edit** `/workspaces/fhir-agent/docker-compose.yml`
+- **Bash** `cd /workspaces/fhir-agent
+docker compose config -q 2>&1 && echo "VALID ✓" || echo "INVALID"
+echo "default:  $(docker compose config --services 2>/dev/null | sort | paste -sd' ' -)"
+echo "gateway:  $(d…`
 
 </details>
 
@@ -4615,6 +4621,6 @@ echo "removed .runtime"`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 18:19 UTC
+- **Last updated:** 14 July 2026, 18:20 UTC
 - **Turns:** 59
 - **Status:** Incomplete
