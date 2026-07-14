@@ -3438,8 +3438,10 @@ Now build and run the tests (first run downloads Spring Boot dependencies):
 
 `LegacyRecordTest` passed (3/3). The Spring context failed to load — I need the root cause (truncated above). Let me read the surefire report:
 
+Root cause found: the environment exports `SPRING_DATASOURCE_URL` (Neon Postgres) — the same quirk CLAUDE.md notes for fhir-service tests — which overrides my H2 config and pulls in the Postgres driver. The robust fix is to pin H2 in the test itself (test properties outrank OS env vars), so it's CI-safe without depending on unset env. Updating the test:
+
 <details>
-<summary>Execution details — 231 tool events</summary>
+<summary>Execution details — 233 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3982,6 +3984,9 @@ mvn -f rxclaim-emulator/pom.xml -B test 2>&1 | tail -45`
 f=rxclaim-emulator/target/surefire-reports/com.payer.rxclaim.RxClaimCoreTest.txt
 grep -m1 -A2 "Caused by" "$f" 2>/dev/null; echo "---- first failure detail ----"
 grep -iE "Ca…`
+- **Edit** `/workspaces/fhir-agent/rxclaim-emulator/src/test/java/com/payer/rxclaim/RxClaimCoreTest.java`
+- **Bash** `cd /workspaces/fhir-agent
+mvn -f rxclaim-emulator/pom.xml -B test 2>&1 | grep -E "Tests run|BUILD|ERROR.*Test" | head -20`
 
 </details>
 
@@ -3992,6 +3997,6 @@ grep -iE "Ca…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 16:01 UTC
+- **Last updated:** 14 July 2026, 16:02 UTC
 - **Turns:** 52
 - **Status:** Incomplete
