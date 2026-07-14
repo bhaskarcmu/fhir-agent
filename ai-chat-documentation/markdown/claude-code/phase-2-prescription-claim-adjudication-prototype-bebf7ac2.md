@@ -3428,8 +3428,10 @@ Now the Spring Boot project. Starting with `pom.xml`:
 
 SQL/400-style tables (H2) and seed data — deliberately legacy-shaped names:
 
+Now the Java sources. Application entry point, then the legacy fixed-width records, the `ADJRXCLM` core, and the REST façade.
+
 <details>
-<summary>Execution details — 222 tool events</summary>
+<summary>Execution details — 223 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3959,6 +3961,7 @@ mkdir -p rxclaim-emulator/src/main/java/com/payer/rxclaim/{api,legacy,core} \
 - **Write** `/workspaces/fhir-agent/rxclaim-emulator/src/main/resources/schema.sql`
 - **Write** `/workspaces/fhir-agent/rxclaim-emulator/src/main/resources/data.sql`
 - **Write** `/workspaces/fhir-agent/rxclaim-emulator/src/main/resources/application.yml`
+- **Write** `/workspaces/fhir-agent/rxclaim-emulator/src/main/java/com/payer/rxclaim/RxClaimEmulatorApplication.java`
 
 </details>
 
@@ -3969,6 +3972,6 @@ mkdir -p rxclaim-emulator/src/main/java/com/payer/rxclaim/{api,legacy,core} \
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 15:56 UTC
+- **Last updated:** 14 July 2026, 15:57 UTC
 - **Turns:** 52
 - **Status:** Incomplete
