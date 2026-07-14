@@ -3689,8 +3689,20 @@ Compose is valid and the default set is exactly Phase 1 — additive confirmed. 
 
 Jars built; fhir + triage healthy. Now start the emulator + claims-service (host jars) and drive the demo:
 
+**Full-stack integration verified end-to-end** — all 5 golden paths adjudicate correctly through claims-service → emulator (real pricing via the ACL) → triage → FHIR, the claims-agent explains a decision, and every decision persisted (`ClaimResponse=1` each):
+
+| Path | Outcome | Reason | Pricing |
+|---|---|---|---|
+| Approved | APPROVED | — | $241.50 |
+| Pended | PENDED | prior-auth-required | $952.00 |
+| Routed | ROUTED_FOR_REVIEW | quantity-limit-exceeded | $1081.50 |
+| Inactive coverage | DENIED | coverage-inactive | — |
+| Multi-reason | DENIED | non-formulary (+quantity in allFindings) | — |
+
+Let me stop the containers and commit M6:
+
 <details>
-<summary>Execution details — 331 tool events</summary>
+<summary>Execution details — 334 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4437,6 +4449,20 @@ mvn -q -f claims-service/pom.xml -Ds…`
 - **Bash** `cd /workspaces/fhir-agent
 # Emulator (H2 forced to dodge ambient SPRING_DATASOURCE_URL)
 java -Dspring.datasource.url='jdbc:h2:mem:rxclaim;DB_CLOSE_DELAY=-1' -Dspring.datasource.driver-class-name=org.h…`
+- **Bash** `cd /workspaces/fhir-agent
+docker compose stop fhir triage 2>&1 | tail -2
+echo "=== changed files (no target/jars) ==="; git status --short
+git add docker-compose.yml data/scripts/seed_claims_demo.py r…`
+- **Bash** `cd /workspaces/fhir-agent
+git commit -q -F - <<'EOF'
+feat(phase2 M6): local wiring + claims demo (phase2 compose profile)
+
+Bring the Phase 2 services up as one stack and drive the golden paths end-to-…`
+- **Bash** `cd /workspaces/fhir-agent
+gh pr create --base main --head feature/phase2-m6-wiring-demo \
+  --title "feat(phase2 M6): local wiring + claims demo (phase2 compose profile)" \
+  --body "$(cat <<'EOF'
+##…`
 
 </details>
 
@@ -4447,6 +4473,6 @@ java -Dspring.datasource.url='jdbc:h2:mem:rxclaim;DB_CLOSE_DELAY=-1' -Dspring.da
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 17:20 UTC
+- **Last updated:** 14 July 2026, 17:21 UTC
 - **Turns:** 57
 - **Status:** Incomplete
