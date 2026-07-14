@@ -3685,8 +3685,10 @@ Compose wired additively (Phase 2 services are `profiles: ["phase2"]`). Now the 
 
 Let me validate the compose file (syntax + that the default `up` set is unchanged) before running:
 
+Compose is valid and the default set is exactly Phase 1 — additive confirmed. Now I'll verify the full integration by running the stack (fhir + triage via Docker; emulator + claims-service as host jars using the warm Maven cache) and driving the golden paths. Building the jars first:
+
 <details>
-<summary>Execution details — 329 tool events</summary>
+<summary>Execution details — 330 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4426,6 +4428,10 @@ echo "=== default services (plain 'up' — must be exactly Phase 1) ==="
 docker compose config --services 2>/dev/null | sort
 echo "=== with --profile phase2 ==="
 docker compose…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== building emulator + claims-service jars (warm cache) ==="
+mvn -q -f rxclaim-emulator/pom.xml -DskipTests package 2>&1 | tail -2
+mvn -q -f claims-service/pom.xml -Ds…`
 
 </details>
 
