@@ -1730,8 +1730,32 @@ PR #24 merged — nice. Before deleting anything, let me state the Git context a
 
 **Git context:** worktree `/workspaces/fhir-agent`, currently on `feature/phase2-planning`. Intended: verify the merge, then delete the **merged** feature branch (local + remote). I will **not** touch `main`, `ai-chat-history`, the `phase1-v1` tag, or any unmerged branch without confirming.
 
+Confirmed: **PR #24 is MERGED**. Now let me switch to `main`, sync it, and verify merge status of each branch before deleting anything.
+
+Clear picture:
+- **`feature/phase2-planning`** — merged ✅ → safe to delete.
+- **`dataeng/phase2-prework`** — **not merged** → deleting loses the data prework.
+- **`origin/feature/walking-skeleton`** — not mine, not merged (possibly an old squash-merged Phase 1 branch).
+
+I'll delete only the confirmed-merged feature branch now, and hold on the other two.
+
+✅ Deleted `feature/phase2-planning` (local + remote) — it was cleanly merged via PR #24.
+
+Two branches remain that I did **not** delete, because each carries a data-loss risk and I want your call:
+
+1. **`dataeng/phase2-prework`** (local + remote) — your data-engineering prework (fetch script, reference inventory, curated CSVs, Claim/EOB samples). **It's not merged into `main`**, so deleting it discards that work permanently. Options:
+   - **Keep it** (it's your reference/prework home), or
+   - **Open a PR to merge** the small committed derivatives into `main` first, then delete, or
+   - **Delete anyway** (you consider it disposable — the raw data regenerates from the script).
+
+2. **`origin/feature/walking-skeleton`** (remote only) — this predates my work; I didn't create it and it's not merged into `main` by fast-forward (likely an old **squash-merged** Phase 1 branch, hence a stale leftover). Since it isn't mine, I'd rather confirm than assume.
+
+Untouched by design: `main`, `ai-chat-history` (checked out in the other worktree), and the `phase1-v1` tag.
+
+How do you want to handle `dataeng/phase2-prework` and `feature/walking-skeleton`?
+
 <details>
-<summary>Execution details — 117 tool events</summary>
+<summary>Execution details — 119 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2014,6 +2038,15 @@ git fetch origin --prune 2>&1 | tail -3
 echo "=== current branch ==="; git rev-parse --abbrev-ref HEAD
 echo "=== all branches (local + remote) ==="; git branch -a
 echo "=== P…`
+- **Bash** `cd /workspaces/fhir-agent
+git switch main && git pull --ff-only 2>&1 | tail -2
+echo "=== HEAD now ==="; git rev-parse --short HEAD
+echo "=== branches MERGED into main ==="; git branch --merged main |…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== delete LOCAL feature/phase2-planning (safe -d, merged) ==="
+git branch -d feature/phase2-planning
+echo "=== delete REMOTE origin/feature/phase2-planning ==="
+git pu…`
 
 </details>
 
@@ -2024,6 +2057,6 @@ echo "=== P…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 00:34 UTC
+- **Last updated:** 14 July 2026, 00:35 UTC
 - **Turns:** 15
 - **Status:** Complete
