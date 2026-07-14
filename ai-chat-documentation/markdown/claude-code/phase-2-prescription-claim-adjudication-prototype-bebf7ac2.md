@@ -2959,8 +2959,10 @@ On `dataeng/phase2-prework`; the ACA research is running. Let me set up the docs
 
 On the docs branch. Let me read §5 to insert the strangler-snapshot (#1) and reliability patterns (#4) cleanly.
 
+Inserting the modernization-state strangler snapshot (#1) after C1:
+
 <details>
-<summary>Execution details — 124 tool events</summary>
+<summary>Execution details — 125 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3273,6 +3275,7 @@ git switch main >/dev/null 2>&1 && git pull --ff-only 2>&1 | tail -1
 git switch -c feature/phase2-docs-refinements 2>&1 | tail -1
 echo "on: $(git rev-parse --abbrev-ref HEAD)…`
 - **Read** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
 
 </details>
 
