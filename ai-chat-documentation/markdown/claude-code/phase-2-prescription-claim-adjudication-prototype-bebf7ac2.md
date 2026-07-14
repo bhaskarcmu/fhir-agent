@@ -3591,6 +3591,26 @@ Let me stop the FHIR container, update the README to reflect M4, and commit:
 
 M4 is up as PR [#29](https://github.com/bhaskarcmu/fhir-agent/pull/29). Updating memory, then summary.
 
+Cleanup and M4 both done.
+
+## Branch cleanup
+Deleted the merged M3 branch (`feature/phase2-m3-claims-service`, local + remote). Remaining: `main`, `ai-chat-history`, old `feature/walking-skeleton`.
+
+## M4 — pipeline & FHIR artefacts → PR [#29](https://github.com/bhaskarcmu/fhir-agent/pull/29)
+Completes the claims-service flow from *decision* to *durable, auditable, idempotent artefacts* (R18):
+- **`FhirArtifactBuilder`** — emits the linked FHIR R4 graph as one **transaction bundle**: `Claim` → `ClaimResponse` (`request`→Claim) → `Task` (when routed) → `Provenance` (`target`→all) → `RiskAssessment` (on a clinical finding), with one `decisionId` stamped on every resource (identifier + `meta.tag`) = the R18.2 mandatory links.
+- **Idempotency (R18.3/R18.4)** — per-entry `ifNoneExist` conditional creates + atomic transaction (no duplicate, no partial write), plus an intake `existingDecision` check that returns the prior decision instead of re-adjudicating. FHIR outage → **503** (retry-safe).
+- **`HapiFhirClient`** (HAPI R4), `AdjudicationService`, controller now persists.
+
+**Verified two ways:** 24 unit tests (added artefact-linkage, routed-Task, clinical-RiskAssessment, and service-dedupe), **and** a runtime smoke against a **live HAPI FHIR server** — one POST persisted `Claim=1 / ClaimResponse=1 / Provenance=1` (linked + tagged), and a **second identical POST left ClaimResponse=1**, proving idempotency.
+
+**Deferred:** member→FHIR-patient resolution for triage, BigQuery audit plane (C4). **M6** wires everything into compose/gateway with the live emulator + triage.
+
+## State
+- Open: **PR #29** (M4). `main` has #24–#28. `phase1-v1` tagged. Memory updated. (FHIR container stopped after the smoke.)
+
+Next after review/merge is **M5 — the separate `claims-agent`** (natural-language explanation over the persisted decisions; non-authoritative, R17.8). Want me to proceed to M5, or pause here?
+
 <details>
 <summary>Execution details — 304 tool events</summary>
 
