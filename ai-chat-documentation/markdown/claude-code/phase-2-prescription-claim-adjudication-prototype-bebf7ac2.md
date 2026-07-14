@@ -3577,8 +3577,10 @@ Updating the controller to persist via the service, mapping FHIR/system failures
 
 Now the tests — FHIR artefact linkage (no server) and intake idempotency (fake client):
 
+Building and testing M4 (first run downloads HAPI FHIR — sizeable):
+
 <details>
-<summary>Execution details — 295 tool events</summary>
+<summary>Execution details — 297 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4232,6 +4234,9 @@ git branch -d…`
 - **Write** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/api/ClaimController.java`
 - **Edit** `/workspaces/fhir-agent/claims-service/src/main/resources/application.yml`
 - **Write** `/workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/FhirArtifactBuilderTest.java`
+- **Write** `/workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/AdjudicationServiceTest.java`
+- **Bash** `cd /workspaces/fhir-agent
+mvn -f claims-service/pom.xml -B test 2>&1 | grep -E "Tests run:|BUILD|ERROR|error:" | head -30`
 
 </details>
 
@@ -4242,6 +4247,6 @@ git branch -d…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 16:56 UTC
+- **Last updated:** 14 July 2026, 16:57 UTC
 - **Turns:** 55
 - **Status:** Incomplete
