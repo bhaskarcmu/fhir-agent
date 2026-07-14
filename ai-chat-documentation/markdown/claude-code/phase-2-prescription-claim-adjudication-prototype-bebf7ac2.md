@@ -3523,8 +3523,12 @@ Root cause is a design choice in the engine: I short-circuited the PA/quantity/s
 
 All 20 tests pass. Now a runtime smoke against the real endpoint (triage/legacy aren't running, so the pipeline degrades gracefully — proving the façade + rules + payer-KB loading + resilience). Packaging first:
 
+The app exited at startup. Let me check the log:
+
+The runtime smoke caught a DI bug the unit tests couldn't: `FilePayerKb` has two constructors and Spring can't pick one. Marking the `@Value` constructor as autowired:
+
 <details>
-<summary>Execution details — 276 tool events</summary>
+<summary>Execution details — 280 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4142,6 +4146,14 @@ ls -lh claims-service/target/claims-service-*.jar`
 java -Dpayer-kb.dir=/workspaces/fhir-agent/data/payer-kb \
      -jar claims-service/target/claims-service-0.1.0.jar >/tmp/claims.log 2>&1 &
 APP=$!; echo "pid $APP; waiting fo…`
+- **Bash** `cd /workspaces/fhir-agent
+grep -iE "error|exception|caused by|APPLICATION FAILED|unable|port" /tmp/claims.log | head -20`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/kb/FilePayerKb.java`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/kb/FilePayerKb.java`
+- **Bash** `cd /workspaces/fhir-agent
+mvn -q -f claims-service/pom.xml -DskipTests package 2>&1 | tail -3
+java -Dpayer-kb.dir=/workspaces/fhir-agent/data/payer-kb \
+     -jar claims-service/target/claims-service-…`
 
 </details>
 
@@ -4152,6 +4164,6 @@ APP=$!; echo "pid $APP; waiting fo…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 16:42 UTC
+- **Last updated:** 14 July 2026, 16:43 UTC
 - **Turns:** 54
 - **Status:** Incomplete
