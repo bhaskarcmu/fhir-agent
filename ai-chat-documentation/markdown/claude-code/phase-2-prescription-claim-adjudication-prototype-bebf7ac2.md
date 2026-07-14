@@ -3794,8 +3794,12 @@ Starting the gateway profile off `main`:
 
 The branch is off `main` (so it doesn't carry PR #33's README changes — I'll keep this PR's docs in the compose/kong files to avoid conflicting with #33). Writing the DB-less Kong declarative config:
 
+Permissions on a bind-mounted key file across container UIDs are fragile, so I'll have the entrypoint **print the generated key to the Kong logs** instead (still generated-at-startup, never committed). Removing the runtime dir and fixing the config comment:
+
+Appending the DB-less Kong service under the `gateway` profile (generates the key at startup, prints it to logs):
+
 <details>
-<summary>Execution details — 349 tool events</summary>
+<summary>Execution details — 352 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4596,6 +4600,11 @@ git switch -c feature/phase2-gateway-profile 2>&1 | tail -1
 mkdir -p gateway/kong/.runtime && touch gateway/kong/.runtime/.gitkeep
 echo "on: $…`
 - **Write** `/workspaces/fhir-agent/gateway/kong/kong.tmpl.yml`
+- **Bash** `cd /workspaces/fhir-agent
+rm -rf gateway/kong/.runtime
+echo "removed .runtime"`
+- **Edit** `/workspaces/fhir-agent/gateway/kong/kong.tmpl.yml`
+- **Edit** `/workspaces/fhir-agent/docker-compose.yml`
 
 </details>
 
@@ -4606,6 +4615,6 @@ echo "on: $…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 18:18 UTC
+- **Last updated:** 14 July 2026, 18:19 UTC
 - **Turns:** 59
 - **Status:** Incomplete
