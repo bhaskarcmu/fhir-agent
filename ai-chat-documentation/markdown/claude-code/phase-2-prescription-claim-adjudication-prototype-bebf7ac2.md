@@ -1870,6 +1870,22 @@ My recommendation: **sequential off `main`**, one PR per milestone, tests-in-eac
 
 Want me to start by turning the current `dataeng/phase2-prework` branch into the **M1 PR** (build out `data/payer-kb/` on it, then open it against `main`)?
 
+## Turn 19
+
+### Prompt
+
+Will go with all your recommendations. BEfore we go further, I want a bit of prep for my interview nbased on this ongoing work:
+
+1. What is idempotency and how are we using/applying it?
+2. What is a facade? How are we using/applying it?
+3. What about IBM i and AS/400 architecture? What are we doing related to it, especially in terms of connecting it, or "Strangling it" in pattern terms, to modern enterprise systems?
+
+Teach me patiently!
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 120 tool events</summary>
 
@@ -2181,6 +2197,6 @@ echo; echo "=== commits o…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 00:42 UTC
-- **Turns:** 18
-- **Status:** Complete
+- **Last updated:** 14 July 2026, 08:59 UTC
+- **Turns:** 19
+- **Status:** Incomplete
