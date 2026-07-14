@@ -3181,8 +3181,10 @@ Now the main data-branch deliverable — expanding `data/reference/README.md` wi
 
 Now updating the reference README — TL;DR, inventory, reproduce, notes, plus a full glossary (#6):
 
+Now refine the commercial note and append the full glossary (#6):
+
 <details>
-<summary>Execution details — 147 tool events</summary>
+<summary>Execution details — 149 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3536,6 +3538,8 @@ curl -s --max-time 90 "https://…`
 - **Write** `/workspaces/fhir-agent/data/scripts/fetch_aca_formulary_sample.py`
 - **Edit** `/workspaces/fhir-agent/data/scripts/fetch_aca_formulary_sample.py`
 - **Read** `/workspaces/fhir-agent/data/reference/README.md`
+- **Edit** `/workspaces/fhir-agent/data/reference/README.md`
+- **Edit** `/workspaces/fhir-agent/data/reference/README.md`
 - **Edit** `/workspaces/fhir-agent/data/reference/README.md`
 - **Edit** `/workspaces/fhir-agent/data/reference/README.md`
 - **Edit** `/workspaces/fhir-agent/data/reference/README.md`
