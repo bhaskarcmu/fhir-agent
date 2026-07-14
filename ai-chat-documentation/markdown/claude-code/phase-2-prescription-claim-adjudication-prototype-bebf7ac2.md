@@ -2969,8 +2969,12 @@ I'll append the two new sections after §13, and also scrub an interview-specifi
 
 Now enhance requirements R13 with the commercial/ACA data strategy (#5) and the prework pointer (#10). Let me read R13:
 
+Now update the phase2 README to surface the new material. Let me read it:
+
+Let me verify plan.md structure is clean and the change set is docs-only before committing the docs PR.
+
 <details>
-<summary>Execution details — 129 tool events</summary>
+<summary>Execution details — 133 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3288,6 +3292,12 @@ echo "on: $(git rev-parse --abbrev-ref HEAD)…`
 - **Read** `/workspaces/fhir-agent/docs/phase2/plan.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
 - **Read** `/workspaces/fhir-agent/docs/phase2/requirements.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/requirements.md`
+- **Read** `/workspaces/fhir-agent/docs/phase2/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/README.md`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== plan.md section headers ==="; grep -n "^## " docs/phase2/plan.md
+echo "=== duplicate ## headers? ==="; grep "^## " docs/phase2/plan.md | sort | uniq -d || echo "(no…`
 
 </details>
 
@@ -3298,6 +3308,6 @@ echo "on: $(git rev-parse --abbrev-ref HEAD)…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 14:59 UTC
+- **Last updated:** 14 July 2026, 15:00 UTC
 - **Turns:** 45
 - **Status:** Incomplete
