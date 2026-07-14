@@ -3629,8 +3629,10 @@ I have the conventions. Building `claims-agent` as a standalone package mirrorin
 
 The deterministic explanation renderer (§9.4-style; the no-LLM fallback and the LLM's grounding):
 
+Now the tool layer — the client to the claims façade and the Anthropic tool definition:
+
 <details>
-<summary>Execution details — 310 tool events</summary>
+<summary>Execution details — 311 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4328,6 +4330,7 @@ touch claims-agent/src/claims_agent/__init__.py claims-agent/tests/__init__.py
 echo "created package dirs"`
 - **Write** `/workspaces/fhir-agent/claims-agent/src/claims_agent/format.py`
 - **Write** `/workspaces/fhir-agent/claims-agent/src/claims_agent/explain.py`
+- **Write** `/workspaces/fhir-agent/claims-agent/src/claims_agent/tools.py`
 
 </details>
 
