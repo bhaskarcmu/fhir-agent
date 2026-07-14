@@ -3583,8 +3583,10 @@ All 24 tests pass (+4 for FHIR). Now the real persistence + idempotency smoke ag
 
 HAPI is up. Now the persistence + idempotency smoke:
 
+Adjudication succeeded both times (APPROVED, DEC-SMOKE1) — persistence didn't throw (else 503). My count queries just had an unencoded `|`. Let me verify persistence + idempotency properly against the still-running FHIR server:
+
 <details>
-<summary>Execution details — 299 tool events</summary>
+<summary>Execution details — 300 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4249,6 +4251,10 @@ for i in $(seq 1 60); do curl -s --max-time 3 http://localhost:8080/fhir/metadat
 java -Dpayer-kb.dir=/workspaces/fhir-agent/data/payer-kb \
      -Dfhir.base-url=http://localhost:8080/fhir \
      -jar claims-service/target/claims-service-0.1.0.jar >/tmp/cl…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== artefact counts for DEC-SMOKE1 (identifier | encoded as %7C) ==="
+for R in Claim ClaimResponse RiskAssessment; do
+  t=$(curl -s "http://localhost:8080/fhir/$R?ident…`
 
 </details>
 
@@ -4259,6 +4265,6 @@ java -Dpayer-kb.dir=/workspaces/fhir-agent/data/payer-kb \
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 16:58 UTC
+- **Last updated:** 14 July 2026, 16:59 UTC
 - **Turns:** 55
 - **Status:** Incomplete
