@@ -2877,6 +2877,16 @@ We have the **terminologies + the real structural template (CMS Part D) + Synthe
 **One-line interview version:**
 > "Private-insurer rules are proprietary, so there's no public dataset to pull — but the *mechanics* are identical to Medicare's, which *is* public. So I ground the structure in the real CMS Part D formulary, then model a few representative commercial plans — Silver, Gold, Employer PPO — as configuration on the same layered engine. That's exactly how RxClaim serves both Medicare and commercial: plan type is configuration, not a different codebase. If I needed more real commercial data, ACA marketplace formularies and Transparency-in-Coverage files are public."
 
+## Turn 43
+
+### Prompt
+
+Okay, now quickly summarize in 10 bullets or so, what we have queued up for documentation updates since the latest docs PR. I think we covered a lot that can be added or updated, some we specifically discussed as to be added to docs, some not explicitly yet
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 120 tool events</summary>
 
@@ -3188,6 +3198,6 @@ echo; echo "=== commits o…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 13:29 UTC
-- **Turns:** 42
+- **Last updated:** 14 July 2026, 13:32 UTC
+- **Turns:** 43
 - **Status:** Incomplete
