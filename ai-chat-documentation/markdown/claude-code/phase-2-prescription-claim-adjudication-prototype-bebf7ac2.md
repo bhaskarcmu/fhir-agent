@@ -3863,8 +3863,10 @@ The fix is simple: call triage with **only** `patient_id` (its `medication_id` e
 
 That diagnostic is informational (non-project file). Rebuilding and re-running the full demo with triage pointed at the right host:
 
+Still `no FHIR patient for member 000000009` — the resolution returns empty in-app even though the patient is seeded and a manual search finds it. Let me isolate whether it's a HAPI search-index timing race (rapid-fire after seed) with a controlled sequence + a delay:
+
 <details>
-<summary>Execution details — 381 tool events</summary>
+<summary>Execution details — 382 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4741,6 +4743,9 @@ for i in $(seq 1 40); do curl -s --max-time 3 http://localhost:8080/fhir/metadat
 mvn -q -f claims-service/pom.xml -DskipTests package 2>&1 | tail -2
 FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose up -d fhir triage >/dev/null 2>&1
 for i in $(seq 1 4…`
+- **Bash** `cd /workspaces/fhir-agent
+FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose up -d fhir triage >/dev/null 2>&1
+for i in $(seq 1 40); do curl -s --max-time 3 http://localhost:8080/fhir/metadata 2>/d…`
 
 </details>
 
@@ -4751,6 +4756,6 @@ for i in $(seq 1 4…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 18:40 UTC
+- **Last updated:** 14 July 2026, 18:42 UTC
 - **Turns:** 60
 - **Status:** Incomplete
