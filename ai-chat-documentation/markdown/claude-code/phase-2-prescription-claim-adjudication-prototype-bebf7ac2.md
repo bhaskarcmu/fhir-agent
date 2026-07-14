@@ -3581,8 +3581,10 @@ Building and testing M4 (first run downloads HAPI FHIR — sizeable):
 
 All 24 tests pass (+4 for FHIR). Now the real persistence + idempotency smoke against a live HAPI server. Bringing up the FHIR server and packaging:
 
+HAPI is up. Now the persistence + idempotency smoke:
+
 <details>
-<summary>Execution details — 298 tool events</summary>
+<summary>Execution details — 299 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4243,6 +4245,10 @@ mvn -f claims-service/pom.xml -B test 2>&1 | grep -E "Tests run:|BUILD|ERROR|err
 docker compose up -d fhir 2>&1 | tail -3
 echo "waiting for HAPI FHIR..."
 for i in $(seq 1 60); do curl -s --max-time 3 http://localhost:8080/fhir/metadata 2>/dev/null | grep…`
+- **Bash** `cd /workspaces/fhir-agent
+java -Dpayer-kb.dir=/workspaces/fhir-agent/data/payer-kb \
+     -Dfhir.base-url=http://localhost:8080/fhir \
+     -jar claims-service/target/claims-service-0.1.0.jar >/tmp/cl…`
 
 </details>
 
