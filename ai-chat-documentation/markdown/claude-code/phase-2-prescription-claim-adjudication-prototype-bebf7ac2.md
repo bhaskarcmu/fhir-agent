@@ -4025,8 +4025,10 @@ Continue the conversation from where it left off without asking the user any fur
 
 Member 000000009 got past resolution and hit triage, but still 422 — which means the **running jar is stale** (the build output was truncated; likely it failed or didn't repackage). Let me rebuild explicitly and confirm success + jar freshness:
 
+Confirmed the source has the JSON string body and the jar is freshly built (19:03:30). The 19:00:45 run must have used a stale jar (the earlier non-clean `package` output was truncated, likely no repackage). Re-running the demo with the confirmed-fresh jar:
+
 <details>
-<summary>Execution details — 404 tool events</summary>
+<summary>Execution details — 405 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4963,6 +4965,9 @@ grep -iE "triage|422|no FHIR|error|exception" /tmp/claims.log | tail -6`
 - **Bash** `cd /workspaces/fhir-agent
 mvn -q -f claims-service/pom.xml -DskipTests clean package 2>&1 | tail -15
 echo "---- jar built at:"; ls -la --time-style=+%H:%M:%S claims-service/target/claims-service-0.1.0…`
+- **Bash** `cd /workspaces/fhir-agent
+FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose up -d fhir triage >/dev/null 2>&1
+for i in $(seq 1 40); do curl -s --max-time 3 http://localhost:8080/fhir/metadata 2>/d…`
 
 </details>
 
