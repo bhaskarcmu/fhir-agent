@@ -3426,8 +3426,10 @@ Clean — only `main`, `ai-chat-history`, and the old `feature/walking-skeleton`
 
 Now the Spring Boot project. Starting with `pom.xml`:
 
+SQL/400-style tables (H2) and seed data — deliberately legacy-shaped names:
+
 <details>
-<summary>Execution details — 219 tool events</summary>
+<summary>Execution details — 222 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3954,6 +3956,9 @@ git switch -c feature/phase2-m2-rxclaim-emulator 2>&1 | tail -1
 mkdir -p rxclaim-emulator/src/main/java/com/payer/rxclaim/{api,legacy,core} \
          rxclaim-emulator/src/ma…`
 - **Write** `/workspaces/fhir-agent/rxclaim-emulator/pom.xml`
+- **Write** `/workspaces/fhir-agent/rxclaim-emulator/src/main/resources/schema.sql`
+- **Write** `/workspaces/fhir-agent/rxclaim-emulator/src/main/resources/data.sql`
+- **Write** `/workspaces/fhir-agent/rxclaim-emulator/src/main/resources/application.yml`
 
 </details>
 
