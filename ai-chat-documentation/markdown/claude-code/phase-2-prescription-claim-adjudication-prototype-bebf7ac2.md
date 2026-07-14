@@ -3804,8 +3804,23 @@ Compose valid, default unchanged (`fhir mcp-agent triage`). Now verify the gatew
 
 The gateway works end-to-end: **key generated at startup** (32-hex, logged, never committed), **no/wrong key → 401**, **valid key → 200** routed to the upstream with the path preserved. Committing the gateway profile:
 
+Gateway profile is up as PR [#34](https://github.com/bhaskarcmu/fhir-agent/pull/34) and **verified end-to-end**. Per your offer to sequence complex slices, I'll pause here for you to review/merge before starting the clinical-safety slice. Let me record state.
+
+## Gateway profile → PR [#34](https://github.com/bhaskarcmu/fhir-agent/pull/34) (verified)
+
+The opt-in `gateway` profile with a **DB-less Kong** edge (decision C2), and it resolves the earlier committed-dev-key concern:
+- **`gateway/kong/kong.tmpl.yml`** — declarative config routing `/claims`, `/fhir`, `/triage` (path-preserving) with key-auth. Phase 1's KIC/Helm config is separate and untouched (gateway-strangler).
+- **`kong` compose service** (`profiles: ["gateway"]`) — **generates the dev key at startup** and prints it to the logs; **no secret committed**. Proxy on `:8000`, admin off.
+
+**Verified live** (fhir + kong, no Phase 2 image builds): key generated + logged, **no key → 401**, **wrong key → 401**, **valid key → 200** routed with the path preserved (CapabilityStatement). `docker compose config` confirms the default set is unchanged (`fhir mcp-agent triage`).
+
+## Pausing here (as you offered)
+Both slices are independent, but since each is genuinely complex I'll **wait for you to review/merge #34** before starting **slice #2 — clinical-safety patient-resolution** (resolve `memberId` → FHIR Patient so triage fires on the penicillin/amoxicillin scenario, which currently degrades to LOW). That one is a `claims-service` code change + a demo patient seed, delivered as its own separate PR.
+
+Just say the word once #34 is merged (or tell me to start #2 now off `main` in parallel if you'd rather not wait — they don't conflict). Current open PRs: **#33** (M7) and **#34** (gateway).
+
 <details>
-<summary>Execution details — 356 tool events</summary>
+<summary>Execution details — 357 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4628,6 +4643,7 @@ git diff --cached --name-only | grep -vE '^docker-compose.yml$|^gat…`
 gh pr create --base main --head feature/phase2-gateway-profile \
   --title "feat(phase2 gateway): DB-less Kong edge gateway profile (parity path, C2)" \
   --body "$(cat <<'EO…`
+- **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase2-planning-state.md`
 
 </details>
 
