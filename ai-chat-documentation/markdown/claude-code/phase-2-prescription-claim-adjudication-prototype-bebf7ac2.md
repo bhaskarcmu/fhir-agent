@@ -3843,8 +3843,10 @@ Updating the two tests for the new signatures:
 
 Building and testing claims-service with the changes:
 
+24 tests pass. Now the demo: the safety scenario needs a **separate** member (else the penicillin patient would trip triage for all claims on member 000000001). I'll seed a distinct patient (000000009: Kristle Mraz, penicillin allergy + amoxicillin) and add a safety golden path. Updating `seed_claims_demo.py`:
+
 <details>
-<summary>Execution details — 370 tool events</summary>
+<summary>Execution details — 371 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4692,6 +4694,7 @@ echo "=== Adjudicati…`
 - **Edit** `/workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/AdjudicationServiceTest.java`
 - **Bash** `cd /workspaces/fhir-agent
 mvn -f claims-service/pom.xml -B test 2>&1 | grep -E "Tests run: [0-9]+, Fail|BUILD|ERROR|error:" | head -15`
+- **Edit** `/workspaces/fhir-agent/data/scripts/seed_claims_demo.py`
 
 </details>
 
@@ -4702,6 +4705,6 @@ mvn -f claims-service/pom.xml -B test 2>&1 | grep -E "Tests run: [0-9]+, Fail|BU
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 18:29 UTC
+- **Last updated:** 14 July 2026, 18:30 UTC
 - **Turns:** 60
 - **Status:** Incomplete
