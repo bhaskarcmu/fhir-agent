@@ -1664,8 +1664,12 @@ Now let me read §3–§6 of plan.md to update the gateway/cloud/milestones sect
 
 Updating §3 (placement, dev key, gateway-strangler) and §5 (hybrid framing, remove "fallback"/"deferred"):
 
+I duplicated the Gotchas block. Let me check and remove the stray one.
+
+Now update §5 (hybrid framing, remove "deferred"/"fallback") and the §4 cloud-deploy isolation row:
+
 <details>
-<summary>Execution details — 93 tool events</summary>
+<summary>Execution details — 98 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1911,6 +1915,12 @@ echo "=== plan.md line count ==="; wc -l docs/phase…`
 - **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
 - **Read** `/workspaces/fhir-agent/docs/phase2/plan.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Bash** `cd /workspaces/fhir-agent
+grep -n "### Gotchas\|## 4. Isolation" docs/phase2/plan.md`
+- **Read** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
 
 </details>
 
@@ -1921,6 +1931,6 @@ echo "=== plan.md line count ==="; wc -l docs/phase…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 00:27 UTC
+- **Last updated:** 14 July 2026, 00:28 UTC
 - **Turns:** 14
 - **Status:** Complete
