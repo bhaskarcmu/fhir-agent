@@ -2504,7 +2504,111 @@ Tell me more about these: " API/contract-first, 12-factor services, PHI-safe-by-
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Great instinct to lock these down — and here's the kicker: **you already applied all six in your prototype**, so you can present them as "principles I practice," not "things I read about." Let me explain each for a layperson, then show where it already lives in your work and how to say it in the interview.
+
+First, the frame: **engineering standards are the "house rules" a Director sets so that 50 people build in a consistent, safe, fast way — without the Director reviewing every line.** Good standards make the *right* thing the *easy* thing.
+
+---
+
+## 1. API / Contract-First
+
+**Plain idea:** Before anyone cooks, everyone agrees on the *menu*. The "contract" is the precise description of what a service accepts and returns — its inputs, outputs, and error responses. You write and agree on that contract **first**, then teams build to it independently.
+
+**Why it matters:** Once the contract is fixed, the frontend team, the backend team, and other consumers can all work **in parallel** without waiting for each other — and they don't get nasty surprises at integration time. The contract becomes the single source of truth you can version and test against.
+
+**As a standard:** APIs are described up front (e.g., an OpenAPI/Swagger spec for REST, or FHIR profiles in our case), reviewed before coding, versioned, and you never make a breaking change without a new version.
+
+**In your prototype:** The `ClaimResponse` schema and error taxonomy (your R17.7) are defined up front; the façade over IBM i has a clean contract so legacy quirks don't leak to consumers.
+
+**Interview line:** *"Contract-first means we agree the interface before we build — so downstream teams integrate in parallel without surprises. It's a direct speed-to-market lever."*
+
+---
+
+## 2. 12-Factor Services
+
+**Plain idea:** A famous checklist of ~12 rules for building cloud services that are easy to deploy, scale, and run. The layperson essence: services should be **stateless and disposable** (any copy can handle any request; you can kill and restart them freely), with their **configuration supplied from outside** (not hard-coded), so any copy behaves identically anywhere. Think "cattle, not pets" — interchangeable, not hand-nurtured.
+
+**Why it matters:** This is what makes **autoscaling** possible — when a flood of pharmacy claims arrives, you just spin up 100 identical copies and tear them down after. It also gives zero-downtime deploys and easy recovery, and lets the *same* build run on a laptop and in the cloud with only config changes.
+
+**As a standard:** No service keeps session state in memory; secrets/config come from the environment or a vault; each service is independently deployable.
+
+**In your prototype:** Your services are stateless request/response, which is exactly why they can run on Cloud Run and autoscale (your C1 decision), and why you can switch local↔cloud by config alone.
+
+**Interview line:** *"12-factor is the discipline that makes services cloud-portable and autoscalable — it's what lets me absorb a claims spike by adding copies, and switch local-to-cloud by config, not by rewriting."*
+
+---
+
+## 3. PHI-Safe-by-Default
+
+**Plain idea:** **PHI = Protected Health Information** (patient identifiers + health data), regulated by **HIPAA** (the US health-privacy law). "By default" means the system protects it **automatically** — an engineer has to make a deliberate, authorized effort to *expose* PHI, never a careless effort to *protect* it. Like a hospital where every chart is locked unless you have a reason and a badge.
+
+**Why it matters:** In a 50-person org, you cannot rely on everyone remembering HIPAA on every line of code. One careless log line that prints a member ID is a reportable breach. Making protection the default removes that risk — this is exactly the bug we caught, where the gateway was logging patient IDs in the URL.
+
+**As a standard:** Encryption everywhere; least-privilege access; **scrub identifiers from logs** (log a decision id, not a patient name); secrets in a vault; keep an audit trail.
+
+**In your prototype:** Your R14 — PHI-safe logging, TLS everywhere, Secret Manager, and a FHIR audit trail — treating everything as PHI even though the data is synthetic.
+
+**Interview line:** *"PHI-safe-by-default makes privacy the path of least resistance — engineers log a decision id, not a member id — so compliance doesn't depend on 50 people remembering the rules on every commit."*
+
+---
+
+## 4. Test-Coverage + Peer-Review Gates
+
+**Plain idea:** Two locks on the door before code ships. A **"gate"** is an automatic checkpoint in the delivery pipeline that **blocks** code from merging unless: (1) automated tests exist, cover enough of the code, and pass, and (2) at least one other qualified engineer has reviewed and approved it. (A "PR" — pull request — is the proposed change that must clear these.) Like a pilot's pre-flight checklist *plus* a co-pilot cross-check.
+
+**Why it matters:** Bugs get caught before customers see them; the reviewer enforces the "constitution" (your standards) on every change; knowledge spreads; and no single person can quietly ship something risky. For deterministic, regulated adjudication, this is how you keep quality consistent at scale.
+
+**As a standard:** Continuous Integration ("CI" — the automation) runs the test suite on every PR; coverage thresholds must be met; approvals are required; you cannot merge on a red build.
+
+**In your prototype:** Your R19 test matrix (contract, rules-golden, end-to-end, idempotency, snapshot) plus golden-fixture governance and the Phase-1-independence test — and peer review is *how you incrementally apply the constitution* (your Q6 answer).
+
+**Interview line:** *"Gates make quality non-optional — every change clears tests and a peer review before merge. That's how you hold determinism and compliance across 50 engineers without heroics."*
+
+---
+
+## 5. Observability (Traces / SLOs) as a Standard
+
+**Plain idea:** Observability is your ability to understand what the system is doing from the outside. Three data types: **logs** (what happened), **metrics** (numbers over time, like requests/second), and **traces** (the end-to-end journey of *one* request across all the services it touches). A **trace** follows a single claim through claims-service → triage → the IBM i core → the data store as one connected timeline. An **SLO** (Service Level Objective) is an explicit target — e.g., *"99.9% of claims adjudicate in under 2 seconds"* — measured continuously, with alerts when you're at risk of missing it.
+
+**Why it matters:** When a claim is slow or fails, you can see *exactly which step* caused it instead of guessing. You catch degradation before customers feel it. And SLOs turn the fuzzy word "reliability" into a **managed number** — that's "serviceability," one of the JD's exact words, and squarely your SRE strength (your −50% MTTR).
+
+**As a standard:** Every service is *born instrumented* — emits standardized traces/metrics/logs with a shared correlation id — via a template, so new services inherit it automatically.
+
+**In your prototype:** Your R15 — OpenTelemetry tracing (one claim = one trace), Managed Prometheus metrics (approvals/denials/latency), and SLOs.
+
+**Interview line:** *"Observability as a standard means every service is born instrumented — one claim is one end-to-end trace — and reliability is a managed SLO, not a hope. It's the serviceability lever, and it's how I cut MTTR by half before."*
+
+---
+
+## 6. ADRs (Architecture Decision Records)
+
+**Plain idea:** The **logbook for big technical decisions.** An ADR is a short (~one-page) document that records: *the context/problem, the options we considered, the decision we made, and the trade-offs/consequences.* Dated, numbered, kept in the codebase. Like a house's renovation history — so a future owner knows *why* that wall was moved.
+
+**Why it matters:** Six months later, nobody remembers *why* you chose Postgres over Mongo — and the debate reopens, wasting weeks. ADRs give **institutional memory**, speed up onboarding, stop settled decisions from being re-litigated, and give compliance an **auditable rationale** for architecture choices. Essential for decision-making across a big, long-lived platform.
+
+**As a standard:** Any significant or hard-to-reverse decision gets a lightweight ADR, reviewed like code; you *supersede* old ones rather than editing them.
+
+**In your prototype:** This is the strongest match — **your planning docs *are* ADRs.** Your deviation table (D1–D8), your cloud decisions (C1–C4), and your normative requirements (R17–R19) are exactly this: decision, rationale, trade-offs, written down.
+
+**Interview line:** *"ADRs are the decision logbook — context, options, choice, trade-offs, one page. They stop a 50-person org from re-litigating settled calls and give compliance an auditable rationale. I keep them as a habit — my prototype's decision log records every deviation and cloud choice with its reasoning."*
+
+---
+
+## The cheat-sheet (and your killer point)
+
+| Standard | One-line "what" | Already in your prototype |
+|---|---|---|
+| API/contract-first | Agree the interface before building | ClaimResponse schema + error taxonomy (R17.7) |
+| 12-factor services | Stateless, config-driven, cloud-portable | Cloud Run autoscale, local↔cloud by config (C1) |
+| PHI-safe-by-default | Privacy is automatic, not remembered | PHI-safe logging, TLS, Secret Manager (R14) |
+| Test + review gates | Nothing ships without tests + a second set of eyes | Test matrix + fixture governance (R19) |
+| Observability/SLOs | Born instrumented; reliability is a managed number | OTel traces + Prometheus + SLOs (R15) |
+| ADRs | A logbook of decisions + rationale | D1–D8, C1–C4, R17–R19 |
+
+**The line that ties it together in the interview:**
+> *"These aren't aspirational for me — I applied all six in the prototype. My decision log is a set of ADRs, the services are 12-factor and contract-first, PHI-safe logging and an audit trail are built in, and there's a test matrix and observability from day one. That's the standards bar I'd bring to the RxClaim org — and I'd roll it out by co-authoring it with your senior architects, then enforcing it automatically in CI."*
+
+Want me to (a) do the same layperson deep-dive on any other cluster (e.g., the strangler/façade/ACL trio, or idempotency/determinism), (b) resume the mock, or (c) head back to the M1 payer-KB PR?
 
 <details>
 <summary>Execution details — 120 tool events</summary>
@@ -2817,6 +2921,6 @@ echo; echo "=== commits o…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 11:55 UTC
+- **Last updated:** 14 July 2026, 11:57 UTC
 - **Turns:** 37
 - **Status:** Incomplete
