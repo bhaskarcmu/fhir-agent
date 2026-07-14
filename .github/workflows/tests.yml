@@ -1,0 +1,66 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  # ── Phase 1 independence (R9): Phase 1 suites pass with NO Phase 2 packages installed,
+  #    and a plain `docker compose up` still resolves to exactly the Phase 1 services. ──
+  phase1:
+    name: phase1 (independence)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Phase 1 packages only
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e "client/clinical[dev]" -e "triage-service[dev]" -e "mcp-agent[dev]"
+      - name: Run Phase 1 test suites (no Phase 2 present)
+        run: |
+          pytest client/clinical/tests \
+                 triage-service/src/triage/tests \
+                 mcp-agent/tests -q
+      - name: Default compose stack is unchanged (additive-only guarantee)
+        run: |
+          got=$(docker compose config --services | sort | paste -sd' ' -)
+          echo "default services: $got"
+          test "$got" = "fhir mcp-agent triage"
+
+  # ── Phase 2 Java services ──────────────────────────────────────────────────
+  phase2-java:
+    name: phase2 (java)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: Test rxclaim-emulator
+        run: mvn -B -f rxclaim-emulator/pom.xml test
+      - name: Test claims-service
+        run: mvn -B -f claims-service/pom.xml test
+
+  # ── Phase 2 explanation agent ──────────────────────────────────────────────
+  phase2-python:
+    name: phase2 (python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install and test claims-agent
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e "claims-agent[dev]"
+          pytest claims-agent/tests -q
