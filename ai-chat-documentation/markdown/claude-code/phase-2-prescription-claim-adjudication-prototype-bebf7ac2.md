@@ -3432,8 +3432,10 @@ Now the Java sources. Application entry point, then the legacy fixed-width recor
 
 Now the `ADJRXCLM` core (RPG/CL-style adjudication) and the REST façade:
 
+Now the tests — a plain unit test for the fixed-width records and a Spring test for the `ADJRXCLM` scenarios:
+
 <details>
-<summary>Execution details — 227 tool events</summary>
+<summary>Execution details — 228 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3968,6 +3970,7 @@ mkdir -p rxclaim-emulator/src/main/java/com/payer/rxclaim/{api,legacy,core} \
 - **Write** `/workspaces/fhir-agent/rxclaim-emulator/src/main/java/com/payer/rxclaim/legacy/LegacyResponseRecord.java`
 - **Write** `/workspaces/fhir-agent/rxclaim-emulator/src/main/java/com/payer/rxclaim/core/RxClaimCore.java`
 - **Write** `/workspaces/fhir-agent/rxclaim-emulator/src/main/java/com/payer/rxclaim/api/AdjudicationController.java`
+- **Write** `/workspaces/fhir-agent/rxclaim-emulator/src/test/java/com/payer/rxclaim/LegacyRecordTest.java`
 
 </details>
 
@@ -3978,6 +3981,6 @@ mkdir -p rxclaim-emulator/src/main/java/com/payer/rxclaim/{api,legacy,core} \
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 15:59 UTC
+- **Last updated:** 14 July 2026, 16:00 UTC
 - **Turns:** 52
 - **Status:** Incomplete
