@@ -1,0 +1,27 @@
+server:
+  port: 8090   # edge-facing façade (fronted by Kong at /claims)
+
+spring:
+  application:
+    name: claims-service
+
+# Payer knowledge base (curated fixtures; C3 repository seam). Default resolves to the repo's
+# data/payer-kb when run from the claims-service module directory.
+payer-kb:
+  dir: ../data/payer-kb
+
+# Downstream services. Internal-only legacy core + reused triage.
+rxclaim:
+  base-url: http://localhost:8091
+triage:
+  base-url: http://localhost:8001
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
