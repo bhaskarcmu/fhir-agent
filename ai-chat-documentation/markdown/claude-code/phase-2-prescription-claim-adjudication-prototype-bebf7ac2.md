@@ -3173,8 +3173,16 @@ The full 3-hop chain works with **real** commercial data — and the first recor
 
 Real sample saved (3 of 3,678 records; 8 tier types). Let me gitignore the raw `.xlsx`, add a reproducible fetch script, and confirm what's tracked.
 
+Now a reproducible fetch script for the ACA/QHP 3-hop chain:
+
+Let me fix a stray non-ASCII character that slipped into the script's docstring:
+
+Now the main data-branch deliverable — expanding `data/reference/README.md` with acronyms (#6) and the verified ACA/commercial sources. Let me read it:
+
+Now updating the reference README — TL;DR, inventory, reproduce, notes, plus a full glossary (#6):
+
 <details>
-<summary>Execution details — 141 tool events</summary>
+<summary>Execution details — 147 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3525,6 +3533,12 @@ curl -s --max-time 90 "https://…`
 - **Write** `/workspaces/fhir-agent/data/reference/.gitignore`
 - **Read** `/workspaces/fhir-agent/data/reference/.gitignore`
 - **Edit** `/workspaces/fhir-agent/data/reference/.gitignore`
+- **Write** `/workspaces/fhir-agent/data/scripts/fetch_aca_formulary_sample.py`
+- **Edit** `/workspaces/fhir-agent/data/scripts/fetch_aca_formulary_sample.py`
+- **Read** `/workspaces/fhir-agent/data/reference/README.md`
+- **Edit** `/workspaces/fhir-agent/data/reference/README.md`
+- **Edit** `/workspaces/fhir-agent/data/reference/README.md`
+- **Edit** `/workspaces/fhir-agent/data/reference/README.md`
 
 </details>
 
@@ -3535,6 +3549,6 @@ curl -s --max-time 90 "https://…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 14 July 2026, 15:03 UTC
+- **Last updated:** 14 July 2026, 15:05 UTC
 - **Turns:** 46
 - **Status:** Incomplete
