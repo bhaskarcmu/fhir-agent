@@ -52,3 +52,7 @@ target/
 .env.local
 /workspaces/setup.log
 ~/.claude/config.json
+
+# Crash dumps — may embed process env (secrets) in plaintext
+core
+core.*
