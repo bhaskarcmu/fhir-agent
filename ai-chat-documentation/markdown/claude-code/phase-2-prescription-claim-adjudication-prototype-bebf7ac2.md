@@ -3171,8 +3171,10 @@ MR-URL PUF is real (346 issuers). Now hops 2–3 — fetch an issuer index and r
 
 The full 3-hop chain works with **real** commercial data — and the first record is **Amoxicillin/Clavulanate (Augmentin)**, which ties straight into our penicillin scenario. Let me save a small tracked sample of complete records and clean up the raw downloads.
 
+Real sample saved (3 of 3,678 records; 8 tier types). Let me gitignore the raw `.xlsx`, add a reproducible fetch script, and confirm what's tracked.
+
 <details>
-<summary>Execution details — 138 tool events</summary>
+<summary>Execution details — 141 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3520,6 +3522,9 @@ curl -s --max-time 45 "https://fm.formularynavigator.com/jsonFiles/publish/…`
 - **Bash** `cd /workspaces/fhir-agent/data/reference/aca-commercial
 # Pull full issuer formulary to a TEMP (gitignored), extract first 3 complete records, then delete the big file.
 curl -s --max-time 90 "https://…`
+- **Write** `/workspaces/fhir-agent/data/reference/.gitignore`
+- **Read** `/workspaces/fhir-agent/data/reference/.gitignore`
+- **Edit** `/workspaces/fhir-agent/data/reference/.gitignore`
 
 </details>
 
