@@ -4273,7 +4273,7 @@ Everything green. Let me tear down the stack and review the full change:
 Clean. Committing — **worktree** `/workspaces/fhir-agent`, **branch** `docs/phase2-guides`, **target** `main` via PR:
 
 <details>
-<summary>Execution details — 514 tool events</summary>
+<summary>Execution details — 515 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5480,6 +5480,13 @@ docs: developer/testing/demo guides, plus a findable docs index
 Documentation was scattered and, in places, wrong: do…`
 - **Bash** `cd /workspaces/fhir-agent
 git push -u origin docs/phase2-guides 2>&1 | tail -3`
+- **Bash** `cd /workspaces/fhir-agent
+gh pr create --base main --head docs/phase2-guides \
+  --title "docs: developer/testing/demo guides, plus a findable docs index" \
+  --body "$(cat <<'EOF'
+## Why
+
+Documentati…`
 
 </details>
 
@@ -5490,6 +5497,6 @@ git push -u origin docs/phase2-guides 2>&1 | tail -3`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 10:58 UTC
+- **Last updated:** 15 July 2026, 10:59 UTC
 - **Turns:** 64
 - **Status:** Incomplete
