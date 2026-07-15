@@ -4147,8 +4147,10 @@ Now keep the requirements doc in sync — R17.5 defines this exact mapping:
 
 Now let me build and run the tests:
 
+38 tests pass (up from 24). Now the real proof — a live end-to-end run. First the normal 6 paths:
+
 <details>
-<summary>Execution details — 451 tool events</summary>
+<summary>Execution details — 452 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5186,6 +5188,10 @@ grep -n "clinical-safety\|R17.5" -B 4 -A 8 docs/phase2/requirements.md | head -4
 - **Edit** `/workspaces/fhir-agent/docs/phase2/requirements.md`
 - **Bash** `cd /workspaces/fhir-agent
 mvn -f claims-service/pom.xml test 2>&1 | grep -E "Tests run:|BUILD|ERROR.*\.java|FAIL" | head -20`
+- **Bash** `cd /workspaces/fhir-agent
+mvn -q -f claims-service/pom.xml -DskipTests clean package 2>&1 | tail -3
+FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose up -d fhir triage >/dev/null 2>&1
+for i in $(s…`
 
 </details>
 
@@ -5196,6 +5202,6 @@ mvn -f claims-service/pom.xml test 2>&1 | grep -E "Tests run:|BUILD|ERROR.*\.jav
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 10:29 UTC
+- **Last updated:** 15 July 2026, 10:30 UTC
 - **Turns:** 63
 - **Status:** Incomplete
