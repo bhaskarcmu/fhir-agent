@@ -4669,8 +4669,12 @@ Backup in place. Now replaying history with the fix folded into the first commit
 
 Commit 1 replayed. Now folding the placeholder fix **into** it, so the fake key never exists in history:
 
+Commit 1 is clean. Replaying the second commit:
+
+Both commits replayed. Now verifying the branch history is genuinely clean before force-pushing:
+
 <details>
-<summary>Execution details — 640 tool events</summary>
+<summary>Execution details — 642 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6174,6 +6178,13 @@ git add docs/gateway-runbook.md
 git commit -q --amend --no-edit
 echo "amended commit 1: $(git log --oneline -1)"
 echo "--- fake key still in this commit?"; git show HEAD --fo…`
+- **Bash** `cd /workspaces/fhir-agent
+git cherry-pick 57ee699 2>&1 | tail -2
+echo "--- branch now:"; git log --oneline main..HEAD`
+- **Bash** `cd /workspaces/fhir-agent
+echo "════ the fake key anywhere in this branch's history? ════"
+found=$(git log -p main..HEAD | grep -c "3f2b9c1e4a7d4c8fb0e6a1d9c3b5e7f2" || true)
+echo "  occurrences acros…`
 
 </details>
 
@@ -6184,6 +6195,6 @@ echo "--- fake key still in this commit?"; git show HEAD --fo…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 12:08 UTC
+- **Last updated:** 15 July 2026, 12:09 UTC
 - **Turns:** 68
 - **Status:** Incomplete
