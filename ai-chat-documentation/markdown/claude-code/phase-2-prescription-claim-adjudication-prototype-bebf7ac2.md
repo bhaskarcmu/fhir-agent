@@ -4157,8 +4157,12 @@ That's the proof. That exact claim approved 30 seconds earlier; with the safety 
 
 Let me verify the other half — an unresolvable member — with triage healthy again:
 
+Both fail-closed paths verified live. Let me clean up the stack and review the diff:
+
+Stack stopped (the exit code was just the shell reporting the killed background jobs). Staging and committing — **worktree** `/workspaces/fhir-agent`, **branch** `feature/phase2-failclosed-safety`, **target** `main` via PR:
+
 <details>
-<summary>Execution details — 454 tool events</summary>
+<summary>Execution details — 458 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5207,6 +5211,20 @@ curl -s -X POST http://localhost:8090/claims/adj…`
 - **Bash** `cd /workspaces/fhir-agent
 FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose up -d triage >/dev/null 2>&1
 for i in $(seq 1 25); do curl -s --max-time 2 http://localhost:8001/health 2>/dev/null | gr…`
+- **Bash** `cd /workspaces/fhir-agent
+pkill -f 'claims-service-0.1.0.jar' 2>/dev/null; pkill -f 'rxclaim-emulator-0.1.0.jar' 2>/dev/null
+docker compose stop fhir triage >/dev/null 2>&1
+echo "(stack stopped)"
+git…`
+- **Bash** `cd /workspaces/fhir-agent
+docker compose stop fhir triage 2>&1 | tail -1
+git status --short`
+- **Bash** `cd /workspaces/fhir-agent
+git add claims-service/ data/scripts/seed_claims_demo.py docs/phase2/requirements.md
+git commit -q -F - <<'EOF'
+fix(claims): fail closed when the clinical-safety check cannot…`
+- **Bash** `cd /workspaces/fhir-agent
+git push -u origin feature/phase2-failclosed-safety 2>&1 | tail -3`
 
 </details>
 
@@ -5217,6 +5235,6 @@ for i in $(seq 1 25); do curl -s --max-time 2 http://localhost:8001/health 2>/de
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 10:31 UTC
+- **Last updated:** 15 July 2026, 10:32 UTC
 - **Turns:** 63
 - **Status:** Incomplete
