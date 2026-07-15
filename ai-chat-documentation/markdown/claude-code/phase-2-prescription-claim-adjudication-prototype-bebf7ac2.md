@@ -4121,8 +4121,20 @@ Good — this touches clinical safety, so I'll look carefully before changing an
 
 Now the triage service's contract — I need to know what it returns for a patient with **no** allergies, since that determines whether the other golden paths can survive a fail-closed policy:
 
+Triage returns **LOW** for a patient with no allergies (`evaluate([], [])`), and **404** for an unknown patient. That settles the design. Let me look at the remaining pieces:
+
+I have what I need. The design: a fourth state — the safety check **could not be completed** — which maps to PEND (a human decides) instead of silently becoming LOW/APPROVED.
+
+Now the rules engine — `UNKNOWN` becomes a PEND finding:
+
+Now the triage client — every failure mode becomes `UNKNOWN` rather than `LOW`:
+
+The class javadoc still describes the old fail-open contract — updating it:
+
+Now the seeder. With fail-closed, member `000000001` must exist in FHIR or every golden path would PEND — so let me generalize the seeding to give it a real (allergy-free) clinical record:
+
 <details>
-<summary>Execution details — 430 tool events</summary>
+<summary>Execution details — 438 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5134,6 +5146,18 @@ grep -rn "refill-risk" triage-service/src --include=*.py -A 20 | head -40`
 - **Read** `/workspaces/fhir-agent/triage-service/src/triage/main.py`
 - **Bash** `cd /workspaces/fhir-agent
 grep -n "def evaluate" -A 30 triage-service/src/triage/rules.py | head -40`
+- **Bash** `cd /workspaces/fhir-agent
+echo "════ test deps available ════"
+grep -n "artifactId" claims-service/pom.xml | grep -iE "test|junit|assertj|mock|wiremock"
+echo "════ docs referencing R17.5 / risk mappin…`
+- **Bash** `cd /workspaces/fhir-agent
+grep -n "clinical-safety\|R17.5" -B 4 -A 8 docs/phase2/requirements.md | head -45`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/domain/RiskLevel.java`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/rules/RulesEngine.java`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/client/HttpTriageClient.java`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/client/HttpTriageClient.java`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/client/HttpTriageClient.java`
+- **Read** `/workspaces/fhir-agent/data/scripts/seed_claims_demo.py`
 
 </details>
 
@@ -5144,6 +5168,6 @@ grep -n "def evaluate" -A 30 triage-service/src/triage/rules.py | head -40`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 10:25 UTC
+- **Last updated:** 15 July 2026, 10:26 UTC
 - **Turns:** 63
 - **Status:** Incomplete
