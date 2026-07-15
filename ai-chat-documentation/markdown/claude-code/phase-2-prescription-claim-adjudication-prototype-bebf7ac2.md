@@ -4149,8 +4149,16 @@ Now let me build and run the tests:
 
 38 tests pass (up from 24). Now the real proof — a live end-to-end run. First the normal 6 paths:
 
+All 6 paths hold, and now **every** claim gets a genuine safety check (member `000000001` is a real FHIR patient → triage returns LOW).
+
+Now the decisive test — kill triage and resubmit the *same clean claim* that just approved (with a fresh claim id, to avoid idempotent replay):
+
+That's the proof. That exact claim approved 30 seconds earlier; with the safety check unavailable it now **pends with a clear reason** instead of silently approving.
+
+Let me verify the other half — an unresolvable member — with triage healthy again:
+
 <details>
-<summary>Execution details — 452 tool events</summary>
+<summary>Execution details — 454 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5192,6 +5200,13 @@ mvn -f claims-service/pom.xml test 2>&1 | grep -E "Tests run:|BUILD|ERROR.*\.jav
 mvn -q -f claims-service/pom.xml -DskipTests clean package 2>&1 | tail -3
 FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose up -d fhir triage >/dev/null 2>&1
 for i in $(s…`
+- **Bash** `cd /workspaces/fhir-agent
+docker compose stop triage >/dev/null 2>&1
+echo "triage stopped. Submitting the SAME clean claim that approved a moment ago:"
+curl -s -X POST http://localhost:8090/claims/adj…`
+- **Bash** `cd /workspaces/fhir-agent
+FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose up -d triage >/dev/null 2>&1
+for i in $(seq 1 25); do curl -s --max-time 2 http://localhost:8001/health 2>/dev/null | gr…`
 
 </details>
 
@@ -5202,6 +5217,6 @@ for i in $(s…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 10:30 UTC
+- **Last updated:** 15 July 2026, 10:31 UTC
 - **Turns:** 63
 - **Status:** Incomplete
