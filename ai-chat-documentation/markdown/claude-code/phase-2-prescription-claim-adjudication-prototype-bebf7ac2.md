@@ -4527,7 +4527,7 @@ Now the controller and the advice that emits a real FHIR `OperationOutcome`:
 Now the contract test for R17.6's three disjoint classes:
 
 <details>
-<summary>Execution details — 602 tool events</summary>
+<summary>Execution details — 604 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5922,6 +5922,9 @@ grep -n "spring-boot-starter-web" -A 2 claims-service/pom…`
 - **Bash** `cd /workspaces/fhir-agent
 grep -n "spring-boot-starter-parent" -A 3 claims-service/pom.xml | head -5
 echo "---- AdjudicationService API:"; grep -n "public\|class" claims-service/src/main/java/com/paye…`
+- **Write** `/workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/ClaimIntakeContractTest.java`
+- **Bash** `cd /workspaces/fhir-agent
+mvn -f claims-service/pom.xml test 2>&1 | grep -E "Tests run:|BUILD|ERROR.*\.java|FAILURE|<<<" | head -20`
 
 </details>
 
@@ -5932,6 +5935,6 @@ echo "---- AdjudicationService API:"; grep -n "public\|class" claims-service/src
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 11:53 UTC
+- **Last updated:** 15 July 2026, 11:54 UTC
 - **Turns:** 67
 - **Status:** Incomplete
