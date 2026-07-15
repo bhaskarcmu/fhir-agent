@@ -41,7 +41,7 @@ class AdjudicationServiceTest {
                     : Optional.empty();
         }
         @Override public Optional<String> resolvePatientId(String memberId) {
-            return Optional.empty();
+            return Optional.of("P1");
         }
     }
 

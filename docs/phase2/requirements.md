@@ -216,9 +216,25 @@ across runs and implementations. `domain_order` is the fixed pipeline order
 quantity). No wall-clock, map-iteration, or set ordering may affect output.
 
 **R17.5 — Triage → finding mapping.** The reused triage `RiskAssessment` maps to a
-clinical-domain finding: `HIGH` ⇒ `DENY`; `MODERATE` ⇒ `REVIEW`; `LOW` ⇒ no finding.
+clinical-domain finding: `HIGH` ⇒ `DENY`; `MODERATE` ⇒ `REVIEW`; `LOW` ⇒ no finding;
+`UNKNOWN` ⇒ `PEND` (`clinical-safety-unavailable`).
 (Known limitation: triage returns only its first match — sufficient for a safety gate;
 documented in the plan.)
+
+**The safety check fails closed.** `UNKNOWN` means the check could not be completed —
+member unresolved, triage down or erroring, or an unrecognised response — and is
+deliberately distinct from `LOW`. Treating "we could not check" as "we checked and it is
+safe" lets a claim approve on a safety check that never ran; the failure is silent,
+because a system that cannot see a drug-allergy conflict reports no conflict. So an
+incomplete check pends for a human rather than approving. A hard `DENY` still outranks it
+(precedence, R17.3): a claim denied on eligibility or formulary grounds needs no safety
+check to be denied.
+
+*Consequence to accept:* a member with no clinical record on file pends rather than
+approving. The prototype seeds a record for every demo member, so an absent record means
+a data-integrity gap — the case that should pend — rather than a routine new member. A
+production deployment would reconcile members against an authoritative index and
+distinguish a documented "no known allergies" record from a missing one.
 
 **R17.6 — Error taxonomy (distinct from denials).** Three disjoint response classes:
 - **Validation error** (malformed/unresolvable claim) → HTTP 400 + `OperationOutcome`;

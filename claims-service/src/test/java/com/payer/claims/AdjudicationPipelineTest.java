@@ -15,6 +15,7 @@ import com.payer.claims.pipeline.AdjudicationPipeline;
 import com.payer.claims.rules.RulesEngine;
 import java.time.LocalDate;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -31,17 +32,21 @@ class AdjudicationPipelineTest {
     private final RulesEngine rules = new RulesEngine();
 
     private AdjudicationPipeline pipeline(FormularyEntry formulary, RiskLevel risk) {
-        PayerKb kb = (planId, rxcui) -> Optional.ofNullable(formulary);
-        TriageClient triage = (claim, patientId) -> risk;
-        LegacyClient legacy = record -> PAID_RESPONSE;
-        return new AdjudicationPipeline(kb, rules, triage, legacy, acl, new StubFhir());
+        return pipeline(formulary, (claim, patientId) -> risk, new StubFhir(Optional.of("P1")));
     }
 
-    /** Minimal FHIR stub: resolves a member to a patient id; other ops unused here. */
-    private static final class StubFhir implements com.payer.claims.fhir.FhirClient {
+    private AdjudicationPipeline pipeline(FormularyEntry formulary, TriageClient triage,
+                                          StubFhir fhir) {
+        PayerKb kb = (planId, rxcui) -> Optional.ofNullable(formulary);
+        LegacyClient legacy = record -> PAID_RESPONSE;
+        return new AdjudicationPipeline(kb, rules, triage, legacy, acl, fhir);
+    }
+
+    /** Minimal FHIR stub: resolves a member to the given patient id; other ops unused here. */
+    private record StubFhir(Optional<String> patientId) implements com.payer.claims.fhir.FhirClient {
         public void submit(org.hl7.fhir.r4.model.Bundle tx) { }
         public Optional<AdjudicationDecision> existingDecision(String id) { return Optional.empty(); }
-        public Optional<String> resolvePatientId(String memberId) { return Optional.of("P1"); }
+        public Optional<String> resolvePatientId(String memberId) { return patientId; }
     }
 
     private static CanonicalClaim claim(String rxcui, int qty, LocalDate dos, boolean paOnFile) {
@@ -88,6 +93,41 @@ class AdjudicationPipelineTest {
                 .adjudicate(claim("723", 30, DOS, false));
         assertThat(d.outcome()).isEqualTo(Outcome.DENIED);
         assertThat(d.reasons()).extracting(f -> f.code()).containsExactly("clinical-safety-high");
+    }
+
+    @Test
+    void resolvedPatientId_isHandedToTriage() {
+        // Regression guard: triage was once called with no patient context, so the safety check
+        // silently evaluated nothing and every claim approved. Assert the id actually flows.
+        AtomicReference<String> seen = new AtomicReference<>();
+        pipeline(fe(true, false, false, null),
+                (claim, patientId) -> { seen.set(patientId); return RiskLevel.LOW; },
+                new StubFhir(Optional.of("P1")))
+                .adjudicate(claim("29046", 30, DOS, false));
+        assertThat(seen.get()).isEqualTo("P1");
+    }
+
+    @Test
+    void unresolvedMember_reachesTriageAsNull_soItCanFailClosed() {
+        // The pipeline does not invent a patient id; it hands null to triage, which maps it to
+        // UNKNOWN (see HttpTriageClientTest) — together these make an unresolvable member pend.
+        AtomicReference<String> seen = new AtomicReference<>("unset");
+        pipeline(fe(true, false, false, null),
+                (claim, patientId) -> { seen.set(patientId); return RiskLevel.UNKNOWN; },
+                new StubFhir(Optional.empty()))
+                .adjudicate(claim("29046", 30, DOS, false));
+        assertThat(seen.get()).isNull();
+    }
+
+    @Test
+    void safetyCheckUnavailable_pendsInsteadOfApproving() {
+        // The whole point of failing closed: an otherwise-clean claim must not approve when the
+        // clinical-safety check could not run.
+        AdjudicationDecision d = pipeline(fe(true, false, false, null), RiskLevel.UNKNOWN)
+                .adjudicate(claim("29046", 30, DOS, false));
+        assertThat(d.outcome()).isEqualTo(Outcome.PENDED);
+        assertThat(d.reasons()).extracting(f -> f.code())
+                .containsExactly("clinical-safety-unavailable");
     }
 
     @Test
