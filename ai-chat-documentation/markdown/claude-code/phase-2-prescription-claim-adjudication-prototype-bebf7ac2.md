@@ -4245,7 +4245,7 @@ Now the developer guide — including the hard-won gotchas that cost real debugg
 Now the testing guide. Let me get accurate counts rather than guess:
 
 <details>
-<summary>Execution details — 487 tool events</summary>
+<summary>Execution details — 489 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5382,6 +5382,13 @@ echo "════ rxclaim-emulator ════"
 mvn -f rxclaim-emulator/pom.xml test 2>&1 | grep -E "Tests run:.*Failures" | tail -2
 echo "════ claims-service ════"
 mvn -f claims-service/p…`
+- **Bash** `cd /workspaces/fhir-agent
+mvn -f claims-service/pom.xml test 2>&1 | grep -E "Tests run: [0-9]+, Failures" | tail -1
+echo "---- per class:"
+mvn -f claims-service/pom.xml test 2>&1 | grep -E "Tests run:…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "fhir-service @Test methods: $(grep -rh '@Test' fhir-service/src/test/java --include=*.java | wc -l)"
+echo "smoke test scripts:"; ls client/clinical/smoke_test.py client…`
 
 </details>
 
@@ -5392,6 +5399,6 @@ mvn -f claims-service/p…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 10:49 UTC
+- **Last updated:** 15 July 2026, 10:50 UTC
 - **Turns:** 64
 - **Status:** Incomplete
