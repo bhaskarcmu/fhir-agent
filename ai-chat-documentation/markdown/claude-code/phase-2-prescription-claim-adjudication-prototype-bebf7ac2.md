@@ -4520,8 +4520,12 @@ Note the working tree is back to main's docs — PR #38's changes live on its ow
 
 Adding the validation dependency:
 
+Now the constraints on the claim record — each one tied to a real reason, not defensive noise:
+
+Now the controller and the advice that emits a real FHIR `OperationOutcome`:
+
 <details>
-<summary>Execution details — 596 tool events</summary>
+<summary>Execution details — 600 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5908,6 +5912,10 @@ git checkout -b fix/claim-validation-r17-6 2>&1 | tail -1
 grep -n "spring-boot-starter-web" -A 2 claims-service/pom…`
 - **Read** `/workspaces/fhir-agent/claims-service/pom.xml`
 - **Edit** `/workspaces/fhir-agent/claims-service/pom.xml`
+- **Write** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/domain/CanonicalClaim.java`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/api/ClaimController.java`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/api/ClaimController.java`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/api/ClaimController.java`
 
 </details>
 
@@ -5918,6 +5926,6 @@ grep -n "spring-boot-starter-web" -A 2 claims-service/pom…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 11:52 UTC
+- **Last updated:** 15 July 2026, 11:53 UTC
 - **Turns:** 67
 - **Status:** Incomplete
