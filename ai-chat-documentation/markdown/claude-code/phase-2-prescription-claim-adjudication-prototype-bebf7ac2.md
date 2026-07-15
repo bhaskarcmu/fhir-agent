@@ -4248,8 +4248,10 @@ Two honest gaps confirmed: R17.6's `OperationOutcome` validation class isn't imp
 
 Now the demo guide. Let me verify the agent commands I'm about to document actually work rather than transcribing them from the README:
 
+The agent's explanation works against the live stack — that's the demo centrepiece. Now the demo guide:
+
 <details>
-<summary>Execution details — 496 tool events</summary>
+<summary>Execution details — 497 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5413,6 +5415,7 @@ grep -rn "add_argument" claims-agent/src/*/[a-z]*.py 2>/dev/null | head -10 || f
 pip install -e "claims-agent[dev]" -q 2>&1 | tail -1
 echo "════ claims-agent --no-llm against the live stack (DEMO-SAFETY claim) ════"
 CLAIMS_URL=http://localhost:8090 python…`
+- **Write** `/workspaces/fhir-agent/docs/demo-guide.md`
 
 </details>
 
@@ -5423,6 +5426,6 @@ CLAIMS_URL=http://localhost:8090 python…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 10:53 UTC
+- **Last updated:** 15 July 2026, 10:55 UTC
 - **Turns:** 64
 - **Status:** Incomplete
