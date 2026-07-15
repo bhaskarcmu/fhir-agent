@@ -4434,8 +4434,16 @@ Kong restart fixed it — a real gotcha for the runbook. But note `/claims` with
 
 That's a genuine bug, worse than the finding suggested. Let me check whether it actually *persisted* a `DEC-null` decision to the audit store — that determines severity:
 
+**Confirmed — and this is a real data-integrity bug, worse than the finding implied.** An empty `{}` claim returns HTTP 200 with a **persisted** `DEC-null` ClaimResponse + Provenance in the audit store. R17.6 requires 400 + `OperationOutcome` and *no* ClaimResponse persisted. Worse: since idempotency keys on `decisionId`, every malformed claim collapses to the same `DEC-null` and replays that cached denial. Let me document it precisely:
+
+Adding the Kong stale-DNS gotcha I hit during verification to the runbook's troubleshooting:
+
+Now tearing down and verifying all links, including the new pages:
+
+All three remaining mentions are inside explicit "does not exist" lists — correctly qualified. Tests green at 38. Committing:
+
 <details>
-<summary>Execution details — 579 tool events</summary>
+<summary>Execution details — 586 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5779,6 +5787,23 @@ echo "════ POST an EMPTY claim {} — R17.6 says this should be 40…`
 - **Bash** `cd /workspaces/fhir-agent
 echo "════ did DEC-null get persisted to the FHIR audit store? ════"
 curl -s --max-time 8 "http://localhost:8080/fhir/ClaimResponse?_tag=DEC-null&_summary=count" | python3 -c…`
+- **Edit** `/workspaces/fhir-agent/docs/testing-guide.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/demo-guide.md`
+- **Edit** `/workspaces/fhir-agent/docs/gateway-runbook.md`
+- **Bash** `cd /workspaces/fhir-agent
+docker compose --profile phase2 --profile gateway down >/dev/null 2>&1
+echo "(stack down)"
+python3 - <<'PY'
+import re, pathlib
+def slug(h):
+    s = re.sub(r'[^\w\s-]', '', h.…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "════ residual false claims? ════"
+echo "-- 'No application code exists yet':"; grep -rn "No application code exists yet" docs/ 2>/dev/null || echo "   gone ✅"
+echo "--…`
+- **Bash** `cd /workspaces/fhir-agent
+git status --short; echo "════"; git diff --stat | tail -3`
 
 </details>
 
@@ -5789,6 +5814,6 @@ curl -s --max-time 8 "http://localhost:8080/fhir/ClaimResponse?_tag=DEC-null&_su
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 11:39 UTC
+- **Last updated:** 15 July 2026, 11:40 UTC
 - **Turns:** 66
 - **Status:** Incomplete
