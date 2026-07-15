@@ -70,6 +70,11 @@ public class RulesEngine {
         } else if (risk == RiskLevel.MODERATE) {
             f.add(Finding.of("CLINICAL-SAFETY", "clinical", Severity.REVIEW, "clinical-safety-moderate",
                     "Moderate clinical-safety concern; pharmacist review recommended."));
+        } else if (risk == RiskLevel.UNKNOWN) {
+            // Fail closed: an incomplete safety check must not silently approve. A human decides.
+            f.add(Finding.of("CLINICAL-SAFETY-UNAVAILABLE", "clinical", Severity.PEND,
+                    "clinical-safety-unavailable",
+                    "Clinical-safety check could not be completed; pharmacist review required."));
         }
 
         // Deterministic total order: severity, then pipeline domain, then rule id.

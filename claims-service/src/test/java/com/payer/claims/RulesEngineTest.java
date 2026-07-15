@@ -68,6 +68,25 @@ class RulesEngineTest {
     }
 
     @Test
+    void pended_whenClinicalRiskUnknown_failsClosed() {
+        // An incomplete safety check must never approve: it pends for a human (R17.5).
+        var r = engine.evaluate(claim(DOS, 1, false, false),
+                fe(true, false, false, false, null), RiskLevel.UNKNOWN);
+        assertThat(r.outcome()).isEqualTo(Outcome.PENDED);
+        assertThat(r.reasons()).extracting(Finding::code)
+                .containsExactly("clinical-safety-unavailable");
+    }
+
+    @Test
+    void unknownRisk_doesNotMaskAHardDenial() {
+        // Non-formulary (DENY) still outranks the safety-unavailable PEND; both are recorded.
+        var r = engine.evaluate(claim(DOS, 1, false, false), null, RiskLevel.UNKNOWN);
+        assertThat(r.outcome()).isEqualTo(Outcome.DENIED);
+        assertThat(r.allFindings()).extracting(Finding::code)
+                .contains("non-formulary", "clinical-safety-unavailable");
+    }
+
+    @Test
     void routedForReview_whenModerateRiskOnly() {
         var r = engine.evaluate(claim(DOS, 1, false, false),
                 fe(true, false, false, false, null), RiskLevel.MODERATE);

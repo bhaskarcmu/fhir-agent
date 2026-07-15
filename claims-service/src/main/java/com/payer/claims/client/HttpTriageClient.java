@@ -16,9 +16,12 @@ import org.springframework.stereotype.Component;
 
 /**
  * HTTP transport to the reused triage service (Phase 1), which returns a FHIR RiskAssessment.
- * Resilient by design: any failure degrades to {@link RiskLevel#LOW} (logged) so triage being
- * down never hard-blocks adjudication — a production build would put a circuit breaker here and
- * consider pending instead (see plan §5). Full member→FHIR-patient resolution lands in M4.
+ *
+ * <p><b>Fails closed.</b> Every path that does not produce a risk level we understand — member
+ * unresolved, triage down or erroring, unrecognised response — returns {@link RiskLevel#UNKNOWN},
+ * never {@link RiskLevel#LOW}. Approving a claim because a safety check was unavailable is a
+ * clinical-safety hazard, so the rules engine maps UNKNOWN to PEND for human review (R17.5).
+ * Adding a circuit breaker here is follow-up work; it changes latency, not this policy.
  */
 @Component
 public class HttpTriageClient implements TriageClient {
@@ -38,8 +41,8 @@ public class HttpTriageClient implements TriageClient {
     @Override
     public RiskLevel assess(CanonicalClaim claim, String fhirPatientId) {
         if (fhirPatientId == null || fhirPatientId.isBlank()) {
-            log.info("no FHIR patient for member {}; clinical risk defaults to LOW", claim.memberId());
-            return RiskLevel.LOW;
+            log.warn("no FHIR patient for member {}; clinical safety UNKNOWN", claim.memberId());
+            return RiskLevel.UNKNOWN;
         }
         try {
             // Only patient_id — triage evaluates all active meds vs. recorded allergies.
@@ -52,21 +55,27 @@ public class HttpTriageClient implements TriageClient {
                     .build();
             HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
             if (resp.statusCode() / 100 != 2) {
-                log.warn("triage returned {} for patient {}; defaulting clinical risk to LOW",
+                log.warn("triage returned {} for patient {}; clinical safety UNKNOWN",
                         resp.statusCode(), fhirPatientId);
-                return RiskLevel.LOW;
+                return RiskLevel.UNKNOWN;
             }
-            JsonNode body = mapper.readTree(resp.body());
-            String code = body.path("prediction").path(0)
-                    .path("qualitativeRisk").path("coding").path(0).path("code").asText("LOW");
-            return switch (code.toUpperCase()) {
+            JsonNode code = mapper.readTree(resp.body()).path("prediction").path(0)
+                    .path("qualitativeRisk").path("coding").path(0).path("code");
+            // A missing/unrecognised code means the contract drifted — we did not get an answer
+            // we understand, so treat it as UNKNOWN rather than reading it as "safe".
+            return switch (code.asText("").toUpperCase()) {
                 case "HIGH" -> RiskLevel.HIGH;
                 case "MODERATE" -> RiskLevel.MODERATE;
-                default -> RiskLevel.LOW;
+                case "LOW" -> RiskLevel.LOW;
+                default -> {
+                    log.warn("triage response had no recognised risk code for patient {}; "
+                            + "clinical safety UNKNOWN", fhirPatientId);
+                    yield RiskLevel.UNKNOWN;
+                }
             };
         } catch (Exception e) {
-            log.warn("triage unavailable ({}); defaulting clinical risk to LOW", e.toString());
-            return RiskLevel.LOW;
+            log.warn("triage unavailable ({}); clinical safety UNKNOWN", e.toString());
+            return RiskLevel.UNKNOWN;
         }
     }
 }
