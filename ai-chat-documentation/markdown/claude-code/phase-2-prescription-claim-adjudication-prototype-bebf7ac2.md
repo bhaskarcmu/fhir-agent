@@ -4408,8 +4408,10 @@ Now the Medium: `fhir-service/README.md` labels two running services as "Future"
 
 Now the Low finding — the placeholder emulator READMEs are a single heading each:
 
+Now the two new pages the findings call for. First the gateway runbook — the single operational source of truth across both phases:
+
 <details>
-<summary>Execution details — 556 tool events</summary>
+<summary>Execution details — 557 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5706,6 +5708,7 @@ echo; echo "════ line count rxclaim-emulator/infra/main.tf ════"
 - **Write** `/workspaces/fhir-agent/epic-emulator/README.md`
 - **Read** `/workspaces/fhir-agent/athena-emulator/README.md`
 - **Write** `/workspaces/fhir-agent/athena-emulator/README.md`
+- **Write** `/workspaces/fhir-agent/docs/gateway-runbook.md`
 
 </details>
 
@@ -5716,6 +5719,6 @@ echo; echo "════ line count rxclaim-emulator/infra/main.tf ════"
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 11:29 UTC
+- **Last updated:** 15 July 2026, 11:30 UTC
 - **Turns:** 66
 - **Status:** Incomplete
