@@ -4498,8 +4498,30 @@ Good — that's the right split. Let me look at the claim type and validation se
 
 `prescriberNpi` is `rpad(..., 10)` — an over-long NPI would be **silently truncated** into the legacy record. That's a concrete corruption risk that justifies format validation. Let me see all the field widths:
 
+`rpad` **truncates** and `lpadNum` overflows the record width — so an over-long `memberId` silently prices the wrong member, and an over-large quantity would shift every downstream field. That makes the legacy fixed-width contract a principled basis for the constraints, rather than me inventing limits.
+
+**My decisions** (mirroring the ACL contract, since exceeding it corrupts data silently):
+
+| Field | Rule | Why |
+|---|---|---|
+| `claimId` | required | the idempotency key — its absence *is* the `DEC-null` bug |
+| `memberId` | required, ≤9 | legacy MBRID width; longer is truncated |
+| `planId`, `rxcui` | required | formulary/clinical lookup keys |
+| `ndc` | required, ≤11 | legacy NDC width |
+| `quantity` | positive, ≤99999 | legacy 5-digit field |
+| `daysSupply` | positive, ≤999 | legacy 3-digit field |
+| `dateOfService` | required | eligibility input; NPEs when null |
+| `prescriberNpi` | required, 10 digits | NPI standard = legacy 10-char field |
+| `coverageEffective`/`Termination` | required | absence currently *masquerades as a denial* |
+| `drugName` | optional | display only; no rule reads it |
+| `priorAuthOnFile`/`stepTherapyMet` | optional | absent → `false` is the conservative default (PEND/REVIEW, never approve) |
+
+Note the working tree is back to main's docs — PR #38's changes live on its own branch, which is exactly the split you asked for. Code only here.
+
+Adding the validation dependency:
+
 <details>
-<summary>Execution details — 593 tool events</summary>
+<summary>Execution details — 596 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5880,6 +5902,12 @@ grep -n "validation" claims-service/pom.xml || echo "  NOT present — needs add
 echo; echo "════ legacy record field widths…`
 - **Read** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/acl/LegacyAdapter.java`
 - **Read** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/acl/LegacyAdapter.java`
+- **Bash** `cd /workspaces/fhir-agent
+git checkout main -q && git pull --ff-only -q 2>&1|tail -1
+git checkout -b fix/claim-validation-r17-6 2>&1 | tail -1
+grep -n "spring-boot-starter-web" -A 2 claims-service/pom…`
+- **Read** `/workspaces/fhir-agent/claims-service/pom.xml`
+- **Edit** `/workspaces/fhir-agent/claims-service/pom.xml`
 
 </details>
 
@@ -5890,6 +5918,6 @@ echo; echo "════ legacy record field widths…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 11:51 UTC
+- **Last updated:** 15 July 2026, 11:52 UTC
 - **Turns:** 67
 - **Status:** Incomplete
