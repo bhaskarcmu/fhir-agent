@@ -4532,8 +4532,10 @@ All 52 pass (38 → 52). Now the live verification — the fix must reject `{}` 
 
 Nothing persisted, all six golden paths unaffected. Running e2e and the claims-agent to be sure nothing downstream regressed:
 
+Tearing down and committing the fix:
+
 <details>
-<summary>Execution details — 607 tool events</summary>
+<summary>Execution details — 609 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5942,6 +5944,13 @@ curl -s --max-time 8 "http://localhost:8080/fhir/ClaimResponse?_tag=DEC-null&_su
 echo "════ e2e ════"; python3 -m pytest e2e/ -q 2>&1 | tail -2
 echo; echo "════ claims-agent still explains (its claim must pass validation) ════"
 python3 -m claims_agent.age…`
+- **Bash** `cd /workspaces/fhir-agent
+for p in $(pgrep -f 'claims-service-0.1.0.jar|rxclaim-emulator-0.1.0.jar' 2>/dev/null); do kill $p 2>/dev/null; done
+docker compose stop fhir triage >/dev/null 2>&1
+echo "(st…`
+- **Bash** `cd /workspaces/fhir-agent
+docker compose stop fhir triage 2>&1 | tail -1
+git status --short`
 
 </details>
 
@@ -5952,6 +5961,6 @@ python3 -m claims_agent.age…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 11:56 UTC
+- **Last updated:** 15 July 2026, 11:57 UTC
 - **Turns:** 67
 - **Status:** Incomplete
