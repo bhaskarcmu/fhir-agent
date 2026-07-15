@@ -4442,6 +4442,50 @@ Now tearing down and verifying all links, including the new pages:
 
 All three remaining mentions are inside explicit "does not exist" lists — correctly qualified. Tests green at 38. Committing:
 
+[PR #38](https://github.com/bhaskarcmu/fhir-agent/pull/38) is up. All eight findings were real and reproducible — I addressed every one. Here's the reasoning, including where your review caught me being wrong.
+
+## The uncomfortable one first
+
+**Your Terraform finding was right, and worse than you stated — and I'm the one who spread it.** The plan claimed "by M7 the cloud path is fully authored; Phase 2b is `terraform apply`, not new construction." I repeated that in three guides *and told you it in chat*, without ever checking. When I did check, I nearly overcorrected to "no cloud IaC exists" — which was **also false**. The truth needed a third look:
+
+- Per-service Cloud Run stubs **do** exist (`claims-service/infra/main.tf`, `rxclaim-emulator/infra/main.tf`) — M2 and M3 genuinely shipped theirs
+- No root module, no `deploy-phase2.sh`, no claims-agent config, no cloud smoke test
+
+So the stubs are unreferenced fragments and Phase 2b is real authoring work. I nearly replaced one inaccuracy with its mirror image, which is a good argument for your "check the repo before citing an artifact" instinct.
+
+## What I changed and why
+
+**Status (Critical):** made it a *single* canonical statement in `phase2/README.md`; the plan links rather than restates, and per-milestone status became a **Status column** — data, not prose. Three prose statements is how you get three opinions.
+
+**Safety semantics (High):** the code was already correct; the doc was stale. So this was drift, not a behaviour deviation — no requirement deviation needed. I gave the service README the full mapping table and the *why*, since that's the paragraph someone will read at 2am.
+
+**Gateway (High):** new `docs/gateway-runbook.md` as the single operational truth. `gateway/README.md` keeps its Phase 1 procedures — they're accurate and battle-tested, so rewriting them would have been vandalism; it just points to the runbook now.
+
+**ADR index (Medium):** an *index*, not twelve retroactive ADRs — those would duplicate rationale that already exists and back-date decisions to look tidier than they were. Four decisions are marked **⚠️ Partially delivered**, which I think is the page's real value: C3's "Postgres behind a repository interface" has the seam but no Postgres.
+
+## What I deliberately did *not* change
+
+**I didn't write the Terraform.** Your finding offered "add the artifacts *or* mark them planned." Authoring a root module is a milestone of infra work with real decisions in it, not a docs PR — and writing IaC to make a sentence true is backwards.
+
+**I didn't fix the bug I found** (below) — normative contract change, needs its own PR.
+
+**I didn't touch `requirements.md`.** D8 says cloud artifacts ship each milestone; that didn't happen. But D8 is an *agreement*, not a completion claim — the shortfall is status, so it went to the plan and the decisions index. Editing the requirement to match what we did would launder a miss into a plan.
+
+## One thing you should know
+
+Verifying the runbook, I found a **data-integrity bug** nobody reported:
+
+```
+POST /claims/adjudicate  {}   →  200  { "decisionId": "DEC-null", "outcome": "DENIED" }
+ClaimResponse?_tag=DEC-null   →  total: 1     ← persisted
+```
+
+An empty claim isn't rejected — it's **adjudicated and written to the audit store**. R17.6 requires 400 + `OperationOutcome` with nothing persisted. And because idempotency keys on `decisionId`, *every* malformed claim collapses to the same `DEC-null` and replays that cached denial. A regulator finding a denial recorded against a claim nobody submitted is a bad day.
+
+It's documented with reproduction and fully specified as §16 item 4. **I'd recommend it as the next code PR** — say the word and I'll take it (it needs a decision from you on which fields are mandatory).
+
+**Branch:** `docs/review-fixes` · **Commit:** `14482f5` · Runbook procedures executed against a live stack, links + anchors verified across 28 files, 38 tests pass.
+
 <details>
 <summary>Execution details — 589 tool events</summary>
 
@@ -5824,6 +5868,6 @@ gh pr create --base main --head docs/review-fixes \
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 11:41 UTC
+- **Last updated:** 15 July 2026, 11:42 UTC
 - **Turns:** 66
 - **Status:** Incomplete
