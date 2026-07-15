@@ -4496,8 +4496,10 @@ Fix that bug, make reasonable decisions for that fix based on your judgement, up
 
 Good — that's the right split. Let me look at the claim type and validation setup before deciding what's mandatory.
 
+`prescriberNpi` is `rpad(..., 10)` — an over-long NPI would be **silently truncated** into the legacy record. That's a concrete corruption risk that justifies format validation. Let me see all the field widths:
+
 <details>
-<summary>Execution details — 590 tool events</summary>
+<summary>Execution details — 593 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5872,6 +5874,12 @@ gh pr create --base main --head docs/review-fixes \
 ### Turn 67 activity
 
 - **Read** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/domain/CanonicalClaim.java`
+- **Bash** `cd /workspaces/fhir-agent
+echo "════ validation dependency present? ════"
+grep -n "validation" claims-service/pom.xml || echo "  NOT present — needs adding"
+echo; echo "════ legacy record field widths…`
+- **Read** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/acl/LegacyAdapter.java`
+- **Read** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/acl/LegacyAdapter.java`
 
 </details>
 
@@ -5882,6 +5890,6 @@ gh pr create --base main --head docs/review-fixes \
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 11:50 UTC
+- **Last updated:** 15 July 2026, 11:51 UTC
 - **Turns:** 67
 - **Status:** Incomplete
