@@ -4260,8 +4260,18 @@ Now the future-work section the plan was missing:
 
 Now the top-level README — it needs to become a map. Adding a documentation section right after the demo:
 
+Now consolidating the README's duplicated "Next" / "Next Steps" / stale test counts into one honest section that defers to the plan:
+
+Let me verify every internal documentation link actually resolves rather than trusting my typing:
+
+All links and anchors verified. Final check that nothing I added breaks the existing suites:
+
+Everything green. Let me tear down the stack and review the full change:
+
+`requirements.md` is untouched — it stays normative. Let me verify it has no commit/PR pollution, as you flagged:
+
 <details>
-<summary>Execution details — 506 tool events</summary>
+<summary>Execution details — 512 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5435,6 +5445,31 @@ CLAIMS_URL=http://localhost:8090 python…`
 - **Edit** `/workspaces/fhir-agent/README.md`
 - **Edit** `/workspaces/fhir-agent/README.md`
 - **Edit** `/workspaces/fhir-agent/README.md`
+- **Edit** `/workspaces/fhir-agent/README.md`
+- **Bash** `cd /workspaces/fhir-agent
+python3 - <<'PY'
+import re, pathlib
+root = pathlib.Path('.')
+files = ['README.md','docs/README.md','docs/developer-guide.md','docs/testing-guide.md',
+         'docs/demo-guid…`
+- **Bash** `cd /workspaces/fhir-agent
+python3 - <<'PY'
+import re, pathlib
+# Verify #anchor targets exist as headings in the target file (GitHub slug rules).
+def slug(h):
+    s = h.strip().lower()
+    s = re.sub(r…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "════ all Python suites (pytest.ini testpaths) ════"
+python3 -m pytest -q 2>&1 | tail -3
+echo; echo "════ e2e (stack still up) ════"
+python3 -m pytest e2e/ -q 2>&1 | tai…`
+- **Bash** `cd /workspaces/fhir-agent
+docker compose --profile phase2 stop >/dev/null 2>&1; docker compose stop fhir triage >/dev/null 2>&1
+echo "(stack stopped)"; git status --short; echo "════ diff stat ════";…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "════ PR/branch/commit references in requirements.md ════"
+grep -nEi "\bPR #|pull request|feature/|branch |commit [0-9a-f]{7}" docs/phase2/requirements.md || echo "  non…`
 
 </details>
 
@@ -5445,6 +5480,6 @@ CLAIMS_URL=http://localhost:8090 python…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 10:57 UTC
+- **Last updated:** 15 July 2026, 10:58 UTC
 - **Turns:** 64
 - **Status:** Incomplete
