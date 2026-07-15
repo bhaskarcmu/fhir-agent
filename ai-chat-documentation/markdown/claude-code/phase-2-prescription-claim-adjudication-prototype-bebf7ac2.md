@@ -4443,7 +4443,7 @@ Now tearing down and verifying all links, including the new pages:
 All three remaining mentions are inside explicit "does not exist" lists — correctly qualified. Tests green at 38. Committing:
 
 <details>
-<summary>Execution details — 588 tool events</summary>
+<summary>Execution details — 589 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5810,6 +5810,10 @@ git commit -q -F - <<'EOF'
 docs…`
 - **Bash** `cd /workspaces/fhir-agent
 git push -u origin docs/review-fixes 2>&1 | tail -2`
+- **Bash** `cd /workspaces/fhir-agent
+gh pr create --base main --head docs/review-fixes \
+  --title "docs: resolve review findings — status truth, safety semantics, gateway runbook, ADR index" \
+  --body "$(cat <…`
 
 </details>
 
