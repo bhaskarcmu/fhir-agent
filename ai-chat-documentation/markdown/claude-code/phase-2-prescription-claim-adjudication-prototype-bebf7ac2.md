@@ -4238,8 +4238,10 @@ Now the documentation. Let me check what's stale in the plan before restructurin
 
 The e2e fix is verified. Now the docs. Let me gather the remaining facts I need to write them accurately:
 
+I have what I need. Creating a branch for the docs work (my e2e fix rides along, since it's the same concern — making the documented behaviour true):
+
 <details>
-<summary>Execution details — 483 tool events</summary>
+<summary>Execution details — 484 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5364,6 +5366,9 @@ echo "════ ai-chat-history worktree ════"
 ls /workspaces/.ai-chat-history 2>/dev/null | head -12
 echo; echo "════ .ona/automations.yaml ════"; cat .ona/automations.yaml 2>/de…`
 - **Bash** `cd /workspaces/.ai-chat-history 2>/dev/null && ls ai-chat-documentation/ | head -10 && echo "---- README head:" && head -30 README.md`
+- **Bash** `cd /workspaces/fhir-agent
+git checkout -b docs/phase2-guides 2>&1 | tail -1
+git status --short`
 
 </details>
 
@@ -5374,6 +5379,6 @@ echo; echo "════ .ona/automations.yaml ════"; cat .ona/automatio
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 10:47 UTC
+- **Last updated:** 15 July 2026, 10:48 UTC
 - **Turns:** 64
 - **Status:** Incomplete
