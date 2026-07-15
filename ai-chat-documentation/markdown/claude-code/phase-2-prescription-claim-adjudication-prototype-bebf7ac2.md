@@ -4663,8 +4663,14 @@ Now the harder half: GitLeaks scanned the commit range `14482f5^..57ee699`, and 
 
 Confirmed: the string is inside commit `14482f5`, so **a follow-up commit cannot clear this alert** — GitLeaks scans that commit's diff regardless. Only rewriting the branch history removes it, and force-pushing is a destructive Git operation, so I need your call before I do it.
 
+Approved — rewriting with a backup first. Discarding my uncommitted edit so I can re-apply it at the right point in history:
+
+Backup in place. Now replaying history with the fix folded into the first commit:
+
+Commit 1 replayed. Now folding the placeholder fix **into** it, so the fake key never exists in history:
+
 <details>
-<summary>Execution details — 636 tool events</summary>
+<summary>Execution details — 640 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6152,6 +6158,22 @@ echo; echo "════ other realistic-looking sec…`
 echo "════ is the fake key in commit 14482f5's diff? ════"
 git show 14482f5 --format='' -- docs/gateway-runbook.md | grep -c "3f2b9c1e4a7d4c8fb0e6a1d9c3b5e7f2" | sed 's/^/  o…`
 - **AskUserQuestion** `{"questions": [{"question": "The fake key is baked into commit 14482f5, so only a history rewrite clears the GitLeaks alert. How should I land the fix?", "header": "GitLeaks fix", "multiSelect": false…`
+- **Bash** `cd /workspaces/fhir-agent
+git checkout -- docs/gateway-runbook.md
+git branch backup/docs-review-fixes-preleak 2>&1 | tail -1
+echo "safety backup created:"; git branch --list 'backup/*'
+echo "current H…`
+- **Bash** `cd /workspaces/fhir-agent
+git reset --hard main 2>&1 | tail -1
+git cherry-pick 14482f5 2>&1 | tail -2
+echo "--- replayed commit 1: $(git log --oneline -1)"
+grep -n "DEV APIKEY: 3f2b" docs/gateway-runb…`
+- **Edit** `/workspaces/fhir-agent/docs/gateway-runbook.md`
+- **Bash** `cd /workspaces/fhir-agent
+git add docs/gateway-runbook.md
+git commit -q --amend --no-edit
+echo "amended commit 1: $(git log --oneline -1)"
+echo "--- fake key still in this commit?"; git show HEAD --fo…`
 
 </details>
 
@@ -6162,6 +6184,6 @@ git show 14482f5 --format='' -- docs/gateway-runbook.md | grep -c "3f2b9c1e4a7d4
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 12:07 UTC
+- **Last updated:** 15 July 2026, 12:08 UTC
 - **Turns:** 68
 - **Status:** Incomplete
