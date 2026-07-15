@@ -4410,8 +4410,18 @@ Now the Low finding — the placeholder emulator READMEs are a single heading ea
 
 Now the two new pages the findings call for. First the gateway runbook — the single operational source of truth across both phases:
 
+Now the ADR index — lightweight, linking to where decisions already live rather than restating them:
+
+Now wiring the two new pages into the index, and adding the pointer from `gateway/README.md` so there's genuinely one source of truth:
+
+`docs/phase2/README.md` holds the canonical status — and my own wording there repeats the false Terraform claim. Fixing it and the C2 filename:
+
+Now the top-level README, which also carries the false Terraform claim I wrote:
+
+Now let me verify the gateway runbook's local procedure is accurate rather than plausible — actually bringing up the gateway profile:
+
 <details>
-<summary>Execution details — 557 tool events</summary>
+<summary>Execution details — 568 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5709,6 +5719,19 @@ echo; echo "════ line count rxclaim-emulator/infra/main.tf ════"
 - **Read** `/workspaces/fhir-agent/athena-emulator/README.md`
 - **Write** `/workspaces/fhir-agent/athena-emulator/README.md`
 - **Write** `/workspaces/fhir-agent/docs/gateway-runbook.md`
+- **Write** `/workspaces/fhir-agent/docs/phase2/decisions.md`
+- **Edit** `/workspaces/fhir-agent/docs/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/README.md`
+- **Read** `/workspaces/fhir-agent/gateway/README.md`
+- **Edit** `/workspaces/fhir-agent/gateway/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/README.md`
+- **Edit** `/workspaces/fhir-agent/README.md`
+- **Edit** `/workspaces/fhir-agent/README.md`
+- **Bash** `cd /workspaces/fhir-agent
+FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose --profile phase2 --profile gateway up -d 2>&1 | tail -4
+for i in $(seq 1 45); do curl -s -o /dev/null --max-time 2 http:…`
 
 </details>
 
@@ -5719,6 +5742,6 @@ echo; echo "════ line count rxclaim-emulator/infra/main.tf ════"
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 11:30 UTC
+- **Last updated:** 15 July 2026, 11:32 UTC
 - **Turns:** 66
 - **Status:** Incomplete
