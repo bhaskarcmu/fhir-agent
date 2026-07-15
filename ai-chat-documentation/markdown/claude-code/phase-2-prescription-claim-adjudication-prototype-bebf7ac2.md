@@ -4272,6 +4272,36 @@ Everything green. Let me tear down the stack and review the full change:
 
 Clean. Committing — **worktree** `/workspaces/fhir-agent`, **branch** `docs/phase2-guides`, **target** `main` via PR:
 
+[PR #37](https://github.com/bhaskarcmu/fhir-agent/pull/37) is up.
+
+## What you asked for
+
+**Three guides**, organised by what a reader is trying to do, all reachable from the top-level README via a new `docs/` index:
+
+1. **[Developer guide](https://github.com/bhaskarcmu/fhir-agent/blob/docs/phase2-guides/docs/developer-guide.md)** — mental model, the lifecycle of one claim through the packages, the invariants that must not break, and how to add a rule / downstream call / artefact. The section I'd point a new developer at first is **§7 Traps**: the ambient env-var leak, HAPI rejecting numeric ids, search-index lag vs. immediate reads, the in-memory FHIR wipe, the uvicorn h2c body-drop, Spring DI constructor ambiguity. Those cost real hours and were living only in my context window.
+
+2. **[Testing guide](https://github.com/bhaskarcmu/fhir-agent/blob/docs/phase2-guides/docs/testing-guide.md)** — each level defined *in this codebase's terms* with a real example, verified counts, run commands, and how to write each type. The centrepiece is a case study of **how the dead safety check passed every test** — what each level did and why it stayed silent. It answers "how should a tester approach this?" far better than abstract advice: test the states you hope never happen; a green suite only proves the questions you asked have good answers; mocks agree with you, stub servers don't.
+
+3. **[Demo guide](https://github.com/bhaskarcmu/fhir-agent/blob/docs/phase2-guides/docs/demo-guide.md)** — prep checklist plus four audiences. For the architect I included what you called out: AI chats version-controlled in the `ai-chat-history` worktree ("the chats are provenance, not exhaust") and the machine-independent devcontainer/Ona setup — plus advice to *volunteer the weaknesses*, since that audience is hunting for what you're hiding.
+
+**Placement**, per your point about pollution: `requirements.md` is untouched and stays normative. Status and sequencing went to `plan.md`, which gains **§16 Future work** — 13 items in three tiers, each with a rationale.
+
+## Two things worth your attention
+
+**The docs were lying.** `docs/` and `docs/phase2/` both still said *"PLANNING — no application code yet"* — after eight merged milestones. Fixed.
+
+**I found and fixed an e2e regression I caused in #36.** The e2e suite never seeded FHIR patients. Since the demo FHIR server is in-memory and boots empty, fail-closed made three golden paths pend instead of approve — and it only passed if the demo seeder happened to run first. **CI doesn't run e2e, so nothing caught it.** I fixed it (`e2e/conftest.py` seeds via the committed seeder, per R19) and added `E2E-SAFETY`, closing the gap where no e2e path proved triage was consulted at all — the same blind spot as the original bug. Verified against a deliberately wiped, confirmed-empty FHIR server: 7 passed.
+
+Writing honest test documentation is what surfaced it, which is a decent argument for the exercise.
+
+**Gaps now written down instead of omitted:** CI skips e2e (top of §16), no non-regression snapshots, e2e doesn't assert the persisted audit graph, and **R17.6's `OperationOutcome` validation class is specified but never implemented** — `ClaimController` has no `@Valid` at all.
+
+**Validation:** 113 Python + 7 e2e pass; every doc link and heading anchor checked programmatically; all documented commands run rather than transcribed.
+
+**Branch:** `docs/phase2-guides` · **Commit:** `1683ff3`
+
+Still awaiting your call on deleting the merged `feature/phase2-failclosed-safety` branch (origin + local) — and I'd note the CI e2e job is infra config, so I'd want your go-ahead before building it.
+
 <details>
 <summary>Execution details — 515 tool events</summary>
 
