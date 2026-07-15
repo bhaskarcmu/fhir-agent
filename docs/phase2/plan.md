@@ -245,6 +245,11 @@ they do not add GKE manifests unless a component is deliberately placed on GKE.)
 
 ## 6. Workstreams / milestones
 
+> **Status: M0–M7 are complete.** The slice runs end to end locally: submit a claim →
+> deterministic decision → FHIR artefact graph → plain-language explanation. **M8 (Phase 2b,
+> the live cloud deploy) has not started** — its Terraform is authored but never applied.
+> What comes next is §16.
+
 Cloud is threaded through every milestone (design + stub + test), per the revised D8; the
 **Cloud touchpoint** column is the artifact/test produced *then* (not live-deployed until
 Phase 2b). Stakeholder deliverables per milestone are in §13.
@@ -461,3 +466,91 @@ Principles:
 - **Sequential off `main`** (merge M2, branch M3 off updated `main`, …) for clean review;
   stacked PRs only when parallelism is worth the rebase cost.
 - Never self-merge — PRs are prepared and kept current for review.
+
+## 16. Future work
+
+M0–M7 are done. This is the prioritised backlog, roughly in the order a new contributor should
+pick it up. Each item says *why it matters* — a backlog without rationale becomes a wish list.
+
+### Tier 1 — do these first
+
+**1. Run the e2e suite in CI.** The single highest-value gap. CI has three jobs; none brings up
+the stack, so `e2e/` only ever runs when a human remembers. A fail-closed change once broke
+three e2e tests and reached `main` unnoticed. Needs a compose-based job (`docker compose
+--profile phase2 up -d`, wait for health, `pytest e2e/`) with sensible timeouts. Touches CI
+config, so agree the approach before building it.
+*Why:* the suite that would have caught the last regression isn't watching.
+
+**2. Non-regression decision snapshots (R19).** Store `ClaimResponse` snapshots under per-service
+`testdata/`; assert catalogue or rule growth cannot silently change an existing decision. R19
+requires this and it does not exist.
+*Why:* a payer's worst failure is a decision that changes without anyone deciding to change it.
+
+**3. Assert the audit graph end-to-end (R18.2).** `FhirArtifactBuilderTest` proves the graph is
+*built* right; nothing proves it is *stored* right. Extend `e2e/` to read back the persisted
+`Claim`/`ClaimResponse`/`Task`/`Provenance`/`RiskAssessment` and assert the links and the
+decision id.
+*Why:* the audit trail is the product for a regulator; it is currently untested where it lands.
+
+**4. Implement R17.6's validation class.** `ClaimController` handles the system-error class (503
++ safe-retry) but has no `@Valid` and never emits an `OperationOutcome`; a malformed claim gets
+Spring's default 400 body. Specified, not built.
+*Why:* the error taxonomy is normative, and "specified but unimplemented" is the worst state for
+a contract.
+
+### Tier 2 — production-shaped work
+
+**5. Circuit breaker on the triage call.** Today every request to a down triage service waits for
+its own timeout, then pends. Under sustained failure that is slow *and* pends a flood of claims.
+A breaker fails fast while preserving the fail-closed policy — it changes latency, not the
+decision.
+*Why:* correct but slow is still an outage.
+
+**6. Exercise the C3 repository seam — Postgres-backed `PayerKb`.** The interface exists and
+`FilePayerKb` implements it. Add a Postgres implementation plus the documented NoSQL-emulator
+path. No rules-engine change should be needed; if one is, the seam is wrong and that is worth
+knowing now.
+*Why:* the seam's whole value is the claim that swapping is cheap. Untested, it's a hypothesis.
+
+**7. Member → Patient resolution for real.** `Patient/member-{id}` is a demo affordance. Replace
+it with a proper member index (or identifier search against a real system URI), and decide how a
+legitimately new member with no clinical record differs from a data-integrity gap — today both
+pend (see R17.5's accepted consequence).
+*Why:* the current convention silently assumes a naming scheme no real payer has.
+
+**8. NCPDP reject-code fidelity.** Map decisions to real reject codes (65 patient not covered, 70
+product not covered, …) alongside the internal reason codes.
+*Why:* a pharmacy system speaks NCPDP; internal codes don't reach the counter.
+
+**9. `Task` lifecycle / prior-auth round trip.** PENDED and ROUTED currently terminate. Build the
+human-in-the-loop return path: a reviewer resolves the `Task`, and the claim re-adjudicates
+idempotently.
+*Why:* PEND is a promise to come back. Nothing comes back yet.
+
+### Tier 3 — scale and cloud
+
+**10. M8 / Phase 2b — live cloud deploy.** `terraform apply`: Cloud Run + Cloud SQL/Neon + Secret
+Manager + Artifact Registry; DB-less Kong live; emulator `ingress=internal`; OTel → Cloud Trace
+and Managed Prometheus; gateway-strangler S1→S2. First real GCP spend — hence deliberately last.
+*Why:* the parity path is built and stub-tested; this is cashing it in, not new construction.
+
+**11. Load, performance, and failure-injection testing.** Nothing is measured. Cold starts are a
+known Cloud Run risk for Spring Boot/HAPI (C1); `min-instances` is the documented mitigation and
+is unverified.
+*Why:* every scalability claim in §5 is currently a design argument, not a number.
+
+**12. BigQuery decision-analytics plane (C4).** FHIR `Provenance` now; the analytics plane was
+always deferred.
+*Why:* "why did approvals drop 4% last month" is a query, not a FHIR search.
+
+**13. Gateway profile coverage in CI.** Kong key-auth and rate limiting are verified by hand.
+*Why:* the gateway is the security boundary; hand-verification doesn't survive contributors.
+
+### Carried-over debt worth naming
+
+- **Compose HAPI version drift** — `v7.2.0` in compose vs `8.8.0` referenced in docs.
+- **Triage returns only its first match** — fine as a safety gate (R17.5); a full multi-reason
+  clinical list needs a triage change, which would touch Phase 1 (R9 — think before doing it).
+- **PHI in gateway logs** — Kong `file-log` records request URIs with identifiers; scrub or
+  treat as restricted (R14). Applies to Phase 1 today.
+- **`epic-emulator/` and `athena-emulator/`** are empty placeholders.

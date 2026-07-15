@@ -1,9 +1,16 @@
 # Phase 2 — Claims Adjudication Modernisation Slice
 
-> **Status: PLANNING — no application code yet.** These documents capture the
-> requirements and implementation plan **we actually agreed to build**, which
-> deviate in places from the source PRD (*Prescription Claim Adjudication
-> Modernization Platform — Phase 2 Scope*, DRAFT). Deviations are listed
+> **Status: BUILT and running locally (M0–M7 complete).** A claim can be submitted,
+> adjudicated, persisted as FHIR artefacts, and explained — end to end, on a laptop.
+> The live cloud deploy (**M8 / Phase 2b**) is deliberately deferred; the IaC is
+> authored but not applied. Next steps: [`plan.md` §16](./plan.md#16-future-work).
+>
+> To run it: [`../demo-guide.md`](../demo-guide.md). To work on it:
+> [`../developer-guide.md`](../developer-guide.md).
+>
+> These documents capture the requirements and implementation plan **we actually
+> agreed to build**, which deviate in places from the source PRD (*Prescription Claim
+> Adjudication Modernization Platform — Phase 2 Scope*, DRAFT). Deviations are listed
 > explicitly in [`requirements.md`](./requirements.md#deviations-from-the-prd).
 
 ## What Phase 2 is
@@ -59,12 +66,16 @@ All Phase 2 work is *additive*. A known-good snapshot is tagged `phase1-v1`
 ## Documents
 
 - **[`requirements.md`](./requirements.md)** — the agreed requirements, scope,
-  out-of-scope, and deviations from the PRD.
+  out-of-scope, and deviations from the PRD. **Normative** — what must be true.
 - **[`plan.md`](./plan.md)** — architecture, service topology, gateway/parity
-  design, workstreams, sequencing, and open questions.
+  design, workstreams, sequencing, open questions, and **[§16 future work](./plan.md#16-future-work)**.
 - **[`source-prd.md`](./source-prd.md)** — the archived source DRAFT PRD that
   seeded this work (the **input**, not the contract; deviations captured in
   `requirements.md`).
+
+Practical guides live one level up and cover both phases:
+**[demo](../demo-guide.md)** · **[developer](../developer-guide.md)** ·
+**[testing](../testing-guide.md)** · **[docs index](../README.md)**.
 
 ## Provenance
 

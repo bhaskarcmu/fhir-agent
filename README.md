@@ -28,6 +28,23 @@ Demo patients loaded by `seed_demo.py`:
 
 ---
 
+## Documentation
+
+Everything is indexed in **[`docs/`](docs/README.md)**. Start with what you're doing:
+
+| I want to… | Read |
+|---|---|
+| **See it work**, or demo it (clinician / insurer / architect / layperson) | [`docs/demo-guide.md`](docs/demo-guide.md) |
+| **Understand the code** and change it safely | [`docs/developer-guide.md`](docs/developer-guide.md) |
+| **Run the tests**, or write good ones | [`docs/testing-guide.md`](docs/testing-guide.md) |
+| **Know why** it's built this way | [`docs/phase2/plan.md`](docs/phase2/plan.md) |
+| **Know what was agreed** (normative requirements) | [`docs/phase2/requirements.md`](docs/phase2/requirements.md) |
+| **Know what to build next** | [`docs/phase2/plan.md` §16](docs/phase2/plan.md#16-future-work) |
+
+Working agreements (git rules, the two worktrees, how to work here): [`CLAUDE.md`](CLAUDE.md).
+
+---
+
 ## Overview
 
 This project builds a platform where clinicians can describe healthcare workflows in natural language, and an **agentic orchestration layer** (powered by LLMs and MCP) generates, deploys, and maintains FHIR-based automations. The goal is to replace traditional SaaS development with AI-driven orchestration, giving healthcare organisations custom tools without needing a full-time software development team.
@@ -125,7 +142,8 @@ and never double-writes its artefacts.
 # Bring up the full stack (Phase 1 services start automatically as dependencies)
 docker compose --profile phase2 up --build -d
 
-# Drive the golden paths (approved / pended / routed / denied / multi-reason)
+# Seed the FHIR fixtures and drive the six golden paths
+# (approved / pended / routed / denied / multi-reason / clinical-safety)
 python3 data/scripts/seed_claims_demo.py
 
 # Explain a decision in plain language (deterministic without an API key)
@@ -136,17 +154,23 @@ docker compose --profile phase2 run --rm claims-agent \
 A plain `docker compose up` (no profile) still runs **only** the Phase 1 stack — Phase 2 is
 strictly additive.
 
+> **The demo FHIR server is in-memory**, so it boots empty every time, and adjudication **fails
+> closed** — a member with no clinical record pends rather than approving. Always run the seeder
+> (it seeds fixtures *and* drives the paths). See the
+> [demo prep checklist](docs/demo-guide.md#1-before-any-demo).
+
 ### Tests
 
 ```bash
-pytest client/clinical/tests triage-service/src/triage/tests mcp-agent/tests   # Phase 1
-mvn -f rxclaim-emulator/pom.xml test && mvn -f claims-service/pom.xml test      # Phase 2 (Java)
-pytest claims-agent/tests                                                       # Phase 2 (agent)
-pytest e2e/                                # golden-path e2e (needs the phase2 stack up; else skips)
+pytest                                      # all Python suites (config in pytest.ini)
+mvn -f claims-service/pom.xml test          # Phase 2 façade: unit + contract tests
+mvn -f rxclaim-emulator/pom.xml test        # simulated legacy core
+pytest e2e/                                 # golden paths (needs the phase2 stack up; else skips)
 ```
 
 CI (`.github/workflows/tests.yml`) runs a **Phase-1-only** job (proving independence) plus the
-Phase 2 suites.
+Phase 2 suites. It does **not** run the e2e suite — that gap, and everything else that is and
+isn't covered, is documented in the [testing guide](docs/testing-guide.md).
 
 ---
 
@@ -233,35 +257,32 @@ cd fhir-service && ./mvnw clean verify
 
 ---
 
-## Known Limitations & Future Work
+## Status & future work
 
 ### Done
-- ✅ Generic FHIR R4 server (all resource endpoints)
-- ✅ H2 in-memory (dev) and Neon serverless PostgreSQL (prod) profiles
-- ✅ Versioned profile URL fallback for validation
-- ✅ **Triage service** — drug-allergy rule engine → FHIR `RiskAssessment`
-- ✅ **MCP agent** — Anthropic tool-use orchestration (FHIR + triage tools)
-- ✅ End-to-end demo, both local processes and full Docker Compose
-- ✅ Test suites: 39 Java (fhir-service) + 105 Python (client, triage, agent, data)
+- ✅ **Phase 1** — FHIR R4 server (H2 dev / Neon PostgreSQL cloud), triage rule engine, MCP
+  agent, end-to-end demo. Tagged `phase1-v1` and independently runnable.
+- ✅ **Phase 2 (M0–M7)** — legacy emulator, adjudication façade + ACL + rules engine, Decision
+  Contract, FHIR audit graph, explanation agent, compose profiles, DB-less Kong, golden paths.
+  Runs end to end locally.
 
 ### Next
-- ⏳ **EHR Emulators**: Epic and Athena customizations (auth stubs, custom profiles, proprietary extensions)
-- ⏳ **Kong gateway on GKE**: production deployment with key-auth + rate limiting
-- ⏳ Interaction checking and additional clinical rules
+The prioritised backlog lives in **[`docs/phase2/plan.md` §16](docs/phase2/plan.md#16-future-work)**
+with rationale for each item. The headlines: run e2e in CI (the top gap), non-regression decision
+snapshots, a circuit breaker on the triage call, the Postgres swap behind the C3 seam, and
+**M8 / Phase 2b** — the live cloud deploy (`terraform apply`; authored, never applied).
 
-### Known Issues
-- Versioned profile URL fallback (`VersionedUrlFallbackValidationSupport`) is a workaround for a gap in HAPI FHIR core; can be removed once HAPI FHIR natively resolves versioned canonical URLs in `DefaultProfileValidationSupport`
-- Binary storage defaults to database; filesystem mode requires explicit `hapi.fhir.binary_storage_mode` and `hapi.fhir.binary_storage_filesystem_base_directory` configuration
-- MDM (patient matching) is disabled by default; enable with `hapi.fhir.mdm_enabled=true`
+Longer-standing: EHR emulators (`epic-emulator/`, `athena-emulator/` are placeholders),
+drug-drug interaction rules, and load testing.
 
----
-
-## Next Steps
-
-1. Add EHR emulators (Epic, Athena) — auth stubs, custom profiles, proprietary extensions
-2. Deploy the Kong gateway + services to GKE (see `deploy.sh` and `gateway/`)
-3. Expand the clinical ruleset (drug-drug interactions, dosage checks)
-4. Add end-to-end smoke tests against the deployed, Kong-gated stack
+### Known issues
+- Versioned profile URL fallback (`VersionedUrlFallbackValidationSupport`) is a workaround for a
+  gap in HAPI FHIR core; removable once HAPI resolves versioned canonical URLs natively in
+  `DefaultProfileValidationSupport`.
+- Binary storage defaults to database; filesystem mode needs explicit
+  `hapi.fhir.binary_storage_mode` + `hapi.fhir.binary_storage_filesystem_base_directory`.
+- MDM (patient matching) is disabled by default; enable with `hapi.fhir.mdm_enabled=true`.
+- Compose pins HAPI `v7.2.0` while docs reference `8.8.0` — drift to reconcile.
 
 ---
 
