@@ -4161,8 +4161,37 @@ Both fail-closed paths verified live. Let me clean up the stack and review the d
 
 Stack stopped (the exit code was just the shell reporting the killed background jobs). Staging and committing — **worktree** `/workspaces/fhir-agent`, **branch** `feature/phase2-failclosed-safety`, **target** `main` via PR:
 
+Done — [PR #36](https://github.com/bhaskarcmu/fhir-agent/pull/36) is up.
+
+## What changed
+
+The safety check now **fails closed**. The core of it is one distinction the code didn't previously make: `RiskLevel.UNKNOWN` ("we could not complete the check") is now separate from `LOW` ("we checked and it's safe"). Collapsing those two is what let a claim approve on a check that never ran — and it's a silent failure by nature, since a system that can't see a drug-allergy conflict reports no conflict. `UNKNOWN` maps to **PEND**, so a pharmacist decides. A hard DENY still outranks it, since a claim denied on formulary grounds doesn't need a safety check to be denied.
+
+I also found a **second fail-open** while in there: a triage response missing the risk field defaulted to `LOW` via `asText("LOW")`. Now `UNKNOWN`.
+
+## The validation that matters
+
+With triage stopped, the *same clean claim that approved 30 seconds earlier* returned:
+
+```
+outcome: PENDED
+reasons: [clinical-safety-unavailable]
+```
+
+An unseeded member behaves the same way, with triage never called. With triage healthy, all 6 golden paths are unchanged.
+
+The new `HttpTriageClientTest` is the guard I'd point a reviewer at: it runs a **real HTTP round-trip** against a JDK stub server and asserts the request body actually carries `patient_id`. A mocked client cannot catch a transport that silently sends an empty body — which is exactly how this broke and stayed broken. Tests went 24 → 38.
+
+## Two things I decided, that you may want to overrule
+
+**A member with no FHIR record now pends rather than approves.** This is the real judgement call. It required seeding member `000000001` in the demo (an allergy-free record), so every claim gets a genuine check — the difference between the two demo members is now what's *on* the record, not whether one exists. The reasoning: in this prototype an absent record means a data gap, which is the case that should pend. But a real payer with legitimately new members might prefer that only *triage failures* pend. That's a one-line change, and I flagged it in the PR.
+
+**I left the circuit breaker out.** It affects latency under sustained failure, not this policy, and is cleaner as its own change.
+
+**Branch:** `feature/phase2-failclosed-safety` · **Commit:** `fd19bb8` · Docs kept in sync (R17.5 now specifies the mapping, rationale, and the accepted consequence).
+
 <details>
-<summary>Execution details — 458 tool events</summary>
+<summary>Execution details — 459 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5225,6 +5254,11 @@ git commit -q -F - <<'EOF'
 fix(claims): fail closed when the clinical-safety check cannot…`
 - **Bash** `cd /workspaces/fhir-agent
 git push -u origin feature/phase2-failclosed-safety 2>&1 | tail -3`
+- **Bash** `cd /workspaces/fhir-agent
+gh pr create --base main --head feature/phase2-failclosed-safety \
+  --title "fix(claims): fail closed when the clinical-safety check cannot run" \
+  --body "$(cat <<'EOF'
+##…`
 
 </details>
 
@@ -5235,6 +5269,6 @@ git push -u origin feature/phase2-failclosed-safety 2>&1 | tail -3`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 10:32 UTC
+- **Last updated:** 15 July 2026, 10:33 UTC
 - **Turns:** 63
 - **Status:** Incomplete
