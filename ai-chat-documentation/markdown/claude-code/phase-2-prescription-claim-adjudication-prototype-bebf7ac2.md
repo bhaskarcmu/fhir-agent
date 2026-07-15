@@ -4536,8 +4536,22 @@ Tearing down and committing the fix:
 
 Code-only, as intended. Committing — **worktree** `/workspaces/fhir-agent` · **branch** `fix/claim-validation-r17-6` · **target** `main`:
 
+[PR #39](https://github.com/bhaskarcmu/fhir-agent/pull/39) is up for the fix. Now updating PR #38's docs for the post-fix reality:
+
+Code files are back to main's state here — the fix lives on its own branch, as intended. Now the docs. Let me see the §16 items so renumbering is exact:
+
+Removing item 4 (now fixed) and renumbering, keeping every cross-reference correct:
+
+Now the testing guide — the R17.6 entry moves from "not tested" to "tested":
+
+My replacement duplicated the gateway bullet — removing the extra:
+
+Now the test inventory — adding the new contract test and updating counts:
+
+Now the claims-service README — documenting the intake contract, which is where an API consumer would look:
+
 <details>
-<summary>Execution details — 610 tool events</summary>
+<summary>Execution details — 621 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5959,6 +5973,37 @@ git commit -q -F - <<'EOF'
 fix(claims): reject malformed claims at intake instead of adjudicating them
 
 A malformed claim was not rejected — it was ad…`
+- **Bash** `cd /workspaces/fhir-agent
+gh pr create --base main --head fix/claim-validation-r17-6 \
+  --title "fix(claims): reject malformed claims at intake instead of adjudicating them" \
+  --body "$(cat <<'EOF'…`
+- **Bash** `cd /workspaces/fhir-agent
+git checkout docs/review-fixes 2>&1 | tail -1
+echo "════ references to specific §16 item numbers (renumbering impact) ════"
+grep -rn "§16 item [0-9]*" --include=*.md . | grep…`
+- **Bash** `cd /workspaces/fhir-agent
+grep -n "^\*\*[0-9]*\." docs/phase2/plan.md`
+- **Bash** `cd /workspaces/fhir-agent
+python3 - <<'PY'
+import pathlib, re
+p = pathlib.Path('docs/phase2/plan.md'); t = p.read_text()
+
+# 1. Excise item 4 (delivered) — from its header up to the start of item 5.
+st…`
+- **Bash** `cd /workspaces/fhir-agent
+python3 - <<'PY'
+import pathlib
+# Renumber cross-references to match (old -> new): 6->5, 7->6, 10->9, 12->11
+fixes = {
+    'docs/gateway-runbook.md': [("§16 item 10", "§16 it…`
+- **Edit** `/workspaces/fhir-agent/docs/testing-guide.md`
+- **Read** `/workspaces/fhir-agent/docs/testing-guide.md`
+- **Edit** `/workspaces/fhir-agent/docs/testing-guide.md`
+- **Edit** `/workspaces/fhir-agent/docs/testing-guide.md`
+- **Bash** `cd /workspaces/fhir-agent
+grep -n "38 tests\|38 unit\|(38\|46 tests\|Tests run: 38" docs/testing-guide.md docs/*.md claims-service/README.md 2>/dev/null | head
+echo "---- 'mvn ... test' count comments…`
+- **Read** `/workspaces/fhir-agent/claims-service/README.md`
 
 </details>
 
@@ -5969,6 +6014,6 @@ A malformed claim was not rejected — it was ad…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 11:57 UTC
+- **Last updated:** 15 July 2026, 11:59 UTC
 - **Turns:** 67
 - **Status:** Incomplete
