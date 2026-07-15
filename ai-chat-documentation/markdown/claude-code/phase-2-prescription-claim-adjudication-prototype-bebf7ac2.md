@@ -4214,8 +4214,12 @@ The normative docs (`requirements.md`, `plan.md`) are well-structured — I'll k
 
 That's a problem I need to check immediately — `e2e/test_golden_paths.py` expects `E2E-APPROVED` → APPROVED for member `000000001`, but it **doesn't seed FHIR patients**. Under fail-closed that now pends. Let me check whether CI runs this:
 
+CI doesn't run the e2e suite, so it's green — but that hides a real defect **I introduced** in the fail-closed PR: `e2e/` never seeds FHIR patients, so under fail-closed its `E2E-APPROVED` case only passes if the demo seeder happened to run first. Let me confirm whether FHIR state persists across restarts:
+
+`jdbc:h2:mem:hapi` — in-memory, no volume. So **every fresh stack starts with an empty FHIR server**, meaning `pytest e2e/` on a clean machine now fails. My earlier verification only passed because I'd run the seeder in the same session. Let me prove it:
+
 <details>
-<summary>Execution details — 467 tool events</summary>
+<summary>Execution details — 469 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5301,6 +5305,14 @@ echo "════ test dirs/files ════"
 find . -path ./node_modules -prune -o \( -name 'test_*.py' -o -name '*Test.java' -o -name '*Tests.java' \) -print 2>/dev/null | grep -v targe…`
 - **Read** `/workspaces/fhir-agent/e2e/test_golden_paths.py`
 - **Read** `/workspaces/fhir-agent/.github/workflows/tests.yml`
+- **Bash** `cd /workspaces/fhir-agent
+echo "════ fhir service in compose ════"
+sed -n '/^  fhir:/,/^  [a-z]/p' docker-compose.yml | head -25
+echo "════ volumes ════"; grep -n "volumes:" -A 4 docker-compose.yml |…`
+- **Bash** `cd /workspaces/fhir-agent
+docker compose restart fhir >/dev/null 2>&1   # in-memory H2 → this wipes FHIR data
+FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose up -d fhir triage >/dev/null 2>&1
+fo…`
 
 </details>
 
@@ -5311,6 +5323,6 @@ find . -path ./node_modules -prune -o \( -name 'test_*.py' -o -name '*Test.java'
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 10:42 UTC
+- **Last updated:** 15 July 2026, 10:43 UTC
 - **Turns:** 64
 - **Status:** Incomplete
