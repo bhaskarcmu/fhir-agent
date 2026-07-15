@@ -4240,8 +4240,12 @@ The e2e fix is verified. Now the docs. Let me gather the remaining facts I need 
 
 I have what I need. Creating a branch for the docs work (my e2e fix rides along, since it's the same concern — making the documented behaviour true):
 
+Now the developer guide — including the hard-won gotchas that cost real debugging time:
+
+Now the testing guide. Let me get accurate counts rather than guess:
+
 <details>
-<summary>Execution details — 484 tool events</summary>
+<summary>Execution details — 487 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5369,6 +5373,15 @@ echo; echo "════ .ona/automations.yaml ════"; cat .ona/automatio
 - **Bash** `cd /workspaces/fhir-agent
 git checkout -b docs/phase2-guides 2>&1 | tail -1
 git status --short`
+- **Write** `/workspaces/fhir-agent/docs/developer-guide.md`
+- **Bash** `cd /workspaces/fhir-agent
+echo "════ python suites (collect only) ════"
+python3 -m pytest --collect-only -q client/clinical/tests triage-service/src/triage/tests mcp-agent/tests claims-agent/tests dat…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "════ rxclaim-emulator ════"
+mvn -f rxclaim-emulator/pom.xml test 2>&1 | grep -E "Tests run:.*Failures" | tail -2
+echo "════ claims-service ════"
+mvn -f claims-service/p…`
 
 </details>
 
@@ -5379,6 +5392,6 @@ git status --short`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 10:48 UTC
+- **Last updated:** 15 July 2026, 10:49 UTC
 - **Turns:** 64
 - **Status:** Incomplete
