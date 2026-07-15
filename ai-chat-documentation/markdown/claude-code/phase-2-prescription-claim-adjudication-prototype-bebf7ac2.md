@@ -4526,8 +4526,10 @@ Now the controller and the advice that emits a real FHIR `OperationOutcome`:
 
 Now the contract test for R17.6's three disjoint classes:
 
+All 52 pass (38 → 52). Now the live verification — the fix must reject `{}` **and** not break any valid claim:
+
 <details>
-<summary>Execution details — 604 tool events</summary>
+<summary>Execution details — 605 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5925,6 +5927,10 @@ echo "---- AdjudicationService API:"; grep -n "public\|class" claims-service/src
 - **Write** `/workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/ClaimIntakeContractTest.java`
 - **Bash** `cd /workspaces/fhir-agent
 mvn -f claims-service/pom.xml test 2>&1 | grep -E "Tests run:|BUILD|ERROR.*\.java|FAILURE|<<<" | head -20`
+- **Bash** `cd /workspaces/fhir-agent
+mvn -q -f claims-service/pom.xml -DskipTests clean package 2>&1 | tail -3
+FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose up -d fhir triage >/dev/null 2>&1
+for i in $(s…`
 
 </details>
 
