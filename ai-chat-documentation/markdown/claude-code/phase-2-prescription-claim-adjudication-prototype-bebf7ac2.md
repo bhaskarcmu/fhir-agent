@@ -4378,8 +4378,16 @@ Confirmed, and the Terraform one is worse than the finding states — **`infra/`
 
 Now I understand the template flow exactly. Let me see what routes the Phase 2 gateway actually defines, so a runbook states facts rather than aspirations:
 
+I've verified all eight findings. Every one is real, and finding #4 is worse than reported — **`infra/` doesn't exist at all**, and I propagated that false claim into my own guides. Let me branch and work through them.
+
+**Worktree** `/workspaces/fhir-agent` · **branch** `docs/review-fixes` · **target** `main` via PR.
+
+Starting with the Critical status conflict — removing the false claim and making the plan defer to one canonical statement rather than adding a third:
+
+Now the milestone table gets a Status column (data, not prose that drifts), replacing the status paragraph I added last round:
+
 <details>
-<summary>Execution details — 526 tool events</summary>
+<summary>Execution details — 529 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5635,6 +5643,10 @@ echo; echo "════ C-decisions ════"; grep -rn "^| C[0-9]" d…`
 - **Bash** `cd /workspaces/fhir-agent
 echo "════ D1-D8 deviations table in requirements.md ════"
 sed -n '/## Deviations from the PRD/,/^---/p' docs/phase2/requirements.md | head -22`
+- **Bash** `cd /workspaces/fhir-agent
+git checkout -b docs/review-fixes 2>&1 | tail -1`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
 
 </details>
 
@@ -5645,6 +5657,6 @@ sed -n '/## Deviations from the PRD/,/^---/p' docs/phase2/requirements.md | head
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 11:24 UTC
+- **Last updated:** 15 July 2026, 11:25 UTC
 - **Turns:** 66
 - **Status:** Incomplete
