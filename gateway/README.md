@@ -1,4 +1,18 @@
-# API Gateway — Kong
+# API Gateway — Kong (Phase 1, KIC on GKE)
+
+> **Scope of this page: the Phase 1 gateway only** — Kong Ingress Controller on GKE, installed
+> via Helm, fronting `/fhir`. This is the gateway that is **deployed today**, and these are its
+> authoritative deploy procedures.
+>
+> **There is a second Kong.** Phase 2 runs a **DB-less** Kong (declarative config, no database)
+> that fronts `/claims`, `/fhir`, and `/triage` locally, and is the canonical Phase 2 gateway
+> (decision C2). The two coexist by design and are unified later via a reversible
+> gateway-strangler migration — Phase 1 is never modified to accommodate Phase 2.
+>
+> **For the cross-phase picture — which gateway owns which route, the S0/S1/S2 states, local
+> procedures, the migration and its rollback — read the
+> [gateway runbook](../docs/gateway-runbook.md).** It is the single operational source of truth
+> and links back here for the Phase 1 procedures below.
 
 Kong Gateway (Apache 2.0) sits in front of `fhir-service` and enforces:
 

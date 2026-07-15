@@ -138,10 +138,27 @@ Documenting these honestly is part of the test strategy. Each is a real hole, no
   assert the R18.2 graph (`Claim`/`ClaimResponse`/`Task`/`Provenance`/`RiskAssessment`) landed
   in FHIR. `FhirArtifactBuilderTest` checks the graph is *built* correctly; nothing checks it is
   *stored* correctly.
-- **R17.6's validation class is unimplemented, so it is untested.** `ClaimController` handles the
-  system-error class (503 + safe-retry) but has no `@Valid` and never emits an
-  `OperationOutcome`; a malformed claim gets Spring's default 400 body. The requirement is
-  specified but not built.
+- **R17.6's validation class is unimplemented — and the failure is worse than "missing".**
+  `ClaimController` handles the system-error class (503 + safe-retry) but has no `@Valid` and
+  never emits an `OperationOutcome`. A malformed claim is not rejected at all: it is
+  **adjudicated**. Verified against the running stack:
+
+  ```console
+  $ curl -H "apikey: $KEY" http://localhost:8000/claims/adjudicate \
+         -H 'Content-Type: application/json' --data '{}'
+  HTTP 200
+  { "decisionId": "DEC-null", "outcome": "DENIED",
+    "reasons": [ { "code": "coverage-inactive", … }, { "code": "non-formulary", … } ] }
+
+  $ curl "http://localhost:8080/fhir/ClaimResponse?_tag=DEC-null&_summary=count"
+  { "total": 1 }        # ← the audit store now holds a denial for a claim that never existed
+  ```
+
+  R17.6 requires **400 + `OperationOutcome`, and no `ClaimResponse` persisted**. Instead an
+  empty body yields a persisted `DEC-null` decision graph. And because idempotency keys on
+  `decisionId` (R18.3), *every* malformed claim collapses to the same `DEC-null` and replays
+  that cached denial. This is a data-integrity bug, not just an unimplemented spec — tracked as
+  [`plan.md` §16 item 4](./phase2/plan.md#16-future-work).
 - **The `gateway` profile is not exercised in CI.** Kong key-auth and rate limiting are verified
   manually.
 - **No load, performance, or soak tests**, and no chaos/failure-injection beyond the unit-level

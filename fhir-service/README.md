@@ -128,13 +128,23 @@ See `CustomBeanTest`, `CustomInterceptorTest`, and `CustomOperationTest` for wor
 
 ## Relationship to Other Modules
 
-| Module | Role |
-|--------|------|
-| `fhir-service` (this) | Generic FHIR R4 data layer — no EHR-specific behaviour |
-| `epic-emulator` | Future: Epic-specific auth stubs, custom profiles, proprietary extensions |
-| `athena-emulator` | Future: Athena-specific customizations |
-| `triage-service` | Future: Drug-allergy risk evaluation business logic |
-| `mcp-agent` | Future: LLM-powered orchestration using FHIR tools |
+Present topology — what consumes this service today:
+
+| Module | Role | Status |
+|--------|------|--------|
+| `fhir-service` (this) | Generic FHIR R4 data layer — no EHR-specific behaviour | ✅ Running |
+| `triage-service` | Drug-allergy risk evaluation → FHIR `RiskAssessment` | ✅ Running |
+| `mcp-agent` | LLM-powered orchestration using FHIR tools (Phase 1) | ✅ Running |
+| `claims-service` | Phase 2 adjudication façade — persists the decision artefact graph here | ✅ Running (`--profile phase2`) |
+| `claims-agent` | Phase 2 explanation agent (non-authoritative) | ✅ Running (`--profile phase2`) |
+| `rxclaim-emulator` | Simulated legacy claims core — internal only, never touches FHIR | ✅ Running (`--profile phase2`) |
+
+Roadmap — not built:
+
+| Module | Intended role | Status |
+|--------|------|--------|
+| `epic-emulator` | Epic-specific auth stubs, custom profiles, proprietary extensions | ⏳ Placeholder |
+| `athena-emulator` | Athena-specific customisations | ⏳ Placeholder |
 
 ## Kubernetes Deployment
 

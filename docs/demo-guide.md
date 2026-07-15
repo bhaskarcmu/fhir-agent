@@ -270,10 +270,14 @@ hand it over:
 - **CI doesn't run e2e.** That's how a fail-closed regression reached `main`. Documented as the
   top gap in [`testing-guide.md` §4](./testing-guide.md#4-what-is-not-tested--known-gaps).
 - **No load testing.** Scale is designed and documented, not measured.
-- **R17.6's `OperationOutcome` validation class is specified but unimplemented.**
+- **Claim validation (R17.6) is unimplemented, and it bites:** `POST /claims/adjudicate` with
+  `{}` returns 200 and *persists* a `DEC-null` decision. Specified, not built — now the top
+  correctness item in plan §16.
 - **No non-regression snapshots yet** (R19 requires them).
-- **The cloud deploy hasn't been applied** — Terraform is authored; Phase 2b is `terraform
-  apply`, deliberately unpaid-for until then.
+- **The cloud deploy is further away than the plan implies.** Per-service Cloud Run stubs exist
+  for the two Java services, but there is **no root Terraform module**, no `deploy-phase2.sh`,
+  and nothing has ever been applied. Phase 2b is real authoring work, not one command. (The plan
+  says so explicitly now — [§6 cloud-delivery gap](./phase2/plan.md#6-workstreams--milestones).)
 
 Then show [`testing-guide.md` §6](./testing-guide.md#6-case-study-how-a-dead-safety-check-passed-every-test)
 — the dead-safety-check case study. Nothing establishes engineering credibility faster than a
