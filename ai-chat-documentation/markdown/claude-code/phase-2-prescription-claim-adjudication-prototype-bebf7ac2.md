@@ -4432,8 +4432,10 @@ claims-service is healthy and bound, but Kong still 503s — Kong resolved the u
 
 Kong restart fixed it — a real gotcha for the runbook. But note `/claims` with an **empty `{}` claim returned 200**, not 400. Let me see what it actually did:
 
+That's a genuine bug, worse than the finding suggested. Let me check whether it actually *persisted* a `DEC-null` decision to the audit store — that determines severity:
+
 <details>
-<summary>Execution details — 578 tool events</summary>
+<summary>Execution details — 579 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5774,6 +5776,9 @@ for i in $(seq 1 30); do curl -s -o /dev/null --max-time 2 http://localhost:8000
 - **Bash** `cd /workspaces/fhir-agent
 KEY=$(docker compose logs kong 2>/dev/null | grep -o 'DEV APIKEY: .*' | tail -1 | cut -d' ' -f3 | tr -d '\r')
 echo "════ POST an EMPTY claim {} — R17.6 says this should be 40…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "════ did DEC-null get persisted to the FHIR audit store? ════"
+curl -s --max-time 8 "http://localhost:8080/fhir/ClaimResponse?_tag=DEC-null&_summary=count" | python3 -c…`
 
 </details>
 
@@ -5784,6 +5789,6 @@ echo "════ POST an EMPTY claim {} — R17.6 says this should be 40…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 11:38 UTC
+- **Last updated:** 15 July 2026, 11:39 UTC
 - **Turns:** 66
 - **Status:** Incomplete
