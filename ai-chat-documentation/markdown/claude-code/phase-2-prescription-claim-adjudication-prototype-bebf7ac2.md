@@ -4558,6 +4558,36 @@ Now verifying the docs branch is coherent — links, anchors, and no lingering r
 
 Now updating PR #38's description, since its original body advertised the bug as an open gap:
 
+Both PRs are ready.
+
+## The fix — [PR #39](https://github.com/bhaskarcmu/fhir-agent/pull/39) (code + tests)
+
+`POST {}` now returns **400 + a real FHIR `OperationOutcome`**, and the audit store stays clean: `ClaimResponse?_tag=DEC-null` went from 1 to **0**. All six golden paths, 7 e2e tests, and the claims-agent are unchanged — which is the point, since valid traffic shouldn't notice a validation fix. Tests went 38 → 52.
+
+**The judgement calls you asked me to make:**
+
+*Which fields are mandatory* came from two rules rather than my taste. First, **anything a decision depends on** — the sharpest case being coverage dates, whose absence made `coverageActiveOnDos()` return false and produced a **denial for a data gap**. That's the same shape as the fail-open safety bug: absence of data silently becoming a decision. Second, **sizes mirror the legacy record**, because `LegacyAdapter.rpad()` *truncates* — a 10-character `memberId` would have priced a different member. The ACL can't defend itself, so the boundary does. That let me justify every bound instead of inventing limits.
+
+*What stays optional:* `drugName` (no rule reads it — rejecting a valid claim over a display string would be its own bug), and the two booleans, whose absent-is-`false` default is conservative: pends or routes, never approves.
+
+Two details worth a look in review: I **sort the `OperationOutcome` issues**, because bean validation reports violations in an unspecified order and that would leak non-determinism into the API; and an unreadable body deliberately **doesn't echo field detail**, since the parser's message can quote the payload and claims are PHI.
+
+The regression guard is `verify(service, never()).adjudicateAndPersist(any())` — the pipeline must never *see* a malformed claim, so no decision can exist to persist.
+
+## The docs — [PR #38](https://github.com/bhaskarcmu/fhir-agent/pull/38) (updated)
+
+Kept proportionate, as you asked — the fix is described as *how the system works*, not as an event:
+
+- `claims-service/README.md` gains an **Intake contract** section (the three response classes + the field table) — where an API consumer would actually look
+- `testing-guide.md`: R17.6 removed from known gaps; the new test added to the inventory; a short note on the *inbound* contract flavour, since it teaches a genuinely different technique
+- plan §16: the delivered item **removed and the backlog renumbered**, with every cross-reference in `decisions.md` and `gateway-runbook.md` updated to match
+- `decisions.md`: one row for the validation-bounds decision
+- `demo-guide.md`: the fixed item dropped from the architect's weaknesses list
+
+One pleasing accident: the developer guide's claim-lifecycle table already said *"validation errors → 400 + `OperationOutcome` (never a denial — R17.6)"*. That was aspirational when I wrote it. It's now simply true, so it stands unchanged.
+
+**⚠️ Merge #39 before #38** — the docs describe the post-fix behaviour. I've noted that at the top of #38 and in #39's reviewer notes.
+
 <details>
 <summary>Execution details — 632 tool events</summary>
 
