@@ -4376,8 +4376,10 @@ These are sharp findings. Several touch claims I made myself, so let me verify e
 
 Confirmed, and the Terraform one is worse than the finding states — **`infra/` doesn't exist at all**. I repeated the plan's claim into my own guides and into PR descriptions without verifying it. Let me check the rest:
 
+Now I understand the template flow exactly. Let me see what routes the Phase 2 gateway actually defines, so a runbook states facts rather than aspirations:
+
 <details>
-<summary>Execution details — 520 tool events</summary>
+<summary>Execution details — 524 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5616,6 +5618,17 @@ echo; echo "════ 4. does infra/terraform exist? ════"; ls…`
 echo "════ 2. claims-service/README.md around line 26 ════"; sed -n '20,32p' claims-service/README.md
 echo; echo "════ 5. which README calls triage/mcp-agent future? ════"
 gr…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "════ 5. find README labelling triage/mcp-agent as future/planned ════"
+grep -rniE "triage.*(future|planned|not yet|will be)|mcp-agent.*(future|planned|not yet|will be)"…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "════ 3. gateway/README.md headings + scope ════"; grep -n "^#\{1,2\} " gateway/README.md | head -14
+echo; echo "════ gateway/kong contents ════"; ls gateway/kong/
+echo;…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "════ deploy-phase2.sh? ════"; ls deploy-phase2.sh 2>/dev/null || echo "  does NOT exist"
+echo; echo "════ compose gateway block (template→generated flow) ════"; sed -n…`
+- **Read** `/workspaces/fhir-agent/gateway/kong/kong.tmpl.yml`
 
 </details>
 
