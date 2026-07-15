@@ -4657,8 +4657,12 @@ Warning: 🛑 Leaks detected, see job summary for details
 
 GitLeaks is right to flag this, and it's my fault: I put a **fabricated but realistic-looking** 32-hex key in the runbook as example output. Let me look at it and check for others:
 
+Exactly **one** offender — line 107. Everything else is my grep catching ASCII diagrams. The real problem isn't just the scanner: a realistic-looking fake key in docs trains readers to dismiss GitLeaks alerts as noise, which is how a genuine leak eventually slips through. The doc only needs to show the *shape* of the log line.
+
+Now the harder half: GitLeaks scanned the commit range `14482f5^..57ee699`, and the string is inside commit **14482f5** itself. Let me confirm that a follow-up commit can't clear it:
+
 <details>
-<summary>Execution details — 633 tool events</summary>
+<summary>Execution details — 635 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6141,6 +6145,10 @@ Addresses all eight review findings. Every one was real and reproducible. The th
 git checkout docs/review-fixes -q 2>&1|tail -1
 echo "════ the flagged line (107) ════"; sed -n '100,110p' docs/gateway-runbook.md
 echo; echo "════ other realistic-looking sec…`
+- **Edit** `/workspaces/fhir-agent/docs/gateway-runbook.md`
+- **Bash** `cd /workspaces/fhir-agent
+echo "════ is the fake key in commit 14482f5's diff? ════"
+git show 14482f5 --format='' -- docs/gateway-runbook.md | grep -c "3f2b9c1e4a7d4c8fb0e6a1d9c3b5e7f2" | sed 's/^/  o…`
 
 </details>
 
@@ -6151,6 +6159,6 @@ echo; echo "════ other realistic-looking sec…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 12:05 UTC
+- **Last updated:** 15 July 2026, 12:06 UTC
 - **Turns:** 68
 - **Status:** Incomplete
