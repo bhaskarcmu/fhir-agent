@@ -4556,8 +4556,10 @@ That line was aspirational when I wrote it; the fix makes it true, so it stays. 
 
 Now verifying the docs branch is coherent — links, anchors, and no lingering references to the fixed bug:
 
+Now updating PR #38's description, since its original body advertised the bug as an open gap:
+
 <details>
-<summary>Execution details — 631 tool events</summary>
+<summary>Execution details — 632 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6030,6 +6032,9 @@ git commit -q -F - <<'EOF'
 docs: reflect the post-fix intake contract (R17.6 implemented)
 
 Follows the claim-validation fix (PR #39)…`
+- **Bash** `cd /workspaces/fhir-agent
+gh pr edit 38 --body "$(cat <<'EOF'
+Addresses all eight review findings. Every one was real and reproducible. The theme is **truthfulness**: several documents asserted things…`
 
 </details>
 
@@ -6040,6 +6045,6 @@ Follows the claim-validation fix (PR #39)…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 12:00 UTC
+- **Last updated:** 15 July 2026, 12:01 UTC
 - **Turns:** 67
 - **Status:** Incomplete
