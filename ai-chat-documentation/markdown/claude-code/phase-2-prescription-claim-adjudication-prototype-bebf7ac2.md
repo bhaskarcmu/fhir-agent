@@ -4212,8 +4212,10 @@ The `PLANNING — no application code yet` status is now badly stale. Let me loo
 
 The normative docs (`requirements.md`, `plan.md`) are well-structured — I'll keep those clean and add the guides alongside. Let me gather the facts I need to write them accurately, starting with the test landscape:
 
+That's a problem I need to check immediately — `e2e/test_golden_paths.py` expects `E2E-APPROVED` → APPROVED for member `000000001`, but it **doesn't seed FHIR patients**. Under fail-closed that now pends. Let me check whether CI runs this:
+
 <details>
-<summary>Execution details — 465 tool events</summary>
+<summary>Execution details — 467 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5297,6 +5299,8 @@ echo; echo "════ requirements.md headings ════"; grep -n "^#\{1,
 - **Bash** `cd /workspaces/fhir-agent
 echo "════ test dirs/files ════"
 find . -path ./node_modules -prune -o \( -name 'test_*.py' -o -name '*Test.java' -o -name '*Tests.java' \) -print 2>/dev/null | grep -v targe…`
+- **Read** `/workspaces/fhir-agent/e2e/test_golden_paths.py`
+- **Read** `/workspaces/fhir-agent/.github/workflows/tests.yml`
 
 </details>
 
