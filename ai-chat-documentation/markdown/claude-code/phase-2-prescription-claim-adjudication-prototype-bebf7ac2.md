@@ -4082,6 +4082,31 @@ Congrats — that's a genuinely nice milestone. 🎉 Let me clean up the branch 
 
 Merge confirmed on `main`. Now deleting the merged feature branch (remote + local):
 
+Branch deleted cleanly — remote and local both gone, `main` fast-forwarded with the merge. Only `ai-chat-history` and `main` remain locally.
+
+## 🎉 Worth celebrating
+
+You took a DRAFT PRD to a **working, end-to-end modernization slice** — and the last piece landing was the one that actually proves the thesis. A clinician-facing claim for a penicillin-allergic patient now gets **DENIED with a machine-readable reason**, produced by a rules engine that never touched the legacy core, reading clinical facts from a FHIR server, with the legacy RPG pricing still authoritative behind an anti-corruption layer. That's the strangler fig pattern *demonstrated*, not described.
+
+What's standing today: a fixed-width RxClaim/DB2 emulator, a canonical claim + ACL, a deterministic decision contract with multi-reason aggregation and precedence, idempotent replay, a full FHIR artefact graph (`Claim → ClaimResponse → Task → Provenance → RiskAssessment`), a separate claims agent, a DB-less Kong parity path, CI with golden-path e2e tests, and the docs to explain every decision. Eight milestones, each its own reviewed PR, none committed to `main`. That's disciplined work.
+
+## Suggested future work
+
+**The one I'd rank first — fail-open clinical safety.** Today an unresolved patient or a triage failure silently degrades to `LOW`, which means **APPROVED**. This slice is itself the cautionary tale: the safety path was silently returning APPROVED for an allergic patient for several milestones, and only a live 6-path demo caught it — no test failed. For a payer system, fail-open on a clinical check is a policy decision, not a default. Worth deciding explicitly whether an *unavailable* safety check should PEND rather than approve, and backing it with a contract test that asserts triage is actually invoked and honored, so this can never regress into a silent LOW again. A circuit breaker belongs here too.
+
+**Then, roughly in order:**
+- **M8 / Phase 2b — the deferred cloud deploy.** Terraform apply for Cloud Run + always-on HAPI, Neon Postgres, DB-less Kong. The parity path is built; this is cashing it in.
+- **Exercise the C3 repository seam** — swap `FilePayerKb` for a Postgres-backed implementation. The seam exists precisely so this is a drop-in.
+- **Member→Patient resolution for real.** The `member-{id}` logical-id convention is a demo affordance; a proper member index (or identifier search with a real system URI) replaces it.
+- **Observability**: traces/SLOs and the C4 decision-audit path (FHIR `Provenance` now → BigQuery later).
+- **NCPDP fidelity**: map decisions to real reject codes (65 patient not covered, 70 product not covered) so downstream pharmacy systems see something authentic.
+- **Prior-auth / `Task` lifecycle** — PENDED and ROUTED currently terminate; the human-in-the-loop round trip is unbuilt.
+- **Load/scale testing** against the scalability decisions already documented.
+
+**Two bits of housekeeping** I noticed but deliberately left untouched: an untracked `core` file in the working tree (looks like a JVM crash dump from a demo run), and a stale `origin/feature/walking-skeleton` remote branch.
+
+Nothing implemented or changed beyond the branch deletion you asked for.
+
 <details>
 <summary>Execution details — 423 tool events</summary>
 
