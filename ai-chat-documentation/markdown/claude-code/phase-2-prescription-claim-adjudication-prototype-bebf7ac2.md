@@ -4422,8 +4422,18 @@ Now let me verify the gateway runbook's local procedure is accurate rather than 
 
 Gateway procedures verified: key retrieval works as documented, no key → **401**, with key → **200**, and `/triage` → 422 (routed, key stripped). `/claims` → 503 because a stray local `java` from my earlier testing still holds port 8090, so the container couldn't bind. Let me clear that and confirm:
 
+`401` without key and `503` with key proves the route and auth work. But the claims-service *container* isn't becoming healthy — worth checking whether that's a real problem:
+
+The container started fine — my curl just raced its startup. Re-verifying now that it's up:
+
+`claims-service: running` but **with no port mapping** — it's in a broken state left over from the failed create when my stray java held 8090. That's my environment, not the repo. Forcing a clean recreate:
+
+claims-service is healthy and bound, but Kong still 503s — Kong resolved the upstream DNS at startup and the container was recreated with a new IP. Restarting Kong should fix it, which is itself a real gotcha worth documenting:
+
+Kong restart fixed it — a real gotcha for the runbook. But note `/claims` with an **empty `{}` claim returned 200**, not 400. Let me see what it actually did:
+
 <details>
-<summary>Execution details — 572 tool events</summary>
+<summary>Execution details — 578 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5747,6 +5757,23 @@ echo "--- port 8090 holder:"; (ss -ltnp 2>/dev/null | grep ':8090' || echo "  fr
 - **Bash** `cd /workspaces/fhir-agent
 FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose --profile phase2 up -d claims-service 2>&1 | tail -2
 for i in $(seq 1 40); do curl -s --max-time 2 http://localhost:8090…`
+- **Bash** `cd /workspaces/fhir-agent
+docker compose logs claims-service 2>&1 | tail -12`
+- **Bash** `cd /workspaces/fhir-agent
+KEY=$(docker compose logs kong 2>/dev/null | grep -o 'DEV APIKEY: .*' | tail -1 | cut -d' ' -f3 | tr -d '\r')
+echo "claims-service direct: $(curl -s --max-time 5 http://local…`
+- **Bash** `cd /workspaces/fhir-agent
+docker compose ps --format '  {{.Service}}: {{.State}} {{.Ports}}' 2>/dev/null | grep -E 'claims|kong'
+echo "--- direct curl retry:"; curl -s --max-time 5 -o /dev/null -w '…`
+- **Bash** `cd /workspaces/fhir-agent
+FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose --profile phase2 up -d --force-recreate claims-service 2>&1 | tail -2
+for i in $(seq 1 40); do curl -s --max-time 2 http…`
+- **Bash** `cd /workspaces/fhir-agent
+docker compose restart kong >/dev/null 2>&1
+for i in $(seq 1 30); do curl -s -o /dev/null --max-time 2 http://localhost:8000/fhir/metadata 2>/dev/null && break; sleep 2; done…`
+- **Bash** `cd /workspaces/fhir-agent
+KEY=$(docker compose logs kong 2>/dev/null | grep -o 'DEV APIKEY: .*' | tail -1 | cut -d' ' -f3 | tr -d '\r')
+echo "════ POST an EMPTY claim {} — R17.6 says this should be 40…`
 
 </details>
 
@@ -5757,6 +5784,6 @@ for i in $(seq 1 40); do curl -s --max-time 2 http://localhost:8090…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 11:35 UTC
+- **Last updated:** 15 July 2026, 11:38 UTC
 - **Turns:** 66
 - **Status:** Incomplete
