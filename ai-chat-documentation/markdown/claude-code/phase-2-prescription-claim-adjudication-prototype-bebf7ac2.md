@@ -4524,8 +4524,10 @@ Now the constraints on the claim record — each one tied to a real reason, not 
 
 Now the controller and the advice that emits a real FHIR `OperationOutcome`:
 
+Now the contract test for R17.6's three disjoint classes:
+
 <details>
-<summary>Execution details — 600 tool events</summary>
+<summary>Execution details — 602 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5916,6 +5918,10 @@ grep -n "spring-boot-starter-web" -A 2 claims-service/pom…`
 - **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/api/ClaimController.java`
 - **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/api/ClaimController.java`
 - **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/api/ClaimController.java`
+- **Write** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/api/ClaimValidationAdvice.java`
+- **Bash** `cd /workspaces/fhir-agent
+grep -n "spring-boot-starter-parent" -A 3 claims-service/pom.xml | head -5
+echo "---- AdjudicationService API:"; grep -n "public\|class" claims-service/src/main/java/com/paye…`
 
 </details>
 
