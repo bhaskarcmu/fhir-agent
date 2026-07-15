@@ -4550,8 +4550,14 @@ Now the test inventory — adding the new contract test and updating counts:
 
 Now the claims-service README — documenting the intake contract, which is where an API consumer would look:
 
+Now the demo guide's "volunteer the weaknesses" list, and a decisions-index row:
+
+That line was aspirational when I wrote it; the fix makes it true, so it stays. Adding brief guidance for the *inbound* contract flavour to the testing guide, since it teaches a distinct technique:
+
+Now verifying the docs branch is coherent — links, anchors, and no lingering references to the fixed bug:
+
 <details>
-<summary>Execution details — 621 tool events</summary>
+<summary>Execution details — 631 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6004,6 +6010,26 @@ fixes = {
 grep -n "38 tests\|38 unit\|(38\|46 tests\|Tests run: 38" docs/testing-guide.md docs/*.md claims-service/README.md 2>/dev/null | head
 echo "---- 'mvn ... test' count comments…`
 - **Read** `/workspaces/fhir-agent/claims-service/README.md`
+- **Edit** `/workspaces/fhir-agent/claims-service/README.md`
+- **Edit** `/workspaces/fhir-agent/claims-service/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/demo-guide.md`
+- **Bash** `cd /workspaces/fhir-agent
+grep -n "non-regression snapshots" docs/demo-guide.md`
+- **Edit** `/workspaces/fhir-agent/docs/demo-guide.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/decisions.md`
+- **Bash** `cd /workspaces/fhir-agent
+grep -n "HTTP intake\|OperationOutcome" docs/developer-guide.md | head -4`
+- **Edit** `/workspaces/fhir-agent/docs/testing-guide.md`
+- **Bash** `cd /workspaces/fhir-agent
+echo "════ lingering references to the fixed bug? ════"
+grep -rni "DEC-null" --include=*.md . | grep -v node_modules || echo "  none ✅"
+echo "════ still claiming R17.6 unimpl…`
+- **Bash** `cd /workspaces/fhir-agent
+git add -A docs/ claims-service/README.md
+git commit -q -F - <<'EOF'
+docs: reflect the post-fix intake contract (R17.6 implemented)
+
+Follows the claim-validation fix (PR #39)…`
 
 </details>
 
@@ -6014,6 +6040,6 @@ echo "---- 'mvn ... test' count comments…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 11:59 UTC
+- **Last updated:** 15 July 2026, 12:00 UTC
 - **Turns:** 67
 - **Status:** Incomplete
