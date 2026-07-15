@@ -3,6 +3,7 @@ package com.payer.claims.api;
 import com.payer.claims.domain.AdjudicationDecision;
 import com.payer.claims.domain.CanonicalClaim;
 import com.payer.claims.pipeline.AdjudicationService;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,16 @@ import org.springframework.web.server.ResponseStatusException;
  * The claims-adjudication API façade — the single edge-facing entry point (fronted by Kong).
  * Accepts a canonical claim, returns the deterministic decision, and persists the auditable
  * FHIR artefact graph. Consumers never see the legacy core behind it.
+ *
+ * <p>Implements the R17.6 error taxonomy's three disjoint response classes:
+ * <ul>
+ *   <li><b>Validation error</b> — malformed claim → 400 + {@code OperationOutcome}, nothing
+ *       adjudicated, nothing persisted. Enforced by {@code @Valid} <i>before</i> this method
+ *       body runs; the response is rendered by {@link ClaimValidationAdvice}.</li>
+ *   <li><b>Adjudication decision</b> — approved/denied/pended/routed → 200 + the decision.
+ *       A denial is a <i>decision about a valid claim</i>, never a complaint about the request.</li>
+ *   <li><b>System error</b> — downstream unavailable → 503, retry-safe.</li>
+ * </ul>
  */
 @RestController
 @RequestMapping("/claims")
@@ -31,7 +42,7 @@ public class ClaimController {
     }
 
     @PostMapping("/adjudicate")
-    public ResponseEntity<AdjudicationDecision> adjudicate(@RequestBody CanonicalClaim claim) {
+    public ResponseEntity<AdjudicationDecision> adjudicate(@Valid @RequestBody CanonicalClaim claim) {
         try {
             return ResponseEntity.ok(service.adjudicateAndPersist(claim));
         } catch (RuntimeException e) {
