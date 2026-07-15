@@ -4139,8 +4139,10 @@ Now the tests. Let me match the existing style:
 
 Adding the rules-engine cases for the new state:
 
+Now the pipeline tests — the regression guards for the exact bug that hid for milestones:
+
 <details>
-<summary>Execution details — 444 tool events</summary>
+<summary>Execution details — 447 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5170,6 +5172,9 @@ grep -n "clinical-safety\|R17.5" -B 4 -A 8 docs/phase2/requirements.md | head -4
 - **Edit** `/workspaces/fhir-agent/data/scripts/seed_claims_demo.py`
 - **Read** `/workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/RulesEngineTest.java`
 - **Edit** `/workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/RulesEngineTest.java`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/AdjudicationPipelineTest.java`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/AdjudicationPipelineTest.java`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/AdjudicationPipelineTest.java`
 
 </details>
 
@@ -5180,6 +5185,6 @@ grep -n "clinical-safety\|R17.5" -B 4 -A 8 docs/phase2/requirements.md | head -4
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 10:27 UTC
+- **Last updated:** 15 July 2026, 10:28 UTC
 - **Turns:** 63
 - **Status:** Incomplete
