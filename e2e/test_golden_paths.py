@@ -8,6 +8,9 @@ services are up. Bring the stack up first:
     docker compose --profile phase2 up --build -d
     pytest e2e/
 
+`conftest.py` seeds the demo members' FHIR records automatically — adjudication fails closed,
+so without them every approving path would pend on `clinical-safety-unavailable`.
+
 Environment:
     CLAIMS_GATEWAY_URL  claims-service base URL (default http://localhost:8090)
     CLAIMS_API_KEY      Kong API key (omit for local/direct)
@@ -57,6 +60,11 @@ GOLDEN = [
             drugName="lisinopril", quantity=30, **_INACTIVE), "DENIED", ["coverage-inactive"]),
     (_claim(claimId="E2E-MULTI", planId="EMP-PPO", rxcui="1991302", ndc="63552-200",
             drugName="semaglutide", quantity=8), "DENIED", ["non-formulary"]),
+    # Clinical safety: member 000000009 has a penicillin allergy on file; amoxicillin conflicts.
+    # This is the one path that proves the reused triage service is actually consulted.
+    (_claim(claimId="E2E-SAFETY", memberId="000000009", planId="COM-SILVER", rxcui="723",
+            ndc="0093-8675", drugName="amoxicillin", quantity=30),
+     "DENIED", ["clinical-safety-high"]),
 ]
 
 
