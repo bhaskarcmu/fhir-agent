@@ -7,6 +7,8 @@ hit only this service (fronted by Kong); the legacy core stays internal.
 
 ## What it does
 `POST /claims/adjudicate` (JSON canonical claim) → deterministic `AdjudicationDecision`:
+0. **Validate the claim** (R17.6). Malformed → `400` + `OperationOutcome`; nothing is
+   adjudicated or persisted (see below).
 1. Look up the formulary row `(planId, rxcui)` from the payer KB (C3 repository seam).
 2. Clinical safety via triage (reused) → risk mapped per R17.5.
 3. **Rules engine** (accumulate-then-resolve, R17): eligibility, formulary, prior-auth,
@@ -17,6 +19,41 @@ hit only this service (fronted by Kong); the legacy core stays internal.
 5. If not a hard denial, call the legacy core via the **ACL** for authoritative pricing.
 
 Outcomes: `APPROVED` / `DENIED` / `PENDED` / `ROUTED_FOR_REVIEW`.
+
+## Intake contract (R17.6)
+
+Three **disjoint** response classes. A *denial* is a decision about a valid claim and is
+recorded; a *malformed request* is not a claim and leaves no trace.
+
+| Class | Status | Body | Persisted? |
+|---|---|---|---|
+| Validation error | `400` | FHIR `OperationOutcome` (`application/fhir+json`) | **No** |
+| Adjudication decision (incl. denials) | `200` | `AdjudicationDecision` | Yes — the artefact graph |
+| System error (downstream unavailable) | `503` | retry-safe message | No — writes are atomic |
+
+**Required fields.** Two rules set this list: anything a *decision depends on* is mandatory (a
+missing value must never be read as a decision input), and string/number bounds mirror the
+**legacy fixed-width record**, which right-pads and truncates — so an over-long `memberId` would
+silently price a different member.
+
+| Field | Constraint |
+|---|---|
+| `claimId` | required — the decision/idempotency key |
+| `memberId` | required, ≤ 9 chars (legacy MBRID width) |
+| `planId`, `rxcui` | required |
+| `ndc` | required, ≤ 11 chars (legacy NDC width) |
+| `quantity` | > 0, ≤ 99999 (legacy 5-digit field) |
+| `daysSupply` | > 0, ≤ 999 (legacy 3-digit field) |
+| `dateOfService` | required, ISO-8601 |
+| `prescriberNpi` | required, exactly 10 digits |
+| `coverageEffective`, `coverageTermination` | required — absence is a data gap, not a denial |
+
+**Optional:** `drugName` (display only — no rule reads it); `priorAuthOnFile` and
+`stepTherapyMet` default to `false` when absent, the conservative reading (pends or routes,
+never approves).
+
+`OperationOutcome` issues are sorted `(field, message)`, so the same bad request always yields
+an identical response.
 
 ## Key pieces
 - `acl/LegacyAdapter` — builds the 46-char legacy claim record and parses the 59-char response
@@ -49,9 +86,11 @@ Treating "unavailable" as `LOW` approves claims on a check that never ran.
 
 ## Build & test
 ```bash
-mvn -f claims-service/pom.xml test          # 38 tests (rules, ACL, KB, pipeline, triage contract)
+mvn -f claims-service/pom.xml test          # 52 tests (rules, ACL, KB, pipeline, intake + triage contracts)
 ```
-Tests are pure JUnit (no Spring context, no DB) — hermetic and fast.
+Mostly pure JUnit (no Spring context, no DB) — hermetic and fast. The exception is
+`ClaimIntakeContractTest`, which loads the web layer via `@WebMvcTest` because the intake
+contract (Jackson binding, `@Valid`, the `OperationOutcome` advice) only exists there.
 
 ## Run locally
 ```bash

@@ -306,7 +306,7 @@ stub-tested and Phase 2b would be `terraform apply`, not new construction.
 >
 > **Consequence:** Phase 2b is **not** "`terraform apply`, not new construction". There is no
 > root module to apply — the per-service stubs are unreferenced fragments. Real authoring work
-> remains, tracked as §16 item 10a. Treat each "Cloud touchpoint" entry as a **design
+> remains, tracked as §16 item 9a. Treat each "Cloud touchpoint" entry as a **design
 > commitment**, and check the repo before citing one as an artifact.
 
 ## 7. Directory layout (additive)
@@ -542,62 +542,43 @@ requires this and it does not exist.
 decision id.
 *Why:* the audit trail is the product for a regulator; it is currently untested where it lands.
 
-**4. Implement R17.6's validation class — this is a live data-integrity bug, not just a missing
-feature.** `ClaimController` has no `@Valid` and never emits an `OperationOutcome`. A malformed
-claim is not rejected; it is **adjudicated**. Verified against the running stack: `POST
-/claims/adjudicate` with `{}` returns **HTTP 200**, `decisionId: "DEC-null"`, `outcome: DENIED`
-— and **persists** a `ClaimResponse` + `Provenance` tagged `DEC-null` into the audit store.
-R17.6 requires 400 + `OperationOutcome` with **no `ClaimResponse` persisted**.
-
-Compounding it: idempotency keys on `decisionId` (R18.3), so *every* malformed claim maps to the
-same `DEC-null` and thereafter replays that one cached denial.
-
-Work: add `@Valid` + constraints to `CanonicalClaim`, a `@RestControllerAdvice` emitting a FHIR
-`OperationOutcome`, and reject before the pipeline runs. Needs a decision on which fields are
-mandatory (claimId, memberId, planId, rxcui, dateOfService at minimum). Add contract tests for
-the taxonomy's three disjoint classes.
-*Why:* the audit trail is the product for a regulator, and it currently accepts junk. A denial
-recorded against a claim nobody submitted is the kind of thing that ends a compliance review.
-
-### Tier 2 — production-shaped work
-
-**5. Circuit breaker on the triage call.** Today every request to a down triage service waits for
+**4. Circuit breaker on the triage call.** Today every request to a down triage service waits for
 its own timeout, then pends. Under sustained failure that is slow *and* pends a flood of claims.
 A breaker fails fast while preserving the fail-closed policy — it changes latency, not the
 decision.
 *Why:* correct but slow is still an outage.
 
-**6. Exercise the C3 repository seam — Postgres-backed `PayerKb`.** The interface exists and
+**5. Exercise the C3 repository seam — Postgres-backed `PayerKb`.** The interface exists and
 `FilePayerKb` implements it. Add a Postgres implementation plus the documented NoSQL-emulator
 path. No rules-engine change should be needed; if one is, the seam is wrong and that is worth
 knowing now.
 *Why:* the seam's whole value is the claim that swapping is cheap. Untested, it's a hypothesis.
 
-**7. Member → Patient resolution for real.** `Patient/member-{id}` is a demo affordance. Replace
+**6. Member → Patient resolution for real.** `Patient/member-{id}` is a demo affordance. Replace
 it with a proper member index (or identifier search against a real system URI), and decide how a
 legitimately new member with no clinical record differs from a data-integrity gap — today both
 pend (see R17.5's accepted consequence).
 *Why:* the current convention silently assumes a naming scheme no real payer has.
 
-**8. NCPDP reject-code fidelity.** Map decisions to real reject codes (65 patient not covered, 70
+**7. NCPDP reject-code fidelity.** Map decisions to real reject codes (65 patient not covered, 70
 product not covered, …) alongside the internal reason codes.
 *Why:* a pharmacy system speaks NCPDP; internal codes don't reach the counter.
 
-**9. `Task` lifecycle / prior-auth round trip.** PENDED and ROUTED currently terminate. Build the
+**8. `Task` lifecycle / prior-auth round trip.** PENDED and ROUTED currently terminate. Build the
 human-in-the-loop return path: a reviewer resolves the `Task`, and the claim re-adjudicates
 idempotently.
 *Why:* PEND is a promise to come back. Nothing comes back yet.
 
 ### Tier 3 — scale and cloud
 
-**10. M8 / Phase 2b — author the cloud IaC, then deploy.** Two distinct pieces of work, and the
+**9. M8 / Phase 2b — author the cloud IaC, then deploy.** Two distinct pieces of work, and the
 first one is real construction:
 
-- **10a. Write the IaC the plan assumed was finished.** The per-service Cloud Run stubs exist
+- **9a. Write the IaC the plan assumed was finished.** The per-service Cloud Run stubs exist
   for the two Java services, but there is no **root module** to apply: `infra/terraform/` (Cloud
   SQL/Neon, Secret Manager, Artifact Registry, and the wiring that composes those stubs),
   `deploy-phase2.sh`, and `claims-agent`'s missing config. See the §6 cloud-delivery gap.
-- **10b. Deploy.** `terraform apply`; DB-less Kong live; emulator `ingress=internal`; OTel →
+- **9b. Deploy.** `terraform apply`; DB-less Kong live; emulator `ingress=internal`; OTel →
   Cloud Trace and Managed Prometheus; gateway-strangler S1→S2. First real GCP spend — hence
   deliberately last.
 
@@ -605,16 +586,16 @@ first one is real construction:
 target is well understood. But Phase 2b is **not** a one-command apply, and planning it as one
 would repeat the mistake that produced the gap.
 
-**11. Load, performance, and failure-injection testing.** Nothing is measured. Cold starts are a
+**10. Load, performance, and failure-injection testing.** Nothing is measured. Cold starts are a
 known Cloud Run risk for Spring Boot/HAPI (C1); `min-instances` is the documented mitigation and
 is unverified.
 *Why:* every scalability claim in §5 is currently a design argument, not a number.
 
-**12. BigQuery decision-analytics plane (C4).** FHIR `Provenance` now; the analytics plane was
+**11. BigQuery decision-analytics plane (C4).** FHIR `Provenance` now; the analytics plane was
 always deferred.
 *Why:* "why did approvals drop 4% last month" is a query, not a FHIR search.
 
-**13. Gateway profile coverage in CI.** Kong key-auth and rate limiting are verified by hand.
+**12. Gateway profile coverage in CI.** Kong key-auth and rate limiting are verified by hand.
 *Why:* the gateway is the security boundary; hand-verification doesn't survive contributors.
 
 ### Carried-over debt worth naming

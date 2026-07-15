@@ -270,9 +270,6 @@ hand it over:
 - **CI doesn't run e2e.** That's how a fail-closed regression reached `main`. Documented as the
   top gap in [`testing-guide.md` §4](./testing-guide.md#4-what-is-not-tested--known-gaps).
 - **No load testing.** Scale is designed and documented, not measured.
-- **Claim validation (R17.6) is unimplemented, and it bites:** `POST /claims/adjudicate` with
-  `{}` returns 200 and *persists* a `DEC-null` decision. Specified, not built — now the top
-  correctness item in plan §16.
 - **No non-regression snapshots yet** (R19 requires them).
 - **The cloud deploy is further away than the plan implies.** Per-service Cloud Run stubs exist
   for the two Java services, but there is **no root Terraform module**, no `deploy-phase2.sh`,

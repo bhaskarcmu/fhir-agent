@@ -30,7 +30,7 @@ Status values: **Accepted** (in force) · **Superseded** (replaced — successor
 | **D5** | **Canonical scope:** 15–20 rules / ~8 domains; **4–5 paths** exercised end-to-end | ✅ Accepted | Resolved three conflicting PRD numbers. The demo now exercises **6** paths (a clinical-safety path was added), still within "4–5" in spirit — the extra path exists because nothing else proved triage was consulted. |
 | **D6** | **Generic FHIR R4**, structured to *nod to* Da Vinci PAS/CRD; **no PAS conformance** | ✅ Accepted | Deliberate scope limit; unchanged. |
 | **D7** | **Curated fixtures** rather than full RxNorm/ICD loads; check-existing-first | ✅ Accepted | Also avoids CPT/AMA licensing risk on a public repo. Governed by R19. |
-| **D8** | **Hybrid cloud, designed & tested throughout, deployed late:** Phase 1 stays on GKE; Phase 2 targets Cloud Run; cloud IaC/stubs/tests ship **from each milestone**; live deploy is Phase 2b | ⚠️ **Partially delivered** | **Supersedes** the earlier "cloud-deferred" framing. The *decision* stands; the *practice* was not followed. Per-service Cloud Run stubs shipped for the two Java services (M2, M3); the top-level root module, `deploy-phase2.sh`, `claims-agent`'s config, and the cloud smoke test never did. See the [cloud-delivery gap](./plan.md#6-workstreams--milestones) and [§16 item 10](./plan.md#16-future-work). |
+| **D8** | **Hybrid cloud, designed & tested throughout, deployed late:** Phase 1 stays on GKE; Phase 2 targets Cloud Run; cloud IaC/stubs/tests ship **from each milestone**; live deploy is Phase 2b | ⚠️ **Partially delivered** | **Supersedes** the earlier "cloud-deferred" framing. The *decision* stands; the *practice* was not followed. Per-service Cloud Run stubs shipped for the two Java services (M2, M3); the top-level root module, `deploy-phase2.sh`, `claims-agent`'s config, and the cloud smoke test never did. See the [cloud-delivery gap](./plan.md#6-workstreams--milestones) and [§16 item 9](./plan.md#16-future-work). |
 
 ## C — Cloud, security & scalability
 
@@ -38,8 +38,8 @@ Status values: **Accepted** (in force) · **Superseded** (replaced — successor
 |---|---|---|---|---|
 | **C1** | Compute | **Hybrid: GKE for Phase 1 (untouched) + Cloud Run for new Phase 2 services**; HAPI always-on | ⚠️ **Partially delivered** | Design in force and reflected in the per-service stubs. Nothing deployed — same gap as D8. Cold starts remain an unverified risk ([`plan.md` §5](./plan.md#5-cloud-architecture--compute-data-security-observability-scalability)). |
 | **C2** | Gateway | **DB-less Kong** as the canonical Phase 2 gateway — one declarative dialect, local + cloud; Phase 1 KIC untouched, unified later via the gateway-strangler | ⚠️ **Partially delivered** | **Supersedes** the config-dialect drift risk originally flagged in [`plan.md` §3](./plan.md#3-gateway--localcloud-parity), and refines **D4**. The local half runs today; the cloud half is undeployed. **Filename caveat:** the committed artifact is `kong.tmpl.yml` (a template); `kong.yml` is generated at startup — see the [gateway runbook](../gateway-runbook.md). |
-| **C3** | Rules data | **Postgres behind a repository interface** now; Bigtable/Firestore is the documented scale swap | ⚠️ **Partially delivered** | The *seam* exists and is honoured (`PayerKb` + `FilePayerKb`). The **Postgres implementation does not** — storage is file-backed. The swap is therefore an untested hypothesis; [§16 item 6](./plan.md#16-future-work). |
-| **C4** | Audit | **FHIR `Provenance`** now (with R18 invariants); BigQuery analytics plane deferred to Phase 2b | ✅ Accepted | `Provenance` is built and persisted per decision. BigQuery deliberately deferred; [§16 item 12](./plan.md#16-future-work). |
+| **C3** | Rules data | **Postgres behind a repository interface** now; Bigtable/Firestore is the documented scale swap | ⚠️ **Partially delivered** | The *seam* exists and is honoured (`PayerKb` + `FilePayerKb`). The **Postgres implementation does not** — storage is file-backed. The swap is therefore an untested hypothesis; [§16 item 5](./plan.md#16-future-work). |
+| **C4** | Audit | **FHIR `Provenance`** now (with R18 invariants); BigQuery analytics plane deferred to Phase 2b | ✅ Accepted | `Provenance` is built and persisted per decision. BigQuery deliberately deferred; [§16 item 11](./plan.md#16-future-work). |
 
 ## Later decisions (post-design, made during build)
 
@@ -48,7 +48,8 @@ Decisions taken after the D/C sets were locked, recorded where they are normativ
 | Decision | Status | Where |
 |---|---|---|
 | **Clinical safety fails closed.** `RiskLevel.UNKNOWN` ("check could not complete") is distinct from `LOW` ("checked, safe") and maps to **PEND**, never approve. A hard DENY still outranks it. | ✅ Accepted | [`requirements.md` R17.5](./requirements.md) — includes the rationale and the accepted consequence (a member with no clinical record pends). Implementation: [`claims-service/README.md`](../../claims-service/README.md). |
-| **Member→Patient resolution by `read Patient/member-{id}`**, not identifier search | ✅ Accepted (prototype affordance) | Reads are immediately consistent; search is index-lagged. Explicitly temporary — [§16 item 7](./plan.md#16-future-work). |
+| **Member→Patient resolution by `read Patient/member-{id}`**, not identifier search | ✅ Accepted (prototype affordance) | Reads are immediately consistent; search is index-lagged. Explicitly temporary — [§16 item 6](./plan.md#16-future-work). |
+| **Claim validation bounds mirror the legacy fixed-width record.** Mandatory = anything a decision depends on; sizes = what the ACL can carry without truncating. | ✅ Accepted | Implements R17.6's validation class. The ACL right-pads and truncates, so the boundary refuses what the ACL would silently corrupt. Field table: [`claims-service/README.md`](../../claims-service/README.md). |
 
 ## Conventions
 

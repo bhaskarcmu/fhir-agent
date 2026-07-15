@@ -90,10 +90,11 @@ python3 client/platform/integration_test.py   # direct FHIR-server integration
 
 ## 3. What is tested today
 
-**Java — our services (46 tests)**
+**Java — our services (60 tests)**
 
 | Suite | Tests | Level | Covers |
 |---|---:|---|---|
+| `ClaimIntakeContractTest` | 14 | interface/contract | The R17.6 error taxonomy's three disjoint classes: malformed → 400 + `OperationOutcome` with nothing adjudicated; decision → 200 (a denial is not an error); system error → 503 |
 | `RulesEngineTest` | 12 | unit + white box | Every rule; precedence (R17.3); deterministic ordering (R17.4); fail-closed `UNKNOWN` → PEND |
 | `HttpTriageClientTest` | 9 | interface/contract | Real HTTP round-trip to a stub triage: request body carries `patient_id`; every failure mode → `UNKNOWN` |
 | `AdjudicationPipelineTest` | 8 | component | The R8 golden paths at decision level; patient id reaches triage; unavailable check pends |
@@ -138,27 +139,6 @@ Documenting these honestly is part of the test strategy. Each is a real hole, no
   assert the R18.2 graph (`Claim`/`ClaimResponse`/`Task`/`Provenance`/`RiskAssessment`) landed
   in FHIR. `FhirArtifactBuilderTest` checks the graph is *built* correctly; nothing checks it is
   *stored* correctly.
-- **R17.6's validation class is unimplemented — and the failure is worse than "missing".**
-  `ClaimController` handles the system-error class (503 + safe-retry) but has no `@Valid` and
-  never emits an `OperationOutcome`. A malformed claim is not rejected at all: it is
-  **adjudicated**. Verified against the running stack:
-
-  ```console
-  $ curl -H "apikey: $KEY" http://localhost:8000/claims/adjudicate \
-         -H 'Content-Type: application/json' --data '{}'
-  HTTP 200
-  { "decisionId": "DEC-null", "outcome": "DENIED",
-    "reasons": [ { "code": "coverage-inactive", … }, { "code": "non-formulary", … } ] }
-
-  $ curl "http://localhost:8080/fhir/ClaimResponse?_tag=DEC-null&_summary=count"
-  { "total": 1 }        # ← the audit store now holds a denial for a claim that never existed
-  ```
-
-  R17.6 requires **400 + `OperationOutcome`, and no `ClaimResponse` persisted**. Instead an
-  empty body yields a persisted `DEC-null` decision graph. And because idempotency keys on
-  `decisionId` (R18.3), *every* malformed claim collapses to the same `DEC-null` and replays
-  that cached denial. This is a data-integrity bug, not just an unimplemented spec — tracked as
-  [`plan.md` §16 item 4](./phase2/plan.md#16-future-work).
 - **The `gateway` profile is not exercised in CI.** Kong key-auth and rate limiting are verified
   manually.
 - **No load, performance, or soak tests**, and no chaos/failure-injection beyond the unit-level
@@ -264,6 +244,22 @@ Rules for this level:
 4. **Use a stub server, not a mock,** whenever the transport itself could be wrong — different
    HTTP versions, content types, encodings, redirects. Mocks skip the transport, and the
    transport is where these bugs live.
+
+**The inbound flavour.** The same level applies to your *own* API, where the contract is what you
+accept and what you refuse. `ClaimIntakeContractTest` uses `@WebMvcTest` rather than calling the
+controller as a plain object, because the contract lives in machinery a unit test never runs:
+Jackson binding, `@Valid`, and the advice that renders the error. Calling the method directly
+skips all three and proves nothing about what an HTTP client sees.
+
+For an inbound contract, assert the **refusals** as carefully as the successes, and assert what
+did *not* happen:
+
+```java
+verify(service, never()).adjudicateAndPersist(any());   // a malformed claim must not reach the pipeline
+```
+
+That "never" is the whole contract: rejection has to happen *before* the work, or something
+invalid has already acquired a decision.
 
 ### End-to-end tests
 

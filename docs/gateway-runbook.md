@@ -166,7 +166,7 @@ deployed, and the IaC to deploy it does not exist.** Specifically:
   `rxclaim-emulator/infra/main.tf`) are unreferenced fragments.
 - No Kong Cloud Run service definition exists at all.
 
-See the [cloud-delivery gap](./phase2/plan.md#6-workstreams--milestones) and §16 item 10.
+See the [cloud-delivery gap](./phase2/plan.md#6-workstreams--milestones) and §16 item 9.
 
 **What is genuinely de-risked**, and worth saying precisely: the *declarative dialect* is the
 same one intended for cloud (C2), and it is exercised locally on every `--profile gateway` run.
