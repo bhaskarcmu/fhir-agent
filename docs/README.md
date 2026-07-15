@@ -7,7 +7,9 @@ Start with what you're trying to do.
 | **See the system work** — or show it to someone | [`demo-guide.md`](./demo-guide.md) | 5–15 min |
 | **Understand the code and change it** | [`developer-guide.md`](./developer-guide.md) | 20 min |
 | **Run the tests, or write good ones** | [`testing-guide.md`](./testing-guide.md) | 15 min |
+| **Operate the gateway** (local, cloud, or the migration) | [`gateway-runbook.md`](./gateway-runbook.md) | 10 min |
 | **Know why it's built this way** | [`phase2/plan.md`](./phase2/plan.md) | 30 min |
+| **Audit what was decided, and whether it still holds** | [`phase2/decisions.md`](./phase2/decisions.md) | 5 min |
 | **Know exactly what was agreed** (normative) | [`phase2/requirements.md`](./phase2/requirements.md) | reference |
 | **Know what to build next** | [`phase2/plan.md` §16](./phase2/plan.md#16-future-work) | 5 min |
 
@@ -27,9 +29,18 @@ honesty), how to run every level, and how to write unit / white-box / component 
 e2e tests here. Its case study — how a dead clinical-safety check passed every test for several
 milestones — is the most useful thing in this folder.
 
+**[Gateway runbook](./gateway-runbook.md)** — the single operational source of truth for the Kong
+edge across **both** phases: why two gateways exist, which one owns which route in each strangler
+state (S0/S1/S2), exact local procedures (including the template→generated config flow), the
+cloud position, the migration and its rollback, and troubleshooting.
+
 ## Design and decisions
 
 **[`phase2/`](./phase2/README.md)** — the claims-adjudication modernisation slice.
+
+- **[`decisions.md`](./phase2/decisions.md)** — the ADR-style index of every architectural
+  decision (D1–D8, C1–C4, plus later ones) with **status and supersession markers**, linking to
+  where each rationale lives. Start here to audit *what was decided and whether it still holds*.
 
 - **[`requirements.md`](./phase2/requirements.md)** — normative. Requirements R1–R19, including
   the Decision Contract (R17), audit invariants and idempotency (R18), and the test matrix (R19).

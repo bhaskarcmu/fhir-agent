@@ -107,7 +107,7 @@ requirement, not a nicety (R17.4): a payer must be able to reproduce a decision 
 | `data/reference/` | Reference-data source catalog (CMS Part D, ACA/QHP) + fetch scripts | Python |
 | `data/scripts/` | Synthea generation + demo seeders | Python |
 | `e2e/` | Golden-path tests against a live stack | Python |
-| `infra/terraform/` | Cloud IaC (applied in Phase 2b) | HCL |
+| `<service>/infra/main.tf` | Per-service Cloud Run **stubs** — only `claims-service` and `rxclaim-emulator` have one; there is **no** root module and nothing has been applied ([gap](./phase2/plan.md#6-workstreams--milestones)) | HCL |
 | `epic-emulator/`, `athena-emulator/` | Placeholders — EHR-specific customisations, not yet implemented | — |
 
 ### Boundaries that are deliberate

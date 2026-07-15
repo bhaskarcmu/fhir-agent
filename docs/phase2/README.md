@@ -1,9 +1,19 @@
 # Phase 2 — Claims Adjudication Modernisation Slice
 
-> **Status: BUILT and running locally (M0–M7 complete).** A claim can be submitted,
-> adjudicated, persisted as FHIR artefacts, and explained — end to end, on a laptop.
-> The live cloud deploy (**M8 / Phase 2b**) is deliberately deferred; the IaC is
-> authored but not applied. Next steps: [`plan.md` §16](./plan.md#16-future-work).
+> ## Canonical status
+>
+> **BUILT and running locally (M0–M7 complete).** A claim can be submitted, adjudicated,
+> persisted as FHIR artefacts, and explained — end to end, on a laptop.
+>
+> **Not deployed to cloud (M8 / Phase 2b not started).** Deliberately deferred to avoid GCP
+> spend until the platform was proven locally. Note that the cloud path is **less complete than
+> the milestone table implies**: per-service Cloud Run stubs exist for the two Java services,
+> but there is no root Terraform module and nothing has been applied — see the
+> [cloud-delivery gap](./plan.md#6-workstreams--milestones). Phase 2b is real authoring work,
+> not one command.
+>
+> *This is the one canonical status statement. Other documents link here rather than restate it.*
+> Next steps: [`plan.md` §16](./plan.md#16-future-work).
 >
 > To run it: [`../demo-guide.md`](../demo-guide.md). To work on it:
 > [`../developer-guide.md`](../developer-guide.md).
@@ -39,7 +49,7 @@ layer."*
 | # | Area | Choice |
 |---|---|---|
 | C1 | Compute | **Hybrid: GKE for Phase 1 (untouched) + Cloud Run for new Phase 2 services**; HAPI always-on. No Phase 1 rework. |
-| C2 | Gateway | **DB-less Kong** as the canonical Phase 2 gateway (one `kong.yml`, local + cloud); Phase 1 KIC Kong untouched, unified later via a **gateway-strangler** (plan §3). |
+| C2 | Gateway | **DB-less Kong** as the canonical Phase 2 gateway (one declarative dialect — committed as `kong.tmpl.yml`, rendered to `kong.yml` at startup — for local + cloud); Phase 1 KIC Kong untouched, unified later via a **gateway-strangler** ([runbook](../gateway-runbook.md), plan §3). |
 | C3 | Rules data | **Postgres behind a repository interface** now; Bigtable/Firestore is the documented scale swap. |
 | C4 | Audit | **FHIR `Provenance`** now (with R18 invariants); BigQuery analytics plane deferred to Phase 2b. |
 
@@ -69,6 +79,8 @@ All Phase 2 work is *additive*. A known-good snapshot is tagged `phase1-v1`
   out-of-scope, and deviations from the PRD. **Normative** — what must be true.
 - **[`plan.md`](./plan.md)** — architecture, service topology, gateway/parity
   design, workstreams, sequencing, open questions, and **[§16 future work](./plan.md#16-future-work)**.
+- **[`decisions.md`](./decisions.md)** — ADR-style index of every decision (D1–D8, C1–C4, and
+  later ones) with status and supersession markers.
 - **[`source-prd.md`](./source-prd.md)** — the archived source DRAFT PRD that
   seeded this work (the **input**, not the contract; deviations captured in
   `requirements.md`).

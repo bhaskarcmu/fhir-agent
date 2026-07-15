@@ -37,7 +37,9 @@ Everything is indexed in **[`docs/`](docs/README.md)**. Start with what you're d
 | **See it work**, or demo it (clinician / insurer / architect / layperson) | [`docs/demo-guide.md`](docs/demo-guide.md) |
 | **Understand the code** and change it safely | [`docs/developer-guide.md`](docs/developer-guide.md) |
 | **Run the tests**, or write good ones | [`docs/testing-guide.md`](docs/testing-guide.md) |
+| **Operate the gateway** (local, cloud, migration) | [`docs/gateway-runbook.md`](docs/gateway-runbook.md) |
 | **Know why** it's built this way | [`docs/phase2/plan.md`](docs/phase2/plan.md) |
+| **Audit the decisions** (status + supersession) | [`docs/phase2/decisions.md`](docs/phase2/decisions.md) |
 | **Know what was agreed** (normative requirements) | [`docs/phase2/requirements.md`](docs/phase2/requirements.md) |
 | **Know what to build next** | [`docs/phase2/plan.md` §16](docs/phase2/plan.md#16-future-work) |
 
@@ -270,7 +272,8 @@ cd fhir-service && ./mvnw clean verify
 The prioritised backlog lives in **[`docs/phase2/plan.md` §16](docs/phase2/plan.md#16-future-work)**
 with rationale for each item. The headlines: run e2e in CI (the top gap), non-regression decision
 snapshots, a circuit breaker on the triage call, the Postgres swap behind the C3 seam, and
-**M8 / Phase 2b** — the live cloud deploy (`terraform apply`; authored, never applied).
+**M8 / Phase 2b** — the cloud deploy, which needs its root Terraform module **written** before it
+can be applied ([cloud-delivery gap](docs/phase2/plan.md#6-workstreams--milestones)).
 
 Longer-standing: EHR emulators (`epic-emulator/`, `athena-emulator/` are placeholders),
 drug-drug interaction rules, and load testing.
