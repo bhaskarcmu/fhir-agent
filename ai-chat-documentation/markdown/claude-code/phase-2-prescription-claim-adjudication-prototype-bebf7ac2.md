@@ -4244,8 +4244,12 @@ Now the developer guide — including the hard-won gotchas that cost real debugg
 
 Now the testing guide. Let me get accurate counts rather than guess:
 
+Two honest gaps confirmed: R17.6's `OperationOutcome` validation class isn't implemented at all, and there are no non-regression snapshots. Both belong in the testing guide rather than being quietly omitted.
+
+Now the demo guide. Let me verify the agent commands I'm about to document actually work rather than transcribing them from the README:
+
 <details>
-<summary>Execution details — 493 tool events</summary>
+<summary>Execution details — 496 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5401,6 +5405,14 @@ grep -rn "OperationOutcome" claims-service/src/test/java claims-service/src/main
 echo "---- (the greps above matched '400' inside amounts, not error tests)"
 gr…`
 - **Read** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/api/ClaimController.java`
+- **Write** `/workspaces/fhir-agent/docs/testing-guide.md`
+- **Bash** `cd /workspaces/fhir-agent
+echo "════ claims-agent CLI options ════"
+grep -rn "add_argument" claims-agent/src/*/[a-z]*.py 2>/dev/null | head -10 || find claims-agent -name '*.py' | head`
+- **Bash** `cd /workspaces/fhir-agent
+pip install -e "claims-agent[dev]" -q 2>&1 | tail -1
+echo "════ claims-agent --no-llm against the live stack (DEMO-SAFETY claim) ════"
+CLAIMS_URL=http://localhost:8090 python…`
 
 </details>
 
@@ -5411,6 +5423,6 @@ gr…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 10:51 UTC
+- **Last updated:** 15 July 2026, 10:53 UTC
 - **Turns:** 64
 - **Status:** Incomplete
