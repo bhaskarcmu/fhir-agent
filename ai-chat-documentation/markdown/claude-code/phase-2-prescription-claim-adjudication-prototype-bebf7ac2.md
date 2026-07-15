@@ -4398,8 +4398,18 @@ Now the High severity safety-semantics drift in `claims-service/README.md` — t
 
 Important correction to my own analysis — **Terraform does exist, but per-service, not top-level**. I nearly wrote a false correction while fixing a false claim. Let me look:
 
+Now I have the true picture, and my own draft gap-note was **wrong in the opposite direction**. Reality: M2 and M3 *did* ship per-service Cloud Run stubs; what's missing is the top-level root module, `deploy-phase2.sh`, and claims-agent's config. Correcting it precisely:
+
+Now fixing my own false claim in the developer guide's repo map:
+
+Now the claims-service README — the High safety-semantics drift, plus stale counts and a "deferred" item that shipped:
+
+Now the Medium: `fhir-service/README.md` labels two running services as "Future":
+
+Now the Low finding — the placeholder emulator READMEs are a single heading each:
+
 <details>
-<summary>Execution details — 540 tool events</summary>
+<summary>Execution details — 556 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5680,6 +5690,22 @@ ls claims-service/infra/main.tf 2>/de…`
 - **Bash** `cd /workspaces/fhir-agent
 echo "════ claims-service/infra/main.tf ════"; cat claims-service/infra/main.tf
 echo; echo "════ line count rxclaim-emulator/infra/main.tf ════"; wc -l rxclaim-emulator/infra…`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/developer-guide.md`
+- **Edit** `/workspaces/fhir-agent/docs/demo-guide.md`
+- **Edit** `/workspaces/fhir-agent/claims-service/README.md`
+- **Edit** `/workspaces/fhir-agent/claims-service/README.md`
+- **Edit** `/workspaces/fhir-agent/claims-service/README.md`
+- **Edit** `/workspaces/fhir-agent/claims-service/README.md`
+- **Read** `/workspaces/fhir-agent/fhir-service/README.md`
+- **Edit** `/workspaces/fhir-agent/fhir-service/README.md`
+- **Write** `/workspaces/fhir-agent/epic-emulator/README.md`
+- **Read** `/workspaces/fhir-agent/epic-emulator/README.md`
+- **Write** `/workspaces/fhir-agent/epic-emulator/README.md`
+- **Read** `/workspaces/fhir-agent/athena-emulator/README.md`
+- **Write** `/workspaces/fhir-agent/athena-emulator/README.md`
 
 </details>
 
@@ -5690,6 +5716,6 @@ echo; echo "════ line count rxclaim-emulator/infra/main.tf ════"
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 11:27 UTC
+- **Last updated:** 15 July 2026, 11:29 UTC
 - **Turns:** 66
 - **Status:** Incomplete
