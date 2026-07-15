@@ -4256,8 +4256,12 @@ Now fixing the badly stale `PLANNING — no application code yet` status on the 
 
 Now the plan — marking the milestones' real status and adding the future-work section:
 
+Now the future-work section the plan was missing:
+
+Now the top-level README — it needs to become a map. Adding a documentation section right after the demo:
+
 <details>
-<summary>Execution details — 502 tool events</summary>
+<summary>Execution details — 506 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5427,6 +5431,10 @@ CLAIMS_URL=http://localhost:8090 python…`
 - **Edit** `/workspaces/fhir-agent/docs/phase2/README.md`
 - **Read** `/workspaces/fhir-agent/docs/phase2/plan.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/README.md`
+- **Edit** `/workspaces/fhir-agent/README.md`
+- **Edit** `/workspaces/fhir-agent/README.md`
 
 </details>
 
@@ -5437,6 +5445,6 @@ CLAIMS_URL=http://localhost:8090 python…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 10:56 UTC
+- **Last updated:** 15 July 2026, 10:57 UTC
 - **Turns:** 64
 - **Status:** Incomplete
