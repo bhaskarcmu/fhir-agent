@@ -4443,7 +4443,7 @@ Now tearing down and verifying all links, including the new pages:
 All three remaining mentions are inside explicit "does not exist" lists — correctly qualified. Tests green at 38. Committing:
 
 <details>
-<summary>Execution details — 586 tool events</summary>
+<summary>Execution details — 588 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5804,6 +5804,12 @@ echo "-- 'No application code exists yet':"; grep -rn "No application code exist
 echo "--…`
 - **Bash** `cd /workspaces/fhir-agent
 git status --short; echo "════"; git diff --stat | tail -3`
+- **Bash** `cd /workspaces/fhir-agent
+git add -A README.md docs/ claims-service/README.md fhir-service/README.md gateway/README.md epic-emulator/README.md athena-emulator/README.md
+git commit -q -F - <<'EOF'
+docs…`
+- **Bash** `cd /workspaces/fhir-agent
+git push -u origin docs/review-fixes 2>&1 | tail -2`
 
 </details>
 
@@ -5814,6 +5820,6 @@ git status --short; echo "════"; git diff --stat | tail -3`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 11:40 UTC
+- **Last updated:** 15 July 2026, 11:41 UTC
 - **Turns:** 66
 - **Status:** Incomplete
