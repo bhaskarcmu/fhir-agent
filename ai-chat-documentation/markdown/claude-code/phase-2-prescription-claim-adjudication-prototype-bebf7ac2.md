@@ -4141,8 +4141,14 @@ Adding the rules-engine cases for the new state:
 
 Now the pipeline tests — the regression guards for the exact bug that hid for milestones:
 
+Now the real contract test — a stub HTTP server (JDK built-in `com.sun.net.httpserver`, no new dependency) that asserts the request body actually carries `patient_id` and pins every failure mode to `UNKNOWN`:
+
+Now keep the requirements doc in sync — R17.5 defines this exact mapping:
+
+Now let me build and run the tests:
+
 <details>
-<summary>Execution details — 447 tool events</summary>
+<summary>Execution details — 451 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5175,6 +5181,11 @@ grep -n "clinical-safety\|R17.5" -B 4 -A 8 docs/phase2/requirements.md | head -4
 - **Edit** `/workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/AdjudicationPipelineTest.java`
 - **Edit** `/workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/AdjudicationPipelineTest.java`
 - **Edit** `/workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/AdjudicationPipelineTest.java`
+- **Write** `/workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/HttpTriageClientTest.java`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/AdjudicationServiceTest.java`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/requirements.md`
+- **Bash** `cd /workspaces/fhir-agent
+mvn -f claims-service/pom.xml test 2>&1 | grep -E "Tests run:|BUILD|ERROR.*\.java|FAIL" | head -20`
 
 </details>
 
@@ -5185,6 +5196,6 @@ grep -n "clinical-safety\|R17.5" -B 4 -A 8 docs/phase2/requirements.md | head -4
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 10:28 UTC
+- **Last updated:** 15 July 2026, 10:29 UTC
 - **Turns:** 63
 - **Status:** Incomplete
