@@ -4534,8 +4534,10 @@ Nothing persisted, all six golden paths unaffected. Running e2e and the claims-a
 
 Tearing down and committing the fix:
 
+Code-only, as intended. Committing — **worktree** `/workspaces/fhir-agent` · **branch** `fix/claim-validation-r17-6` · **target** `main`:
+
 <details>
-<summary>Execution details — 609 tool events</summary>
+<summary>Execution details — 610 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5951,6 +5953,12 @@ echo "(st…`
 - **Bash** `cd /workspaces/fhir-agent
 docker compose stop fhir triage 2>&1 | tail -1
 git status --short`
+- **Bash** `cd /workspaces/fhir-agent
+git add claims-service/
+git commit -q -F - <<'EOF'
+fix(claims): reject malformed claims at intake instead of adjudicating them
+
+A malformed claim was not rejected — it was ad…`
 
 </details>
 
