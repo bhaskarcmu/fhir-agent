@@ -4677,8 +4677,37 @@ Exactly one file differs from the backup, and zero occurrences across the PR ran
 
 **"no leaks found", exit code 0** — verified with the exact GitLeaks version and command CI uses, over the rewritten range. Force-pushing:
 
+**GitLeaks passes on PR #38**, along with all three test jobs. Cleaning up the safety backup now that the remote is confirmed good:
+
+Fixed and verified. **PR #38 now passes GitLeaks** (plus all three test jobs).
+
+## What was actually wrong
+
+The finding was legitimate, not a false positive. I had put a **fabricated but realistic-looking** 32-hex key in the gateway runbook as example log output. GitLeaks measured entropy 3.9 and flagged it — doing precisely its job.
+
+The irony wasn't lost on me: the flagged line sits three lines below my own sentence claiming *"no secret is ever committed (R10, gitleaks-clean)."*
+
+## How I addressed it, rather than silenced it
+
+I replaced the fake key with `<32 hex characters, generated at startup>`. The doc only ever needed to show the *shape* of the log line so a reader recognises it — a realistic value added nothing.
+
+I deliberately **did not** add a `.gitleaks.toml` allowlist, which was the tempting quick fix. The real harm of a plausible-looking key in documentation isn't the string itself; it's that it teaches readers to wave scanners through — *"that's just the doc example"*. That habit is how a genuine leak eventually lands. A clean scan means an alert always means something. I put that reasoning in the runbook next to the placeholder, so the next person doesn't "helpfully" restore a realistic value.
+
+## The part that needed your approval
+
+A follow-up commit **could not** have cleared this. GitLeaks scans the PR's commit range, and the string lived inside commit `14482f5` — so it would have kept failing no matter what I added on top. Only a history rewrite removes it.
+
+I replayed both commits onto `main` with the placeholder folded into the first, keeping both commit messages intact (only the SHAs changed). Guardrails used:
+
+- A backup branch before touching anything, deleted only after the remote was confirmed good
+- `--force-with-lease`, not `--force`
+- Diffed the rewritten branch against the backup: **one file changed, one line** — nothing else moved
+- Verified with **gitleaks 8.24.3 locally** — the same version and command as CI — before pushing: `no leaks found`, exit 0
+
+**PR #38:** head `5820e3d`, 2 commits, all four checks green. [PR #39](https://github.com/bhaskarcmu/fhir-agent/pull/39) (the claim-validation fix) is untouched and still wants merging first.
+
 <details>
-<summary>Execution details — 646 tool events</summary>
+<summary>Execution details — 647 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6205,6 +6234,10 @@ git push --force-with-lease 2>&1 | tail -3`
 sleep 45
 gh pr view 38 --json state,headRefOid,commits --jq '"state: \(.state)\nhead: \(.headRefOid[0:7])\ncommits: \(.commits | length)"'
 echo "════ gitleaks check run on th…`
+- **Bash** `cd /workspaces/fhir-agent
+git branch -D backup/docs-review-fixes-preleak 2>&1 | tail -1
+echo "--- local branches:"; git branch
+echo "--- PR #38 head matches local: $(git rev-parse --short HEAD)"`
 
 </details>
 
@@ -6215,6 +6248,6 @@ echo "════ gitleaks check run on th…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 12:10 UTC
+- **Last updated:** 15 July 2026, 12:11 UTC
 - **Turns:** 68
 - **Status:** Incomplete
