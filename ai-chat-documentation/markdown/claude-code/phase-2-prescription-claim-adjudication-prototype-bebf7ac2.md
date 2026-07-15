@@ -4379,7 +4379,7 @@ Confirmed, and the Terraform one is worse than the finding states — **`infra/`
 Now I understand the template flow exactly. Let me see what routes the Phase 2 gateway actually defines, so a runbook states facts rather than aspirations:
 
 <details>
-<summary>Execution details — 524 tool events</summary>
+<summary>Execution details — 526 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5629,6 +5629,12 @@ echo;…`
 echo "════ deploy-phase2.sh? ════"; ls deploy-phase2.sh 2>/dev/null || echo "  does NOT exist"
 echo; echo "════ compose gateway block (template→generated flow) ════"; sed -n…`
 - **Read** `/workspaces/fhir-agent/gateway/kong/kong.tmpl.yml`
+- **Bash** `cd /workspaces/fhir-agent
+echo "════ 7. D-decisions in requirements.md ════"; grep -nE "^\*?\*?D[0-9]" docs/phase2/requirements.md | head -12
+echo; echo "════ C-decisions ════"; grep -rn "^| C[0-9]" d…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "════ D1-D8 deviations table in requirements.md ════"
+sed -n '/## Deviations from the PRD/,/^---/p' docs/phase2/requirements.md | head -22`
 
 </details>
 
@@ -5639,6 +5645,6 @@ echo; echo "════ compose gateway block (template→generated flow) ═�
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 11:23 UTC
+- **Last updated:** 15 July 2026, 11:24 UTC
 - **Turns:** 66
 - **Status:** Incomplete
