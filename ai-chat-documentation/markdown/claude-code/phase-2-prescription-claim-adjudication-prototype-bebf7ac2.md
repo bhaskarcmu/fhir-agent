@@ -4218,8 +4218,12 @@ CI doesn't run the e2e suite, so it's green — but that hides a real defect **I
 
 `jdbc:h2:mem:hapi` — in-memory, no volume. So **every fresh stack starts with an empty FHIR server**, meaning `pytest e2e/` on a clean machine now fails. My earlier verification only passed because I'd run the seeder in the same session. Let me prove it:
 
+Confirmed — **3 e2e tests fail on a fresh stack**. My merged fail-closed change broke them, and CI never runs e2e so nothing caught it. (Note `E2E-INACTIVE`/`E2E-MULTI` still pass — DENY correctly outranks PEND, exactly as designed.)
+
+R19 governs test fixtures, so let me check what it prescribes before fixing:
+
 <details>
-<summary>Execution details — 469 tool events</summary>
+<summary>Execution details — 470 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5313,6 +5317,7 @@ echo "════ volumes ════"; grep -n "volumes:" -A 4 docker-compose
 docker compose restart fhir >/dev/null 2>&1   # in-memory H2 → this wipes FHIR data
 FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose up -d fhir triage >/dev/null 2>&1
 fo…`
+- **Read** `/workspaces/fhir-agent/docs/phase2/requirements.md`
 
 </details>
 
@@ -5323,6 +5328,6 @@ fo…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 10:43 UTC
+- **Last updated:** 15 July 2026, 10:44 UTC
 - **Turns:** 64
 - **Status:** Incomplete
