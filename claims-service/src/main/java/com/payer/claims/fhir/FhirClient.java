@@ -12,4 +12,7 @@ public interface FhirClient {
 
     /** Intake idempotency (R18.3): a prior decision for this id, if already persisted. */
     Optional<AdjudicationDecision> existingDecision(String decisionId);
+
+    /** Resolve a member id to its FHIR Patient logical id (for the clinical-safety check). */
+    Optional<String> resolvePatientId(String memberId);
 }

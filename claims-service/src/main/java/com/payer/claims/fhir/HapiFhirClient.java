@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Optional;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.ClaimResponse;
+import org.hl7.fhir.r4.model.Patient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -48,6 +49,21 @@ public class HapiFhirClient implements FhirClient {
         List<Finding> reasons = r.getProcessNote().stream()
                 .map(n -> parseNote(n.getText())).toList();
         return Optional.of(new AdjudicationDecision(decisionId, outcome, reasons, reasons, null));
+    }
+
+    @Override
+    public Optional<String> resolvePatientId(String memberId) {
+        // Read Patient/member-{memberId} directly (reads are immediately consistent, unlike an
+        // identifier search which depends on search-index timing; the "member-" prefix keeps the
+        // logical id non-numeric, which HAPI requires for client-assigned ids). In production a
+        // member→Patient index would back this resolution.
+        try {
+            Patient p = client.read().resource(Patient.class)
+                    .withId("member-" + memberId).execute();
+            return Optional.ofNullable(p.getIdElement().getIdPart());
+        } catch (ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException e) {
+            return Optional.empty();
+        }
     }
 
     private static Finding parseNote(String text) {
