@@ -4673,8 +4673,10 @@ Commit 1 is clean. Replaying the second commit:
 
 Both commits replayed. Now verifying the branch history is genuinely clean before force-pushing:
 
+Exactly one file differs from the backup, and zero occurrences across the PR range. Let me verify with GitLeaks itself rather than trusting grep:
+
 <details>
-<summary>Execution details — 642 tool events</summary>
+<summary>Execution details — 643 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6185,6 +6187,10 @@ echo "--- branch now:"; git log --oneline main..HEAD`
 echo "════ the fake key anywhere in this branch's history? ════"
 found=$(git log -p main..HEAD | grep -c "3f2b9c1e4a7d4c8fb0e6a1d9c3b5e7f2" || true)
 echo "  occurrences acros…`
+- **Bash** `cd /workspaces/fhir-agent
+if command -v gitleaks >/dev/null 2>&1; then echo "gitleaks present: $(gitleaks version)"; else
+  echo "installing gitleaks 8.24.3 (same version as CI) to scratchpad…"
+  D=/t…`
 
 </details>
 
