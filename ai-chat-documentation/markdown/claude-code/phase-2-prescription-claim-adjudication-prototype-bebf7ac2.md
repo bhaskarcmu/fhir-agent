@@ -4528,8 +4528,12 @@ Now the contract test for R17.6's three disjoint classes:
 
 All 52 pass (38 → 52). Now the live verification — the fix must reject `{}` **and** not break any valid claim:
 
+**400 + a real FHIR `OperationOutcome`**, deterministically ordered. Now the critical checks — nothing persisted, and no valid claim broken:
+
+Nothing persisted, all six golden paths unaffected. Running e2e and the claims-agent to be sure nothing downstream regressed:
+
 <details>
-<summary>Execution details — 605 tool events</summary>
+<summary>Execution details — 607 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5931,6 +5935,13 @@ mvn -f claims-service/pom.xml test 2>&1 | grep -E "Tests run:|BUILD|ERROR.*\.jav
 mvn -q -f claims-service/pom.xml -DskipTests clean package 2>&1 | tail -3
 FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose up -d fhir triage >/dev/null 2>&1
 for i in $(s…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "════ is DEC-null persisted now? ════"
+curl -s --max-time 8 "http://localhost:8080/fhir/ClaimResponse?_tag=DEC-null&_summary=count" | python3 -c 'import json,sys; print(…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "════ e2e ════"; python3 -m pytest e2e/ -q 2>&1 | tail -2
+echo; echo "════ claims-agent still explains (its claim must pass validation) ════"
+python3 -m claims_agent.age…`
 
 </details>
 
@@ -5941,6 +5952,6 @@ for i in $(s…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 11:54 UTC
+- **Last updated:** 15 July 2026, 11:56 UTC
 - **Turns:** 67
 - **Status:** Incomplete
