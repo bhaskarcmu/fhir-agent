@@ -4420,8 +4420,10 @@ Now the top-level README, which also carries the false Terraform claim I wrote:
 
 Now let me verify the gateway runbook's local procedure is accurate rather than plausible — actually bringing up the gateway profile:
 
+Gateway procedures verified: key retrieval works as documented, no key → **401**, with key → **200**, and `/triage` → 422 (routed, key stripped). `/claims` → 503 because a stray local `java` from my earlier testing still holds port 8090, so the container couldn't bind. Let me clear that and confirm:
+
 <details>
-<summary>Execution details — 568 tool events</summary>
+<summary>Execution details — 572 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5732,6 +5734,19 @@ echo; echo "════ line count rxclaim-emulator/infra/main.tf ════"
 - **Bash** `cd /workspaces/fhir-agent
 FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose --profile phase2 --profile gateway up -d 2>&1 | tail -4
 for i in $(seq 1 45); do curl -s -o /dev/null --max-time 2 http:…`
+- **Bash** `cd /workspaces/fhir-agent
+for p in $(pgrep -f 'claims-service-0.1.0.jar|rxclaim-emulator-0.1.0.jar' 2>/dev/null); do kill $p 2>/dev/null; done
+sleep 3
+FHIR_GATEWAY_URL=http://fhir:8080/fhir docker com…`
+- **Bash** `cd /workspaces/fhir-agent
+KEY=$(docker compose logs kong 2>/dev/null | grep -o 'DEV APIKEY: .*' | tail -1 | cut -d' ' -f3 | tr -d '\r')
+echo "claims-service health: $(curl -s --max-time 3 http://local…`
+- **Bash** `cd /workspaces/fhir-agent
+docker compose ps --format '  {{.Service}}: {{.State}}' 2>/dev/null
+echo "--- port 8090 holder:"; (ss -ltnp 2>/dev/null | grep ':8090' || echo "  free")`
+- **Bash** `cd /workspaces/fhir-agent
+FHIR_GATEWAY_URL=http://fhir:8080/fhir docker compose --profile phase2 up -d claims-service 2>&1 | tail -2
+for i in $(seq 1 40); do curl -s --max-time 2 http://localhost:8090…`
 
 </details>
 
@@ -5742,6 +5757,6 @@ for i in $(seq 1 45); do curl -s -o /dev/null --max-time 2 http:…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 11:32 UTC
+- **Last updated:** 15 July 2026, 11:35 UTC
 - **Turns:** 66
 - **Status:** Incomplete
