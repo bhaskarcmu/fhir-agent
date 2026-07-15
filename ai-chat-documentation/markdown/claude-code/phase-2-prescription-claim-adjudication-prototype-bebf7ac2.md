@@ -4386,8 +4386,20 @@ Starting with the Critical status conflict — removing the false claim and maki
 
 Now the milestone table gets a Status column (data, not prose that drifts), replacing the status paragraph I added last round:
 
+Now the false "cloud path is fully authored" claim right after the table — this is the one I repeated without checking:
+
+Now the same false claim in the isolation table (§4) and the directory layout (§7):
+
+Now the template→generated flow in §3, where the docs say `kong.yml` but the repo has `kong.tmpl.yml`:
+
+Now §16 item 10 — it currently implies Terraform merely needs applying, which is exactly the false claim:
+
+Now the High severity safety-semantics drift in `claims-service/README.md` — the doc contradicts the normative fail-closed contract:
+
+Important correction to my own analysis — **Terraform does exist, but per-service, not top-level**. I nearly wrote a false correction while fixing a false claim. Let me look:
+
 <details>
-<summary>Execution details — 529 tool events</summary>
+<summary>Execution details — 540 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5647,6 +5659,27 @@ sed -n '/## Deviations from the PRD/,/^---/p' docs/phase2/requirements.md | head
 git checkout -b docs/review-fixes 2>&1 | tail -1`
 - **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Bash** `cd /workspaces/fhir-agent
+python3 - <<'PY'
+import re, pathlib
+p = pathlib.Path('docs/phase2/plan.md'); t = p.read_text()
+# Header: insert a Status column after '#'
+t = t.replace("| # | Milestone | Del…`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Read** `/workspaces/fhir-agent/claims-service/README.md`
+- **Bash** `cd /workspaces/fhir-agent
+echo "════ claims-service cloud artifacts claimed in its README ════"
+ls claims-service/Dockerfile 2>/dev/null || echo "  no Dockerfile"
+ls claims-service/infra/main.tf 2>/de…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "════ claims-service/infra/main.tf ════"; cat claims-service/infra/main.tf
+echo; echo "════ line count rxclaim-emulator/infra/main.tf ════"; wc -l rxclaim-emulator/infra…`
 
 </details>
 
@@ -5657,6 +5690,6 @@ git checkout -b docs/review-fixes 2>&1 | tail -1`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 11:25 UTC
+- **Last updated:** 15 July 2026, 11:27 UTC
 - **Turns:** 66
 - **Status:** Incomplete
