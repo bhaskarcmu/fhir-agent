@@ -4208,8 +4208,12 @@ Congrats on the merge. Before the docs work — per the repo's Git rules I shoul
 
 Now let me survey what documentation exists today before reorganizing anything.
 
+The `PLANNING — no application code yet` status is now badly stale. Let me look at the plan's structure:
+
+The normative docs (`requirements.md`, `plan.md`) are well-structured — I'll keep those clean and add the guides alongside. Let me gather the facts I need to write them accurately, starting with the test landscape:
+
 <details>
-<summary>Execution details — 460 tool events</summary>
+<summary>Execution details — 465 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5284,6 +5288,15 @@ gh pr create --base main --head feature/phase2-failclosed-safety \
 git checkout main -q && git pull --ff-only -q 2>&1 | tail -1
 echo "════ all markdown in repo (excl. node_modules/target) ════"
 find . -name '*.md' -not -path '*/node_modules/…`
+- **Read** `/workspaces/fhir-agent/README.md`
+- **Read** `/workspaces/fhir-agent/docs/README.md`
+- **Read** `/workspaces/fhir-agent/docs/phase2/README.md`
+- **Bash** `cd /workspaces/fhir-agent
+echo "════ plan.md headings ════"; grep -n "^#\{1,3\} " docs/phase2/plan.md
+echo; echo "════ requirements.md headings ════"; grep -n "^#\{1,3\} " docs/phase2/requirements.md`
+- **Bash** `cd /workspaces/fhir-agent
+echo "════ test dirs/files ════"
+find . -path ./node_modules -prune -o \( -name 'test_*.py' -o -name '*Test.java' -o -name '*Tests.java' \) -print 2>/dev/null | grep -v targe…`
 
 </details>
 
@@ -5294,6 +5307,6 @@ find . -name '*.md' -not -path '*/node_modules/…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 10:41 UTC
+- **Last updated:** 15 July 2026, 10:42 UTC
 - **Turns:** 64
 - **Status:** Incomplete
