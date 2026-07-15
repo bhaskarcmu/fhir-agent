@@ -4245,7 +4245,7 @@ Now the developer guide — including the hard-won gotchas that cost real debugg
 Now the testing guide. Let me get accurate counts rather than guess:
 
 <details>
-<summary>Execution details — 489 tool events</summary>
+<summary>Execution details — 493 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5389,6 +5389,18 @@ mvn -f claims-service/pom.xml test 2>&1 | grep -E "Tests run:…`
 - **Bash** `cd /workspaces/fhir-agent
 echo "fhir-service @Test methods: $(grep -rh '@Test' fhir-service/src/test/java --include=*.java | wc -l)"
 echo "smoke test scripts:"; ls client/clinical/smoke_test.py client…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "════ testdata / snapshot dirs (R19 asks for these) ════"
+find . -type d -name 'testdata' -not -path '*/target/*' 2>/dev/null; echo "(none found = gap)"
+echo; echo "════…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "════ any test of the R17.6 error taxonomy (400 + OperationOutcome)? ════"
+grep -rln "OperationOutcome\|400\|BadRequest" claims-service/src/test/java 2>/dev/null || echo…`
+- **Bash** `cd /workspaces/fhir-agent
+grep -rn "OperationOutcome" claims-service/src/test/java claims-service/src/main/java | head -5
+echo "---- (the greps above matched '400' inside amounts, not error tests)"
+gr…`
+- **Read** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/api/ClaimController.java`
 
 </details>
 
@@ -5399,6 +5411,6 @@ echo "smoke test scripts:"; ls client/clinical/smoke_test.py client…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 10:50 UTC
+- **Last updated:** 15 July 2026, 10:51 UTC
 - **Turns:** 64
 - **Status:** Incomplete
