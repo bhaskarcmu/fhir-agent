@@ -4270,8 +4270,10 @@ Everything green. Let me tear down the stack and review the full change:
 
 `requirements.md` is untouched — it stays normative. Let me verify it has no commit/PR pollution, as you flagged:
 
+Clean. Committing — **worktree** `/workspaces/fhir-agent`, **branch** `docs/phase2-guides`, **target** `main` via PR:
+
 <details>
-<summary>Execution details — 512 tool events</summary>
+<summary>Execution details — 514 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5470,6 +5472,14 @@ echo "(stack stopped)"; git status --short; echo "════ diff stat ══�
 - **Bash** `cd /workspaces/fhir-agent
 echo "════ PR/branch/commit references in requirements.md ════"
 grep -nEi "\bPR #|pull request|feature/|branch |commit [0-9a-f]{7}" docs/phase2/requirements.md || echo "  non…`
+- **Bash** `cd /workspaces/fhir-agent
+git add README.md docs/ e2e/
+git commit -q -F - <<'EOF'
+docs: developer/testing/demo guides, plus a findable docs index
+
+Documentation was scattered and, in places, wrong: do…`
+- **Bash** `cd /workspaces/fhir-agent
+git push -u origin docs/phase2-guides 2>&1 | tail -3`
 
 </details>
 
