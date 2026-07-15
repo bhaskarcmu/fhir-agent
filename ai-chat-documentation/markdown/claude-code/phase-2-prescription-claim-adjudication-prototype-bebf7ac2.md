@@ -4232,8 +4232,14 @@ Now verify the e2e suite passes on a genuinely fresh stack (wiping FHIR again to
 
 The `pkill` killed my own shell (exit 144). claims-service survived; the emulator didn't. Starting it cleanly:
 
+**7 passed on a genuinely empty FHIR server.** The e2e regression is fixed and the suite now covers clinical safety too.
+
+Now the documentation. Let me check what's stale in the plan before restructuring:
+
+The e2e fix is verified. Now the docs. Let me gather the remaining facts I need to write them accurately:
+
 <details>
-<summary>Execution details — 479 tool events</summary>
+<summary>Execution details — 483 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5348,6 +5354,16 @@ nohup java -Dspring.datasource.url='jdbc:h2:mem:rxclaim;DB_CLOSE_DELAY=-1' -Dspr
 - **Bash** `cd /workspaces/fhir-agent
 docker compose restart fhir >/dev/null 2>&1   # wipe in-memory FHIR → genuinely fresh
 for i in $(seq 1 40); do curl -s --max-time 3 http://localhost:8080/fhir/metadata 2>/dev…`
+- **Read** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Bash** `cd /workspaces/fhir-agent
+echo "════ claims-service packages ════"
+find claims-service/src/main/java -type d | sed 's|claims-service/src/main/java/||'
+echo; echo "════ ports from docker-compose ════"…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "════ ai-chat-history worktree ════"
+ls /workspaces/.ai-chat-history 2>/dev/null | head -12
+echo; echo "════ .ona/automations.yaml ════"; cat .ona/automations.yaml 2>/de…`
+- **Bash** `cd /workspaces/.ai-chat-history 2>/dev/null && ls ai-chat-documentation/ | head -10 && echo "---- README head:" && head -30 README.md`
 
 </details>
 
@@ -5358,6 +5374,6 @@ for i in $(seq 1 40); do curl -s --max-time 3 http://localhost:8080/fhir/metadat
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 15 July 2026, 10:46 UTC
+- **Last updated:** 15 July 2026, 10:47 UTC
 - **Turns:** 64
 - **Status:** Incomplete
