@@ -148,8 +148,22 @@ Now replacing the open-questions section with resolved decisions:
 
 PRD is updated. Now the design doc — reworking the milestone plan and resolving its open questions.
 
+Now the milestone plan (§13) and open questions (§15):
+
+Now updating §12 (security/auth) and §15 (open questions → decisions):
+
+Let me fix these three stale references now that the questions are resolved:
+
+Now let me do a final consistency pass and mark this todo complete before republishing.
+
+Clean. Now updating the todo list and republishing the artifacts before committing to the repo.
+
+**Git op:** worktree `/workspaces/fhir-agent`, current branch `main`, target branch: new local branch `docs/provider-search-design` (created now, committed to, **not pushed**, no PR — per your instruction).
+
+Now copying the finalized PRD and design docs into the repo:
+
 <details>
-<summary>Execution details — 30 tool events</summary>
+<summary>Execution details — 55 tool events</summary>
 
 ### Turn 1 activity
 
@@ -186,6 +200,39 @@ PRD is updated. Now the design doc — reworking the milestone plan and resolvin
 - **Edit** `/tmp/claude-1000/-workspaces-fhir-agent/430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb/scratchpad/phase3/design.md`
 - **Edit** `/tmp/claude-1000/-workspaces-fhir-agent/430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb/scratchpad/phase3/design.md`
 - **TodoWrite** `{"todos": [{"content": "Resolve open questions with best judgment in prd.md", "status": "completed", "activeForm": "Resolving open questions in prd.md"}, {"content": "Resolve open questions + rework m…`
+- **Edit** `/tmp/claude-1000/-workspaces-fhir-agent/430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb/scratchpad/phase3/design.md`
+- **Edit** `/tmp/claude-1000/-workspaces-fhir-agent/430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb/scratchpad/phase3/design.md`
+- **Edit** `/tmp/claude-1000/-workspaces-fhir-agent/430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb/scratchpad/phase3/design.md`
+- **Bash** `grep -n "future phase\|M8\|Phase 3\.\|eligibility/network phase" /tmp/claude-1000/-workspaces-fhir-agent/430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb/scratchpad/phase3/design.md /tmp/claude-1000/-workspaces-f…`
+- **Bash** `cd /tmp/claude-1000/-workspaces-fhir-agent/430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb/scratchpad/phase3
+sed -i \
+  -e 's/second source without NPI (e.g. a state licensing board) is added — a future phase\./…`
+- **Bash** `grep -n "§11\|open question\|UI phase" /tmp/claude-1000/-workspaces-fhir-agent/430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb/scratchpad/phase3/design.md`
+- **Edit** `/tmp/claude-1000/-workspaces-fhir-agent/430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb/scratchpad/phase3/design.md`
+- **Edit** `/tmp/claude-1000/-workspaces-fhir-agent/430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb/scratchpad/phase3/design.md`
+- **Edit** `/tmp/claude-1000/-workspaces-fhir-agent/430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb/scratchpad/phase3/design.md`
+- **Edit** `/tmp/claude-1000/-workspaces-fhir-agent/430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb/scratchpad/phase3/design.md`
+- **Bash** `grep -n "Phase 3\.[0-9]\|Phase-3\.\|phase 3\.[0-9]" /tmp/claude-1000/-workspaces-fhir-agent/430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb/scratchpad/phase3/design.md /tmp/claude-1000/-workspaces-fhir-agent/430…`
+- **TodoWrite** `{"todos": [{"content": "Resolve open questions with best judgment in prd.md", "status": "completed", "activeForm": "Resolving open questions in prd.md"}, {"content": "Resolve open questions + rework m…`
+- **Artifact** `/tmp/claude-1000/-workspaces-fhir-agent/430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb/scratchpad/phase3/prd.md`
+- **Artifact** `/tmp/claude-1000/-workspaces-fhir-agent/430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb/scratchpad/phase3/design.md`
+- **TodoWrite** `{"todos": [{"content": "Resolve open questions with best judgment in prd.md", "status": "completed", "activeForm": "Resolving open questions in prd.md"}, {"content": "Resolve open questions + rework m…`
+- **Bash** `git status`
+- **Bash** `git checkout -b docs/provider-search-design`
+- **Bash** `ls docs/ 2>/dev/null; echo "---"; ls docs/phase2/ 2>/dev/null`
+- **Read** `/workspaces/fhir-agent/docs/phase2/README.md`
+- **Bash** `mkdir -p /workspaces/fhir-agent/docs/phase3`
+- **Write** `/workspaces/fhir-agent/docs/phase3/README.md`
+- **Bash** `cp /tmp/claude-1000/-workspaces-fhir-agent/430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb/scratchpad/phase3/prd.md /workspaces/fhir-agent/docs/phase3/prd.md
+cp /tmp/claude-1000/-workspaces-fhir-agent/430e8e57-d…`
+- **Bash** `git add docs/phase3/
+git status`
+- **Bash** `git commit -m "$(cat <<'EOF'
+docs(phase3): draft PRD and design proposal for Provider Search
+
+Provider Search & Referral: first-party provider directory built on
+authoritative public data (NPPES), wit…`
+- **TodoWrite** `{"todos": [{"content": "Resolve open questions with best judgment in prd.md", "status": "completed", "activeForm": "Resolving open questions in prd.md"}, {"content": "Resolve open questions + rework m…`
 
 </details>
 
@@ -196,6 +243,6 @@ PRD is updated. Now the design doc — reworking the milestone plan and resolvin
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 13:41 UTC
+- **Last updated:** 17 July 2026, 13:43 UTC
 - **Turns:** 2
 - **Status:** Complete
