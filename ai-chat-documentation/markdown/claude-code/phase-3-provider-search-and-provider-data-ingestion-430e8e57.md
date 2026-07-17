@@ -377,8 +377,12 @@ Now writing `main.py`:
 
 Now `conftest.py`:
 
+Now an API-level integration test (exercises `main.py`'s route wiring, not just the modules):
+
+Now let's add a local Postgres service to `docker-compose.yml` plus a `provider-registry` service, matching the existing style:
+
 <details>
-<summary>Execution details — 171 tool events</summary>
+<summary>Execution details — 178 tool events</summary>
 
 ### Turn 1 activity
 
@@ -619,6 +623,13 @@ ls /workspaces/fhir-agent/provider-registry-servic…`
 - **Write** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/tests/conftest.py`
 - **Write** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/tests/test_taxonomy.py`
 - **Write** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/tests/test_api_validation.py`
+- **Write** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/tests/test_location_search.py`
+- **Edit** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/tests/test_location_search.py`
+- **Write** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/tests/test_registry.py`
+- **Write** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/tests/test_api_search.py`
+- **Write** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/tests/test_ratelimit.py`
+- **TodoWrite** `{"todos": [{"content": "Scaffold provider-registry-service package (pyproject, src layout)", "status": "completed", "activeForm": "Scaffolding provider-registry-service package"}, {"content": "Write s…`
+- **Bash** `sed -n '1,170p' /workspaces/fhir-agent/docker-compose.yml`
 
 </details>
 
@@ -629,6 +640,6 @@ ls /workspaces/fhir-agent/provider-registry-servic…`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 14:30 UTC
+- **Last updated:** 17 July 2026, 14:31 UTC
 - **Turns:** 8
 - **Status:** Incomplete
