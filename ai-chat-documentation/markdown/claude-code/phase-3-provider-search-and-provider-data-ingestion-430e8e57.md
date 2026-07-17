@@ -573,7 +573,7 @@ Tests pass and self-skip correctly. Now let's actually run the agent for real to
 Now let's test the real LLM narration path (I have `CLAUDE_API_KEY` available):
 
 <details>
-<summary>Execution details — 375 tool events</summary>
+<summary>Execution details — 376 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1194,6 +1194,8 @@ for state in ['ca', 'mt']:
 - **Bash** `export DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›localhost:5432/provider_registry"
 cd /workspaces/fhir-agent
 time python3 -m provider_curation_agent --states NC,CA,MT 2>&1`
+- **Bash** `ls /workspaces/fhir-agent/claims-agent/Dockerfile 2>&1
+cat /workspaces/fhir-agent/claims-agent/Dockerfile 2>/dev/null`
 
 </details>
 
