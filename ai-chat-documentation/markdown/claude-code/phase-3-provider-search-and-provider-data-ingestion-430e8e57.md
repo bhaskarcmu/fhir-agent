@@ -734,8 +734,16 @@ Now let's manually verify the full agent against the real production dataset (12
 
 Excellent — real, honest handling of the known `accepting_new_patients` data gap rather than fabricating. Let's try one more real query exercising the ambiguous/clarification guardrail path:
 
+Let me check whether that "no results" was a genuine data gap or the model mis-transcribing the taxonomy code (missing trailing "X"):
+
+Found another real, concrete bug from this manual run: the model transcribed `207RE0101X` as `207RE0101` (dropped trailing "X"), which silently returned zero results instead of an error — a false negative, not fabrication, but still worth closing. Let me check if NUCC codes have a consistent format I can validate against:
+
+Confirmed: real NUCC codes are consistently `^[0-9A-Z]{9}X$` (10 chars, all 883 verified, zero exceptions). Adding this as a real, verified schema constraint so a truncated code gets rejected explicitly instead of silently returning zero results:
+
+Good, nothing broke. Now let's re-run the same real query against production data to confirm the fix helps:
+
 <details>
-<summary>Execution details — 550 tool events</summary>
+<summary>Execution details — 558 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1703,6 +1711,27 @@ nohup python3 -m uvicorn provider_registry.m…`
 python3 -m provider_search_agent --query "Find a family medicine doctor accepting new patients near ZIP 59601, Montana"`
 - **Bash** `cd /workspaces/fhir-agent
 python3 -m provider_search_agent --query "I need to see an endocrinologist, I live near 90001"`
+- **Bash** `echo "=== with correct code 207RE0101X ==="
+curl -s -X POST http://127.0.0.1:8002/v1/providers/search -H "Content-Type: application/json" \
+  -d '{"location": {"zip": "90001"}, "taxonomy_codes": ["207…`
+- **Bash** `python3 -c "
+import csv, re
+pattern = re.compile(r'^[0-9]{9}X$')
+with open('/workspaces/fhir-agent/data/reference/providers/taxonomy_reference.csv') as f:
+    codes = [row['code'] for row in csv.DictR…`
+- **Bash** `python3 -c "
+import csv, re
+pattern = re.compile(r'^[0-9A-Z]{9}X$')
+with open('/workspaces/fhir-agent/data/reference/providers/taxonomy_reference.csv') as f:
+    codes = [row['code'] for row in csv.Di…`
+- **Read** `/workspaces/fhir-agent/provider-mcp-server/src/provider_mcp/schemas.py`
+- **Read** `/workspaces/fhir-agent/provider-mcp-server/src/provider_mcp/schemas.py`
+- **Edit** `/workspaces/fhir-agent/provider-mcp-server/src/provider_mcp/schemas.py`
+- **Bash** `cd /workspaces/fhir-agent
+TEST_DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›localhost:5432/provider_registry_test" \
+  python3 -m pytest provider-mcp-server/tests/ -v --import-mode=i…`
+- **Bash** `cd /workspaces/fhir-agent
+python3 -m provider_search_agent --query "I need to see an endocrinologist, I live near 90001"`
 
 </details>
 
@@ -1713,6 +1742,6 @@ python3 -m provider_search_agent --query "I need to see an endocrinologist, I li
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 15:54 UTC
+- **Last updated:** 17 July 2026, 15:56 UTC
 - **Turns:** 12
 - **Status:** Incomplete
