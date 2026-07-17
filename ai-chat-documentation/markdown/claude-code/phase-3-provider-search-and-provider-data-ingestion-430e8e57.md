@@ -177,8 +177,60 @@ What changed since the last draft:
 
 Both artifacts are re-published at the same URLs if you'd rather read there. Let me know what you'd like changed before this goes any further — nothing's pushed or opened as a PR.
 
+## Turn 3
+
+### Prompt
+
+Digest my review findings below, used your own judgement to acceot, re-severitize, and take what you want leave what you dont want. Just explain your analysis and concurrence/disagreements with the findings. Proveed to make all changes you deem will make things better, even if low severity. Then, push and creat first docs PR for Phase 3. 
+_____________________________
+High: Phase 3 repeats a cloud-readiness assumption that Phase 2 handled eventually quite well.
+Evidence (not fully analyzed, do your own searches):
+design.md:533, design.md:537, design.md:551, design.md:555, prd.md:10, README.md:28
+Cross-phase contradiction:
+README.md:8, README.md:12, plan.md:289, plan.md:307, decisions.md:33
+Risk: under-preparedness for cloud deployment. disappointed stakeholders.
+Suggestion: Explain in more detail, cloud-readiness and preparedness. Better to slightly overdo the cloud preparedness than be caught red handed later.
+
+High: Tool/API contract detail is not implementation-ready at the same rigor level as Phase 2 requirements.
+Evidence:
+prd.md:91, prd.md:94, design.md:385, design.md:428
+Gap: schemas are still sketch-level and error taxonomy is not defined (validation error, upstream unavailable, ambiguous specialty/location, no-result, etc.), which makes deterministic behavior and testability weaker than Phase 2’s contract style.
+
+High: Provider lifecycle/deactivation handling is under-specified, which can produce stale referrals.
+Evidence:
+design.md:224, design.md:355, design.md:346, design.md:573
+Gap: model has ingestion and anomaly tables, but no explicit active/deactivated semantics, validity windows, or serving policy for stale/deactivated NPIs in search responses.
+
+Critical: Security posture inherits “internal-only/no app-layer auth” from Phase 2 without a Phase 3-specific threat model for location-sensitive inputs.
+Evidence:
+prd.md:112, prd.md:114, design.md:518, design.md:524
+Gap: this may be acceptable for prototype scope, but it should be explicitly justified with boundary assumptions and abuse cases (compromised internal caller, replay, excessive query scraping).
+
+Medium: Search relevance choices may reduce referral usability in sparse or mixed datasets.
+Evidence:
+design.md:304, design.md:355, design.md:308
+Gap: nearest-distance-only ranking plus entity_type mixed ingestion can surface organizations/facilities when clinician intent is an individual practitioner. A default ranking policy or explicit filter strategy is not yet defined.
+
+High: Decision governance is less mature than Phase 2 documentation practice.
+Evidence:
+README.md:5, prd.md:155, design.md:581
+Cross-phase comparator:
+decisions.md:1, decisions.md:56, README.md:82
+Gap: Phase 3 has decisions embedded in docs, but no standalone ADR-status index with accepted/superseded/partially-delivered tracking.
+
+Overall Improvement areas (elaborate yourself and create/execute action items based on your own analysus and judgement):
+
+* Add explicit SLI/SLO terminology and error-budget style metrics, not only one latency KPI and “no formal SLO.”
+* Formalize “contract-first” by publishing concrete request/response/error schemas with versioning language.
+* Clarify provider-directory domain terms using Plan-Net concepts where relevant (practitioner, practitioner role, organization, location) even if persistence remains non-FHIR.
+* Over-communicate in the plan regarding PRs coming up or any details without meandering or making too long.
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
-<summary>Execution details — 58 tool events</summary>
+<summary>Execution details — 64 tool events</summary>
 
 ### Turn 1 activity
 
@@ -252,6 +304,15 @@ authoritative public data (NPPES), wit…`
 - **Read** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/MEMORY.md`
 - **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/MEMORY.md`
 
+### Turn 3 activity
+
+- **Read** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase3/prd.md`
+- **Read** `/workspaces/fhir-agent/docs/phase3/README.md`
+- **Read** `/workspaces/fhir-agent/docs/phase2/README.md`
+- **Bash** `sed -n '270,320p' /workspaces/fhir-agent/docs/phase2/plan.md`
+- **Bash** `sed -n '1,10p;25,40p;50,60p;75,90p' /workspaces/fhir-agent/docs/phase2/decisions.md`
+
 </details>
 
 ---
@@ -261,6 +322,6 @@ authoritative public data (NPPES), wit…`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 13:44 UTC
-- **Turns:** 2
-- **Status:** Complete
+- **Last updated:** 17 July 2026, 14:00 UTC
+- **Turns:** 3
+- **Status:** Incomplete
