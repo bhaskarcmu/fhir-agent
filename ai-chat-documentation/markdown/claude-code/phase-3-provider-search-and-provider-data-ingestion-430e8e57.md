@@ -712,8 +712,10 @@ This is a genuinely interesting real result — not a crash, but the guardrail c
 
 Found it exactly: Claude is passing `"location": '{"zip": "27514"}'` — a JSON-encoded **string**, not a nested object — 12 times in a row before giving up. Real, reproducible schema issue. Let me test a fix: adding an explicit `"type": "object"` alongside `oneOf` (currently the schema only has `type` inside each branch):
 
+That didn't fix it either — even with the type hint, Claude still stringifies the nested object. This is a known class of LLM tool-calling quirk with `oneOf`-typed object parameters. Let me try a different fix: flatten the schema (drop `oneOf`, let the registry service's existing Pydantic validator handle the "exactly one of zip/lat-lon" cross-field rule, since it already does):
+
 <details>
-<summary>Execution details — 527 tool events</summary>
+<summary>Execution details — 528 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1639,6 +1641,7 @@ from provider_search_agent.agent import search
 
 async def main():
     result = await search('Find an endocrinologist near ZIP 27514', verbose=True…`
+- **Read** `/workspaces/fhir-agent/provider-mcp-server/src/provider_mcp/schemas.py`
 
 </details>
 
