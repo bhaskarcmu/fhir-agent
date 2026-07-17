@@ -278,6 +278,28 @@ I verified all 6 findings against the actual repo rather than taking them on fai
 
 All four "overall improvement" items were actioned too: SLIs defined (§11), contract versioning language (§8.3), a Plan-Net domain-terms mapping (§4.1), and this PR description kept to a punch list rather than restating the docs.
 
+## Turn 4
+
+### Prompt
+
+List the milestones for me
+
+### Claude response
+
+Milestones for Phase 3 (design.md §13), each with its cloud-readiness stub:
+
+| Milestone | Scope | Cloud-readiness stub |
+|---|---|---|
+| **M1** | This PRD + design doc — committed locally, now in PR #40 (docs-first, matches Phase 2) | n/a — docs only |
+| **M2** | `provider-registry-service`: schema/migrations, `LocationSearchPort` + `HaversineSqlLocationSearch`, taxonomy resolve endpoint, coarse per-caller rate-limit middleware (defense-in-depth, §12.1), unit tests against a small hand-written fixture | Dockerfile + Terraform Cloud Run module sketch, `ingress = "internal"` (not applied) |
+| **M3** | Ingestion scripts: NPPES pull for the pilot state (NC), NUCC load, ZCTA load, upsert — verified against real data | Terraform sketch for a manually-triggered Cloud Run Job (not applied) |
+| **M4** | `provider-curation-agent`: wraps M3 with an AI run-summary; expand ingestion to the full curated set (NC, CA, MT) | n/a — CLI tool, no new deployable surface |
+| **M5** | `provider-mcp-server`: real MCP server (stdio), wired to the registry service; integration test proving the actual `initialize`/`tools-list`/`tools-call` handshake | Dockerfile + Terraform sketch — flagged: stdio doesn't cross a network boundary, so this makes it cloud-*runnable*, not cloud-*callable* |
+| **M6** | `provider-search-agent`: real MCP client/host, Anthropic tool-use loop, groundedness eval suite | n/a — CLI tool; spawns the MCP server as a local child process |
+| **M7** | `docker-compose` demo profile bundling all four components; end-to-end local verification | **Root Terraform module** composing the stubs + `deploy-phase3.sh` + an executed CI cloud smoke test — named explicitly here, not assumed to fall out of M2/M3's per-service stubs |
+
+Then, as its own phase rather than a milestone: **Phase 3b** (future, not started) — GCP live deployment: `terraform apply` using M7's root module, correct IAM/VPC-connector scoping so the no-app-layer-auth trust boundary actually holds, and resolving the MCP transport question for real if a cloud-hosted agent is ever needed (stdio → SSE/HTTP).
+
 <details>
 <summary>Execution details — 110 tool events</summary>
 
@@ -428,6 +450,6 @@ First docs PR for **Phase 3 — Provider Search & Referral**: a first-party pr�
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 14:10 UTC
-- **Turns:** 3
+- **Last updated:** 17 July 2026, 14:12 UTC
+- **Turns:** 4
 - **Status:** Complete
