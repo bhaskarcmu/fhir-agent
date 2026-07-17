@@ -676,8 +676,20 @@ Now `README.md`'s canonical status:
 
 Now let's stage, commit, and push:
 
+PR number matched (#44). Finalizing.
+
+**M5 done. PR opened:** [github.com/bhaskarcmu/fhir-agent/pull/44](https://github.com/bhaskarcmu/fhir-agent/pull/44) — branch `feature/m5-provider-mcp-server`.
+
+This is the milestone the whole phase has been building toward — a genuine MCP server, not a simulation. Before writing any implementation, I installed the real `mcp` SDK and ran a minimal server+client round trip over stdio to confirm design.md's speculative code sketch actually matched the current API (it did, with one bonus: the SDK validates tool arguments against the JSON Schema automatically, for free).
+
+The integration test doesn't assert the protocol works — it exercises it for real: both the MCP server and `provider-registry-service` spawned as genuine subprocesses, a real `ClientSession` driving `initialize → tools/list → tools/call`, including the error and schema-rejection paths. I then went further and hand-verified it against the full 12,582-provider dataset — a live search near Los Angeles returned real physicians through the actual protocol.
+
+One thing I deliberately did *not* do: write a Cloud Run Service Terraform resource. An stdio-only process can't satisfy Cloud Run's `$PORT`/health-check model, so that resource would `terraform validate` cleanly while being undeployable — exactly the "stub exists ≠ deploy-ready" trap this project already caught and corrected once. The stub only provisions an Artifact Registry repo instead.
+
+Root `pytest`: **186 passed** — checked for last milestone's filename-collision bug first this time, found none. Next up once #44 merges: **M6**, `provider-search-agent`, the real MCP client/host that completes the protocol boundary.
+
 <details>
-<summary>Execution details — 491 tool events</summary>
+<summary>Execution details — 494 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1519,6 +1531,13 @@ feat(provider-mcp-server): M5 — the real, hand-built MCP server
 The core deliverable this whole phase exists to build: a genuine MCP
 server (Pyt…`
 - **Bash** `git push -u origin feature/m5-provider-mcp-server`
+- **Bash** `cd /workspaces/fhir-agent
+gh pr create --title "feat(provider-mcp-server): M5 — the real, hand-built MCP server" --body "$(cat <<'EOF'
+## Summary
+
+M5 of Phase 3 (design.md §13): `provider-mcp-server`…`
+- **TodoWrite** `{"todos": [{"content": "Verify real mcp SDK API (Server, stdio, ClientSession) - done via smoke test", "status": "completed", "activeForm": "Verifying real mcp SDK API"}, {"content": "Scaffold provide…`
+- **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase3-planning-state.md`
 
 </details>
 
@@ -1529,6 +1548,6 @@ server (Pyt…`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 15:38 UTC
+- **Last updated:** 17 July 2026, 15:39 UTC
 - **Turns:** 11
 - **Status:** Incomplete
