@@ -7,8 +7,12 @@ the first draft are resolved in §9 using best judgement; flagged where you may 
 **Terminology note:** internal work within Phase 3 is tracked as **milestones** (M1, M2, ...),
 never as "Phase 3.x" — "Phase" is reserved for top-level platform phases only: Phase 1, Phase 2,
 Phase 3 (this doc), and **Phase 3b** — the future GCP cloud-deployment phase that mirrors Phase
-2's live-deploy milestone (Phase 2b). Every Phase 3 milestone prepares a cloud-readiness stub so
-Phase 3b is a deploy, not a redesign (see design doc §13).
+2's live-deploy milestone (Phase 2b). Every Phase 3 milestone prepares a cloud-readiness stub,
+but — having checked what Phase 2b actually turned out to need — that stub is necessary and not
+sufficient; see the explicit gap-avoidance callout in design doc §13 before assuming Phase 3b is
+"just a deploy."
+**Decision index:** [`decisions.md`](./decisions.md) tracks every architectural decision below
+with a status (Accepted / Partially delivered / Superseded), same convention as Phase 2's.
 
 ---
 
@@ -95,6 +99,9 @@ natural-language interface the platform already uses for triage.
 | FR10 | The ingestion pipeline pulls NPPES data for a curated set of states, normalizes taxonomy codes, joins ZIP centroids for coordinates, and upserts golden records keyed by NPI. |
 | FR11 | The ingestion pipeline (agent-assisted) produces a human-readable run summary: records added/updated, records flagged (missing taxonomy, missing/ambiguous address, stale relative to prior run). |
 | FR12 | Every registry record carries lineage: source system, source pull timestamp, ingestion run ID. |
+| FR13 | Every tool response conforms to a defined error taxonomy — success-with-results, success-no-results, ambiguous, validation error, not-found, upstream-unavailable — each a distinct, disjoint response shape (design doc §8.4), not an ad-hoc error string. |
+| FR14 | The registry tracks each provider's active/deactivated status (from NPPES's deactivation signal) and `search_providers_near` excludes deactivated providers by default; `get_provider` still returns a deactivated record explicitly, so an existing caller can see why it's stale rather than getting an unexplained not-found (design doc §4.1). |
+| FR15 | `search_providers_near` supports an optional `entity_type` filter (individual/organization) so a request for an individual practitioner isn't silently mixed with organization-level NPIs that happen to carry a matching taxonomy code (design doc §4.3). |
 
 ## 6. Non-functional requirements
 
@@ -107,13 +114,19 @@ natural-language interface the platform already uses for triage.
 - **Freshness.** One-time seed per curated state, manually re-run on demand. No SLA on data
   staleness this phase; the run timestamp is always visible in lineage.
 - **Availability.** Internal-only services (registry, taxonomy, MCP server); not on a
-  customer-facing critical path this phase. Standard dev/demo reliability expectations, no formal
-  SLO yet — see design doc §Observability for what's instrumented in preparation for one.
+  customer-facing critical path this phase. Standard dev/demo reliability expectations. SLIs
+  (availability, latency, zero-result rate, MCP conformance, ingestion coverage) are defined
+  now so instrumentation lands correctly from M2; no SLO/error-budget target is set against them
+  this build, since there's no production traffic yet to set one against — see design doc §11.
 - **PHI/PII handling.** Provider data itself is CMS public record, not PHI. However, the **input**
   to a search — a patient's ZIP/coordinate — is potentially sensitive (it discloses a patient's
   approximate location tied to a clinical need) and must be treated PHI-safe-by-default: never
-  logged in plaintext, never included in error messages verbatim, consistent with the platform's
+  logged in plaintext (enforced via a shared sanitizing helper, not left as an unenforced
+  convention), never included in error messages verbatim, consistent with the platform's
   existing posture (see [[secret-values-never-print]] convention already applied to secrets).
+  The internal-only, no-app-layer-auth trust boundary this relies on is justified for Phase 3's
+  specific data flow — not just reused from Phase 2 — in design doc §12.1, including the abuse
+  cases considered (compromised internal caller, query-volume scraping, log leakage).
 - **Compliance posture.** NPPES data is explicitly CMS public-use data with no HIPAA restriction on
   redistribution. No BAA or PHI-handling agreement is implicated by the registry itself.
 - **Real-MCP-server learning requirement (NFR, must-have).** The MCP server must implement the
@@ -151,6 +164,8 @@ natural-language interface the platform already uses for triage.
   a coordinate (ZIP centroid join) and at least one taxonomy code.
 - **Data gap transparency:** 100% of records missing `accepting_new_patients` are surfaced as
   `unknown`, never silently coerced to `false`.
+- **Staleness safety:** 0 deactivated NPIs (per §4.1's `npi_status`) appear in a default
+  `search_providers_near` response across the eval set.
 
 ## 9. Decisions (resolving the first draft's open questions)
 

@@ -183,6 +183,16 @@ real independent scaling needs.
 
 ### 4.1 Data model (Postgres, single instance — see §5 for the persistence decision)
 
+**Domain terms, for readers who know FHIR provider-directory conventions:** the schema below
+is a custom relational shape, not FHIR resources (§9 explains why), but it's worth naming the
+correspondence to HL7's Da Vinci PDex Plan-Net IG — the real standard for this domain — so the
+mapping is obvious if a future phase does go FHIR-native: `providers` (entity_type=1) ≈
+Plan-Net `Practitioner`; `providers` (entity_type=2) ≈ `Organization`; `provider_addresses` ≈
+`Location`; the practitioner-at-a-location-with-a-specialty combination that
+`provider_taxonomies` + `provider_addresses` jointly express ≈ `PractitionerRole`. No
+`HealthcareService` equivalent exists — Phase 3 doesn't model bookable services, only
+providers and where to find them.
+
 ```
 providers
   npi                 char(10) PK
@@ -192,6 +202,10 @@ providers
   organization_name   text NULL
   phone               text NULL
   is_sole_proprietor  boolean NULL
+  npi_status          text            -- 'active' | 'deactivated' (see status policy below)
+  deactivated_at       date NULL       -- from NPPES deactivation date, if present
+  deactivation_reason  text NULL       -- NPPES reason code, if present (to verify exact field
+                                        -- name/values against the live schema at M3)
   source              text            -- 'NPPES'
   source_pulled_at    timestamptz
   ingestion_run_id    uuid FK -> ingestion_runs
@@ -241,6 +255,28 @@ nullable boolean on `provider_addresses` (it's a practice-location-level fact, n
 NPI-level one) with its own `source`/`source_pulled_at` lineage pair, not silently merged
 into the NPPES lineage fields.
 
+**Provider status & serving policy (closes a real gap in the first draft).** NPPES tracks
+deactivation for individual and organizational NPIs (retirement, death, fraud/error
+correction) via deactivation-date/reason fields in the source data — the first draft's schema
+had nowhere to put that fact, and no rule about what a search should do with it. Fixed here:
+
+- `fetch_nppes_state` captures whatever deactivation signal NPPES exposes for the pulled
+  record (field names/values to verify against the live API/bulk schema at M3 — not assumed)
+  and `upsert_golden_record` sets `npi_status`/`deactivated_at`/`deactivation_reason`
+  accordingly.
+- **`search_providers_near` excludes `npi_status = 'deactivated'` by default.** A retired or
+  deceased provider must never surface in a referral list — this is a correctness rule, not a
+  ranking preference, so it's a hard filter, not something `accepting_new_patients`-style
+  "unknown ≠ excluded" leniency applies to.
+- **`get_provider` still returns a deactivated record** (by NPI, explicit lookup) — a
+  downstream caller who already has an NPI on file needs to be able to see *why* it's stale,
+  not get a 404 that looks like a data error.
+- **Known residual gap, named rather than hidden:** because ingestion is a manually re-run,
+  one-time-per-state seed (§6, PRD §6 Freshness), a provider that becomes deactivated *between*
+  runs won't be caught until the next manual re-run — there is no live polling of NPPES's
+  weekly deactivation file this build (§6). This is an accepted consequence of the one-time-seed
+  decision, tracked as a named risk in §14, not an oversight.
+
 ### 4.2 `LocationSearchPort` — the swappable interface
 
 ```python
@@ -261,6 +297,8 @@ class LocationSearchPort(Protocol):
         taxonomy_codes: list[str],
         limit: int,
         accepting_new_patients: bool | None,
+        entity_type: Literal["individual", "organization"] | None = None,
+        include_deactivated: bool = False,   # False = default hard filter, see §4.1
     ) -> list[ProviderMatch]: ...
 ```
 
@@ -279,6 +317,8 @@ JOIN provider_taxonomies t ON t.npi = p.npi
 WHERE t.taxonomy_code = ANY(:taxonomy_codes)
   AND a.state = ANY(:candidate_states)   -- cheap pre-filter, no PostGIS needed
   AND a.lat IS NOT NULL
+  AND (:include_deactivated OR p.npi_status = 'active')   -- default hard filter, §4.1
+  AND (:entity_type IS NULL OR p.entity_type = :entity_type)
 HAVING distance_miles <= :radius_miles
 ORDER BY distance_miles ASC
 LIMIT :limit;
@@ -309,6 +349,17 @@ Kept deliberately simple and explainable:
    includes providers where the flag is `true` **or `unknown`**, never silently excluding
    `unknown` as if it were `false` — and the response tags each result's flag as
    `true` / `unknown` so the agent can say "unconfirmed" rather than implying certainty.
+5. `entity_type` filter, optional (gap in the first draft, closed here): a clinician asking
+   "find an endocrinologist" almost always means an individual practitioner, but the first
+   draft's search had no way to exclude organization-type NPIs (entity_type=2, e.g. a hospital
+   system that also carries an Endocrinology taxonomy) from surfacing ahead of an individual.
+   Rather than bake a default preference into the ranking logic — which would break the
+   "distance is the only rank key" simplicity principle above — `search_providers_near` gains
+   an optional `entity_type: "individual" | "organization" | null` filter param (default
+   `null` = unrestricted). Whether to apply it is pushed up to `provider-search-agent`'s NL
+   decomposition (FR8): the agent infers "endocrinologist" → `individual` the same way it
+   already infers a taxonomy code, and states that inference in its rationale rather than the
+   deterministic tool silently guessing it.
 
 ## 5. Persistence decision
 
@@ -401,7 +452,8 @@ async def main():
 `provider-registry-service`'s internal HTTP API — the same "call the deterministic
 service over HTTP, don't import it" pattern `mcp-agent` already uses for
 `triage-service`. This keeps the MCP server stateless and focused purely on protocol
-translation.
+translation. `RESOLVE_SPECIALTY_SCHEMA`/`SEARCH_SCHEMA`/`GET_PROVIDER_SCHEMA` above are
+concrete JSON Schema objects, not placeholders — see §8.3 for their actual contents.
 
 ### 8.2 Client/host side (`provider-search-agent`)
 
@@ -425,32 +477,102 @@ it does not hardcode `TOOL_DEFINITIONS` the way `mcp-agent/src/agent/tools.py` d
 today. That hardcoded-vs-discovered distinction *is* the protocol boundary this phase
 is meant to prove out.
 
-### 8.3 Tool contracts (sketch)
+### 8.3 Tool contracts
+
+The first draft left these as prose sketches with placeholder schema constants
+(`RESOLVE_SPECIALTY_SCHEMA`, etc.) — not implementation-ready, and noticeably less rigorous
+than Phase 2's R17.7 "canonical schemas with committed example payloads." Fixed here: concrete
+JSON Schema for every tool's input, and a concrete example response for every tool.
+
+**Contract versioning.** MCP has no first-class endpoint-versioning concept the way a REST
+path does — the tool *name* is the stable contract identifier. Rule for this build: a
+backward-compatible change (new optional field, widened enum) edits the schema in place; a
+breaking change (removed/renamed/re-typed field, narrowed enum) ships as a new tool name with
+a numeric suffix (e.g. `search_providers_near_v2`) rather than silently changing the existing
+one — so an already-registered MCP client never has a tool's behavior change out from under it
+between calls to `tools/list`. `provider-registry-service`'s internal HTTP routes are prefixed
+`/v1/...` for the same reason, even though `triage-service` today doesn't version its routes —
+a deliberate, small improvement for a new service, not a retrofit demanded of existing ones.
+
+**`resolve_specialty`**
 
 ```jsonc
-// resolve_specialty
-{ "query": "string, free text" }
-→ { "query": "...", "matches": [
-      { "code": "207RE0101X", "grouping": "...", "classification": "Endocrinology, Diabetes & Metabolism",
-        "specialization": null, "score": 0.94 } ] }
+// input schema
+{ "type": "object", "required": ["query"], "additionalProperties": false,
+  "properties": { "query": { "type": "string", "minLength": 1, "maxLength": 200 } } }
 
-// search_providers_near
-{ "location": { "zip": "27514" } | { "lat": 35.9, "lon": -79.05 },
-  "taxonomy_codes": ["207RE0101X"],
-  "radius_miles": 15, "limit": 10,
-  "accepting_new_patients": true | false | null }
-→ { "origin": { "lat": 35.9, "lon": -79.05, "resolved_from": "zip:27514" },
-    "count": 3,
-    "results": [ { "npi": "1234567890", "name": "...", "entity_type": 1,
-        "taxonomy_code": "207RE0101X", "taxonomy_description": "...",
-        "address": {...}, "distance_miles": 4.2,
-        "accepting_new_patients": "unknown",
-        "lineage": { "source": "NPPES", "source_pulled_at": "...", "ingestion_run_id": "..." } } ] }
+// example call
+{ "query": "endocrinologist" }
 
-// get_provider
-{ "npi": "1234567890" }
-→ full record: all addresses, all taxonomies, lineage
+// example response (success — see §8.4 for the ambiguous/no-match cases)
+{ "query": "endocrinologist", "matches": [
+    { "code": "207RE0101X", "grouping": "Allopathic & Osteopathic Physicians",
+      "classification": "Endocrinology, Diabetes & Metabolism", "specialization": null,
+      "score": 0.94, "nucc_version": "24.1" } ] }
 ```
+
+**`search_providers_near`**
+
+```jsonc
+// input schema
+{ "type": "object", "required": ["location", "taxonomy_codes"], "additionalProperties": false,
+  "properties": {
+    "location": { "oneOf": [
+        { "type": "object", "required": ["zip"], "properties": { "zip": { "type": "string", "pattern": "^[0-9]{5}$" } } },
+        { "type": "object", "required": ["lat", "lon"], "properties": { "lat": { "type": "number", "minimum": -90, "maximum": 90 }, "lon": { "type": "number", "minimum": -180, "maximum": 180 } } } ] },
+    "taxonomy_codes": { "type": "array", "items": { "type": "string" }, "minItems": 1, "maxItems": 10 },
+    "radius_miles": { "type": "number", "exclusiveMinimum": 0, "maximum": 200, "default": 25 },
+    "limit": { "type": "integer", "minimum": 1, "maximum": 50, "default": 10 },
+    "accepting_new_patients": { "type": ["boolean", "null"], "default": null },
+    "entity_type": { "type": ["string", "null"], "enum": ["individual", "organization", null], "default": null } } }
+
+// example call
+{ "location": { "zip": "27514" }, "taxonomy_codes": ["207RE0101X"], "radius_miles": 15,
+  "limit": 10, "accepting_new_patients": true, "entity_type": "individual" }
+
+// example response (success)
+{ "origin": { "lat": 35.9, "lon": -79.05, "resolved_from": "zip:27514" },
+  "count": 1,
+  "results": [ { "npi": "1234567890", "name": "Jane Doe, MD", "entity_type": 1,
+      "npi_status": "active",
+      "taxonomy_code": "207RE0101X", "taxonomy_description": "Endocrinology, Diabetes & Metabolism",
+      "address": { "address_1": "100 Main St", "city": "Chapel Hill", "state": "NC", "zip5": "27514" },
+      "distance_miles": 4.2,
+      "accepting_new_patients": "unknown",
+      "lineage": { "source": "NPPES", "source_pulled_at": "2026-08-01T00:00:00Z", "ingestion_run_id": "..." } } ] }
+```
+
+**`get_provider`**
+
+```jsonc
+// input schema
+{ "type": "object", "required": ["npi"], "additionalProperties": false,
+  "properties": { "npi": { "type": "string", "pattern": "^[0-9]{10}$" } } }
+
+// example call
+{ "npi": "1234567890" }
+
+// example response (success)
+{ "npi": "1234567890", "entity_type": 1, "name": "Jane Doe, MD", "npi_status": "active",
+  "addresses": [ {...} ], "taxonomies": [ {...} ],
+  "lineage": { "source": "NPPES", "source_pulled_at": "...", "ingestion_run_id": "..." } }
+```
+
+### 8.4 Error taxonomy
+
+The first draft's FR9 said the agent "surfaces [failures] plainly," without defining what a
+tool actually returns when something goes wrong — no equivalent of Phase 2's R17.6. Fixed here
+with the same shape Phase 2 used (disjoint response classes, each with a fixed
+status/persisted-or-not rule), adapted from a decisioning domain to a search domain:
+
+| Class | When | MCP tool result | Registry-service HTTP | Notes |
+|---|---|---|---|---|
+| **Success — results found** | Valid request, ≥1 match | Normal result, `isError` absent/false | `200` | §8.3 examples above |
+| **Success — no results** | Valid request, 0 matches | Normal result, `count: 0, results: []` — **not an error** | `200` | Distinguishing "found nothing real" from "something broke" is the whole point of FR9 — an empty result must never be dressed up as, or confused with, a failure the agent should paper over |
+| **Ambiguous input** | `resolve_specialty` has no confidently-dominant match, or a ZIP has no centroid | Normal result, `status: "ambiguous"` + candidates/reason — **not an error** | `200` | This is a legitimate outcome the agent must resolve by asking the clinician (FR9), not a system fault — same reasoning as the row above |
+| **Validation error** | Malformed input (bad ZIP pattern, radius out of range, unknown taxonomy code format) | `isError: true`, `error_type: "validation_error"`, `field`, `message` | `400` | No query executed |
+| **Not found** | `get_provider` called with an NPI absent from the registry | `isError: true`, `error_type: "not_found"` | `404` | Distinct from "no results" above — a bad/stale NPI is a different signal than a legitimate empty search |
+| **Upstream unavailable** | `provider-registry-service` unreachable or Postgres down | `isError: true`, `error_type: "upstream_unavailable"` | `502`/`503` | Agent must say so plainly and stop (existing guardrail, §3.1) — never silently retries into a fabricated answer |
 
 ## 9. Integration with the existing platform
 
@@ -500,15 +622,29 @@ is meant to prove out.
 
 - Structured logs: never log a raw patient ZIP/coordinate in plaintext — log a
   state/region bucket instead, or a truncated/hashed form, consistent with PHI-safe
-  handling of the search *input* (provider *output* data is public).
-- Metrics: `search_providers_near` latency histogram, zero-result rate, MCP tool-call
-  counts by tool name, ingestion run record/flag counts.
+  handling of the search *input* (provider *output* data is public). Enforced via the
+  shared `sanitize_location()` helper named in §12.1, not left as an unenforced convention.
 - Groundedness check (automated, not manual): every NPI appearing in a
   `provider-search-agent` transcript must resolve via `get_provider` — a referential
   smoke test, same spirit as Phase 2's idempotency verification.
-- No formal SLO this phase (internal-only, no production traffic) — instrumentation is
-  prep work for one, consistent with Phase 2's "designed + stubbed, live deploy later"
-  posture.
+
+**SLIs defined now; SLO/error-budget deferred — named explicitly rather than left as one
+latency KPI plus "no formal SLO."** No production traffic exists yet to set a real budget
+against, but the *indicators* a future SLO would be built on are specified now so
+instrumentation lands correctly from M2, not retrofitted later:
+
+| SLI | Definition | Measured from |
+|---|---|---|
+| Availability | % of `search_providers_near` / `resolve_specialty` / `get_provider` calls completing as a defined success or no-result response (§8.4) — validation/not-found errors on well-formed test traffic count against it, upstream-unavailable errors always do | MCP `tools/call` receipt → response, rolling 5-minute window |
+| Latency | p50/p95/p99 histogram, `tools/call` receipt → response | Same window |
+| Zero-result rate | % of successful `search_providers_near` calls returning `count: 0` | Same window — a leading indicator of curated-data coverage gaps, not itself a failure |
+| MCP conformance | % of agent sessions completing `initialize → tools/list → tools/call` without a protocol-level error | Per session |
+| Ingestion coverage | % of pulled NPPES records per run resolving a coordinate + ≥1 taxonomy code | Per `ingestion_runs` row (PRD §8 KPI) |
+
+An SLO (a target on Availability/Latency) and an error budget are **not set this build** —
+consistent with Phase 2's own posture for pre-launch internal services — but the table above
+is what a future SLO would reference, so setting one later is a target-setting exercise, not
+new instrumentation work.
 
 ## 12. Security / compliance
 
@@ -527,32 +663,104 @@ is meant to prove out.
 - Agent guardrails recap: never fabricate a provider fact; always carry lineage; surface
   "unknown" rather than guessing (§3.1).
 
+### 12.1 Threat model for the internal boundary
+
+The first draft copied Phase 2's "no app-layer auth, network isolation only" decision without
+justifying it for Phase 3's specific data flow — reused the mechanism without restating why
+it's still sufficient here. Phase 2's internal payload is a claim; Phase 3's is a patient's
+approximate location tied to a clinical need, which is a materially different sensitivity
+profile even though the *auth mechanism* carries over unchanged. Reasoning, explicit:
+
+- **What's actually protected.** Not the provider data (public record). Two things: (1) the
+  search **input** — a patient's location — per the existing PHI-safe handling rule (PRD §6);
+  (2) secondarily, the **aggregate query pattern** (which ZIPs, which specialties, what volume,
+  over time) — even without any single request containing PHI, a scraped time series of a
+  clinic's referral searches is itself a signal about that clinic's patient population, and
+  isn't defended by "the response body is public data."
+- **Trust boundary assumption, named rather than implied.** No-app-layer-auth is only as safe
+  as the Cloud Run `ingress=internal` + IAM invoker + VPC connector configuration actually
+  restricting callers to specifically-authorized services. That configuration lives in
+  Terraform, not in this repo's Python/Java code — it's an **operational dependency**, and
+  Phase 3b's Terraform apply must get it right for this decision to hold. Named as an explicit
+  Phase 3b acceptance criterion in §13.1, not assumed to fall out of "internal-only" as a label.
+- **Abuse cases considered:**
+  - *Compromised or over-permissioned internal caller* (another Cloud Run service in the same
+    VPC that shouldn't have registry access but does, due to an overly broad IAM binding or
+    VPC connector scope) — mitigated only by correct IAM scoping at deploy time (Phase 3b), not
+    by anything in this codebase. Accepted risk for an internal-only prototype; would need
+    per-service IAM service accounts (not a shared one) before this goes beyond prototype scope.
+  - *Query-volume scraping* — nothing in this design rate-limits `provider-registry-service`
+    internally (Kong's rate-limiting is edge-only and this service isn't on the edge). A
+    compromised or buggy internal caller could hammer it unboundedly. **Cheap, concrete
+    mitigation added to M2** (not deferred to a doc note): a coarse per-caller rate limit via
+    FastAPI middleware on `provider-registry-service` — defense-in-depth, not a substitute for
+    correct IAM scoping.
+  - *Replay* — no auth token exists to replay; a captured request is just a repeatable read
+    against public data. Not a meaningful risk given nothing PHI is returned or stored.
+  - *Log/telemetry leakage of the raw search location* — the "never log in plaintext" rule
+    (PRD §6) is currently just a sentence with no enforcement mechanism named. Fixed here: it's
+    enforced the way this codebase already enforces PHI-safe logging elsewhere — a shared
+    `sanitize_location()` helper used in `provider-registry-service`'s request-logging
+    middleware (state/region bucket only, per §11), not a policy left to individual call sites
+    to remember.
+
 ## 13. Milestone plan
 
 Internal work is tracked as milestones, not sub-phases — no "Phase 3.x" labels anywhere below.
-Following Phase 2's actual pattern (design + stub the cloud posture at every milestone; defer the
+Following Phase 2's *intent* (design + stub the cloud posture at every milestone; defer the
 live `terraform apply` to its own follow-on phase), every milestone that adds a deployable
-component also produces a **cloud-readiness stub** — a Dockerfile and a Terraform module sketch,
-validated with `terraform validate`/`plan` but never applied. That makes **Phase 3b** a deploy of
-already-proven config, not a redesign.
+component also produces a **cloud-readiness stub** — a Dockerfile and a per-service Terraform
+module sketch, validated with `terraform validate`/`plan` but never applied.
+
+> ### ⚠️ Do not read "cloud-readiness stub" as "Phase 3b is just `terraform apply`"
+>
+> The first draft of this doc claimed exactly that — "Phase 3b is a deploy of already-proven
+> config, not a redesign" — and that claim was wrong on its own evidence: Phase 2 said the
+> identical thing (`decisions.md` D8: "cloud IaC/stubs/tests ship from each milestone") and
+> then had to publicly retract it. `docs/phase2/plan.md`'s own "Cloud-delivery gap" callout
+> found that per-service Cloud Run stubs shipping on schedule (M2, M3 did ship theirs) still
+> left **no root Terraform module** wiring them together (Cloud SQL/Neon, Secret Manager,
+> Artifact Registry, VPC connector, IAM), **no deploy script**, and **no executed cloud smoke
+> test in CI** — and concluded "Phase 2b is not 'terraform apply, not new construction'... Real
+> authoring work remains."
+>
+> Phase 3 will not repeat that specific gap **by naming the same three deliverables as their
+> own milestone-tracked items**, not as an implied side-effect of per-service stubs:
+> 1. A root Terraform module (`infra/terraform/` or equivalent) that actually composes the
+>    per-service stubs — added as an explicit M7 deliverable below, not assumed to exist because
+>    the per-service pieces do.
+> 2. A `deploy-phase3.sh` (or equivalent) — same treatment.
+> 3. An executed cloud smoke test in CI (not just "a stub exists") — same treatment.
+>
+> Even with those three named, **Phase 3b is still real authoring work**, not a single command
+> — the honest claim is "the design and per-service config won't need to change," not "nothing
+> is left to build." Treat every "Cloud-readiness stub" cell below as a **design commitment**,
+> and check the repo before citing one as a delivered artifact — the same caution Phase 2's own
+> docs now carry.
 
 | Milestone | Scope | Cloud-readiness stub |
 |---|---|---|
 | M1 | This PRD + design doc, committed locally (docs-first, matches Phase 2) | n/a — docs only |
-| M2 | `provider-registry-service`: schema/migrations, `LocationSearchPort` + `HaversineSqlLocationSearch`, taxonomy resolve endpoint, unit tests against a small hand-written fixture (not real data yet) | Dockerfile + Terraform Cloud Run module sketch, `ingress = "internal"` (not applied) |
+| M2 | `provider-registry-service`: schema/migrations, `LocationSearchPort` + `HaversineSqlLocationSearch`, taxonomy resolve endpoint, coarse per-caller rate-limit middleware (§12.1 defense-in-depth), unit tests against a small hand-written fixture (not real data yet) | Dockerfile + Terraform Cloud Run module sketch, `ingress = "internal"` (not applied) |
 | M3 | Ingestion scripts (deterministic): NPPES pull for the pilot state (NC), NUCC load, ZCTA load, upsert — verified against real data | Terraform sketch for a manually-triggered Cloud Run Job (matches the one-time-seed decision, PRD §6) — not applied |
 | M4 | `provider-curation-agent`: wraps M3 with an AI run-summary; expand ingestion to the full curated set (NC, CA, MT) | n/a — CLI tool, no new deployable surface |
 | M5 | `provider-mcp-server`: real MCP server (stdio), wired to the registry service; integration test proving the actual `initialize`/`tools-list`/`tools-call` handshake | Dockerfile + Terraform Cloud Run sketch — flagged with the caveat in §13.1 below: stdio doesn't cross a network boundary, so this stub alone doesn't make the server cloud-*callable*, only cloud-*runnable* |
 | M6 | `provider-search-agent`: real MCP client/host, Anthropic tool-use loop, groundedness eval suite | n/a — CLI tool; spawns the MCP server as a local child process |
-| M7 | `docker-compose` demo profile bundling all four new components; end-to-end local verification | Final cloud-readiness pass: `terraform validate`/`plan` across every module added in M2–M6 (still not applied) |
+| M7 | `docker-compose` demo profile bundling all four new components; end-to-end local verification | **Root Terraform module** (`infra/terraform/`) composing the M2/M3 per-service stubs + `deploy-phase3.sh` + an executed cloud smoke test wired into CI (stub-target, no live spend) — the three items the callout above names explicitly, not left implied. `terraform validate`/`plan` across everything (still not applied) |
 
 ### 13.1 Phase 3b — GCP cloud deployment (future, out of scope here)
 
-Mirrors Phase 2b exactly: Phase 2 was "designed + stubbed + tested throughout; live deploy is
-Phase 2b" (project history, M8/C1). Phase 3b's scope, once started:
+Same intent as Phase 2b — but stated with the correction the callout above makes: this is
+**real authoring work landing on top of M2–M7's stubs**, not a single command. Scope, once
+started:
 
-- `terraform apply` for `provider-registry-service` and `provider-mcp-server` on Cloud Run,
-  `ingress = internal`, IAM invoker + VPC connector — using the M2–M7 stubs as-is.
+- `terraform apply` using M7's root module — the module that actually composes
+  `provider-registry-service` and `provider-mcp-server`'s per-service stubs, Cloud SQL/Neon,
+  Secret Manager, Artifact Registry, and the VPC connector — not the per-service stubs in
+  isolation, which is exactly what Phase 2 had at this stage and found insufficient.
+- Correctly scope IAM invoker bindings and VPC connector reach so the network-isolation-only
+  trust assumption in §12.1 actually holds — an explicit acceptance criterion for this
+  milestone, not an assumed side-effect of "ingress=internal" as a label.
 - **No new application-layer auth** — matches the verified Phase 2 pattern (PRD §9): internal
   calls carry no API key/bearer/shared-secret header; isolation is enforced entirely by Cloud Run
   ingress + IAM, not by the application.
@@ -570,6 +778,12 @@ Phase 2b" (project history, M8/C1). Phase 3b's scope, once started:
 
 - **`accepting_new_patients` data gap** — the single biggest open risk; may need to ship
   without it (always `unknown`) if no usable source is confirmed.
+- **Provider staleness/deactivation between ingestion runs** (gap identified in review,
+  closed at the schema/policy level in §4.1) — because ingestion is a manually re-run,
+  one-time-per-state seed, a provider that becomes deactivated after a run won't be caught
+  until the next manual re-run. `npi_status` filtering prevents an *already-known*
+  deactivated provider from surfacing, but doesn't shrink the detection lag itself — only a
+  scheduled refresh (explicitly out of scope this build, §6) would.
 - **NPPES public API rate limits** at ingestion time are undocumented/unverified —
   build in basic backoff, verify empirically during M3.
 - **ZCTA-vs-ZIP mismatch** can misplace a small number of centroids (non-residential
@@ -577,6 +791,9 @@ Phase 2b" (project history, M8/C1). Phase 3b's scope, once started:
 - **Taxonomy synonym coverage** is inherently incomplete for a deterministic (non-LLM)
   matcher — an accepted trade-off for traceability, worth a follow-up eval once real
   usage patterns exist.
+- **Internal-boundary trust depends on correct IAM/VPC scoping at deploy time** (§12.1) —
+  the no-app-layer-auth decision is only as sound as Phase 3b's Terraform gets that
+  scoping right; named as an explicit Phase 3b acceptance criterion, not just a doc note.
 
 ## 15. Decisions (resolving the first draft's open questions)
 
