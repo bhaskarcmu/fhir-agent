@@ -178,3 +178,46 @@ services:
       timeout: 5s
       retries: 18
       start_period: 15s
+
+  # ══ Phase 3 (opt-in: `docker compose --profile phase3 up`) ═════════════════
+  # Additive only — none of the below start on a plain `docker compose up`.
+
+  # ── Provider registry Postgres (dev/test only — see provider-registry-service/README) ──
+  postgres:
+    image: postgres:16-alpine
+    container_name: fhir-agent-postgres
+    profiles: ["phase3"]
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: provider_registry
+      POSTGRES_PASSWORD: provider_registry
+      POSTGRES_DB: provider_registry
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U provider_registry"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  # ── Provider registry service (INTERNAL ONLY — no host port) ──────────────
+  # Never on the Kong edge (design.md §9) — reachable only at provider-registry:8002
+  # on the compose network, mirroring the cloud "ingress=internal" posture (same
+  # pattern as rxclaim-emulator above).
+  provider-registry:
+    build:
+      context: .
+      dockerfile: provider-registry-service/Dockerfile
+    container_name: fhir-agent-provider-registry
+    profiles: ["phase3"]
+    environment:
+      DATABASE_URL: postgresql://provider_registry:provider_registry@postgres:5432/provider_registry
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
