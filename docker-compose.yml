@@ -221,3 +221,23 @@ services:
       timeout: 5s
       retries: 10
       start_period: 10s
+
+  # ── Provider curation agent (run-once CLI) ─────────────────────────────────
+  # Orchestrates data/scripts/provider_ingest/ and narrates the result (design.md §3.2).
+  # NOT an MCP client -- ingestion is out of the MCP boundary. No cloud-readiness stub:
+  # a CLI tool has no deployable surface (same as claims-agent).
+  provider-curation-agent:
+    build:
+      context: .
+      dockerfile: provider-curation-agent/Dockerfile
+    container_name: fhir-agent-provider-curation-agent
+    profiles: ["phase3"]
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      CLAUDE_API_KEY: ${CLAUDE_API_KEY:-}     # falls back to deterministic summary if unset
+      DATABASE_URL: postgresql://provider_registry:provider_registry@postgres:5432/provider_registry
+    depends_on:
+      postgres:
+        condition: service_healthy
+    stdin_open: true
+    tty: true

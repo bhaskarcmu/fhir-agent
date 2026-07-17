@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "provider-curation-agent"
+version = "0.1.0"
+description = "Non-authoritative run-summary/anomaly-narration agent for provider registry ingestion"
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=0.28",
+    "psycopg[binary]>=3.1",
+]
+
+[project.optional-dependencies]
+# Test tooling — install with: pip install -e "provider-curation-agent[dev]"
+dev = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
