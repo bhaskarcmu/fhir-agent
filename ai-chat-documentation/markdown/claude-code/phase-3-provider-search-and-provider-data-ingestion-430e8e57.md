@@ -162,8 +162,23 @@ Clean. Now updating the todo list and republishing the artifacts before committi
 
 Now copying the finalized PRD and design docs into the repo:
 
+**Committed locally.** Worktree `/workspaces/fhir-agent`, branch `docs/provider-search-design` (created off `main`, not pushed, no PR), commit `a325dee`:
+
+```
+docs/phase3/README.md
+docs/phase3/prd.md
+docs/phase3/design.md
+```
+
+What changed since the last draft:
+
+- **Terminology reworked** per your instruction: internal breakdown is now **milestones M1–M7** (design.md §13) with no "Phase 3.x" labels anywhere. **Phase 3b** is the one reserved exception — the future GCP live-deploy phase, mirroring Phase 2b exactly. Every milestone that adds a deployable component now specifies its cloud-readiness stub (Dockerfile + Terraform sketch, `validate`/`plan` only, never applied), so 3b is a deploy of proven config, not new design work. Section 13.1 spells out 3b's actual scope, including the one genuinely open architectural question it must resolve: MCP's stdio transport doesn't cross a network boundary, so a cloud-hosted agent would need the SSE/HTTP transport instead — I recommended defaulting to keeping the agent CLI-only even after 3b (mirrors `claims-agent`) unless something forces otherwise.
+- **All 5 open questions resolved** (PRD §9, design §15) using best judgement — curated states (NC/CA/MT for density contrast), `accepting_new_patients` ships permanently `unknown`, curation agent stays narrow-scoped, both new agents stay CLI-only, no new shared `client/` package. One of these I verified rather than guessed: internal service-to-service auth. I checked Phase 2's actual code and confirmed there's **no application-layer auth** on internal calls (`HttpTriageClient.java:50-55`, `HttpLegacyClient.java:23-29`, `HapiFhirClient.java:24-31`) — trust is Cloud Run `ingress=internal` + IAM only. Phase 3 follows the same pattern.
+
+Both artifacts are re-published at the same URLs if you'd rather read there. Let me know what you'd like changed before this goes any further — nothing's pushed or opened as a PR.
+
 <details>
-<summary>Execution details — 55 tool events</summary>
+<summary>Execution details — 58 tool events</summary>
 
 ### Turn 1 activity
 
@@ -233,6 +248,9 @@ docs(phase3): draft PRD and design proposal for Provider Search
 Provider Search & Referral: first-party provider directory built on
 authoritative public data (NPPES), wit…`
 - **TodoWrite** `{"todos": [{"content": "Resolve open questions with best judgment in prd.md", "status": "completed", "activeForm": "Resolving open questions in prd.md"}, {"content": "Resolve open questions + rework m…`
+- **Write** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase3-planning-state.md`
+- **Read** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/MEMORY.md`
+- **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/MEMORY.md`
 
 </details>
 
@@ -243,6 +261,6 @@ authoritative public data (NPPES), wit…`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 13:43 UTC
+- **Last updated:** 17 July 2026, 13:44 UTC
 - **Turns:** 2
 - **Status:** Complete
