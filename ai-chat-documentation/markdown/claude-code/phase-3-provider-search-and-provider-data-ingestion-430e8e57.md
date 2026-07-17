@@ -356,7 +356,7 @@ Cleanup done. And yes — **M2 is correct**: per `design.md` §13, M1 was this d
 Now starting M2. Let me quickly check existing Python service conventions to match them before scaffolding.
 
 <details>
-<summary>Execution details — 132 tool events</summary>
+<summary>Execution details — 133 tool events</summary>
 
 ### Turn 1 activity
 
@@ -552,6 +552,11 @@ grep -n "^  [a-z-]*:" docker-compose.yml 2>/dev/null | head -30
 ec…`
 - **Bash** `which psql postgres pg_ctl 2>/dev/null; echo "---"; dpkg -l | grep -i postgres 2>/dev/null; echo "---docker-compose fhir/postgres check---"
 sed -n '1,40p' /workspaces/fhir-agent/docker-compose.yml`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== rxclaim-emulator/infra/main.tf ==="
+cat rxclaim-emulator/infra/main.tf 2>/dev/null
+echo; echo "=== triage-service/src/triage/main.py (style ref) ==="
+cat triage-ser…`
 
 </details>
 
@@ -562,6 +567,6 @@ sed -n '1,40p' /workspaces/fhir-agent/docker-compose.yml`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 14:22 UTC
+- **Last updated:** 17 July 2026, 14:23 UTC
 - **Turns:** 8
 - **Status:** Incomplete
