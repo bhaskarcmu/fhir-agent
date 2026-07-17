@@ -655,7 +655,7 @@ Real, working, cross-state verification against production-scale data. Cleaning 
 Confirmed clean. Now the Terraform Cloud Run stub and Dockerfile:
 
 <details>
-<summary>Execution details — 459 tool events</summary>
+<summary>Execution details — 461 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1447,6 +1447,12 @@ jobs`
 - **Bash** `ss -ltnp 2>/dev/null | grep 8002 || echo "port 8002 free, no server running"`
 - **TodoWrite** `{"todos": [{"content": "Verify real mcp SDK API (Server, stdio, ClientSession) - done via smoke test", "status": "completed", "activeForm": "Verifying real mcp SDK API"}, {"content": "Scaffold provide…`
 - **Write** `/workspaces/fhir-agent/provider-mcp-server/Dockerfile`
+- **Bash** `mkdir -p /workspaces/fhir-agent/provider-mcp-server/infra`
+- **Bash** `python3 -c "
+import mcp.server
+import pkgutil
+print([m.name for m in pkgutil.iter_modules(mcp.server.__path__)])
+"`
 
 </details>
 
