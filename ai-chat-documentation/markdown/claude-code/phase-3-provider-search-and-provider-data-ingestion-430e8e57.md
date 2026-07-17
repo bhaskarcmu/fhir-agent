@@ -381,8 +381,12 @@ Now an API-level integration test (exercises `main.py`'s route wiring, not just 
 
 Now let's add a local Postgres service to `docker-compose.yml` plus a `provider-registry` service, matching the existing style:
 
+Now adding the docker-compose services. Let me view the tail of the file first to find a good insertion point:
+
+Let me add a startup hook to `main.py` that applies `schema.sql` automatically — mirroring how the Java services auto-run `schema.sql` via Spring Boot:
+
 <details>
-<summary>Execution details — 178 tool events</summary>
+<summary>Execution details — 182 tool events</summary>
 
 ### Turn 1 activity
 
@@ -630,6 +634,11 @@ ls /workspaces/fhir-agent/provider-registry-servic…`
 - **Write** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/tests/test_ratelimit.py`
 - **TodoWrite** `{"todos": [{"content": "Scaffold provider-registry-service package (pyproject, src layout)", "status": "completed", "activeForm": "Scaffolding provider-registry-service package"}, {"content": "Write s…`
 - **Bash** `sed -n '1,170p' /workspaces/fhir-agent/docker-compose.yml`
+- **Bash** `ss -ltn 2>/dev/null | grep -E ":5432|:5433" || echo "5432/5433 free"`
+- **Edit** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/tests/conftest.py`
+- **Bash** `wc -l /workspaces/fhir-agent/docker-compose.yml
+sed -n '170,260p' /workspaces/fhir-agent/docker-compose.yml`
+- **Read** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/main.py`
 
 </details>
 
@@ -640,6 +649,6 @@ ls /workspaces/fhir-agent/provider-registry-servic…`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 14:31 UTC
+- **Last updated:** 17 July 2026, 14:32 UTC
 - **Turns:** 8
 - **Status:** Incomplete
