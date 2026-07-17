@@ -30,10 +30,10 @@
     "present": true,
     "raw_filename": "430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb.jsonl",
     "source_deleted_at": null,
-    "status": "incomplete",
+    "status": "complete",
     "title": "Provider search capability with MCP and data ingestion",
     "turns": 1,
-    "updated_at": "2026-07-17T13:05:25.177000+00:00"
+    "updated_at": "2026-07-17T13:05:46.797000+00:00"
   },
   "49895199-bfa2-470d-ba8d-4bd7737fd12b": {
     "archived_at": "2026-07-14T17:34:06.474356+00:00",
