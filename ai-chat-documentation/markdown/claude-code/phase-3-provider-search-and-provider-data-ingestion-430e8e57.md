@@ -450,8 +450,14 @@ Confirmed merged. Proceeding with cleanup.
 
 Now for M3. Given the instruction to keep documentation and test results current going forward, let me first check existing data-fetch script conventions (Phase 2 already tackled "curate real external public data"), then research the actual live data sources I flagged as "to verify" in the design doc.
 
+This confirms Phase 2 already verified the NPPES API URL (`npiregistry.cms.hhs.gov/api/?version=2.1`) as real and reachable — good, one less unknown. Now let me verify the NUCC taxonomy and Census ZCTA sources, which are new to this phase and still flagged "to verify" in the design doc.
+
+Confirmed real and reachable. Now the NUCC taxonomy CSV:
+
+NUCC confirmed and downloaded (884 rows, clean CSV). Now verifying the NPPES API's real behavior — pagination, response shape, and whether it actually needs `curl` (bot-blocked) like other CMS pages:
+
 <details>
-<summary>Execution details — 234 tool events</summary>
+<summary>Execution details — 246 tool events</summary>
 
 ### Turn 1 activity
 
@@ -803,6 +809,31 @@ find data/reference/npi -type f 2>/dev/null | head -30
 echo "=== data/reference/README.md ==="
 cat data/reference/README.md 2>/dev/…`
 - **Bash** `cat /workspaces/fhir-agent/data/reference/.gitignore`
+- **ToolSearch** `WebSearch WebFetch`
+- **WebSearch** `NUCC health care provider taxonomy CSV download nucc.org current file`
+- **WebSearch** `Census Gazetteer files ZCTA national download 2024 census.gov`
+- **Bash** `curl -sL -o /dev/null -w "HTTP %{http_code}  %{url_effective}\n" "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2024_Gazetteer/2024_Gaz_zcta_national.zip"
+curl -sL "https://www2.census.gov…`
+- **Bash** `curl -sL "https://www.nucc.org/index.php/code-sets-mainmenu-41/provider-taxonomy-mainmenu-40/csv-mainmenu-57" -A "Mozilla/5.0" 2>&1 | grep -oiE 'href="[^"]*\.csv"' | head -10`
+- **Bash** `curl -sL "https://www.nucc.org/images/stories/CSV/nucc_taxonomy_260.csv" -A "Mozilla/5.0" -o /tmp/nucc.csv -w "HTTP %{http_code}, size %{size_download} bytes\n"
+head -5 /tmp/nucc.csv
+echo "---row coun…`
+- **Bash** `curl -sL "https://npiregistry.cms.hhs.gov/api/?version=2.1&state=NC&limit=5&skip=0" -o /tmp/nppes_sample.json -w "HTTP %{http_code}\n"
+python3 -m json.tool /tmp/nppes_sample.json | head -80`
+- **Bash** `curl -sL "https://npiregistry.cms.hhs.gov/api/?version=2.1&state=NC&taxonomy_description=Family%20Medicine&limit=5&skip=0" -o /tmp/nppes_sample2.json -w "HTTP %{http_code}\n"
+python3 -m json.tool /tmp…`
+- **Bash** `python3 -c "
+import json
+d = json.load(open('/tmp/nppes_sample2.json'))
+print('total results returned:', len(d['results']))
+print('all basic keys seen:')
+keys=set()
+for r in d['results']:
+    keys.upd…`
+- **WebSearch** `NPPES NPI registry API "deactivation_date" "deactivation_reason_code" basic status field version 2.1`
+- **WebFetch** `https://npiregistry.cms.hhs.gov/demo-api`
+- **Bash** `curl -sL "https://npiregistry.cms.hhs.gov/api-page" -A "Mozilla/5.0" 2>&1 | grep -io "status[^<]\{0,80\}" | head -10
+echo "---try known likely-deactivated test NPI from NPPES docs (1234567893 is the s…`
 
 </details>
 
@@ -813,6 +844,6 @@ cat data/reference/README.md 2>/dev/…`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 14:46 UTC
+- **Last updated:** 17 July 2026, 14:49 UTC
 - **Turns:** 9
 - **Status:** Incomplete
