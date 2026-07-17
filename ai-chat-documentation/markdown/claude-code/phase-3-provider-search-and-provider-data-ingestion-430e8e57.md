@@ -554,8 +554,10 @@ Confirmed merged. Proceeding with cleanup.
 
 Now researching `claims-agent`'s structure — the established precedent for a non-authoritative AI-narration agent with a deterministic fallback — before building `provider-curation-agent`.
 
+**Git op:** worktree `/workspaces/fhir-agent`, current branch `main`, target: new branch `feature/m4-provider-curation-agent`.
+
 <details>
-<summary>Execution details — 354 tool events</summary>
+<summary>Execution details — 358 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1137,6 +1139,12 @@ cat claims-agent/src/claims_agent/__main__.py`
 cat claims-agent/src/claims_agent/tools.py
 echo "=== format.py ==="
 cat claims-agent/src/claims_agent/format.py`
+- **TodoWrite** `{"todos": [{"content": "Scaffold provider-curation-agent package (mirrors claims-agent structure)", "status": "in_progress", "activeForm": "Scaffolding provider-curation-agent package"}, {"content": "…`
+- **Bash** `git checkout -b feature/m4-provider-curation-agent
+mkdir -p /workspaces/fhir-agent/provider-curation-agent/src/provider_curation_agent
+mkdir -p /workspaces/fhir-agent/provider-curation-agent/tests`
+- **Write** `/workspaces/fhir-agent/provider-curation-agent/pyproject.toml`
+- **Write** `/workspaces/fhir-agent/provider-curation-agent/src/provider_curation_agent/__init__.py`
 
 </details>
 
@@ -1147,6 +1155,6 @@ cat claims-agent/src/claims_agent/format.py`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 15:13 UTC
+- **Last updated:** 17 July 2026, 15:15 UTC
 - **Turns:** 10
 - **Status:** Incomplete
