@@ -328,10 +328,17 @@ Provide the PRD and Plan as markups for download, quickly please
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Switching to the fast path — publishing the two docs directly as Markdown artifacts (no conversion needed, ready to view/download immediately).
+
+Both are up, reflecting the final review-revised content from PR #40:
+
+- **[PRD](https://claude.ai/code/artifact/6fbd2cca-5f86-4c8e-9a6e-e26e7642d1cd)**
+- **[Design/Plan](https://claude.ai/code/artifact/878c58dc-33dc-44c9-b418-e4113c5f96ef)**
+
+(Dropped the PDF pipeline I'd started building — these markdown artifacts are viewable/downloadable directly and match what's in the PR.)
 
 <details>
-<summary>Execution details — 122 tool events</summary>
+<summary>Execution details — 124 tool events</summary>
 
 ### Turn 1 activity
 
@@ -500,6 +507,11 @@ in_code = False
 maxw = 0
 maxline = ""
 for line in text.split('\n'):…`
+
+### Turn 7 activity
+
+- **Artifact** `/workspaces/fhir-agent/docs/phase3/prd.md`
+- **Artifact** `/workspaces/fhir-agent/docs/phase3/design.md`
 
 </details>
 
