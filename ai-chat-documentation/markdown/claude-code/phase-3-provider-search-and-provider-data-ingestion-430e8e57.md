@@ -458,8 +458,10 @@ NUCC confirmed and downloaded (884 rows, clean CSV). Now verifying the NPPES API
 
 Let's start with the documentation updates the user specifically asked me to prioritize. First, `design.md`'s milestone table and the §6 diagram/prose inconsistency I need to resolve:
 
+Now updating §7's data sources table to replace the "to verify" flags with confirmed, real findings:
+
 <details>
-<summary>Execution details — 252 tool events</summary>
+<summary>Execution details — 255 tool events</summary>
 
 ### Turn 1 activity
 
@@ -845,6 +847,9 @@ echo "…`
 - **TodoWrite** `{"todos": [{"content": "Update design.md milestone table: mark M1/M2 done with real verified results; resolve §6 diagram/prose inconsistency (direct DB writes)", "status": "in_progress", "activeForm":…`
 - **Bash** `grep -n "^## 6\|^## 13\|calls provider-registry-service upsert" /workspaces/fhir-agent/docs/phase3/design.md`
 - **Read** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Bash** `grep -n "^## 7\|^## 8" /workspaces/fhir-agent/docs/phase3/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase3/design.md`
 
 </details>
 
@@ -855,6 +860,6 @@ echo "…`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 14:50 UTC
+- **Last updated:** 17 July 2026, 14:51 UTC
 - **Turns:** 9
 - **Status:** Incomplete
