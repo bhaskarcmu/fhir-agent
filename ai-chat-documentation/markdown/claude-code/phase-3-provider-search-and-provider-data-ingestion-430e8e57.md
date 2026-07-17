@@ -227,10 +227,16 @@ Overall Improvement areas (elaborate yourself and create/execute action items ba
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+I dug into the evidence behind each finding before touching anything — reading Phase 2's actual `README.md`/`plan.md`/`decisions.md`, and re-reading my own docs at the cited lines. Here's my analysis, then I'll make the changes.
+
+Now implementing. Starting with the data model — adding provider status/deactivation tracking and a Plan-Net domain-terms mapping (Findings #3 and improvement-area #3):
+
+Now adding the serving policy for deactivated/stale providers right after the data model:
+
+Now the ranking section — adding an `entity_type` filter and documenting default behavior explicitly:
 
 <details>
-<summary>Execution details — 67 tool events</summary>
+<summary>Execution details — 75 tool events</summary>
 
 ### Turn 1 activity
 
@@ -315,6 +321,14 @@ authoritative public data (NPPES), wit…`
 - **Bash** `grep -n "error taxonomy\|Error Taxonomy\|error code\|ErrorCode\|error class" /workspaces/fhir-agent/docs/phase2/*.md | head -30`
 - **Bash** `grep -n "R17\.6\|R17\.7\|R17\.8" /workspaces/fhir-agent/docs/phase2/requirements.md | head -20`
 - **Bash** `sed -n '225,255p' /workspaces/fhir-agent/docs/phase2/requirements.md`
+- **Bash** `wc -l /workspaces/fhir-agent/docs/phase2/README.md; sed -n '75,95p' /workspaces/fhir-agent/docs/phase2/decisions.md`
+- **Bash** `wc -l /workspaces/fhir-agent/docs/phase2/decisions.md; sed -n '55,60p' /workspaces/fhir-agent/docs/phase2/decisions.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **TodoWrite** `{"todos": [{"content": "Analyze review findings against actual repo evidence", "status": "completed", "activeForm": "Analyzing review findings"}, {"content": "Fix provider lifecycle/deactivation gap (…`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
 
 </details>
 
@@ -325,6 +339,6 @@ authoritative public data (NPPES), wit…`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 14:01 UTC
+- **Last updated:** 17 July 2026, 14:04 UTC
 - **Turns:** 3
-- **Status:** Incomplete
+- **Status:** Complete
