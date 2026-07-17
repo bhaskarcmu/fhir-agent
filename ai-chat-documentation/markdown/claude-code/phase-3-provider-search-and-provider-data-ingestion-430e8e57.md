@@ -527,7 +527,7 @@ README already correctly defers to design.md §13 rather than duplicating number
 Now pushing and opening the PR:
 
 <details>
-<summary>Execution details — 344 tool events</summary>
+<summary>Execution details — 346 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1080,6 +1080,12 @@ feat(provider-ingest): M3 — real NPPES/NUCC/ZCTA ingestion for NC pilot
 New data/scripts/provider_ingest/ pipeline: fetch_nucc_taxonomy.py,
 fetc…`
 - **Bash** `git push -u origin feature/m3-nppes-ingestion`
+- **Bash** `cd /workspaces/fhir-agent
+gh pr create --title "feat(provider-ingest): M3 — real NPPES/NUCC/ZCTA ingestion for NC pilot" --body "$(cat <<'EOF'
+## Summary
+
+M3 of Phase 3 (design.md §13): the determinis…`
+- **TodoWrite** `{"todos": [{"content": "Update design.md milestone table: mark M1/M2 done with real verified results; resolve §6 diagram/prose inconsistency (direct DB writes)", "status": "completed", "activeForm": "…`
 
 </details>
 
