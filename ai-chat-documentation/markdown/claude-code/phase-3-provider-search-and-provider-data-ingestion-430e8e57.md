@@ -700,8 +700,12 @@ Confirmed merged.
 
 **Git op:** worktree `/workspaces/fhir-agent`, current branch `feature/m5-provider-mcp-server`, target `main` — switching, pulling, deleting the merged branch.
 
+Another real, non-obvious finding: MCP's `stdio_client` only inherits a safe-listed subset of env vars (`HOME, LOGNAME, PATH, SHELL, TERM, USER`) — not the full parent environment. `PROVIDER_REGISTRY_URL` must be passed explicitly. Good to know before writing the client. Let's build M6.
+
+**Git op:** worktree `/workspaces/fhir-agent`, current branch `main`, target: new branch `feature/m6-provider-search-agent`.
+
 <details>
-<summary>Execution details — 498 tool events</summary>
+<summary>Execution details — 505 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1558,6 +1562,23 @@ M5 of Phase 3 (design.md §13): `provider-mcp-server`…`
 - **Bash** `git checkout main && git pull origin main`
 - **Bash** `git push origin --delete feature/m5-provider-mcp-server
 git branch -d feature/m5-provider-mcp-server`
+- **Bash** `python3 -c "
+from mcp.client.stdio import stdio_client
+import inspect
+print(inspect.getsource(stdio_client))" 2>&1 | head -60`
+- **Bash** `python3 -c "
+from mcp.client.stdio import get_default_environment
+import inspect
+print(inspect.getsource(get_default_environment))"`
+- **Bash** `python3 -c "
+from mcp.client.stdio import DEFAULT_INHERITED_ENV_VARS
+print(DEFAULT_INHERITED_ENV_VARS)"`
+- **TodoWrite** `{"todos": [{"content": "Verify MCP client env-inheritance behavior (done - safe-listed only)", "status": "completed", "activeForm": "Verifying MCP client env-inheritance behavior"}, {"content": "Scaff…`
+- **Bash** `git checkout -b feature/m6-provider-search-agent
+mkdir -p /workspaces/fhir-agent/provider-search-agent/src/provider_search_agent
+mkdir -p /workspaces/fhir-agent/provider-search-agent/tests`
+- **Write** `/workspaces/fhir-agent/provider-search-agent/pyproject.toml`
+- **Write** `/workspaces/fhir-agent/provider-search-agent/src/provider_search_agent/format.py`
 
 </details>
 
@@ -1568,6 +1589,6 @@ git branch -d feature/m5-provider-mcp-server`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 15:41 UTC
+- **Last updated:** 17 July 2026, 15:43 UTC
 - **Turns:** 12
 - **Status:** Incomplete
