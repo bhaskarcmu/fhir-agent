@@ -540,6 +540,16 @@ Real result: 5,040 unique NC providers ingested, idempotency proven with a real 
 
 Per your instruction, documentation was updated throughout rather than at the end: `design.md` §6/§7/§13/§14, `decisions.md` (P10–P13), `prd.md`'s KPI, and `README.md`'s canonical status all reflect real measured numbers now. Root `pytest`: **159 passed**. I've noted in memory that this "real numbers, not predictions" discipline should continue for M4 onward.
 
+## Turn 10
+
+### Prompt
+
+PR #42 merged. Delete merged branches and proceed to M4
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 347 tool events</summary>
 
@@ -1111,6 +1121,6 @@ M3 of Phase 3 (design.md §13): the determinis…`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 15:09 UTC
-- **Turns:** 9
+- **Last updated:** 17 July 2026, 15:12 UTC
+- **Turns:** 10
 - **Status:** Incomplete
