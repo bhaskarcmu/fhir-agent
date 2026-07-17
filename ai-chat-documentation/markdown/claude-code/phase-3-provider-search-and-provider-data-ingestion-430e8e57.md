@@ -622,8 +622,22 @@ Real work, not just code: it fetched CA and MT live from NPPES and ingested all 
 
 Root `pytest`: **172 passed** (the corrected count, after the fix). Docs updated throughout as before. Next up once #43 merges: **M5**, the real hand-built MCP server.
 
+## Turn 11
+
+### Prompt
+
+PR #43 merged. Delete the merged branches and proceed to M5.
+
+### Claude response
+
+Confirmed merged. Proceeding with cleanup.
+
+**Git op:** worktree `/workspaces/fhir-agent`, current branch `feature/m4-provider-curation-agent`, target `main` — switching, pulling the merge, deleting the merged branch.
+
+Now M5 — the real, hand-built MCP server. Before writing any code, let me verify the actual `mcp` Python SDK's API (design.md's sketch was speculative when written; time to verify it for real, consistent with this project's discipline so far).
+
 <details>
-<summary>Execution details — 420 tool events</summary>
+<summary>Execution details — 428 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1315,6 +1329,34 @@ M4 of Phase 3 (design.md §13): `provider-c…`
 - **Read** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/MEMORY.md`
 - **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/MEMORY.md`
 
+### Turn 11 activity
+
+- **Bash** `gh pr view 43 --json state,mergedAt,mergeCommit 2>&1`
+- **Bash** `git branch --show-current; git status`
+- **Bash** `git checkout main && git pull origin main`
+- **Bash** `git push origin --delete feature/m4-provider-curation-agent
+git branch -d feature/m4-provider-curation-agent`
+- **Bash** `pip index versions mcp 2>&1 | head -5
+python3 -c "import mcp" 2>&1`
+- **Bash** `python3 -m pip install "mcp==1.28.1" 2>&1 | tail -15`
+- **Bash** `python3 -c "
+import mcp
+print('mcp package version location:', mcp.__file__)
+"
+python3 -c "
+from mcp.server import Server
+import inspect
+print(inspect.signature(Server.__init__))
+print([m for m in dir…`
+- **Bash** `python3 -c "
+from mcp.server.stdio import stdio_server
+import inspect
+print(inspect.signature(stdio_server))
+"
+python3 -c "
+import mcp.types as types
+print(inspect.signature(types.Tool.__init__)) if F…`
+
 </details>
 
 ---
@@ -1324,6 +1366,6 @@ M4 of Phase 3 (design.md §13): `provider-c…`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 15:26 UTC
-- **Turns:** 10
+- **Last updated:** 17 July 2026, 15:28 UTC
+- **Turns:** 11
 - **Status:** Incomplete
