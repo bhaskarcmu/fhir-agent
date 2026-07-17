@@ -263,8 +263,23 @@ Numbering holds together cleanly. Now committing on the existing branch, pushing
 
 Now pushing and opening the PR:
 
+**PR opened:** [github.com/bhaskarcmu/fhir-agent/pull/40](https://github.com/bhaskarcmu/fhir-agent/pull/40) — branch `docs/provider-search-design`, 2 commits, pushed to `origin`.
+
+**My analysis, condensed:**
+
+I verified all 6 findings against the actual repo rather than taking them on faith, and accepted every one in substance:
+
+- **Cloud-readiness (High, accepted as-is):** this was the sharpest finding. My docs claimed per-milestone stubs mean "Phase 3b is a deploy, not a redesign" — Phase 2's own `decisions.md` (D8/C1) and `plan.md`'s "Cloud-delivery gap" callout explicitly retract that exact claim: per-service stubs shipped on schedule, but the root Terraform module, deploy script, and cloud smoke test never did, so Phase 2b wasn't "one command." I hadn't checked before writing the same sentence. Fixed with a callout in design.md §13 and named the three missing deliverables as their own milestone items.
+- **Contract rigor (High, accepted):** confirmed the schemas were literally placeholder constants and FR9 had no defined error shape. Added real JSON Schemas + a 5-class error taxonomy modeled on Phase 2's actual R17.6.
+- **Provider lifecycle (High, accepted):** confirmed NPPES does track deactivation and my schema had nowhere to put it. Added `npi_status` + a default hard filter, plus a named residual risk (manual re-run means detection lag).
+- **Security posture (Critical → downgraded to High):** substance is right — I reused Phase 2's auth decision without justifying it for a location-sensitive data flow. Downgraded because nothing is deployed yet, so there's no live exploitable gap — the defect was a missing threat model, not a live hole. Added one (§12.1), plus a concrete cheap mitigation (rate-limit middleware, scheduled into M2, not just a doc note).
+- **Ranking/entity_type (Medium, accepted):** real usability gap. Added an optional filter rather than baking a bias into the "distance-only" ranking principle, which I still think is right.
+- **Decision governance (High → downgraded to Medium, but built anyway):** legitimate but not blocking. Built it regardless because it's the natural place to record the cloud-readiness correction with an honest status, exactly like Phase 2 eventually had to.
+
+All four "overall improvement" items were actioned too: SLIs defined (§11), contract versioning language (§8.3), a Plan-Net domain-terms mapping (§4.1), and this PR description kept to a punch list rather than restating the docs.
+
 <details>
-<summary>Execution details — 108 tool events</summary>
+<summary>Execution details — 110 tool events</summary>
 
 ### Turn 1 activity
 
@@ -401,6 +416,8 @@ he…`
 ## Summary
 
 First docs PR for **Phase 3 — Provider Search & Referral**: a first-party pr…`
+- **TodoWrite** `{"todos": [{"content": "Analyze review findings against actual repo evidence", "status": "completed", "activeForm": "Analyzing review findings"}, {"content": "Fix provider lifecycle/deactivation gap (…`
+- **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase3-planning-state.md`
 
 </details>
 
@@ -411,6 +428,6 @@ First docs PR for **Phase 3 — Provider Search & Referral**: a first-party pr�
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 14:09 UTC
+- **Last updated:** 17 July 2026, 14:10 UTC
 - **Turns:** 3
 - **Status:** Complete
