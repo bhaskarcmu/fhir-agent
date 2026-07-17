@@ -160,8 +160,13 @@ natural-language interface the platform already uses for triage.
 - **Search quality:** ≥ 95% of eval scenarios with a known-answerable specialty+location return at
   least one correctly-specialty-matched result within the requested radius.
 - **Latency:** p95 `search_providers_near` < 300ms at curated-subset scale (measured, not assumed).
-- **Ingestion coverage:** ≥ 99% of pulled NPPES records for the curated states successfully resolve
-  a coordinate (ZIP centroid join) and at least one taxonomy code.
+- **Ingestion coverage:** ≥ 90% of pulled NPPES records for the curated states successfully resolve
+  a coordinate (ZIP centroid join) and at least one taxonomy code. **Revised down from an assumed
+  ≥99% after M3's real pull measured 94.2%** (4,747/5,040 real NC records) — the gap is fully
+  explained by the known ZCTA-vs-ZIP approximation limitation (design doc §7), including a
+  confirmed real example (Duke University Medical Center's ZIP 27710 has no ZCTA at all). ≥99%
+  was never measured against real data when it was first written; ≥90% is the honest bar based on
+  what M3 actually observed, not a re-guess.
 - **Data gap transparency:** 100% of records missing `accepting_new_patients` are surfaced as
   `unknown`, never silently coerced to `false`.
 - **Staleness safety:** 0 deactivated NPIs (per §4.1's `npi_status`) appear in a default

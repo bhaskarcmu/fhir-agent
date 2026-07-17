@@ -2,20 +2,24 @@
 
 > ## Canonical status
 >
-> **Draft — planning only, no implementation started.** This directory holds the PRD and
-> design proposal; open questions from the first draft have been resolved (see each doc's
-> decisions section) but nothing has been built yet.
+> **M1–M3 done, M4–M7 not started.** `provider-registry-service` (M2, PR #41) is built and
+> tested against a real local Postgres. Ingestion (M3) has pulled and loaded real NPPES/NUCC/
+> Census data for the pilot state — see this milestone's PR for the exact record counts, not
+> a number restated here (they'd drift). No agents, no MCP server yet — that's M4–M6. Nothing
+> deployed to any cloud (Phase 3b, not started; see `design.md` §13's cloud-delivery-gap
+> callout before assuming a stub means deploy-ready).
 >
-> *This is the one canonical status statement. Other documents link here rather than restate it.*
+> *This is the one canonical status statement. Other documents link here rather than restate it.
+> Milestone-by-milestone verified test results live in `design.md` §13, updated per PR — check
+> there for current counts.*
 >
 > - [`prd.md`](./prd.md) — problem, goals/non-goals, requirements, success metrics.
 > - [`design.md`](./design.md) — architecture, the two agents' tool contracts, the hand-built
->   MCP server, data model, milestone plan.
+>   MCP server, data model, **milestone plan with verified test results** (§13).
 > - [`decisions.md`](./decisions.md) — ADR-style index of every architectural decision, with
 >   status tracking (Accepted / Partially delivered / Superseded), same convention as Phase 2's.
 >
-> **What's next:** this PR is docs-only (M1). M2 (`provider-registry-service`) starts once this
-> is reviewed — its own PR, no code in this one.
+> **What's next:** M4 (`provider-curation-agent` + expand ingestion to CA/MT).
 
 ## What Phase 3 is
 

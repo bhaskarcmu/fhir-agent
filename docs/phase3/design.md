@@ -382,17 +382,46 @@ data-prework pattern of a re-runnable script rather than a live pipeline):
 
 ```
 data/scripts/provider_ingest/
-  fetch_nppes.py        # NPI Registry API pull, paginated, per state
+  fetch_nppes.py            # NPI Registry API pull, paginated, per state
   fetch_nucc_taxonomy.py    # NUCC CSV download + parse into taxonomy_reference rows
   fetch_zcta_centroids.py   # Census Gazetteer ZCTA file → zip_centroids rows
-  run_ingestion.py          # orchestrates the above, calls provider-registry-service upsert API
+  run_ingestion.py          # orchestrates the above, writes directly to Postgres
 ```
+
+**Correction from the first draft (M3):** §1's architecture diagram always showed the
+ETL writing directly to Postgres; this section's prose contradicted it, saying
+`run_ingestion.py` "calls provider-registry-service upsert API." That API was never
+specified anywhere else in this doc and would exist for exactly one caller — the same
+"don't build a shared client for a single caller" reasoning §9 already applies to
+`client/clinical` applies here too. Resolved in favor of the diagram: `run_ingestion.py`
+writes directly to Postgres via `psycopg`, no HTTP layer. `provider-registry-service`
+gains no write endpoints from this milestone.
 
 `run_ingestion.py --states NC,CA,MT` (the curated set decided in PRD §9 — density contrast, not
 demo-data alignment) is what `provider-curation-agent` invokes
 and then narrates. Re-running is idempotent: `upsert_golden_record` keys on NPI, and an
 `ingestion_runs` row is written per invocation so lineage always shows which run last
 touched a record.
+
+**Real-world gotcha found in M3, not assumed:** the live NPPES Read API rejects a
+`state`-only query — `state=NC` alone returns `{"errors":[{"description":"Field state
+requires additional search criteria", ...}]}`. `fetch_nppes.py` works around this by
+iterating a curated list of `taxonomy_description` values combined with `state`,
+deduping results by NPI — which also means a "curated by geography" pull is, in
+practice, always curated by geography *and* whichever taxonomy terms the query list
+covers. Widening taxonomy coverage later is just growing that list, not a schema change.
+
+**Real-world gotcha on deactivation status:** every sampled live-API query during M3
+returned `basic.status: "A"` (active) — never anything else, across hundreds of sampled
+records. The live Read API appears not to surface deactivated NPIs at all; CMS's
+deactivation-date/reason fields are documented for the **bulk dissemination file**, not
+confirmed present on this endpoint. Consequence: this ingestion path sets
+`npi_status = 'active'` for everything it writes — §4.1's `npi_status` column and
+default-exclusion policy are real, tested infrastructure (M2), just not yet exercised by
+live data, since the live API gives us no deactivated records to exercise it with. Not
+a blocker — the bulk file remains explicitly out of scope this phase (PRD §7) — but
+worth being honest that "provider deactivation, verified end-to-end against real data"
+isn't yet true, only "the schema and filter are ready for when it is."
 
 **Where incremental/CDC would fit later:** NPPES publishes weekly deactivation/update
 files in addition to the monthly full file — a later initiative could poll those and run
@@ -403,9 +432,9 @@ re-run" with "weekly refresh," without changing the ingestion functions themselv
 
 | Source | Provides | Access | Cadence | Key gotchas |
 |---|---|---|---|---|
-| **NPPES NPI Registry** (CMS) | NPI, entity type, name/org name, practice + mailing address, up to 15 taxonomy codes (one primary), phone, enumeration/update dates | Public API `npiregistry.cms.hhs.gov/api` — no key, filterable by `state`/`city`/`postal_code`/`taxonomy_description`, 200 results/page + pagination. (Full bulk CSV also exists, ~9GB — not used this phase per the curated-subset decision.) | API reflects near-real-time registry; bulk file refreshes monthly + weekly incremental | **No "accepting new patients" field** — ships as `unknown` this build rather than guessing (§15). Org-type (entity_type=2) addresses may be a facility, not an individual's practice — both types are ingested but tagged so callers can distinguish. Address quality varies (PO boxes, billing addresses); not solvable from NPPES fields alone. |
-| **NUCC Health Care Provider Taxonomy** | Hierarchical code set: Grouping → Classification → Specialization, 10-char code, definition | Free CSV/PDF from nucc.org, no API | ~2 releases/year (annual + mid-year) | Version drift — codes are occasionally deprecated/split between releases; `taxonomy_reference.nucc_version` pins which release a row came from. |
-| **Census Bureau Gazetteer ZCTA file** | ZIP Code Tabulation Area centroid (`INTPTLAT`/`INTPTLONG`) | Free, public domain, bulk download from census.gov | Refreshed with each decennial + intercensal release | ZCTA ≠ USPS ZIP exactly (Census-drawn approximation of ZIP delivery areas) — acceptable for a proximity *stub*, should be documented as an approximation. *To verify: current-year file URL/format at implementation time.* |
+| **NPPES NPI Registry** (CMS) | NPI, entity type, name/org name, practice + mailing address, up to 15 taxonomy codes (one primary), phone, enumeration/update dates | **Verified live, M3:** `https://npiregistry.cms.hhs.gov/api/?version=2.1` — no key, JSON, 200 results/page + `skip` pagination. **A bare `state` filter is rejected** ("Field state requires additional search criteria") — must be paired with `taxonomy_description`, `city`, `postal_code`, `first_name`/`last_name`, or `organization_name`; `fetch_nppes.py` pairs `state` with a curated `taxonomy_description` list (§6). (Full bulk CSV also exists, ~9GB — not used this phase per the curated-subset decision.) | API reflects near-real-time registry; bulk file refreshes monthly + weekly incremental | **No "accepting new patients" field** — ships as `unknown` this build rather than guessing (§15). **`basic.status` observed as `"A"` on every sampled record (M3, hundreds sampled) — never anything else**; deactivated NPIs don't appear to surface via this endpoint at all (§6). Org-type (entity_type=2) addresses may be a facility, not an individual's practice — both types are ingested but tagged so callers can distinguish. Address quality varies (PO boxes, billing addresses); not solvable from NPPES fields alone. |
+| **NUCC Health Care Provider Taxonomy** | Hierarchical code set: Grouping → Classification → Specialization, 10-char code, definition | **Verified live, M3:** CSV at `https://www.nucc.org/images/stories/CSV/nucc_taxonomy_260.csv` (current version **26.0**, 883 codes, 529KB) — free, no auth, no license click-through needed for this kind of read/redistribution use (the license-request form on nucc.org is for vendors embedding the code set in commercial products). Columns: `Code, Grouping, Classification, Specialization, Definition, Notes, Display Name, Section`. | ~2 releases/year (annual + mid-year) | Version drift — codes are occasionally deprecated/split between releases; `taxonomy_reference.nucc_version` pins which release a row came from. |
+| **Census Bureau Gazetteer ZCTA file** | ZIP Code Tabulation Area centroid (`INTPTLAT`/`INTPTLONG`) | **Verified live, M3:** `https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2024_Gazetteer/2024_Gaz_zcta_national.zip` — free, public domain, tab-delimited text inside the zip. | Refreshed with each decennial + intercensal release (2024 vintage confirmed current at M3) | ZCTA ≠ USPS ZIP exactly (Census-drawn approximation of ZIP delivery areas) — acceptable for a proximity *stub*, documented as an approximation. |
 | **US Census Geocoder API** | Full street-address → lat/long geocoding | Free, no key | Live | Not needed for MVP (ZIP centroid suffices per the PRD's simplicity requirement) — noted as the natural future upgrade for precise address-level input instead of ZIP-centroid approximation. |
 | **HL7 Da Vinci PDex Plan-Net IG** | *Not a data source* — the real published FHIR standard (Practitioner/PractitionerRole/Organization/Location/HealthcareService) for provider-directory interoperability | N/A | N/A | Registry uses a custom schema, not FHIR resources, this phase (see §9) — Plan-Net is the natural alignment point if the registry becomes FHIR-native later. Flagging for awareness, not adopting now. |
 
@@ -738,15 +767,38 @@ module sketch, validated with `terraform validate`/`plan` but never applied.
 > and check the repo before citing one as a delivered artifact — the same caution Phase 2's own
 > docs now carry.
 
-| Milestone | Scope | Cloud-readiness stub |
-|---|---|---|
-| M1 | This PRD + design doc, committed locally (docs-first, matches Phase 2) | n/a — docs only |
-| M2 | `provider-registry-service`: schema/migrations, `LocationSearchPort` + `HaversineSqlLocationSearch`, taxonomy resolve endpoint, coarse per-caller rate-limit middleware (§12.1 defense-in-depth), unit tests against a small hand-written fixture (not real data yet) | Dockerfile + Terraform Cloud Run module sketch, `ingress = "internal"` (not applied) |
-| M3 | Ingestion scripts (deterministic): NPPES pull for the pilot state (NC), NUCC load, ZCTA load, upsert — verified against real data | Terraform sketch for a manually-triggered Cloud Run Job (matches the one-time-seed decision, PRD §6) — not applied |
-| M4 | `provider-curation-agent`: wraps M3 with an AI run-summary; expand ingestion to the full curated set (NC, CA, MT) | n/a — CLI tool, no new deployable surface |
-| M5 | `provider-mcp-server`: real MCP server (stdio), wired to the registry service; integration test proving the actual `initialize`/`tools-list`/`tools-call` handshake | Dockerfile + Terraform Cloud Run sketch — flagged with the caveat in §13.1 below: stdio doesn't cross a network boundary, so this stub alone doesn't make the server cloud-*callable*, only cloud-*runnable* |
-| M6 | `provider-search-agent`: real MCP client/host, Anthropic tool-use loop, groundedness eval suite | n/a — CLI tool; spawns the MCP server as a local child process |
-| M7 | `docker-compose` demo profile bundling all four new components; end-to-end local verification | **Root Terraform module** (`infra/terraform/`) composing the M2/M3 per-service stubs + `deploy-phase3.sh` + an executed cloud smoke test wired into CI (stub-target, no live spend) — the three items the callout above names explicitly, not left implied. `terraform validate`/`plan` across everything (still not applied) |
+| Milestone | Status | Scope | Cloud-readiness stub |
+|---|---|---|---|
+| M1 | ✅ Done (PR #40) | This PRD + design doc, committed locally (docs-first, matches Phase 2) | n/a — docs only |
+| M2 | ✅ Done (PR #41) | `provider-registry-service`: schema/migrations, `LocationSearchPort` + `HaversineSqlLocationSearch`, taxonomy resolve endpoint, coarse per-caller rate-limit middleware (§12.1 defense-in-depth), unit tests against a small hand-written fixture (not real data yet) | Dockerfile + Terraform Cloud Run module sketch, `ingress = "internal"` — `terraform validate` passed |
+| M3 | ✅ Done | Ingestion scripts (deterministic): NPPES pull for the pilot state (NC), NUCC load, ZCTA load, upsert — verified against real data | Terraform sketch for a manually-triggered Cloud Run Job (matches the one-time-seed decision, PRD §6) — `terraform validate` passed, not applied |
+| M4 | ⏳ Not started | `provider-curation-agent`: wraps M3 with an AI run-summary; expand ingestion to the full curated set (NC, CA, MT) | n/a — CLI tool, no new deployable surface |
+| M5 | ⏳ Not started | `provider-mcp-server`: real MCP server (stdio), wired to the registry service; integration test proving the actual `initialize`/`tools-list`/`tools-call` handshake | Dockerfile + Terraform Cloud Run sketch — flagged with the caveat in §13.1 below: stdio doesn't cross a network boundary, so this stub alone doesn't make the server cloud-*callable*, only cloud-*runnable* |
+| M6 | ⏳ Not started | `provider-search-agent`: real MCP client/host, Anthropic tool-use loop, groundedness eval suite | n/a — CLI tool; spawns the MCP server as a local child process |
+| M7 | ⏳ Not started | `docker-compose` demo profile bundling all four new components; end-to-end local verification | **Root Terraform module** (`infra/terraform/`) composing the M2/M3 per-service stubs + `deploy-phase3.sh` + an executed cloud smoke test wired into CI (stub-target, no live spend) — the three items the callout above names explicitly, not left implied. `terraform validate`/`plan` across everything (still not applied) |
+
+**Verified, per milestone** (updated as each lands — see each PR for the full command output,
+not just the claim):
+
+- **M2** (PR #41): full root `pytest` — 147 passed (all pre-existing suites + 34 new), run
+  against a locally installed Postgres 16, not mocked. DB-free tests (validation/taxonomy/
+  rate-limit) independently confirmed to pass with no `DATABASE_URL` set at all. DB-backed
+  tests independently confirmed to skip cleanly (not error) when Postgres is unreachable.
+  `terraform validate` passed. `docker compose config` confirmed the default (no-profile)
+  stack unchanged and the new `phase3` profile correctly scoped.
+- **M3**: full root `pytest` — **159 passed** (147 from M2 + 12 new: `fetch_nppes` record-
+  parsing/pagination/dedup/wrong-state-filter tests, `fetch_nucc_taxonomy` and
+  `fetch_zcta_centroids` parsing/join tests — all mocked HTTP, no network — plus 2 DB-backed
+  `run_ingestion` idempotency tests, self-skip confirmed when Postgres is unreachable). Real
+  ingestion run against local Postgres 16, NC pilot state: **5,040 unique real providers**
+  ingested (3,371 individual / 1,669 organization, spanning 348 distinct NUCC taxonomy codes),
+  **883/883** NUCC codes loaded, **3,025** ZIP centroids loaded (NC/CA/MT). Re-run confirmed
+  idempotent (0 added, 5,040 updated on the second pass). End-to-end verified live through
+  `provider-registry-service`'s actual HTTP API (not just the DB layer) — a real search near
+  ZIP 27514 returned real UNC Chapel Hill endocrinologists with correct lineage. Coordinate
+  resolution: **94.2%** (4,747/5,040) — below the PRD's original assumed ≥99%, revised to a
+  measured ≥90% target (decisions.md P12). `terraform validate` passed for the ingestion Cloud
+  Run Job stub.
 
 ### 13.1 Phase 3b — GCP cloud deployment (future, out of scope here)
 
@@ -784,13 +836,19 @@ started:
   until the next manual re-run. `npi_status` filtering prevents an *already-known*
   deactivated provider from surfacing, but doesn't shrink the detection lag itself — only a
   scheduled refresh (explicitly out of scope this build, §6) would.
-- **NPPES public API rate limits** at ingestion time are undocumented/unverified —
-  build in basic backoff, verify empirically during M3.
-- **ZCTA-vs-ZIP mismatch** can misplace a small number of centroids (non-residential
-  ZIPs have no ZCTA) — acceptable for a stub, called out rather than hidden.
+- **NPPES public API rate limits** — verified empirically in M3: ~30 requests over ~10s at a
+  0.2s inter-request pacing hit no throttling (5,770 raw records across 10 taxonomy terms × 3
+  pages). Still undocumented officially — the pacing is precautionary, not proven necessary.
+- **ZCTA-vs-ZIP mismatch** — confirmed real in M3, not just theoretical: **94.2%** coordinate-
+  resolution on the real NC pull (4,747/5,040), with a confirmed concrete example (Duke
+  University Medical Center's ZIP 27710 has no ZCTA at all — a large institutional ZIP, exactly
+  the case this risk predicted). PRD §8's KPI revised from an assumed ≥99% to a measured ≥90%
+  (decisions.md P12) rather than leaving a KPI real data had already disproven.
 - **Taxonomy synonym coverage** is inherently incomplete for a deterministic (non-LLM)
-  matcher — an accepted trade-off for traceability, worth a follow-up eval once real
-  usage patterns exist.
+  matcher — confirmed real in M3: `resolve_specialty("endocrinologist")` against the full
+  883-code set returns `status: "ambiguous"` (a nursing-taxonomy specialization scores above
+  the intended physician code). Accepted trade-off for traceability; flagged as a real
+  tuning opportunity for a future milestone (decisions.md P13), not fixed in M3.
 - **Internal-boundary trust depends on correct IAM/VPC scoping at deploy time** (§12.1) —
   the no-app-layer-auth decision is only as sound as Phase 3b's Terraform gets that
   scoping right; named as an explicit Phase 3b acceptance criterion, not just a doc note.
