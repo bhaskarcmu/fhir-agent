@@ -419,8 +419,10 @@ Let's also validate the `docker-compose.yml` changes don't break anything and ar
 
 Both checks pass: default profile unchanged (`fhir`, `triage`, `mcp-agent`), and the new `phase3` profile correctly adds `postgres` + `provider-registry`, with valid YAML throughout. Let's clean up the test artifact and finalize:
 
+Now pushing and opening the PR:
+
 <details>
-<summary>Execution details — 221 tool events</summary>
+<summary>Execution details — 223 tool events</summary>
 
 ### Turn 1 activity
 
@@ -736,6 +738,12 @@ git status --short`
 - **Bash** `cd /workspaces/fhir-agent
 git add -A -- provider-registry-service docker-compose.yml pytest.ini
 git status`
+- **Bash** `cd /workspaces/fhir-agent
+git commit -m "$(cat <<'EOF'
+feat(provider-registry): M2 — provider-registry-service (design.md §13)
+
+New internal-only FastAPI service implementing the deterministic core Pr…`
+- **Bash** `git push -u origin feature/m2-provider-registry-service`
 
 </details>
 
