@@ -608,8 +608,22 @@ Now let's finalize — check status, clean caches, stage, commit:
 
 Now pushing and opening the PR:
 
+PR number matched my prediction (#43) — no fixup needed. Finalizing.
+
+This collision finding is valuable beyond Phase 3 — worth a dedicated, durable memory so I catch it proactively in any future work on this repo.
+
+**M4 done. PR opened:** [github.com/bhaskarcmu/fhir-agent/pull/43](https://github.com/bhaskarcmu/fhir-agent/pull/43) — branch `feature/m4-provider-curation-agent`.
+
+**What's in it** — `provider-curation-agent`, deliberately built as a near-identical mirror of `claims-agent`'s proven structure rather than a new design: same file layout, same LLM-optional/`--no-llm` pattern. Its one tool shells out to M3's ingestion scripts and reads the authoritative result back from Postgres, never trusting subprocess output or inventing numbers.
+
+Real work, not just code: it fetched CA and MT live from NPPES and ingested all three curated states for real — **12,582 total providers** now in the registry. Ran it twice to confirm idempotency, the second time through the actual Anthropic API (this environment has `CLAUDE_API_KEY`, not `ANTHROPIC_API_KEY` — the fallback check order mattered), which narrated the real counts correctly.
+
+**The most important thing this milestone caught:** while running my own new tests, I noticed the test names shown under `provider-curation-agent`'s path didn't match what I'd written — a silent `pytest` module-collision bug (two identically-named `test_tools.py` files across packages resolve to the same import path and share Python's module cache) meant 4 of `claims-agent`'s tests were running *twice* and all 7 of mine were running *zero* times, with a clean passing exit code the whole time. Fixed by renaming, verified no other collisions exist repo-wide, and — since this could silently recur with the next same-named test file — I saved it as a durable, repo-wide memory rather than just a Phase 3 note, so I check for it proactively in any future work here.
+
+Root `pytest`: **172 passed** (the corrected count, after the fix). Docs updated throughout as before. Next up once #43 merges: **M5**, the real hand-built MCP server.
+
 <details>
-<summary>Execution details — 414 tool events</summary>
+<summary>Execution details — 420 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1290,6 +1304,16 @@ feat(provider-curation-agent): M4 — AI run-summary agent + CA/MT expansion
 
 New provider-curation-agent/ package, deliberately mirroring claims-a…`
 - **Bash** `git push -u origin feature/m4-provider-curation-agent`
+- **Bash** `cd /workspaces/fhir-agent
+gh pr create --title "feat(provider-curation-agent): M4 — AI run-summary agent + CA/MT expansion" --body "$(cat <<'EOF'
+## Summary
+
+M4 of Phase 3 (design.md §13): `provider-c…`
+- **TodoWrite** `{"todos": [{"content": "Scaffold provider-curation-agent package (mirrors claims-agent structure)", "status": "completed", "activeForm": "Scaffolding provider-curation-agent package"}, {"content": "Wr…`
+- **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase3-planning-state.md`
+- **Write** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/pytest-test-filename-collision.md`
+- **Read** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/MEMORY.md`
+- **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/MEMORY.md`
 
 </details>
 
@@ -1300,6 +1324,6 @@ New provider-curation-agent/ package, deliberately mirroring claims-a…`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 15:25 UTC
+- **Last updated:** 17 July 2026, 15:26 UTC
 - **Turns:** 10
 - **Status:** Incomplete
