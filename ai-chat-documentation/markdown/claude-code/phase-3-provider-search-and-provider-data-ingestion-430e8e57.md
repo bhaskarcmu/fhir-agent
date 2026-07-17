@@ -704,8 +704,10 @@ Another real, non-obvious finding: MCP's `stdio_client` only inherits a safe-lis
 
 **Git op:** worktree `/workspaces/fhir-agent`, current branch `main`, target: new branch `feature/m6-provider-search-agent`.
 
+Fixing the warning — applying `asyncio` mark only to the actual async tests:
+
 <details>
-<summary>Execution details — 511 tool events</summary>
+<summary>Execution details — 518 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1587,6 +1589,22 @@ mkdir -p /workspaces/fhir-agent/provider-search-agent/tests`
 echo "---mcp-agent test_e2e_demo_flow.py mocking of anthropic client---"
 grep -n "class Mock\|messages.create\|sto…`
 - **Bash** `grep -n "anthropic\|ANTHROPIC_API_KEY\|skip" /workspaces/fhir-agent/mcp-agent/tests/test_e2e_demo_flow.py | head -20`
+- **Write** `/workspaces/fhir-agent/provider-search-agent/tests/test_agent.py`
+- **Bash** `cd /workspaces/fhir-agent
+python3 -m pip install -e "provider-search-agent[dev]" 2>&1 | tail -10`
+- **Bash** `cd /workspaces/fhir-agent
+python3 -m pytest provider-search-agent/tests/test_agent.py -v --import-mode=importlib 2>&1 | tail -30`
+- **Edit** `/workspaces/fhir-agent/provider-search-agent/tests/test_agent.py`
+- **Bash** `cd /workspaces/fhir-agent
+python3 - << 'EOF'
+import re
+path = "provider-search-agent/tests/test_agent.py"
+with open(path) as f:
+    content = f.read()
+content = content.replace("async def test_run_que…`
+- **Edit** `/workspaces/fhir-agent/provider-search-agent/tests/test_agent.py`
+- **Bash** `cd /workspaces/fhir-agent
+python3 -m pytest provider-search-agent/tests/test_agent.py -v --import-mode=importlib 2>&1 | tail -20`
 
 </details>
 
@@ -1597,6 +1615,6 @@ grep -n "class Mock\|messages.create\|sto…`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 15:44 UTC
+- **Last updated:** 17 July 2026, 15:45 UTC
 - **Turns:** 12
 - **Status:** Incomplete
