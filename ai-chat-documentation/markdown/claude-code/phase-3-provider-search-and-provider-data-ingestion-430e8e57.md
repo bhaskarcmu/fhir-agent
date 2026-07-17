@@ -235,8 +235,10 @@ Now adding the serving policy for deactivated/stale providers right after the da
 
 Now the ranking section — adding an `entity_type` filter and documenting default behavior explicitly:
 
+Now Finding 2 — fleshing out the tool contracts with real JSON Schemas, an error taxonomy modeled on Phase 2's R17.6, and a versioning note:
+
 <details>
-<summary>Execution details — 75 tool events</summary>
+<summary>Execution details — 76 tool events</summary>
 
 ### Turn 1 activity
 
@@ -326,6 +328,7 @@ authoritative public data (NPPES), wit…`
 - **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
 - **TodoWrite** `{"todos": [{"content": "Analyze review findings against actual repo evidence", "status": "completed", "activeForm": "Analyzing review findings"}, {"content": "Fix provider lifecycle/deactivation gap (…`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
