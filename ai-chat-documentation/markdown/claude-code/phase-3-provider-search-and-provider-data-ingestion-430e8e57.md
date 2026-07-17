@@ -373,8 +373,10 @@ Now let's cut this method out of `location.py` and create `registry.py` with it:
 
 Adjusting `models.py` for the unresolvable-ZIP edge case (origin can't be computed when the ambiguous/no-centroid case fires):
 
+Now writing `main.py`:
+
 <details>
-<summary>Execution details — 161 tool events</summary>
+<summary>Execution details — 165 tool events</summary>
 
 ### Turn 1 activity
 
@@ -605,6 +607,10 @@ ls /workspaces/fhir-agent/provider-registry-servic…`
 - **Write** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/registry.py`
 - **Write** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/ratelimit.py`
 - **Edit** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/models.py`
+- **Write** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/main.py`
+- **Edit** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/main.py`
+- **Edit** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/main.py`
+- **TodoWrite** `{"todos": [{"content": "Scaffold provider-registry-service package (pyproject, src layout)", "status": "completed", "activeForm": "Scaffolding provider-registry-service package"}, {"content": "Write s…`
 
 </details>
 
