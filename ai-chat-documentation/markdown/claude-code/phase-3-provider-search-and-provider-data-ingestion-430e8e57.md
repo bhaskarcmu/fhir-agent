@@ -654,8 +654,14 @@ Real, working, cross-state verification against production-scale data. Cleaning 
 
 Confirmed clean. Now the Terraform Cloud Run stub and Dockerfile:
 
+Now let's validate it:
+
+Passes. Cleaning up and updating design.md §13.1 with the confirmed transport-module finding:
+
+Now let's update `pytest.ini`, `.ona/automations.yaml`, and `CLAUDE.md`. I'm deliberately **not** adding a docker-compose service for `provider-mcp-server` — it communicates over stdio and needs a client to spawn it as a child process (that's M6's job); a standalone compose entry would just sit idle with nothing to do.
+
 <details>
-<summary>Execution details — 461 tool events</summary>
+<summary>Execution details — 468 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1453,6 +1459,13 @@ import mcp.server
 import pkgutil
 print([m.name for m in pkgutil.iter_modules(mcp.server.__path__)])
 "`
+- **Write** `/workspaces/fhir-agent/provider-mcp-server/infra/main.tf`
+- **Bash** `cd /workspaces/fhir-agent/provider-mcp-server/infra && terraform init -backend=false 2>&1 | tail -6 && terraform validate 2>&1`
+- **Bash** `rm -rf /workspaces/fhir-agent/provider-mcp-server/infra/.terraform /workspaces/fhir-agent/provider-mcp-server/infra/.terraform.lock.hcl`
+- **Bash** `grep -n "SSE/HTTP transport if a server-hosted agent" /workspaces/fhir-agent/docs/phase3/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **TodoWrite** `{"todos": [{"content": "Verify real mcp SDK API (Server, stdio, ClientSession) - done via smoke test", "status": "completed", "activeForm": "Verifying real mcp SDK API"}, {"content": "Scaffold provide…`
 
 </details>
 
@@ -1463,6 +1476,6 @@ print([m.name for m in pkgutil.iter_modules(mcp.server.__path__)])
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 15:34 UTC
+- **Last updated:** 17 July 2026, 15:35 UTC
 - **Turns:** 11
 - **Status:** Incomplete
