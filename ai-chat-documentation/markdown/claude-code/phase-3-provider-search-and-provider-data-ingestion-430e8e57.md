@@ -732,8 +732,10 @@ All 3 pass. Let's confirm self-skip behavior (no API key, no DB):
 
 Now let's manually verify the full agent against the real production dataset (12,582 providers), matching the M5 pattern:
 
+Excellent — real, honest handling of the known `accepting_new_patients` data gap rather than fabricating. Let's try one more real query exercising the ambiguous/clarification guardrail path:
+
 <details>
-<summary>Execution details — 549 tool events</summary>
+<summary>Execution details — 550 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1699,6 +1701,8 @@ cd /workspaces/fhir-agent/provider-registry-service
 nohup python3 -m uvicorn provider_registry.m…`
 - **Bash** `cd /workspaces/fhir-agent
 python3 -m provider_search_agent --query "Find a family medicine doctor accepting new patients near ZIP 59601, Montana"`
+- **Bash** `cd /workspaces/fhir-agent
+python3 -m provider_search_agent --query "I need to see an endocrinologist, I live near 90001"`
 
 </details>
 
@@ -1709,6 +1713,6 @@ python3 -m provider_search_agent --query "Find a family medicine doctor acceptin
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 15:53 UTC
+- **Last updated:** 17 July 2026, 15:54 UTC
 - **Turns:** 12
 - **Status:** Incomplete
