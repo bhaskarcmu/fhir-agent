@@ -98,13 +98,24 @@ Start by asking me your clarifying questions.
 
 I'll ground my clarifying questions in the actual repo state first — checking prior phase context and the existing MCP-agent/gateway structure — then ask you before drafting anything.
 
+I've grounded myself in the current repo state before drafting questions. Key facts that shape the questions below:
+
+- **mcp-agent/ is confirmed NOT a real MCP server today** — it's an in-process Anthropic tool-use loop (`agent.py`/`tools.py`), matching your premise. Interestingly, `fhir-service` (Java) already has a *dormant* real MCP server (Spring AI MCP, `enabled-by-default: false`) — unrelated to mcp-agent and not something Phase 2 touched. I'll treat it as irrelevant to Phase 3 unless you say otherwise.
+- **triage-service is called over HTTP** from mcp-agent, not in-process — so "the MCP boundary must not be bypassed" has a clean precedent to follow.
+- **client/clinical/ has no Organization/Location/Practitioner models yet** — Provider Search will add the first ones, following its existing `get_<resource>()` + dataclass + `_parse_<resource>()` pattern.
+- **Phase 2 set real precedents** worth either following or deliberately deviating from: a *separate* `claims-agent` package (not an extension of `mcp-agent`), curated data slices instead of full bulk files (2.4GB CMS PUF → curated only), Postgres-behind-a-repository-interface with NoSQL/Bigtable as a documented future scale-swap (not built now), Cloud Run for new Phase 2 services vs. GKE for untouched Phase 1, and `docs/phase2/{README,requirements,plan,decisions,source-prd}.md` as the doc-set template with a `D#/C#` decisions log (no formal `ADR-NNNN` folder exists).
+- **gateway/ already has a clean "internal-only, never on the edge" precedent** (`rxclaim-emulator`) that the MCP server can follow directly.
+
+Now, my clarifying questions — the four below are the ones that most change the shape of the design, so I'd like your call on each before drafting.
+
 <details>
-<summary>Execution details — 2 tool events</summary>
+<summary>Execution details — 3 tool events</summary>
 
 ### Turn 1 activity
 
 - **Read** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase2-planning-state.md`
 - **Agent** `Survey repo structure for Phase 3 design`
+- **AskUserQuestion** `{"questions": [{"question": "Which language should the hand-built MCP server (and the agent's MCP client/host side) use?", "header": "MCP language", "multiSelect": false, "options": [{"label": "Python…`
 
 </details>
 
@@ -115,6 +126,6 @@ I'll ground my clarifying questions in the actual repo state first — checking 
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 13:07 UTC
+- **Last updated:** 17 July 2026, 13:08 UTC
 - **Turns:** 1
 - **Status:** Complete
