@@ -110,8 +110,22 @@ Now, my clarifying questions — the four below are the ones that most change th
 
 A few more that shape scope boundaries and the ingestion/infra design:
 
+Both drafts are up:
+
+- **[PRD](https://claude.ai/code/artifact/aaa566f9-7741-4488-96ba-869dad82bdb0)** — problem, goals/non-goals, functional + non-functional requirements, success metrics, explicit out-of-scope.
+- **[Design proposal](https://claude.ai/code/artifact/8f08156a-6dad-4d09-aec0-391d32483d2b)** — architecture diagram, both agents' full tool contracts and guardrails, the Provider Registry Service + `LocationSearchPort` stub, the hand-built MCP server (real code sketch for both server and client/host sides), data sources with honest gotchas, and a phased rollout.
+
+Grounded the design in what's actually in the repo rather than assuming: two new standalone agent packages (matches Phase 2's `claims-agent` precedent), Postgres-only with a swappable port (matches Phase 2's C3 decision), internal-only on Cloud Run with no Kong route (matches `rxclaim-emulator`), and MCP scoped only to the three query-side tools — ingestion deliberately stays outside the MCP boundary since it has no client that needs tool discovery.
+
+Two things came up during research that are worth flagging directly:
+
+1. **NPPES has no `accepting_new_patients` field.** I did not find a verified source for it and marked this "to verify" rather than guessing — the schema keeps it nullable/`unknown` until we confirm a real source (e.g. CMS Care Compare) actually covers it.
+2. **`fhir-service` already has a dormant, unrelated Java MCP server** (Spring AI, `enabled-by-default: false`). I treated it as irrelevant to this Python-based Phase 3 build — flag if you want it reused or removed instead.
+
+Both docs end with a short **open-questions list** (§9 in the PRD, §15 in the design doc) — things like which 2–3 states to curate, whether the search agent needs an HTTP entrypoint, and Phase 2's actual east-west auth pattern to match. Nothing is committed to the repo yet — these are drafts for your review; once you're good with the direction I'll branch, write them to `docs/phase3/`, and open a PR, matching the Phase 2 pattern.
+
 <details>
-<summary>Execution details — 9 tool events</summary>
+<summary>Execution details — 14 tool events</summary>
 
 ### Turn 1 activity
 
@@ -124,6 +138,11 @@ A few more that shape scope boundaries and the ingestion/infra design:
 - **Write** `/tmp/claude-1000/-workspaces-fhir-agent/430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb/scratchpad/phase3/prd.md`
 - **ToolSearch** `TodoWrite`
 - **TodoWrite** `{"todos": [{"content": "Draft PRD (prd.md)", "status": "completed", "activeForm": "Drafting PRD"}, {"content": "Draft design proposal (design.md)", "status": "in_progress", "activeForm": "Drafting des…`
+- **Write** `/tmp/claude-1000/-workspaces-fhir-agent/430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb/scratchpad/phase3/design.md`
+- **TodoWrite** `{"todos": [{"content": "Draft PRD (prd.md)", "status": "completed", "activeForm": "Drafting PRD"}, {"content": "Draft design proposal (design.md)", "status": "completed", "activeForm": "Drafting desig…`
+- **Artifact** `/tmp/claude-1000/-workspaces-fhir-agent/430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb/scratchpad/phase3/prd.md`
+- **Artifact** `/tmp/claude-1000/-workspaces-fhir-agent/430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb/scratchpad/phase3/design.md`
+- **TodoWrite** `{"todos": [{"content": "Draft PRD (prd.md)", "status": "completed", "activeForm": "Drafting PRD"}, {"content": "Draft design proposal (design.md)", "status": "completed", "activeForm": "Drafting desig…`
 
 </details>
 
@@ -134,6 +153,6 @@ A few more that shape scope boundaries and the ingestion/infra design:
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 13:19 UTC
+- **Last updated:** 17 July 2026, 13:23 UTC
 - **Turns:** 1
 - **Status:** Complete
