@@ -462,8 +462,20 @@ Now updating §7's data sources table to replace the "to verify" flags with conf
 
 Now the milestone table itself — marking M1/M2 done with real verified results, matching Phase 2's status-tracking convention:
 
+Now `README.md`'s canonical status:
+
+Now `decisions.md` — adding the two new decisions made during M3:
+
+Now updating the install automation and `CLAUDE.md` to include `provider-registry-service` (needed since the ingestion scripts depend on `psycopg`):
+
+That table intentionally stays Phase-1-scoped (Phase 2's services aren't in it either) — leaving it alone. Now implementing the ingestion scripts.
+
+Let's actually run it to verify:
+
+Real, verified, working. Now `fetch_zcta_centroids.py`:
+
 <details>
-<summary>Execution details — 258 tool events</summary>
+<summary>Execution details — 281 tool events</summary>
 
 ### Turn 1 activity
 
@@ -855,6 +867,48 @@ echo "…`
 - **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
 - **Bash** `grep -n "^## 13\|^### 13.1\|^## 14" /workspaces/fhir-agent/docs/phase3/design.md`
 - **Read** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase3/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/README.md`
+- **Read** `/workspaces/fhir-agent/docs/phase3/decisions.md`
+- **Bash** `grep -n "| \*\*P9\*\*\|## Conventions" /workspaces/fhir-agent/docs/phase3/decisions.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/decisions.md`
+- **Edit** `/workspaces/fhir-agent/.ona/automations.yaml`
+- **Bash** `grep -n 'pip install -e "client' /workspaces/fhir-agent/CLAUDE.md`
+- **Read** `/workspaces/fhir-agent/CLAUDE.md`
+- **Edit** `/workspaces/fhir-agent/CLAUDE.md`
+- **Bash** `grep -n "^| \`" /workspaces/fhir-agent/CLAUDE.md | head -10`
+- **TodoWrite** `{"todos": [{"content": "Update design.md milestone table: mark M1/M2 done with real verified results; resolve §6 diagram/prose inconsistency (direct DB writes)", "status": "completed", "activeForm": "…`
+- **Bash** `curl -sL -o /dev/null -w "no UA: HTTP %{http_code}\n" "https://www.nucc.org/images/stories/CSV/nucc_taxonomy_260.csv"
+python3 -c "
+import urllib.request
+try:
+    with urllib.request.urlopen('https://w…`
+- **Bash** `mkdir -p /workspaces/fhir-agent/data/scripts/provider_ingest
+mkdir -p /workspaces/fhir-agent/data/reference/providers`
+- **Write** `/workspaces/fhir-agent/data/scripts/provider_ingest/fetch_nucc_taxonomy.py`
+- **Bash** `python3 data/scripts/provider_ingest/fetch_nucc_taxonomy.py
+echo "---"
+head -3 data/reference/providers/taxonomy_reference.csv
+wc -l data/reference/providers/taxonomy_reference.csv`
+- **Bash** `cd /tmp
+curl -sL "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2024_Gazetteer/2024_Gaz_zcta_national.zip" -o zcta.zip
+unzip -o -q zcta.zip
+ls -la
+FILE=$(ls *.txt | head -1)
+echo "file: $F…`
+- **Bash** `mkdir -p /tmp/zcta_work
+curl -sL "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2024_Gazetteer/2024_Gaz_zcta_national.zip" -o /tmp/zcta_work/zcta.zip
+cd /tmp/zcta_work && unzip -o -q zcta.…`
+- **Bash** `head -1 /tmp/zcta_work/2024_Gaz_zcta_national.txt | tr '\t' '\n' | cat -n
+echo "---sample data row---"
+sed -n '2p' /tmp/zcta_work/2024_Gaz_zcta_national.txt | tr '\t' '\n' | cat -n
+echo "---row count-…`
+- **WebSearch** `census.gov ZCTA to state relationship file crosswalk 2020 download zcta_county_rel or GEOID state FIPS`
+- **Bash** `curl -sL "https://www2.census.gov/geo/docs/maps-data/data/rel2020/zcta520/" 2>&1 | grep -oE 'href="[^"]*"' | head -20`
+- **Bash** `curl -sL "https://www2.census.gov/geo/docs/maps-data/data/rel2020/zcta520/tab20_zcta520_county20_natl.txt" -o /tmp/zcta_work/zcta_county.txt -w "HTTP %{http_code}, size %{size_download}\n"
+head -1 /tm…`
+- **Bash** `awk -F'|' 'NR>1 && $2!="" {print; c++} c>=3{exit}' /tmp/zcta_work/zcta_county.txt`
 
 </details>
 
@@ -865,6 +919,6 @@ echo "…`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 14:51 UTC
+- **Last updated:** 17 July 2026, 14:55 UTC
 - **Turns:** 9
 - **Status:** Incomplete
