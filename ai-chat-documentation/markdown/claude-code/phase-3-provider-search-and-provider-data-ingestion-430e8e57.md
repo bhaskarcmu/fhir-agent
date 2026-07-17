@@ -526,8 +526,22 @@ README already correctly defers to design.md §13 rather than duplicating number
 
 Now pushing and opening the PR:
 
+**M3 done. PR opened:** [github.com/bhaskarcmu/fhir-agent/pull/42](https://github.com/bhaskarcmu/fhir-agent/pull/42) — branch `feature/m3-nppes-ingestion`, off updated `main` (M2 merge cleanup done first: verified PR #41 merged, deleted the branch).
+
+**What's in PR #42** — the deterministic ingestion pipeline, run for real against live public sources, not mocked or synthetic. Every "to verify" flag left in the design docs is now a verified fact, and running it surfaced five genuine findings I documented rather than glossed over:
+
+1. NPPES rejects a bare `state` filter — undocumented, only found by querying it.
+2. `state=NC` matches *any* of a provider's addresses, not the practice location — ~13% of raw results were actually practicing out-of-state and got filtered out (would've been a real referral bug otherwise).
+3. Every sampled record showed `status: "A"` — deactivated NPIs don't seem to surface via this API at all.
+4. Coordinate resolution measured at **94.2%**, not the ≥99% the docs assumed before any real data existed — traced to a concrete cause (Duke University Medical Center's ZIP has no ZCTA). Revised the PRD's KPI to a measured ≥90% rather than leaving a number reality had already disproven.
+5. `resolve_specialty("endocrinologist")` comes back `ambiguous` against the real 883-code taxonomy set — invisible in M2's toy 2-code fixture. Documented as a future tuning item, not fixed here (out of scope for an ingestion milestone).
+
+Real result: 5,040 unique NC providers ingested, idempotency proven with a real second run, and verified end-to-end through the live service — a search near Chapel Hill returned actual UNC endocrinologists with correct lineage.
+
+Per your instruction, documentation was updated throughout rather than at the end: `design.md` §6/§7/§13/§14, `decisions.md` (P10–P13), `prd.md`'s KPI, and `README.md`'s canonical status all reflect real measured numbers now. Root `pytest`: **159 passed**. I've noted in memory that this "real numbers, not predictions" discipline should continue for M4 onward.
+
 <details>
-<summary>Execution details — 346 tool events</summary>
+<summary>Execution details — 347 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1086,6 +1100,7 @@ gh pr create --title "feat(provider-ingest): M3 — real NPPES/NUCC/ZCTA ingesti
 
 M3 of Phase 3 (design.md §13): the determinis…`
 - **TodoWrite** `{"todos": [{"content": "Update design.md milestone table: mark M1/M2 done with real verified results; resolve §6 diagram/prose inconsistency (direct DB writes)", "status": "completed", "activeForm": "…`
+- **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase3-planning-state.md`
 
 </details>
 
@@ -1096,6 +1111,6 @@ M3 of Phase 3 (design.md §13): the determinis…`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 15:08 UTC
+- **Last updated:** 17 July 2026, 15:09 UTC
 - **Turns:** 9
 - **Status:** Incomplete
