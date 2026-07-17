@@ -1,4 +1,4 @@
-# Provider search capability with MCP and data ingestion
+# Phase 3 - provider search and provider data ingestion
 
 ## Turn 1
 
