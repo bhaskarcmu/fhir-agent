@@ -710,8 +710,10 @@ Now the groundedness eval harness — the key milestone deliverable ("100% of NP
 
 This is a genuinely interesting real result — not a crash, but the guardrail correctly refusing to fabricate when a tool call kept failing. Let me investigate exactly why `search_providers_near` failed, with verbose tracing:
 
+Found it exactly: Claude is passing `"location": '{"zip": "27514"}'` — a JSON-encoded **string**, not a nested object — 12 times in a row before giving up. Real, reproducible schema issue. Let me test a fix: adding an explicit `"type": "object"` alongside `oneOf` (currently the schema only has `type` inside each branch):
+
 <details>
-<summary>Execution details — 524 tool events</summary>
+<summary>Execution details — 527 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1628,6 +1630,15 @@ from provider_search_agent.agent import search
 
 async def main():
     result = await search('Find an endocrinologist near ZIP 27514', verbose=True…`
+- **Read** `/workspaces/fhir-agent/provider-mcp-server/src/provider_mcp/schemas.py`
+- **Edit** `/workspaces/fhir-agent/provider-mcp-server/src/provider_mcp/schemas.py`
+- **Bash** `cd /workspaces/fhir-agent
+python3 -c "
+import asyncio
+from provider_search_agent.agent import search
+
+async def main():
+    result = await search('Find an endocrinologist near ZIP 27514', verbose=True…`
 
 </details>
 
@@ -1638,6 +1649,6 @@ async def main():
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 15:48 UTC
+- **Last updated:** 17 July 2026, 15:49 UTC
 - **Turns:** 12
 - **Status:** Incomplete
