@@ -457,7 +457,7 @@ Confirmed real and reachable. Now the NUCC taxonomy CSV:
 NUCC confirmed and downloaded (884 rows, clean CSV). Now verifying the NPPES API's real behavior — pagination, response shape, and whether it actually needs `curl` (bot-blocked) like other CMS pages:
 
 <details>
-<summary>Execution details — 246 tool events</summary>
+<summary>Execution details — 247 tool events</summary>
 
 ### Turn 1 activity
 
@@ -834,6 +834,10 @@ for r in d['results']:
 - **WebFetch** `https://npiregistry.cms.hhs.gov/demo-api`
 - **Bash** `curl -sL "https://npiregistry.cms.hhs.gov/api-page" -A "Mozilla/5.0" 2>&1 | grep -io "status[^<]\{0,80\}" | head -10
 echo "---try known likely-deactivated test NPI from NPPES docs (1234567893 is the s…`
+- **Bash** `head -20 /workspaces/fhir-agent/data/scripts/load.py
+echo "---check for requirements files---"
+find /workspaces/fhir-agent/data -iname "requirements*.txt" -o -iname "pyproject.toml" 2>/dev/null
+echo "…`
 
 </details>
 
