@@ -237,8 +237,18 @@ Now the ranking section — adding an `entity_type` filter and documenting defau
 
 Now Finding 2 — fleshing out the tool contracts with real JSON Schemas, an error taxonomy modeled on Phase 2's R17.6, and a versioning note:
 
+Now Finding 4 — the threat model for the internal boundary:
+
+Now Finding 1 — the big one. Rewriting the milestone-plan cloud-readiness framing to be honest, with an explicit gap callout modeled on Phase 2's own retraction:
+
+Now updating M7's cloud-readiness cell and the §13.1 Phase 3b section to name the three deliverables explicitly:
+
+Now Finding 3's risk entry, plus a pointer to the threat model, in §14 Risks:
+
+Now the SLI improvement in §11 Observability/SLOs:
+
 <details>
-<summary>Execution details — 76 tool events</summary>
+<summary>Execution details — 86 tool events</summary>
 
 ### Turn 1 activity
 
@@ -332,6 +342,16 @@ authoritative public data (NPPES), wit…`
 - **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **TodoWrite** `{"todos": [{"content": "Analyze review findings against actual repo evidence", "status": "completed", "activeForm": "Analyzing review findings"}, {"content": "Fix provider lifecycle/deactivation gap (…`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **TodoWrite** `{"todos": [{"content": "Analyze review findings against actual repo evidence", "status": "completed", "activeForm": "Analyzing review findings"}, {"content": "Fix provider lifecycle/deactivation gap (…`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase2/decisions.md`
 
 </details>
 
@@ -342,6 +362,6 @@ authoritative public data (NPPES), wit…`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 14:04 UTC
+- **Last updated:** 17 July 2026, 14:06 UTC
 - **Turns:** 3
 - **Status:** Complete
