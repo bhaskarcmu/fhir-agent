@@ -500,8 +500,32 @@ Good, passes. Now the ZCTA and NPPES fetch tests:
 
 Both pass, including the split-ZCTA majority-area edge case. Now `fetch_nppes.py` tests:
 
+All pass. Now the DB-backed `run_ingestion.py` test, self-skipping when Postgres is unreachable (matching `provider-registry-service`'s pattern):
+
+Let's run this against the real test Postgres:
+
+Both pass. Let's verify the self-skip behavior too:
+
+Confirmed. Now the Terraform stub for the ingestion Cloud Run Job:
+
+Now let's actually validate it:
+
+Passes. Cleaning up build artifacts and moving to a Dockerfile for the ingestion job:
+
+Now updating the docs with the real measured results, as promised. First, the PRD's ingestion-coverage KPI (measured 94.2%, not the assumed ≥99%):
+
+Now updating design.md's Risks section with this taxonomy-quality finding and the ZCTA-gap confirmation:
+
+Now updating the milestone table's "Verified" section with M3's actual results:
+
+Now running the complete root pytest suite for real, final numbers:
+
+Now updating README.md's canonical status with the real M3 summary:
+
+README already correctly defers to design.md §13 rather than duplicating numbers — matches Phase 2's convention exactly. No change needed there. Now let's check the full diff and make sure nothing unexpected got picked up:
+
 <details>
-<summary>Execution details — 316 tool events</summary>
+<summary>Execution details — 342 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1012,6 +1036,41 @@ ls -la data/scripts/provider_ingest/test_fetch_nucc_taxonomy.py`
 - **Bash** `python3 -m pytest data/scripts/provider_ingest/test_fetch_zcta_centroids.py -v --import-mode=importlib 2>&1 | tail -20`
 - **Write** `/workspaces/fhir-agent/data/scripts/provider_ingest/test_fetch_nppes.py`
 - **Bash** `python3 -m pytest data/scripts/provider_ingest/test_fetch_nppes.py -v --import-mode=importlib 2>&1 | tail -25`
+- **Write** `/workspaces/fhir-agent/data/scripts/provider_ingest/test_run_ingestion.py`
+- **Bash** `cd /workspaces/fhir-agent
+TEST_DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›localhost:5432/provider_registry_test" \
+  python3 -m pytest data/scripts/provider_ingest/test_run_ingesti…`
+- **Bash** `cd /workspaces/fhir-agent
+TEST_DATABASE_URL="postgresql://x:‹redacted:url-credentials›localhost:59999/nope" \
+  python3 -m pytest data/scripts/provider_ingest/test_run_ingestion.py -v --import-mode=importlib 2>&1 | tail -10`
+- **TodoWrite** `{"todos": [{"content": "Update design.md milestone table: mark M1/M2 done with real verified results; resolve §6 diagram/prose inconsistency (direct DB writes)", "status": "completed", "activeForm": "…`
+- **Bash** `mkdir -p /workspaces/fhir-agent/data/scripts/provider_ingest/infra`
+- **Write** `/workspaces/fhir-agent/data/scripts/provider_ingest/infra/main.tf`
+- **Bash** `cd /workspaces/fhir-agent/data/scripts/provider_ingest/infra && terraform init -backend=false 2>&1 | tail -6 && terraform validate 2>&1`
+- **Bash** `rm -rf /workspaces/fhir-agent/data/scripts/provider_ingest/infra/.terraform /workspaces/fhir-agent/data/scripts/provider_ingest/infra/.terraform.lock.hcl`
+- **Write** `/workspaces/fhir-agent/data/scripts/provider_ingest/Dockerfile`
+- **Bash** `grep -n "Ingestion coverage" /workspaces/fhir-agent/docs/phase3/prd.md`
+- **Read** `/workspaces/fhir-agent/docs/phase3/prd.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/prd.md`
+- **Bash** `grep -n "P11" /workspaces/fhir-agent/docs/phase3/decisions.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/decisions.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/decisions.md`
+- **Bash** `grep -n "^## 14. Risks" /workspaces/fhir-agent/docs/phase3/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Bash** `grep -n "M3\*\*: see this milestone" /workspaces/fhir-agent/docs/phase3/design.md`
+- **TodoWrite** `{"todos": [{"content": "Update design.md milestone table: mark M1/M2 done with real verified results; resolve §6 diagram/prose inconsistency (direct DB writes)", "status": "completed", "activeForm": "…`
+- **Bash** `cd /workspaces/fhir-agent && python3 -m pytest -v 2>&1 | tail -70`
+- **Read** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase3/README.md`
+- **Bash** `cd /workspaces/fhir-agent
+git status --short
+echo "---check gitignore doesn't block new reference files---"
+git check-ignore -v data/reference/providers/*.csv data/reference/providers/*.json 2>&1 || e…`
+- **Bash** `cd /workspaces/fhir-agent
+find data/scripts/provider_ingest -name "__pycache__" -o -name "*.pyc" | xargs rm -rf
+find provider-registry-service -name "__pycache__" -o -name "*.egg-info" -o -name ".pyte…`
 
 </details>
 
@@ -1022,6 +1081,6 @@ ls -la data/scripts/provider_ingest/test_fetch_nucc_taxonomy.py`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 15:03 UTC
+- **Last updated:** 17 July 2026, 15:07 UTC
 - **Turns:** 9
 - **Status:** Incomplete
