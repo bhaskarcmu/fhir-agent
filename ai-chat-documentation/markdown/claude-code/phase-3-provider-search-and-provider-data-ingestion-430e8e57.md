@@ -556,8 +556,14 @@ Now researching `claims-agent`'s structure — the established precedent for a n
 
 **Git op:** worktree `/workspaces/fhir-agent`, current branch `main`, target: new branch `feature/m4-provider-curation-agent`.
 
+Now `tools.py` — the `IngestionClient` that orchestrates fetch+ingest+DB-readback (mirrors `ClaimsClient`):
+
+Now `summarize.py` — the deterministic renderer (mirrors `explain.py`):
+
+Now `format.py`:
+
 <details>
-<summary>Execution details — 358 tool events</summary>
+<summary>Execution details — 361 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1145,6 +1151,9 @@ mkdir -p /workspaces/fhir-agent/provider-curation-agent/src/provider_curation_ag
 mkdir -p /workspaces/fhir-agent/provider-curation-agent/tests`
 - **Write** `/workspaces/fhir-agent/provider-curation-agent/pyproject.toml`
 - **Write** `/workspaces/fhir-agent/provider-curation-agent/src/provider_curation_agent/__init__.py`
+- **Write** `/workspaces/fhir-agent/provider-curation-agent/src/provider_curation_agent/tools.py`
+- **Write** `/workspaces/fhir-agent/provider-curation-agent/src/provider_curation_agent/summarize.py`
+- **Write** `/workspaces/fhir-agent/provider-curation-agent/src/provider_curation_agent/format.py`
 
 </details>
 
