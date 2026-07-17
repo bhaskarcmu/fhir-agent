@@ -636,8 +636,16 @@ Confirmed merged. Proceeding with cleanup.
 
 Now M5 — the real, hand-built MCP server. Before writing any code, let me verify the actual `mcp` Python SDK's API (design.md's sketch was speculative when written; time to verify it for real, consistent with this project's discipline so far).
 
+Let's prove a minimal real round-trip works before building the actual server — a toy server + client over real stdio:
+
+Real handshake confirmed end-to-end. Now building the actual server with full confidence in the API.
+
+**Git op:** worktree `/workspaces/fhir-agent`, current branch `main`, target: new branch `feature/m5-provider-mcp-server`.
+
+Let's check `mcp-agent`'s HTTP-calling convention (the "call the deterministic service over HTTP" pattern this design explicitly mirrors) before writing `registry_client.py`:
+
 <details>
-<summary>Execution details — 428 tool events</summary>
+<summary>Execution details — 439 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1356,6 +1364,38 @@ print(inspect.signature(stdio_server))
 python3 -c "
 import mcp.types as types
 print(inspect.signature(types.Tool.__init__)) if F…`
+- **Bash** `python3 -c "
+from mcp.server import Server
+import inspect
+src = inspect.getsource(Server.call_tool)
+print(src[:2000])
+"`
+- **Bash** `python3 -c "
+from mcp.server import Server
+import inspect
+src = inspect.getsource(Server.list_tools)
+print(src[:800])
+"`
+- **Bash** `mkdir -p /tmp/mcp_smoke
+cat > /tmp/mcp_smoke/toy_server.py << 'EOF'
+import asyncio
+import mcp.types as types
+from mcp.server import Server
+from mcp.server.stdio import stdio_server
+
+server = Server("t…`
+- **Bash** `rm -rf /tmp/mcp_smoke`
+- **TodoWrite** `{"todos": [{"content": "Verify real mcp SDK API (Server, stdio, ClientSession) - done via smoke test", "status": "completed", "activeForm": "Verifying real mcp SDK API"}, {"content": "Scaffold provide…`
+- **Bash** `git checkout -b feature/m5-provider-mcp-server
+mkdir -p /workspaces/fhir-agent/provider-mcp-server/src/provider_mcp_server
+mkdir -p /workspaces/fhir-agent/provider-mcp-server/tests`
+- **Bash** `rm -rf /workspaces/fhir-agent/provider-mcp-server/src/provider_mcp_server
+mkdir -p /workspaces/fhir-agent/provider-mcp-server/src/provider_mcp
+ls /workspaces/fhir-agent/provider-mcp-server/src/`
+- **Bash** `grep -n "triage_url\|httpx\|TRIAGE_SERVICE_URL\|def.*triage" /workspaces/fhir-agent/mcp-agent/src/agent/tools.py | head -20`
+- **Write** `/workspaces/fhir-agent/provider-mcp-server/pyproject.toml`
+- **Write** `/workspaces/fhir-agent/provider-mcp-server/src/provider_mcp/__init__.py`
+- **Write** `/workspaces/fhir-agent/provider-mcp-server/src/provider_mcp/schemas.py`
 
 </details>
 
@@ -1366,6 +1406,6 @@ print(inspect.signature(types.Tool.__init__)) if F…`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 15:28 UTC
+- **Last updated:** 17 July 2026, 15:30 UTC
 - **Turns:** 11
 - **Status:** Incomplete
