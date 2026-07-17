@@ -566,8 +566,12 @@ Now `agent.py` — the CLI, mirroring `claims_agent/agent.py`'s LLM-loop + `--no
 
 Now let's install the package and check claims-agent's test style before writing tests:
 
+Good, matches claims-agent's exact behavior. Now `test_tools.py` — mocked subprocess for the fetch-skip logic, DB-backed (self-skip) for the read-back logic:
+
+Tests pass and self-skip correctly. Now let's actually run the agent for real to expand ingestion to CA and MT — the real M4 action:
+
 <details>
-<summary>Execution details — 368 tool events</summary>
+<summary>Execution details — 373 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1168,6 +1172,18 @@ cat /workspaces/fhir-agent/claims-agent/tests/test_tools.py | head -50`
 - **Write** `/workspaces/fhir-agent/provider-curation-agent/tests/__init__.py`
 - **Write** `/workspaces/fhir-agent/provider-curation-agent/tests/test_summarize.py`
 - **Bash** `python3 -m pytest provider-curation-agent/tests/test_summarize.py -v --import-mode=importlib 2>&1 | tail -25`
+- **Write** `/workspaces/fhir-agent/provider-curation-agent/tests/test_tools.py`
+- **Bash** `cd /workspaces/fhir-agent
+TEST_DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›localhost:5432/provider_registry_test" \
+  python3 -m pytest provider-curation-agent/tests/ -v --import-mo…`
+- **Bash** `cd /workspaces/fhir-agent
+TEST_DATABASE_URL="postgresql://x:‹redacted:url-credentials›localhost:59999/nope" \
+  python3 -m pytest provider-curation-agent/tests/test_tools.py -v --import-mode=importlib 2>&1 | tail -15`
+- **Bash** `echo "ANTHROPIC_API_KEY set: $([ -n "$ANTHROPIC_API_KEY" ] && echo yes || echo no)"
+echo "CLAUDE_API_KEY set: $([ -n "$CLAUDE_API_KEY" ] && echo yes || echo no)"`
+- **Bash** `export DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›localhost:5432/provider_registry"
+cd /workspaces/fhir-agent
+time python3 -m provider_curation_agent --states NC,CA,MT --no-llm 2>&…`
 
 </details>
 
@@ -1178,6 +1194,6 @@ cat /workspaces/fhir-agent/claims-agent/tests/test_tools.py | head -50`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 15:17 UTC
+- **Last updated:** 17 July 2026, 15:18 UTC
 - **Turns:** 10
 - **Status:** Incomplete
