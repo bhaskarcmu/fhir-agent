@@ -772,7 +772,7 @@ module sketch, validated with `terraform validate`/`plan` but never applied.
 | M1 | ✅ Done (PR #40) | This PRD + design doc, committed locally (docs-first, matches Phase 2) | n/a — docs only |
 | M2 | ✅ Done (PR #41) | `provider-registry-service`: schema/migrations, `LocationSearchPort` + `HaversineSqlLocationSearch`, taxonomy resolve endpoint, coarse per-caller rate-limit middleware (§12.1 defense-in-depth), unit tests against a small hand-written fixture (not real data yet) | Dockerfile + Terraform Cloud Run module sketch, `ingress = "internal"` — `terraform validate` passed |
 | M3 | ✅ Done | Ingestion scripts (deterministic): NPPES pull for the pilot state (NC), NUCC load, ZCTA load, upsert — verified against real data | Terraform sketch for a manually-triggered Cloud Run Job (matches the one-time-seed decision, PRD §6) — `terraform validate` passed, not applied |
-| M4 | ⏳ Not started | `provider-curation-agent`: wraps M3 with an AI run-summary; expand ingestion to the full curated set (NC, CA, MT) | n/a — CLI tool, no new deployable surface |
+| M4 | ✅ Done (PR #43) | `provider-curation-agent`: wraps M3 with an AI run-summary; expand ingestion to the full curated set (NC, CA, MT) | n/a — CLI tool, no new deployable surface |
 | M5 | ⏳ Not started | `provider-mcp-server`: real MCP server (stdio), wired to the registry service; integration test proving the actual `initialize`/`tools-list`/`tools-call` handshake | Dockerfile + Terraform Cloud Run sketch — flagged with the caveat in §13.1 below: stdio doesn't cross a network boundary, so this stub alone doesn't make the server cloud-*callable*, only cloud-*runnable* |
 | M6 | ⏳ Not started | `provider-search-agent`: real MCP client/host, Anthropic tool-use loop, groundedness eval suite | n/a — CLI tool; spawns the MCP server as a local child process |
 | M7 | ⏳ Not started | `docker-compose` demo profile bundling all four new components; end-to-end local verification | **Root Terraform module** (`infra/terraform/`) composing the M2/M3 per-service stubs + `deploy-phase3.sh` + an executed cloud smoke test wired into CI (stub-target, no live spend) — the three items the callout above names explicitly, not left implied. `terraform validate`/`plan` across everything (still not applied) |
@@ -786,7 +786,7 @@ not just the claim):
   tests independently confirmed to skip cleanly (not error) when Postgres is unreachable.
   `terraform validate` passed. `docker compose config` confirmed the default (no-profile)
   stack unchanged and the new `phase3` profile correctly scoped.
-- **M3**: full root `pytest` — **159 passed** (147 from M2 + 12 new: `fetch_nppes` record-
+- **M3** (PR #42): full root `pytest` — **159 passed** (147 from M2 + 12 new: `fetch_nppes` record-
   parsing/pagination/dedup/wrong-state-filter tests, `fetch_nucc_taxonomy` and
   `fetch_zcta_centroids` parsing/join tests — all mocked HTTP, no network — plus 2 DB-backed
   `run_ingestion` idempotency tests, self-skip confirmed when Postgres is unreachable). Real
@@ -799,6 +799,26 @@ not just the claim):
   resolution: **94.2%** (4,747/5,040) — below the PRD's original assumed ≥99%, revised to a
   measured ≥90% target (decisions.md P12). `terraform validate` passed for the ingestion Cloud
   Run Job stub.
+- **M4** (PR #43): full root `pytest` — **172 passed** (159 from M3 + 13 new: 6 deterministic
+  `summarize.render_summary` tests, no DB needed; 7 `IngestionClient`/`execute_tool` tests, 5
+  mocked-subprocess/no-DB + 2 DB-backed with self-skip confirmed). **Real bug found and fixed
+  while running this milestone's own tests**: `provider-curation-agent/tests/test_tools.py`
+  silently collided with `claims-agent/tests/test_tools.py` under `--import-mode=importlib` —
+  both `tests/` packages resolve to the identical dotted module name `tests.test_tools`, so
+  Python's `sys.modules` cache served claims-agent's already-imported module for both,
+  meaning 4 of claims-agent's tests silently ran *twice* under two different reported paths
+  while all 7 of this milestone's real tests never ran at all — with no error, no warning, a
+  passing exit code throughout. Confirmed via a `find`-based repo-wide filename-collision
+  check (only this one pair existed) and fixed by renaming to `test_ingestion_tools.py` — the
+  general lesson (test filenames must be repo-unique, not just per-package-unique, given this
+  pytest.ini's `--import-mode=importlib` + per-package `tests/__init__.py` setup) is worth
+  keeping in mind for future milestones' test files. Real agent run (deterministic path):
+  ingested **12,582 total providers** across NC/CA/MT (5,040 NC + 5,519 CA + 2,023 MT — CA and
+  MT freshly fetched live from NPPES this run), 396 anomalies flagged (all `missing_coordinate`,
+  consistent with M3's measured ZCTA-gap rate). Idempotency reconfirmed: a second real run
+  (this time with the actual Anthropic API via `CLAUDE_API_KEY`, not `--no-llm`) reported 0
+  added / 12,582 updated and correctly narrated the real anomaly breakdown without inventing
+  any counts.
 
 ### 13.1 Phase 3b — GCP cloud deployment (future, out of scope here)
 
@@ -828,6 +848,14 @@ started:
 
 ## 14. Risks
 
+- **Test filenames must be repo-unique, not just per-package-unique** — found real in M4:
+  `--import-mode=importlib` plus per-package `tests/__init__.py` means two identically-named
+  test files in different packages (`claims-agent/tests/test_tools.py` and
+  `provider-curation-agent/tests/test_tools.py`) resolve to the same dotted module name and
+  silently collide via Python's `sys.modules` cache — one package's tests run twice under two
+  reported paths, the other's never run, with no error and a passing exit code. Watch for this
+  on every future milestone that adds a `tests/` directory; `find . -name "test_*.py" | xargs
+  -n1 basename | sort | uniq -c | awk '$1>1'` catches it before it's silent.
 - **`accepting_new_patients` data gap** — the single biggest open risk; may need to ship
   without it (always `unknown`) if no usable source is confirmed.
 - **Provider staleness/deactivation between ingestion runs** (gap identified in review,

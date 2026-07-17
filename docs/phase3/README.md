@@ -2,11 +2,12 @@
 
 > ## Canonical status
 >
-> **M1–M3 done, M4–M7 not started.** `provider-registry-service` (M2, PR #41) is built and
-> tested against a real local Postgres. Ingestion (M3) has pulled and loaded real NPPES/NUCC/
-> Census data for the pilot state — see this milestone's PR for the exact record counts, not
-> a number restated here (they'd drift). No agents, no MCP server yet — that's M4–M6. Nothing
-> deployed to any cloud (Phase 3b, not started; see `design.md` §13's cloud-delivery-gap
+> **M1–M4 done, M5–M7 not started.** `provider-registry-service` (M2) is built and tested
+> against a real local Postgres. Ingestion (M3) loaded real NPPES/NUCC/Census data for the
+> pilot state; `provider-curation-agent` (M4) wraps it with an AI run-summary and expanded
+> ingestion to the full curated set (NC, CA, MT) — see `design.md` §13 for exact record
+> counts, not restated here (they'd drift). No MCP server or search agent yet — that's M5–M6.
+> Nothing deployed to any cloud (Phase 3b, not started; see `design.md` §13's cloud-delivery-gap
 > callout before assuming a stub means deploy-ready).
 >
 > *This is the one canonical status statement. Other documents link here rather than restate it.
@@ -19,7 +20,8 @@
 > - [`decisions.md`](./decisions.md) — ADR-style index of every architectural decision, with
 >   status tracking (Accepted / Partially delivered / Superseded), same convention as Phase 2's.
 >
-> **What's next:** M4 (`provider-curation-agent` + expand ingestion to CA/MT).
+> **What's next:** M5 (`provider-mcp-server` — the real, hand-built MCP server this phase
+> exists to build).
 
 ## What Phase 3 is
 
