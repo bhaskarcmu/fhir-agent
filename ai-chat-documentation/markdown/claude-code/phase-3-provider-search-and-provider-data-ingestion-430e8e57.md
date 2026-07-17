@@ -660,8 +660,24 @@ Passes. Cleaning up and updating design.md §13.1 with the confirmed transport-m
 
 Now let's update `pytest.ini`, `.ona/automations.yaml`, and `CLAUDE.md`. I'm deliberately **not** adding a docker-compose service for `provider-mcp-server` — it communicates over stdio and needs a client to spawn it as a child process (that's M6's job); a standalone compose entry would just sit idle with nothing to do.
 
+Now running the full root pytest suite for final numbers:
+
+Let me check for filename collisions before trusting this count — learned that lesson last milestone:
+
+No collisions. 186 is trustworthy. Let's confirm self-skip behavior for the full suite too:
+
+Now updating the docs with real M5 results.
+
+Now the "Verified, per milestone" block:
+
+Now `decisions.md` — P16 for the honest Terraform stub decision:
+
+Now `README.md`'s canonical status:
+
+Now let's stage, commit, and push:
+
 <details>
-<summary>Execution details — 468 tool events</summary>
+<summary>Execution details — 489 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1466,6 +1482,36 @@ print([m.name for m in pkgutil.iter_modules(mcp.server.__path__)])
 - **Read** `/workspaces/fhir-agent/docs/phase3/design.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
 - **TodoWrite** `{"todos": [{"content": "Verify real mcp SDK API (Server, stdio, ClientSession) - done via smoke test", "status": "completed", "activeForm": "Verifying real mcp SDK API"}, {"content": "Scaffold provide…`
+- **Edit** `/workspaces/fhir-agent/pytest.ini`
+- **Edit** `/workspaces/fhir-agent/.ona/automations.yaml`
+- **Edit** `/workspaces/fhir-agent/CLAUDE.md`
+- **Bash** `cd /workspaces/fhir-agent
+find provider-mcp-server -name "__pycache__" -o -name "*.egg-info" -o -name ".pytest_cache" | xargs rm -rf
+TEST_DATABASE_URL="postgresql://provider_registry:provider_registry…`
+- **Bash** `cd /workspaces/fhir-agent
+find . -name "test_*.py" | xargs -n1 basename | sort | uniq -c | awk '$1>1'
+echo "check complete (no output above = no collisions)"`
+- **Bash** `cd /workspaces/fhir-agent
+TEST_DATABASE_URL="postgresql://x:‹redacted:url-credentials›localhost:59999/nope" python3 -m pytest 2>&1 | tail -6`
+- **TodoWrite** `{"todos": [{"content": "Verify real mcp SDK API (Server, stdio, ClientSession) - done via smoke test", "status": "completed", "activeForm": "Verifying real mcp SDK API"}, {"content": "Scaffold provide…`
+- **Bash** `grep -n "| M5 |" /workspaces/fhir-agent/docs/phase3/design.md`
+- **Bash** `gh pr list --state all --limit 3 --json number,title 2>&1`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Bash** `grep -n "M4\*\* (PR #43)" /workspaces/fhir-agent/docs/phase3/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Bash** `grep -n "P15" /workspaces/fhir-agent/docs/phase3/decisions.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/decisions.md`
+- **Read** `/workspaces/fhir-agent/docs/phase3/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/README.md`
+- **Bash** `cd /workspaces/fhir-agent
+find provider-mcp-server -name "__pycache__" -o -name "*.egg-info" -o -name ".pytest_cache" | xargs rm -rf
+rm -rf provider-mcp-server/infra/.terraform provider-mcp-server/inf…`
+- **TodoWrite** `{"todos": [{"content": "Verify real mcp SDK API (Server, stdio, ClientSession) - done via smoke test", "status": "completed", "activeForm": "Verifying real mcp SDK API"}, {"content": "Scaffold provide…`
+- **Bash** `cd /workspaces/fhir-agent
+git add -A -- provider-mcp-server .ona/automations.yaml CLAUDE.md docs/phase3 pytest.ini
+git status --short`
 
 </details>
 
@@ -1476,6 +1522,6 @@ print([m.name for m in pkgutil.iter_modules(mcp.server.__path__)])
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 15:35 UTC
+- **Last updated:** 17 July 2026, 15:38 UTC
 - **Turns:** 11
 - **Status:** Incomplete
