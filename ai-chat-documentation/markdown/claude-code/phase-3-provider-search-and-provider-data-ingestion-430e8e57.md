@@ -363,8 +363,18 @@ Now scaffolding the package:
 
 Expected — will `pip install -e` once the package is scaffolded. Continuing.
 
+Now I need to update the `_SEARCH_SQL` call site since I added `radius_miles`/`limit` params. Let me fix `search_near`:
+
+Let me realign with the design doc's actual module split — `get_provider` belongs in a separate `registry` module, not the `LocationSearchPort` protocol:
+
+Now removing `get_provider` from `HaversineSqlLocationSearch` and moving it into a new `registry.py`:
+
+Now let's cut this method out of `location.py` and create `registry.py` with it:
+
+Adjusting `models.py` for the unresolvable-ZIP edge case (origin can't be computed when the ambiguous/no-centroid case fires):
+
 <details>
-<summary>Execution details — 147 tool events</summary>
+<summary>Execution details — 161 tool events</summary>
 
 ### Turn 1 activity
 
@@ -581,6 +591,20 @@ ls /workspaces/fhir-agent/provider-registry-servic…`
 - **Write** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/errors.py`
 - **Write** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/taxonomy.py`
 - **Write** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/location.py`
+- **Edit** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/location.py`
+- **Read** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/location.py`
+- **Edit** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/location.py`
+- **Bash** `grep -n "len(results) >= limit" /workspaces/fhir-agent/provider-registry-service/src/provider_registry/location.py`
+- **Read** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/location.py`
+- **Edit** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/location.py`
+- **Read** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/location.py`
+- **Edit** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/location.py`
+- **Bash** `grep -n "def get_provider\|def resolve_zip_to_coordinate\|^class \|^def " /workspaces/fhir-agent/provider-registry-service/src/provider_registry/location.py`
+- **Read** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/location.py`
+- **Edit** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/location.py`
+- **Write** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/registry.py`
+- **Write** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/ratelimit.py`
+- **Edit** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/models.py`
 
 </details>
 
@@ -591,6 +615,6 @@ ls /workspaces/fhir-agent/provider-registry-servic…`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 14:26 UTC
+- **Last updated:** 17 July 2026, 14:28 UTC
 - **Turns:** 8
 - **Status:** Incomplete
