@@ -706,8 +706,10 @@ Another real, non-obvious finding: MCP's `stdio_client` only inherits a safe-lis
 
 Fixing the warning — applying `asyncio` mark only to the actual async tests:
 
+Now the groundedness eval harness — the key milestone deliverable ("100% of NPIs in an agent transcript resolve via `get_provider`"):
+
 <details>
-<summary>Execution details — 518 tool events</summary>
+<summary>Execution details — 521 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1605,6 +1607,11 @@ content = content.replace("async def test_run_que…`
 - **Edit** `/workspaces/fhir-agent/provider-search-agent/tests/test_agent.py`
 - **Bash** `cd /workspaces/fhir-agent
 python3 -m pytest provider-search-agent/tests/test_agent.py -v --import-mode=importlib 2>&1 | tail -20`
+- **Write** `/workspaces/fhir-agent/provider-search-agent/tests/test_groundedness_eval.py`
+- **TodoWrite** `{"todos": [{"content": "Verify MCP client env-inheritance behavior (done - safe-listed only)", "status": "completed", "activeForm": "Verifying MCP client env-inheritance behavior"}, {"content": "Scaff…`
+- **Bash** `cd /workspaces/fhir-agent
+TEST_DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›localhost:5432/provider_registry_test" \
+  python3 -m pytest provider-search-agent/tests/test_groundedness…`
 
 </details>
 
@@ -1615,6 +1622,6 @@ python3 -m pytest provider-search-agent/tests/test_agent.py -v --import-mode=imp
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 15:45 UTC
+- **Last updated:** 17 July 2026, 15:46 UTC
 - **Turns:** 12
 - **Status:** Incomplete
