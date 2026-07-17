@@ -355,8 +355,16 @@ Cleanup done. And yes — **M2 is correct**: per `design.md` §13, M1 was this d
 
 Now starting M2. Let me quickly check existing Python service conventions to match them before scaffolding.
 
+Terraform is available — good, I can actually validate the cloud stub rather than just claim it works. Let me set up a todo list for M2 and get started.
+
+**Git op:** worktree `/workspaces/fhir-agent`, current branch `main`, target: new branch `feature/m2-provider-registry-service` (creating now, per the standing "always branch, never commit to main" rule).
+
+Now scaffolding the package:
+
+Expected — will `pip install -e` once the package is scaffolded. Continuing.
+
 <details>
-<summary>Execution details — 133 tool events</summary>
+<summary>Execution details — 143 tool events</summary>
 
 ### Turn 1 activity
 
@@ -557,6 +565,18 @@ echo "=== rxclaim-emulator/infra/main.tf ==="
 cat rxclaim-emulator/infra/main.tf 2>/dev/null
 echo; echo "=== triage-service/src/triage/main.py (style ref) ==="
 cat triage-ser…`
+- **Bash** `which terraform 2>/dev/null && terraform version || echo "NO_TERRAFORM"`
+- **TodoWrite** `{"todos": [{"content": "Scaffold provider-registry-service package (pyproject, src layout)", "status": "in_progress", "activeForm": "Scaffolding provider-registry-service package"}, {"content": "Write…`
+- **Bash** `git checkout -b feature/m2-provider-registry-service`
+- **Bash** `mkdir -p /workspaces/fhir-agent/provider-registry-service/src/provider_registry/tests
+mkdir -p /workspaces/fhir-agent/provider-registry-service/infra
+ls /workspaces/fhir-agent/provider-registry-servic…`
+- **Write** `/workspaces/fhir-agent/provider-registry-service/pyproject.toml`
+- **TodoWrite** `{"todos": [{"content": "Scaffold provider-registry-service package (pyproject, src layout)", "status": "completed", "activeForm": "Scaffolding provider-registry-service package"}, {"content": "Write s…`
+- **Write** `/workspaces/fhir-agent/provider-registry-service/schema.sql`
+- **Edit** `/workspaces/fhir-agent/provider-registry-service/pyproject.toml`
+- **Write** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/__init__.py`
+- **Write** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/db.py`
 
 </details>
 
@@ -567,6 +587,6 @@ cat triage-ser…`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 14:23 UTC
+- **Last updated:** 17 July 2026, 14:24 UTC
 - **Turns:** 8
 - **Status:** Incomplete
