@@ -474,8 +474,10 @@ Let's actually run it to verify:
 
 Real, verified, working. Now `fetch_zcta_centroids.py`:
 
+Let's run it for real:
+
 <details>
-<summary>Execution details — 281 tool events</summary>
+<summary>Execution details — 284 tool events</summary>
 
 ### Turn 1 activity
 
@@ -909,6 +911,11 @@ echo "---row count-…`
 - **Bash** `curl -sL "https://www2.census.gov/geo/docs/maps-data/data/rel2020/zcta520/tab20_zcta520_county20_natl.txt" -o /tmp/zcta_work/zcta_county.txt -w "HTTP %{http_code}, size %{size_download}\n"
 head -1 /tm…`
 - **Bash** `awk -F'|' 'NR>1 && $2!="" {print; c++} c>=3{exit}' /tmp/zcta_work/zcta_county.txt`
+- **Write** `/workspaces/fhir-agent/data/scripts/provider_ingest/fetch_zcta_centroids.py`
+- **Bash** `time python3 data/scripts/provider_ingest/fetch_zcta_centroids.py --states NC,CA,MT`
+- **Bash** `grep "^27514," /workspaces/fhir-agent/data/reference/providers/zip_centroids.csv
+grep "^27601," /workspaces/fhir-agent/data/reference/providers/zip_centroids.csv
+wc -l /workspaces/fhir-agent/data/refe…`
 
 </details>
 
