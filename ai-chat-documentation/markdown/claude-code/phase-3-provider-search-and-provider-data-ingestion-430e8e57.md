@@ -570,8 +570,10 @@ Good, matches claims-agent's exact behavior. Now `test_tools.py` — mocked subp
 
 Tests pass and self-skip correctly. Now let's actually run the agent for real to expand ingestion to CA and MT — the real M4 action:
 
+Now let's test the real LLM narration path (I have `CLAUDE_API_KEY` available):
+
 <details>
-<summary>Execution details — 373 tool events</summary>
+<summary>Execution details — 375 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1184,6 +1186,14 @@ echo "CLAUDE_API_KEY set: $([ -n "$CLAUDE_API_KEY" ] && echo yes || echo no)"`
 - **Bash** `export DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›localhost:5432/provider_registry"
 cd /workspaces/fhir-agent
 time python3 -m provider_curation_agent --states NC,CA,MT --no-llm 2>&…`
+- **Bash** `ls -la /workspaces/fhir-agent/data/reference/providers/
+python3 -c "
+import json
+for state in ['ca', 'mt']:
+    data = json.load(open(f'/workspaces/fhir-agent/data/reference/providers/nppes_{state}.js…`
+- **Bash** `export DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›localhost:5432/provider_registry"
+cd /workspaces/fhir-agent
+time python3 -m provider_curation_agent --states NC,CA,MT 2>&1`
 
 </details>
 
@@ -1194,6 +1204,6 @@ time python3 -m provider_curation_agent --states NC,CA,MT --no-llm 2>&…`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 15:18 UTC
+- **Last updated:** 17 July 2026, 15:19 UTC
 - **Turns:** 10
 - **Status:** Incomplete
