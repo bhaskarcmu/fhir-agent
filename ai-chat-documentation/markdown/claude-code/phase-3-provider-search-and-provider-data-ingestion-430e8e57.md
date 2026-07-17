@@ -494,8 +494,12 @@ Idempotency confirmed. Now let's verify end-to-end through `provider-registry-se
 
 Real, working end-to-end verification — genuine UNC Chapel Hill endocrinologists returned with correct lineage. One real finding worth noting: `resolve_specialty("endocrinologist")` now returns `status: "ambiguous"` against the full 883-code real taxonomy set (my M2 fixture only had 2 codes, so this ambiguity path was never actually exercised before). That's the system correctly surfacing genuine ambiguity, not a bug — I'll document it as a finding, not "fix" the matcher (out of M3's scope). Let's shut down the test server and move to writing tests.
 
+Now writing tests for the ingestion pipeline, following the established `test_load.py` convention (standalone scripts loaded via `importlib.util`, HTTP mocked):
+
+Good, passes. Now the ZCTA and NPPES fetch tests:
+
 <details>
-<summary>Execution details — 308 tool events</summary>
+<summary>Execution details — 314 tool events</summary>
 
 ### Turn 1 activity
 
@@ -997,6 +1001,13 @@ nohup python3 -m uvicorn provider_registry.m…`
 - **Bash** `echo "=== resolve_specialty: endocrinologist ==="
 curl -s -X POST http://127.0.0.1:8002/v1/taxonomy/resolve -H "Content-Type: application/json" -d '{"query": "endocrinologist"}' | python3 -m json.tool…`
 - **Bash** `kill %1 2>/dev/null; sleep 1; jobs`
+- **Write** `/workspaces/fhir-agent/data/scripts/provider_ingest/test_fetch_nucc_taxonomy.py`
+- **Bash** `python3 -m pytest data/scripts/provider_ingest/test_fetch_nucc_taxonomy.py -v --import-mode=importlib 2>&1 | tail -15`
+- **Bash** `pwd
+ls -la data/scripts/provider_ingest/test_fetch_nucc_taxonomy.py`
+- **Bash** `cd /workspaces/fhir-agent && python3 -m pytest data/scripts/provider_ingest/test_fetch_nucc_taxonomy.py -v --import-mode=importlib 2>&1 | tail -15`
+- **Write** `/workspaces/fhir-agent/data/scripts/provider_ingest/test_fetch_zcta_centroids.py`
+- **Bash** `python3 -m pytest data/scripts/provider_ingest/test_fetch_zcta_centroids.py -v --import-mode=importlib 2>&1 | tail -20`
 
 </details>
 
@@ -1007,6 +1018,6 @@ curl -s -X POST http://127.0.0.1:8002/v1/taxonomy/resolve -H "Content-Type: appl
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 15:02 UTC
+- **Last updated:** 17 July 2026, 15:03 UTC
 - **Turns:** 9
 - **Status:** Incomplete
