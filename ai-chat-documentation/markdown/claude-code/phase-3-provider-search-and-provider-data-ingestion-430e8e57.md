@@ -646,8 +646,16 @@ Let's check `mcp-agent`'s HTTP-calling convention (the "call the deterministic s
 
 Confirmed. Now writing `registry_client.py` and `server.py`:
 
+Excellent — all 7 pass on the first real run, including the not-found error path and the SDK's automatic schema-validation rejection. Let's confirm self-skip works too:
+
+Let's also do one manual real-data verification through the actual MCP protocol (not just the fixture test) — proving it works against all 12,582 real providers across NC/CA/MT:
+
+Real, working, cross-state verification against production-scale data. Cleaning up and moving to the cloud-readiness stub.
+
+Confirmed clean. Now the Terraform Cloud Run stub and Dockerfile:
+
 <details>
-<summary>Execution details — 449 tool events</summary>
+<summary>Execution details — 459 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1413,6 +1421,32 @@ python3 -m pip install -e "provider-mcp-server[dev]" 2>&1 | tail -10`
 - **Write** `/workspaces/fhir-agent/provider-mcp-server/tests/test_registry_client.py`
 - **Bash** `cd /workspaces/fhir-agent
 python3 -m pytest provider-mcp-server/tests/test_registry_client.py -v --import-mode=importlib 2>&1 | tail -20`
+- **Write** `/workspaces/fhir-agent/provider-mcp-server/tests/test_handshake.py`
+- **Bash** `cd /workspaces/fhir-agent
+TEST_DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›localhost:5432/provider_registry_test" \
+  python3 -m pytest provider-mcp-server/tests/test_handshake.py -…`
+- **Bash** `cd /workspaces/fhir-agent
+TEST_DATABASE_URL="postgresql://x:‹redacted:url-credentials›localhost:59999/nope" \
+  python3 -m pytest provider-mcp-server/tests/test_handshake.py -v --import-mode=importlib 2>&1 | tail -15`
+- **Bash** `export DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›localhost:5432/provider_registry"
+cd /workspaces/fhir-agent/provider-registry-service
+nohup python3 -m uvicorn provider_registry.m…`
+- **Bash** `cat > /tmp/mcp_smoke_real.py << 'EOF'
+import asyncio
+import json
+import os
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+
+async def main():
+    env = {…`
+- **Bash** `kill %1 2>/dev/null; pkill -f "uvicorn provider_registry.main:app" 2>/dev/null; sleep 1
+rm -f /tmp/mcp_smoke_real.py
+jobs`
+- **Bash** `pgrep -fa "uvicorn provider_registry" || echo "no stray uvicorn processes"`
+- **Bash** `ss -ltnp 2>/dev/null | grep 8002 || echo "port 8002 free, no server running"`
+- **TodoWrite** `{"todos": [{"content": "Verify real mcp SDK API (Server, stdio, ClientSession) - done via smoke test", "status": "completed", "activeForm": "Verifying real mcp SDK API"}, {"content": "Scaffold provide…`
+- **Write** `/workspaces/fhir-agent/provider-mcp-server/Dockerfile`
 
 </details>
 
@@ -1423,6 +1457,6 @@ python3 -m pytest provider-mcp-server/tests/test_registry_client.py -v --import-
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 15:32 UTC
+- **Last updated:** 17 July 2026, 15:34 UTC
 - **Turns:** 11
 - **Status:** Incomplete
