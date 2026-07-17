@@ -598,8 +598,16 @@ Now updating `design.md`'s milestone table:
 
 Now appending M4's real results after M3's block:
 
+Now adding this finding to §14 Risks and `decisions.md`:
+
+Now `decisions.md` — adding P14 for this and P15 for the M4 milestone completion:
+
+Now updating `README.md`'s canonical status:
+
+Now let's finalize — check status, clean caches, stage, commit:
+
 <details>
-<summary>Execution details — 402 tool events</summary>
+<summary>Execution details — 412 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1261,6 +1269,19 @@ TEST_DATABASE_URL="postgresql://x:‹redacted:url-credentials›localhost:59999/
 - **Bash** `sed -n '789,801p' /workspaces/fhir-agent/docs/phase3/design.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Bash** `grep -n "^## 14. Risks" -A 3 /workspaces/fhir-agent/docs/phase3/design.md | head -5`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Bash** `grep -n "P13" /workspaces/fhir-agent/docs/phase3/decisions.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/decisions.md`
+- **Read** `/workspaces/fhir-agent/docs/phase3/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/README.md`
+- **Bash** `cd /workspaces/fhir-agent
+find provider-curation-agent -name "__pycache__" -o -name "*.egg-info" -o -name ".pytest_cache" | xargs rm -rf
+git status --short`
+- **TodoWrite** `{"todos": [{"content": "Scaffold provider-curation-agent package (mirrors claims-agent structure)", "status": "completed", "activeForm": "Scaffolding provider-curation-agent package"}, {"content": "Wr…`
+- **Bash** `cd /workspaces/fhir-agent
+git add -A -- provider-curation-agent data/reference/providers/nppes_ca.json data/reference/providers/nppes_mt.json .ona/automations.yaml CLAUDE.md docker-compose.yml docs/ph…`
 
 </details>
 
@@ -1271,6 +1292,6 @@ TEST_DATABASE_URL="postgresql://x:‹redacted:url-credentials›localhost:59999/
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 15:23 UTC
+- **Last updated:** 17 July 2026, 15:24 UTC
 - **Turns:** 10
 - **Status:** Incomplete
