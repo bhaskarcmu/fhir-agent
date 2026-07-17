@@ -448,8 +448,10 @@ Confirmed merged. Proceeding with cleanup.
 
 **Git op:** worktree `/workspaces/fhir-agent`, current branch `feature/m2-provider-registry-service`, target `main` — switching, pulling the merge, deleting the merged branch (confirmed by you).
 
+Now for M3. Given the instruction to keep documentation and test results current going forward, let me first check existing data-fetch script conventions (Phase 2 already tackled "curate real external public data"), then research the actual live data sources I flagged as "to verify" in the design doc.
+
 <details>
-<summary>Execution details — 230 tool events</summary>
+<summary>Execution details — 234 tool events</summary>
 
 ### Turn 1 activity
 
@@ -786,6 +788,21 @@ M2 of Phase 3 (design.md §13): `provider-registry-service`, t…`
 - **Bash** `git checkout main && git pull origin main`
 - **Bash** `git push origin --delete feature/m2-provider-registry-service
 git branch -d feature/m2-provider-registry-service`
+- **Bash** `cd /workspaces/fhir-agent
+find data/scripts -maxdepth 1 -type f | sort
+echo "---fetch_reference_data.py header---"
+head -60 data/scripts/fetch_reference_data.py 2>/dev/null
+echo "---test_load.py (exis…`
+- **Bash** `head -80 /workspaces/fhir-agent/data/scripts/fetch_aca_formulary_sample.py
+echo "---data/reference gitignore---"
+grep -n "reference" /workspaces/fhir-agent/.gitignore
+echo "---existing data/reference…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== data/reference/npi contents ==="
+find data/reference/npi -type f 2>/dev/null | head -30
+echo "=== data/reference/README.md ==="
+cat data/reference/README.md 2>/dev/…`
+- **Bash** `cat /workspaces/fhir-agent/data/reference/.gitignore`
 
 </details>
 
@@ -796,6 +813,6 @@ git branch -d feature/m2-provider-registry-service`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 14:45 UTC
+- **Last updated:** 17 July 2026, 14:46 UTC
 - **Turns:** 9
 - **Status:** Incomplete
