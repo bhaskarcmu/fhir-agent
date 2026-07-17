@@ -108,14 +108,17 @@ I've grounded myself in the current repo state before drafting questions. Key fa
 
 Now, my clarifying questions — the four below are the ones that most change the shape of the design, so I'd like your call on each before drafting.
 
+A few more that shape scope boundaries and the ingestion/infra design:
+
 <details>
-<summary>Execution details — 3 tool events</summary>
+<summary>Execution details — 4 tool events</summary>
 
 ### Turn 1 activity
 
 - **Read** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase2-planning-state.md`
 - **Agent** `Survey repo structure for Phase 3 design`
 - **AskUserQuestion** `{"questions": [{"question": "Which language should the hand-built MCP server (and the agent's MCP client/host side) use?", "header": "MCP language", "multiSelect": false, "options": [{"label": "Python…`
+- **AskUserQuestion** `{"questions": [{"question": "Where should the new Phase 3 services (registry, taxonomy, location-search, MCP server, both agents) deploy?", "header": "Deploy target", "multiSelect": false, "options":…`
 
 </details>
 
