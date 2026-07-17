@@ -308,10 +308,10 @@ Provide the PRD and Plan as PDFs for download
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Both are available. Installing pandoc + wkhtmltopdf (self-contained, no LaTeX needed) plus a couple of fonts for good Unicode/symbol coverage:
 
 <details>
-<summary>Execution details — 114 tool events</summary>
+<summary>Execution details — 117 tool events</summary>
 
 ### Turn 1 activity
 
@@ -457,6 +457,10 @@ First docs PR for **Phase 3 — Provider Search & Referral**: a first-party pr�
 - **Bash** `echo "python3: $(python3 --version 2>&1)"; echo "pip3: $(pip3 --version 2>&1)"; echo "node: $(node --version 2>&1)"; echo "npm: $(npm --version 2>&1)"; which apt apt-get 2>/dev/null; echo "---checking…`
 - **Bash** `pip3 show weasyprint 2>&1 | head -3; echo "---"; find / -iname "*chromium*" -o -iname "*chrome*" 2>/dev/null | grep -v -E "\.cache|node_modules/.*/test|/proc/" | head -20; echo "---playwright---"; pyt…`
 - **Bash** `sudo -n true 2>&1 && echo "HAVE_SUDO" || echo "NO_SUDO"; id`
+- **Bash** `cat /etc/os-release | head -3
+sudo apt-get update -qq 2>&1 | tail -20`
+- **Bash** `apt-cache policy pandoc wkhtmltopdf fonts-dejavu-core fonts-noto-core 2>&1`
+- **Bash** `sudo apt-get install -y pandoc wkhtmltopdf fonts-noto-core 2>&1 | tail -30`
 
 </details>
 
@@ -469,4 +473,4 @@ First docs PR for **Phase 3 — Provider Search & Referral**: a first-party pr�
 - **Created:** 17 July 2026, 13:05 UTC
 - **Last updated:** 17 July 2026, 14:14 UTC
 - **Turns:** 5
-- **Status:** Incomplete
+- **Status:** Complete
