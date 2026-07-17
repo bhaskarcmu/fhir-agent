@@ -742,8 +742,20 @@ Confirmed: real NUCC codes are consistently `^[0-9A-Z]{9}X$` (10 chars, all 883 
 
 Good, nothing broke. Now let's re-run the same real query against production data to confirm the fix helps:
 
+Fixed completely — real 10 endocrinologists returned with correct lineage. Let me stop the debug server and document this second real finding.
+
+Now adding this second real finding to `decisions.md` and design.md's Risks:
+
+Now design.md §14 Risks:
+
+Valid, default profile unchanged. Now updating pytest.ini, `.ona/automations.yaml`, and `CLAUDE.md`:
+
+Now let's check for filename collisions and run the full suite:
+
+No collisions. Now running the full suite:
+
 <details>
-<summary>Execution details — 558 tool events</summary>
+<summary>Execution details — 575 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1732,6 +1744,32 @@ TEST_DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›
   python3 -m pytest provider-mcp-server/tests/ -v --import-mode=i…`
 - **Bash** `cd /workspaces/fhir-agent
 python3 -m provider_search_agent --query "I need to see an endocrinologist, I live near 90001"`
+- **Bash** `pkill -f "uvicorn provider_registry.main:app" 2>/dev/null; sleep 1
+ss -ltn 2>/dev/null | grep 8002 || echo "port 8002 free"`
+- **Bash** `ss -ltn 2>/dev/null | grep 8002 || echo "port 8002 free, confirmed"`
+- **Bash** `grep -n "P18" /workspaces/fhir-agent/docs/phase3/decisions.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/decisions.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **TodoWrite** `{"todos": [{"content": "Verify MCP client env-inheritance behavior (done - safe-listed only)", "status": "completed", "activeForm": "Verifying MCP client env-inheritance behavior"}, {"content": "Scaff…`
+- **Write** `/workspaces/fhir-agent/provider-search-agent/Dockerfile`
+- **Bash** `grep -n "provider-curation-agent:" -A 18 /workspaces/fhir-agent/docker-compose.yml | tail -20`
+- **Read** `/workspaces/fhir-agent/docker-compose.yml`
+- **Edit** `/workspaces/fhir-agent/docker-compose.yml`
+- **Bash** `cd /workspaces/fhir-agent
+docker compose config -q 2>&1; echo "exit: $?"
+COMPOSE_PROFILES=phase3 docker compose config --services 2>&1
+echo "---default unchanged---"
+docker compose config --services 2…`
+- **TodoWrite** `{"todos": [{"content": "Verify MCP client env-inheritance behavior (done - safe-listed only)", "status": "completed", "activeForm": "Verifying MCP client env-inheritance behavior"}, {"content": "Scaff…`
+- **Edit** `/workspaces/fhir-agent/pytest.ini`
+- **Edit** `/workspaces/fhir-agent/.ona/automations.yaml`
+- **Edit** `/workspaces/fhir-agent/CLAUDE.md`
+- **Bash** `cd /workspaces/fhir-agent
+find . -name "test_*.py" | xargs -n1 basename | sort | uniq -c | awk '$1>1'
+echo "check complete"`
+- **Bash** `cd /workspaces/fhir-agent
+find provider-search-agent -name "__pycache__" -o -name "*.egg-info" -o -name ".pytest_cache" | xargs rm -rf
+TEST_DATABASE_URL="postgresql://provider_registry:provider_regist…`
 
 </details>
 
@@ -1742,6 +1780,6 @@ python3 -m provider_search_agent --query "I need to see an endocrinologist, I li
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 15:56 UTC
+- **Last updated:** 17 July 2026, 15:58 UTC
 - **Turns:** 12
 - **Status:** Incomplete
