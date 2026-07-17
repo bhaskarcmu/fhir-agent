@@ -716,8 +716,20 @@ That didn't fix it either — even with the type hint, Claude still stringifies 
 
 This was the real fix — first try, clean native object, correct grounded results. Let's verify nothing else broke, and that the cross-field validation (exactly one of zip/lat-lon) still works via the registry service's existing Pydantic validator:
 
+Cross-field validation still works correctly at the registry-service layer. Let's stop the debug server and update the docs with this real finding.
+
+Now updating `design.md` §8.3 to correct the documented schema with this real finding:
+
+Good, those are all within the new corrective note. Now `decisions.md`:
+
+Now adding this to §14 Risks:
+
+This is valuable enough to save as a durable memory too — applies to any future tool-schema design, not just this milestone.
+
+Now let's re-seed and run the full groundedness eval suite to confirm all 3 pass with the fix:
+
 <details>
-<summary>Execution details — 531 tool events</summary>
+<summary>Execution details — 545 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1655,6 +1667,25 @@ async def main():
 - **Bash** `cd /workspaces/fhir-agent
 TEST_DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›localhost:5432/provider_registry_test" \
   python3 -m pytest provider-mcp-server/tests/ -v --import-mode=i…`
+- **Bash** `echo "=== neither zip nor lat/lon ==="
+curl -s -X POST http://127.0.0.1:8002/v1/providers/search -H "Content-Type: application/json" \
+  -d '{"location": {}, "taxonomy_codes": ["207RE0101X"]}' -w "\nH…`
+- **Bash** `pkill -f "uvicorn provider_registry.main:app" 2>/dev/null; sleep 1
+ss -ltn 2>/dev/null | grep 8002 || echo "port 8002 free"`
+- **Bash** `ss -ltn 2>/dev/null | grep 8002 || echo "port 8002 free, no server running"`
+- **Bash** `grep -n '"location": { "oneOf"' /workspaces/fhir-agent/docs/phase3/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Bash** `grep -n "oneOf" /workspaces/fhir-agent/docs/phase3/design.md`
+- **Bash** `grep -n "P16" /workspaces/fhir-agent/docs/phase3/decisions.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/decisions.md`
+- **Bash** `grep -n "^## 14. Risks" -A 3 /workspaces/fhir-agent/docs/phase3/design.md | head -5`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Write** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/llm-tool-schema-oneof-unreliable.md`
+- **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/MEMORY.md`
+- **Bash** `cd /workspaces/fhir-agent
+TEST_DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›localhost:5432/provider_registry_test" \
+  python3 -m pytest provider-search-agent/tests/test_groundedness…`
 
 </details>
 
@@ -1665,6 +1696,6 @@ TEST_DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 15:50 UTC
+- **Last updated:** 17 July 2026, 15:52 UTC
 - **Turns:** 12
 - **Status:** Incomplete
