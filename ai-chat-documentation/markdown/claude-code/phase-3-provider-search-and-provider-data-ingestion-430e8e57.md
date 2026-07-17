@@ -124,6 +124,16 @@ Two things came up during research that are worth flagging directly:
 
 Both docs end with a short **open-questions list** (§9 in the PRD, §15 in the design doc) — things like which 2–3 states to curate, whether the search agent needs an HTTP entrypoint, and Phase 2's actual east-west auth pattern to match. Nothing is committed to the repo yet — these are drafts for your review; once you're good with the direction I'll branch, write them to `docs/phase3/`, and open a PR, matching the Phase 2 pattern.
 
+## Turn 2
+
+### Prompt
+
+Answer the open questions yourself using best judgement. Then commit these documents locally without creating a PR yet. I want to review them here in this environment. Also for terminology do not use the word "Phase" for any parts of Phase 3. There can be milestones within Phase 3 9create a plan containing these). Phase 3b will be GCP cloud deployment, just as we did with phase 2, each milestone will prepare suitably with stubs for Phase 3b. MAke all this ready locally commmitted for my review please
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 14 tool events</summary>
 
@@ -153,6 +163,6 @@ Both docs end with a short **open-questions list** (§9 in the PRD, §15 in the 
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 13:23 UTC
-- **Turns:** 1
-- **Status:** Complete
+- **Last updated:** 17 July 2026, 13:36 UTC
+- **Turns:** 2
+- **Status:** Incomplete
