@@ -524,8 +524,10 @@ Now updating README.md's canonical status with the real M3 summary:
 
 README already correctly defers to design.md §13 rather than duplicating numbers — matches Phase 2's convention exactly. No change needed there. Now let's check the full diff and make sure nothing unexpected got picked up:
 
+Now pushing and opening the PR:
+
 <details>
-<summary>Execution details — 342 tool events</summary>
+<summary>Execution details — 344 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1071,6 +1073,13 @@ git check-ignore -v data/reference/providers/*.csv data/reference/providers/*.js
 - **Bash** `cd /workspaces/fhir-agent
 find data/scripts/provider_ingest -name "__pycache__" -o -name "*.pyc" | xargs rm -rf
 find provider-registry-service -name "__pycache__" -o -name "*.egg-info" -o -name ".pyte…`
+- **Bash** `cd /workspaces/fhir-agent
+git commit -m "$(cat <<'EOF'
+feat(provider-ingest): M3 — real NPPES/NUCC/ZCTA ingestion for NC pilot
+
+New data/scripts/provider_ingest/ pipeline: fetch_nucc_taxonomy.py,
+fetc…`
+- **Bash** `git push -u origin feature/m3-nppes-ingestion`
 
 </details>
 
@@ -1081,6 +1090,6 @@ find provider-registry-service -name "__pycache__" -o -name "*.egg-info" -o -nam
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 15:07 UTC
+- **Last updated:** 17 July 2026, 15:08 UTC
 - **Turns:** 9
 - **Status:** Incomplete
