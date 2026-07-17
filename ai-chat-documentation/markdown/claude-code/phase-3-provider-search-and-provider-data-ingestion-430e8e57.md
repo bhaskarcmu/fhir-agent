@@ -460,8 +460,10 @@ Let's start with the documentation updates the user specifically asked me to pri
 
 Now updating §7's data sources table to replace the "to verify" flags with confirmed, real findings:
 
+Now the milestone table itself — marking M1/M2 done with real verified results, matching Phase 2's status-tracking convention:
+
 <details>
-<summary>Execution details — 255 tool events</summary>
+<summary>Execution details — 258 tool events</summary>
 
 ### Turn 1 activity
 
@@ -849,6 +851,9 @@ echo "…`
 - **Read** `/workspaces/fhir-agent/docs/phase3/design.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
 - **Bash** `grep -n "^## 7\|^## 8" /workspaces/fhir-agent/docs/phase3/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Bash** `grep -n "^## 13\|^### 13.1\|^## 14" /workspaces/fhir-agent/docs/phase3/design.md`
 - **Read** `/workspaces/fhir-agent/docs/phase3/design.md`
 
 </details>
