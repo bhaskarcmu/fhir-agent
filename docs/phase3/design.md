@@ -773,7 +773,7 @@ module sketch, validated with `terraform validate`/`plan` but never applied.
 | M2 | ✅ Done (PR #41) | `provider-registry-service`: schema/migrations, `LocationSearchPort` + `HaversineSqlLocationSearch`, taxonomy resolve endpoint, coarse per-caller rate-limit middleware (§12.1 defense-in-depth), unit tests against a small hand-written fixture (not real data yet) | Dockerfile + Terraform Cloud Run module sketch, `ingress = "internal"` — `terraform validate` passed |
 | M3 | ✅ Done | Ingestion scripts (deterministic): NPPES pull for the pilot state (NC), NUCC load, ZCTA load, upsert — verified against real data | Terraform sketch for a manually-triggered Cloud Run Job (matches the one-time-seed decision, PRD §6) — `terraform validate` passed, not applied |
 | M4 | ✅ Done (PR #43) | `provider-curation-agent`: wraps M3 with an AI run-summary; expand ingestion to the full curated set (NC, CA, MT) | n/a — CLI tool, no new deployable surface |
-| M5 | ⏳ Not started | `provider-mcp-server`: real MCP server (stdio), wired to the registry service; integration test proving the actual `initialize`/`tools-list`/`tools-call` handshake | Dockerfile + Terraform Cloud Run sketch — flagged with the caveat in §13.1 below: stdio doesn't cross a network boundary, so this stub alone doesn't make the server cloud-*callable*, only cloud-*runnable* |
+| M5 | ✅ Done (PR #44) | `provider-mcp-server`: real MCP server (stdio), wired to the registry service; integration test proving the actual `initialize`/`tools-list`/`tools-call` handshake | Dockerfile + Terraform packaging stub (Artifact Registry only, deliberately **not** a Cloud Run Service resource — see §13.1: stdio doesn't cross a network boundary, so a Cloud Run Service resource here would validate cleanly while being undeployable) — `terraform validate` passed |
 | M6 | ⏳ Not started | `provider-search-agent`: real MCP client/host, Anthropic tool-use loop, groundedness eval suite | n/a — CLI tool; spawns the MCP server as a local child process |
 | M7 | ⏳ Not started | `docker-compose` demo profile bundling all four new components; end-to-end local verification | **Root Terraform module** (`infra/terraform/`) composing the M2/M3 per-service stubs + `deploy-phase3.sh` + an executed cloud smoke test wired into CI (stub-target, no live spend) — the three items the callout above names explicitly, not left implied. `terraform validate`/`plan` across everything (still not applied) |
 
@@ -819,6 +819,23 @@ not just the claim):
   (this time with the actual Anthropic API via `CLAUDE_API_KEY`, not `--no-llm`) reported 0
   added / 12,582 updated and correctly narrated the real anomaly breakdown without inventing
   any counts.
+- **M5** (PR #44): full root `pytest` — **186 passed** (172 from M4 + 14 new: 7 `registry_client`
+  tests, mocked HTTP, no network; 7 real MCP-handshake integration tests). Checked for the
+  test-filename collision from M4 before trusting the count this time
+  (`find . -name "test_*.py" | ... | uniq -c` — none found). Self-skip confirmed for the
+  DB-backed handshake tests (155 passed, 31 skipped when Postgres unreachable). **The real MCP
+  protocol handshake verified end-to-end, not simulated**: `provider-mcp-server` spawned as a
+  genuine subprocess over stdio, `provider-registry-service` spawned as a genuine subprocess
+  over HTTP, a real `mcp` SDK `ClientSession` driving `initialize` → `tools/list` → `tools/call`
+  against both — including the SDK's own automatic JSON-Schema input validation rejecting a
+  malformed NPI (`isError: true`) and a real `not_found` (§8.4) path, both exercised for real,
+  not asserted from documentation. Separately verified by hand against the full **12,582-real-
+  provider** dataset (all three curated states): a live `search_providers_near` call for a Los
+  Angeles ZIP returned three real Family Medicine physicians through the actual MCP protocol.
+  `terraform validate` passed for the packaging stub (deliberately not a Cloud Run Service
+  resource — see the milestone table's Cloud-readiness cell). Confirmed live (not assumed) that
+  the installed `mcp` SDK already ships `sse`/`streamable_http`/`websocket` transport modules
+  alongside `stdio` — Phase 3b's transport decision (§13.1) has real SDK support to build on.
 
 ### 13.1 Phase 3b — GCP cloud deployment (future, out of scope here)
 
@@ -843,7 +860,11 @@ started:
   `claims-agent`, which also isn't cloud-deployed) and let it reach the now-cloud-hosted
   `provider-mcp-server` only for local dev/demo, or
   (b) implement MCP's SSE/HTTP transport if a server-hosted agent becomes a real requirement.
-  Default recommendation: (a), until something concrete forces (b).
+  Default recommendation: (a), until something concrete forces (b). **Verified in M5, not
+  assumed:** option (b) isn't blocked on SDK support — the installed `mcp` package (v1.28.1)
+  already ships `mcp.server.sse`, `mcp.server.streamable_http`, and `mcp.server.websocket`
+  alongside `mcp.server.stdio`. Whichever way Phase 3b decides is an application-code and
+  deployment decision, not a missing-feature one.
 - Live smoke tests against the deployed services, matching Phase 2b's verification bar.
 
 ## 14. Risks
