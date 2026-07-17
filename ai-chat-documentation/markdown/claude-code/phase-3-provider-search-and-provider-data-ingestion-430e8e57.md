@@ -477,7 +477,7 @@ Real, verified, working. Now `fetch_zcta_centroids.py`:
 Let's run it for real:
 
 <details>
-<summary>Execution details — 286 tool events</summary>
+<summary>Execution details — 288 tool events</summary>
 
 ### Turn 1 activity
 
@@ -919,6 +919,12 @@ wc -l /workspaces/fhir-agent/data/refe…`
 - **Bash** `for term in "Family Medicine" "Internal Medicine" "Pediatrics" "Cardiovascular Disease" "Dermatology"; do
   encoded=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1]))" "$ter…`
 - **Bash** `for term in "Family Medicine" "Internal Medicine" "Pediatrics" "Cardiovascular Disease" "Dermatology" "Obstetrics %26 Gynecology" "Psychiatry" "Orthopaedic Surgery" "General Acute Care Hospital" "Endo…`
+- **Bash** `python3 -c "
+import urllib.request, urllib.parse, json
+def check(term):
+    q = urllib.parse.urlencode({'version': '2.1', 'state': 'NC', 'taxonomy_description': term, 'limit': 200, 'skip': 0})
+    url…`
+- **TodoWrite** `{"todos": [{"content": "Update design.md milestone table: mark M1/M2 done with real verified results; resolve §6 diagram/prose inconsistency (direct DB writes)", "status": "completed", "activeForm": "…`
 
 </details>
 
@@ -929,6 +935,6 @@ wc -l /workspaces/fhir-agent/data/refe…`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 14:56 UTC
+- **Last updated:** 17 July 2026, 14:57 UTC
 - **Turns:** 9
 - **Status:** Incomplete
