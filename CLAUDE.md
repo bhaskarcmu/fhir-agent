@@ -32,8 +32,12 @@ serve different audiences and should not modify each other's code.
 
 ```
 # Python packages (editable installs + test tooling — see .ona/automations.yaml)
-python -m pip install -e "client/clinical[dev]" -e "triage-service[dev]" -e "mcp-agent[dev]"
+python -m pip install -e "client/clinical[dev]" -e "triage-service[dev]" -e "mcp-agent[dev]" -e "provider-registry-service[dev]"
 pytest <path>                       # run focused tests for the changed package
+
+# provider-registry-service's DB-backed tests need a local Postgres; they self-skip
+# (not error) when one isn't reachable at TEST_DATABASE_URL — see
+# provider-registry-service/src/provider_registry/tests/conftest.py.
 
 # FHIR service (Java). Unset SPRING_DATASOURCE_URL / NEON_* first so tests use H2;
 # otherwise MdmTest boots against a live DB and fails on auth (env issue, not code).
