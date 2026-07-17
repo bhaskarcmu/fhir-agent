@@ -492,8 +492,10 @@ Now let's actually run the ingestion end-to-end against the real local Postgres 
 
 Idempotency confirmed. Now let's verify end-to-end through `provider-registry-service` itself with a real search query:
 
+Real, working end-to-end verification — genuine UNC Chapel Hill endocrinologists returned with correct lineage. One real finding worth noting: `resolve_specialty("endocrinologist")` now returns `status: "ambiguous"` against the full 883-code real taxonomy set (my M2 fixture only had 2 codes, so this ambiguity path was never actually exercised before). That's the system correctly surfacing genuine ambiguity, not a bug — I'll document it as a finding, not "fix" the matcher (out of M3's scope). Let's shut down the test server and move to writing tests.
+
 <details>
-<summary>Execution details — 307 tool events</summary>
+<summary>Execution details — 308 tool events</summary>
 
 ### Turn 1 activity
 
@@ -994,6 +996,7 @@ cd /workspaces/fhir-agent/provider-registry-service
 nohup python3 -m uvicorn provider_registry.m…`
 - **Bash** `echo "=== resolve_specialty: endocrinologist ==="
 curl -s -X POST http://127.0.0.1:8002/v1/taxonomy/resolve -H "Content-Type: application/json" -d '{"query": "endocrinologist"}' | python3 -m json.tool…`
+- **Bash** `kill %1 2>/dev/null; sleep 1; jobs`
 
 </details>
 
