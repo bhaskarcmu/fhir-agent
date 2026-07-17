@@ -677,7 +677,7 @@ Now `README.md`'s canonical status:
 Now let's stage, commit, and push:
 
 <details>
-<summary>Execution details — 489 tool events</summary>
+<summary>Execution details — 491 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1512,6 +1512,13 @@ rm -rf provider-mcp-server/infra/.terraform provider-mcp-server/inf…`
 - **Bash** `cd /workspaces/fhir-agent
 git add -A -- provider-mcp-server .ona/automations.yaml CLAUDE.md docs/phase3 pytest.ini
 git status --short`
+- **Bash** `cd /workspaces/fhir-agent
+git commit -m "$(cat <<'EOF'
+feat(provider-mcp-server): M5 — the real, hand-built MCP server
+
+The core deliverable this whole phase exists to build: a genuine MCP
+server (Pyt…`
+- **Bash** `git push -u origin feature/m5-provider-mcp-server`
 
 </details>
 
