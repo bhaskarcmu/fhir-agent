@@ -337,6 +337,16 @@ Both are up, reflecting the final review-revised content from PR #40:
 
 (Dropped the PDF pipeline I'd started building — these markdown artifacts are viewable/downloadable directly and match what's in the PR.)
 
+## Turn 8
+
+### Prompt
+
+PR merged. DElete merged branch and proceed to next milestone (I think that is M2, correct if wrong)
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 124 tool events</summary>
 
@@ -522,6 +532,6 @@ for line in text.split('\n'):…`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 14:17 UTC
-- **Turns:** 7
+- **Last updated:** 17 July 2026, 14:20 UTC
+- **Turns:** 8
 - **Status:** Incomplete
