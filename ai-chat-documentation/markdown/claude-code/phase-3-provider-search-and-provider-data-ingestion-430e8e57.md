@@ -562,8 +562,12 @@ Now `summarize.py` — the deterministic renderer (mirrors `explain.py`):
 
 Now `format.py`:
 
+Now `agent.py` — the CLI, mirroring `claims_agent/agent.py`'s LLM-loop + `--no-llm` fallback pattern:
+
+Now let's install the package and check claims-agent's test style before writing tests:
+
 <details>
-<summary>Execution details — 361 tool events</summary>
+<summary>Execution details — 368 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1154,6 +1158,16 @@ mkdir -p /workspaces/fhir-agent/provider-curation-agent/tests`
 - **Write** `/workspaces/fhir-agent/provider-curation-agent/src/provider_curation_agent/tools.py`
 - **Write** `/workspaces/fhir-agent/provider-curation-agent/src/provider_curation_agent/summarize.py`
 - **Write** `/workspaces/fhir-agent/provider-curation-agent/src/provider_curation_agent/format.py`
+- **Write** `/workspaces/fhir-agent/provider-curation-agent/src/provider_curation_agent/agent.py`
+- **Write** `/workspaces/fhir-agent/provider-curation-agent/src/provider_curation_agent/__main__.py`
+- **Bash** `cd /workspaces/fhir-agent
+python3 -m pip install -e "provider-curation-agent[dev]" 2>&1 | tail -10`
+- **Bash** `cat /workspaces/fhir-agent/claims-agent/tests/test_explain.py | head -40
+echo "=== test_tools.py ==="
+cat /workspaces/fhir-agent/claims-agent/tests/test_tools.py | head -50`
+- **Write** `/workspaces/fhir-agent/provider-curation-agent/tests/__init__.py`
+- **Write** `/workspaces/fhir-agent/provider-curation-agent/tests/test_summarize.py`
+- **Bash** `python3 -m pytest provider-curation-agent/tests/test_summarize.py -v --import-mode=importlib 2>&1 | tail -25`
 
 </details>
 
@@ -1164,6 +1178,6 @@ mkdir -p /workspaces/fhir-agent/provider-curation-agent/tests`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 15:15 UTC
+- **Last updated:** 17 July 2026, 15:17 UTC
 - **Turns:** 10
 - **Status:** Incomplete
