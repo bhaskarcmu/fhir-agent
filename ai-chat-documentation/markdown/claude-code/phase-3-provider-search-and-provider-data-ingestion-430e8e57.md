@@ -247,8 +247,24 @@ Now Finding 3's risk entry, plus a pointer to the threat model, in §14 Risks:
 
 Now the SLI improvement in §11 Observability/SLOs:
 
+Now updating PRD §9 and design §15 to point to the new decisions.md index (matching Phase 2's stated convention: index links, doesn't restate):
+
+Now adding new FRs for the error taxonomy and provider status/entity_type, and updating NFRs:
+
+Now fixing the cloud-readiness overclaim in the Terminology section:
+
+This all reads cleanly. Now doing a final consistency pass across all four files before committing.
+
+All content edits are done. Let me do one final read-through pass of design.md to check for internal consistency (section numbering, cross-references) before committing.
+
+Numbering holds together cleanly. Now committing on the existing branch, pushing, and opening the PR.
+
+**Git op:** worktree `/workspaces/fhir-agent`, branch `docs/provider-search-design` (already exists from the prior commit), target: same branch — committing the review-driven revisions, then pushing and opening the PR as requested.
+
+Now pushing and opening the PR:
+
 <details>
-<summary>Execution details — 86 tool events</summary>
+<summary>Execution details — 108 tool events</summary>
 
 ### Turn 1 activity
 
@@ -352,6 +368,39 @@ authoritative public data (NPPES), wit…`
 - **TodoWrite** `{"todos": [{"content": "Analyze review findings against actual repo evidence", "status": "completed", "activeForm": "Analyzing review findings"}, {"content": "Fix provider lifecycle/deactivation gap (…`
 - **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
 - **Read** `/workspaces/fhir-agent/docs/phase2/decisions.md`
+- **Write** `/workspaces/fhir-agent/docs/phase3/decisions.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/decisions.md`
+- **TodoWrite** `{"todos": [{"content": "Analyze review findings against actual repo evidence", "status": "completed", "activeForm": "Analyzing review findings"}, {"content": "Fix provider lifecycle/deactivation gap (…`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/prd.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/prd.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/prd.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/prd.md`
+- **TodoWrite** `{"todos": [{"content": "Analyze review findings against actual repo evidence", "status": "completed", "activeForm": "Analyzing review findings"}, {"content": "Fix provider lifecycle/deactivation gap (…`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/README.md`
+- **Read** `/workspaces/fhir-agent/docs/phase3/README.md`
+- **Bash** `cd /workspaces/fhir-agent
+grep -n "RESOLVE_SPECIALTY_SCHEMA\|SEARCH_SCHEMA\|GET_PROVIDER_SCHEMA" docs/phase3/design.md
+echo "---"
+grep -c "^" docs/phase3/prd.md docs/phase3/design.md docs/phase3/decis…`
+- **Bash** `sed -n '395,415p' /workspaces/fhir-agent/docs/phase3/design.md`
+- **Bash** `grep -n "registry_client.dispatch\` is a thin httpx wrapper" /workspaces/fhir-agent/docs/phase3/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Bash** `grep -n "^## \|^### " /workspaces/fhir-agent/docs/phase3/design.md`
+- **Bash** `git status`
+- **Bash** `git add docs/phase3/
+git status`
+- **Bash** `git commit -m "$(cat <<'EOF'
+docs(phase3): apply review findings — error taxonomy, threat model, lifecycle, cloud honesty
+
+Digested an external review of the Phase 3 draft and made the changes that
+he…`
+- **Bash** `git push -u origin docs/provider-search-design`
+- **Bash** `gh pr create --title "docs(phase3): PRD and design proposal — Provider Search & Referral" --body "$(cat <<'EOF'
+## Summary
+
+First docs PR for **Phase 3 — Provider Search & Referral**: a first-party pr…`
 
 </details>
 
@@ -362,6 +411,6 @@ authoritative public data (NPPES), wit…`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 14:06 UTC
+- **Last updated:** 17 July 2026, 14:09 UTC
 - **Turns:** 3
 - **Status:** Complete
