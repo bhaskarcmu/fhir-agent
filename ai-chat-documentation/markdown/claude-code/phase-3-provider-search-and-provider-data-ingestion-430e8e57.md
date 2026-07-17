@@ -498,8 +498,10 @@ Now writing tests for the ingestion pipeline, following the established `test_lo
 
 Good, passes. Now the ZCTA and NPPES fetch tests:
 
+Both pass, including the split-ZCTA majority-area edge case. Now `fetch_nppes.py` tests:
+
 <details>
-<summary>Execution details — 314 tool events</summary>
+<summary>Execution details — 316 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1008,6 +1010,8 @@ ls -la data/scripts/provider_ingest/test_fetch_nucc_taxonomy.py`
 - **Bash** `cd /workspaces/fhir-agent && python3 -m pytest data/scripts/provider_ingest/test_fetch_nucc_taxonomy.py -v --import-mode=importlib 2>&1 | tail -15`
 - **Write** `/workspaces/fhir-agent/data/scripts/provider_ingest/test_fetch_zcta_centroids.py`
 - **Bash** `python3 -m pytest data/scripts/provider_ingest/test_fetch_zcta_centroids.py -v --import-mode=importlib 2>&1 | tail -20`
+- **Write** `/workspaces/fhir-agent/data/scripts/provider_ingest/test_fetch_nppes.py`
+- **Bash** `python3 -m pytest data/scripts/provider_ingest/test_fetch_nppes.py -v --import-mode=importlib 2>&1 | tail -25`
 
 </details>
 
