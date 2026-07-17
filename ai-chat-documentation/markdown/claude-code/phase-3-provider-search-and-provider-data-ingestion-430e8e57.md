@@ -767,7 +767,7 @@ Now `README.md`'s canonical status:
 Now let's stage, commit, and push:
 
 <details>
-<summary>Execution details — 590 tool events</summary>
+<summary>Execution details — 592 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1802,6 +1802,12 @@ git status --short`
 - **Bash** `cd /workspaces/fhir-agent
 git add -A -- provider-search-agent provider-mcp-server/src/provider_mcp/schemas.py .ona/automations.yaml CLAUDE.md docker-compose.yml docs/phase3 pytest.ini
 git status --sho…`
+- **Bash** `cd /workspaces/fhir-agent
+git commit -m "$(cat <<'EOF'
+feat(provider-search-agent): M6 — the real MCP client/host, protocol boundary complete
+
+provider-search-agent is a genuine MCP client/host (desig…`
+- **Bash** `git push -u origin feature/m6-provider-search-agent`
 
 </details>
 
