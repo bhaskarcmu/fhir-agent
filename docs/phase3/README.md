@@ -2,15 +2,16 @@
 
 > ## Canonical status
 >
-> **M1–M5 done, M6–M7 not started.** `provider-registry-service` (M2) is built and tested
+> **M1–M6 done, M7 not started.** `provider-registry-service` (M2) is built and tested
 > against a real local Postgres. Ingestion (M3) loaded real NPPES/NUCC/Census data for the
 > pilot state; `provider-curation-agent` (M4) wraps it with an AI run-summary and expanded
 > ingestion to the full curated set (NC, CA, MT). `provider-mcp-server` (M5) is a real,
-> hand-built MCP server — the actual `initialize`/`tools/list`/`tools/call` handshake is
-> verified end-to-end against real data, not simulated — see `design.md` §13 for exact
-> counts, not restated here (they'd drift). No search agent yet — that's M6. Nothing
-> deployed to any cloud (Phase 3b, not started; see `design.md` §13's cloud-delivery-gap
-> callout before assuming a stub means deploy-ready).
+> hand-built MCP server. `provider-search-agent` (M6) is a real MCP client/host — the
+> protocol boundary is complete end to end, and a real groundedness eval (genuine Claude
+> API calls) verifies every provider it states is real, not fabricated — see `design.md`
+> §13 for exact counts, not restated here (they'd drift). Nothing deployed to any cloud
+> (Phase 3b, not started; see `design.md` §13's cloud-delivery-gap callout before assuming
+> a stub means deploy-ready).
 >
 > *This is the one canonical status statement. Other documents link here rather than restate it.
 > Milestone-by-milestone verified test results live in `design.md` §13, updated per PR — check
@@ -22,8 +23,8 @@
 > - [`decisions.md`](./decisions.md) — ADR-style index of every architectural decision, with
 >   status tracking (Accepted / Partially delivered / Superseded), same convention as Phase 2's.
 >
-> **What's next:** M6 (`provider-search-agent` — the real MCP client/host, completing the
-> protocol boundary M5 built the server side of).
+> **What's next:** M7 (`docker-compose` demo profile bundling all four new components;
+> end-to-end local verification — the last milestone before Phase 3b's cloud deployment).
 
 ## What Phase 3 is
 

@@ -542,13 +542,28 @@ a deliberate, small improvement for a new service, not a retrofit demanded of ex
 
 **`search_providers_near`**
 
+**Corrected in M6, not as originally sketched here.** The first draft's `location` schema
+used `oneOf` (zip-branch vs. lat/lon-branch) to express "exactly one of these two shapes."
+Real testing against live Claude found this made the model send `location` as a **JSON-
+encoded string** (`'{"zip": "27514"}'`) instead of a native object, on every single attempt
+across two independent bugfix tries (first adding an explicit top-level `"type": "object"`
+hint alongside the `oneOf` — no change; the model kept stringifying it) — a real, reproducible
+LLM tool-calling quirk with `oneOf`-typed nested-object parameters, not a hypothetical
+concern. Fixed by flattening `location` to a plain object with three optional fields and
+moving the "exactly one of zip, or (lat and lon)" rule to `provider-registry-service`'s
+existing Pydantic validator (`LocationInput`'s `model_validator`, §4 — which already enforced
+this independently of the MCP-level schema) rather than re-adding it at the JSON-Schema
+level. Verified the cross-field rule still rejects malformed input end-to-end after the
+change (`{}` and `{zip + lat + lon together}` both still return `400 validation_error`).
+
 ```jsonc
 // input schema
 { "type": "object", "required": ["location", "taxonomy_codes"], "additionalProperties": false,
   "properties": {
-    "location": { "oneOf": [
-        { "type": "object", "required": ["zip"], "properties": { "zip": { "type": "string", "pattern": "^[0-9]{5}$" } } },
-        { "type": "object", "required": ["lat", "lon"], "properties": { "lat": { "type": "number", "minimum": -90, "maximum": 90 }, "lon": { "type": "number", "minimum": -180, "maximum": 180 } } } ] },
+    "location": { "type": "object", "additionalProperties": false,
+        "properties": { "zip": { "type": "string", "pattern": "^[0-9]{5}$" },
+          "lat": { "type": "number", "minimum": -90, "maximum": 90 },
+          "lon": { "type": "number", "minimum": -180, "maximum": 180 } } },
     "taxonomy_codes": { "type": "array", "items": { "type": "string" }, "minItems": 1, "maxItems": 10 },
     "radius_miles": { "type": "number", "exclusiveMinimum": 0, "maximum": 200, "default": 25 },
     "limit": { "type": "integer", "minimum": 1, "maximum": 50, "default": 10 },
@@ -774,7 +789,7 @@ module sketch, validated with `terraform validate`/`plan` but never applied.
 | M3 | ✅ Done | Ingestion scripts (deterministic): NPPES pull for the pilot state (NC), NUCC load, ZCTA load, upsert — verified against real data | Terraform sketch for a manually-triggered Cloud Run Job (matches the one-time-seed decision, PRD §6) — `terraform validate` passed, not applied |
 | M4 | ✅ Done (PR #43) | `provider-curation-agent`: wraps M3 with an AI run-summary; expand ingestion to the full curated set (NC, CA, MT) | n/a — CLI tool, no new deployable surface |
 | M5 | ✅ Done (PR #44) | `provider-mcp-server`: real MCP server (stdio), wired to the registry service; integration test proving the actual `initialize`/`tools-list`/`tools-call` handshake | Dockerfile + Terraform packaging stub (Artifact Registry only, deliberately **not** a Cloud Run Service resource — see §13.1: stdio doesn't cross a network boundary, so a Cloud Run Service resource here would validate cleanly while being undeployable) — `terraform validate` passed |
-| M6 | ⏳ Not started | `provider-search-agent`: real MCP client/host, Anthropic tool-use loop, groundedness eval suite | n/a — CLI tool; spawns the MCP server as a local child process |
+| M6 | ✅ Done (PR #45) | `provider-search-agent`: real MCP client/host, Anthropic tool-use loop, groundedness eval suite | n/a — CLI tool; spawns the MCP server as a local child process |
 | M7 | ⏳ Not started | `docker-compose` demo profile bundling all four new components; end-to-end local verification | **Root Terraform module** (`infra/terraform/`) composing the M2/M3 per-service stubs + `deploy-phase3.sh` + an executed cloud smoke test wired into CI (stub-target, no live spend) — the three items the callout above names explicitly, not left implied. `terraform validate`/`plan` across everything (still not applied) |
 
 **Verified, per milestone** (updated as each lands — see each PR for the full command output,
@@ -836,6 +851,28 @@ not just the claim):
   resource — see the milestone table's Cloud-readiness cell). Confirmed live (not assumed) that
   the installed `mcp` SDK already ships `sse`/`streamable_http`/`websocket` transport modules
   alongside `stdio` — Phase 3b's transport decision (§13.1) has real SDK support to build on.
+- **M6** (PR #45): full root `pytest` — **196 passed** (186 from M5 + 10 new: 7 tool-use-loop
+  unit tests with the Anthropic client and MCP session both mocked; 3 real groundedness-eval
+  tests making genuine, billed Claude API calls). Checked for filename collisions before
+  trusting the count (none). Self-skip confirmed for both prerequisites independently — no DB
+  and no LLM key both produce clean skips (162 passed, 34 skipped together). **The groundedness
+  eval is real, not simulated**: scripted NL queries run through the full real stack (real
+  Claude, real `provider-search-agent` tool-use loop, real `provider-mcp-server` subprocess,
+  real `provider-registry-service` subprocess, real Postgres), then every NPI the agent's final
+  answer mentions is independently re-fetched via `get_provider` and asserted real — including
+  a query with zero real matches, asserted to produce zero fabricated NPIs.
+  **Two real bugs found and fixed by actually running live queries, not just the scripted
+  eval set**: (1) Claude reliably serialized the `oneOf`-typed `location` parameter as a JSON
+  string instead of a native object on 12/12 consecutive attempts — fixed by flattening the
+  schema (decisions.md P17, §14 Risks). (2) Claude once transcribed `207RE0101X` as
+  `207RE0101` (dropped the trailing "X") copying a code between tool calls, which silently
+  produced a misleading zero-result response instead of an error — fixed by adding a
+  `^[0-9A-Z]{9}X$` pattern verified against all 883 real NUCC codes (decisions.md P19,
+  §14 Risks). Both confirmed fixed by re-running the exact real query that exposed them.
+  Manually verified end-to-end against the full 12,582-provider dataset: a real Montana query
+  correctly and honestly flagged the known `accepting_new_patients` data gap (never guessed);
+  a real Los Angeles query returned 10 real endocrinologists with correct lineage after the
+  taxonomy-code fix.
 
 ### 13.1 Phase 3b — GCP cloud deployment (future, out of scope here)
 
@@ -869,6 +906,25 @@ started:
 
 ## 14. Risks
 
+- **`oneOf`-typed nested-object tool parameters are unreliable with live LLM tool-calling** —
+  found real in M6, not hypothetical: Claude serialized a `oneOf`-typed `location` parameter
+  as a JSON string instead of a native object on 12/12 consecutive attempts, even after adding
+  an explicit `"type": "object"` hint. Fixed by flattening to optional fields + downstream
+  cross-field validation (decisions.md P17). Worth remembering for any future tool schema in
+  this project that's tempted to reach for `oneOf`/`anyOf` at the parameter level — prefer a
+  flat object with validation pushed to the deterministic service behind the tool.
+- **Unconstrained free-text-derived parameters can silently produce false negatives, not just
+  fabrication** — found real in M6's manual verification: Claude transcribed a taxonomy code
+  from one tool result into the next tool call with one character dropped
+  (`207RE0101X` → `207RE0101`). With no format constraint on `taxonomy_codes`, this didn't
+  error — it silently matched zero rows, and the agent correctly-but-misleadingly reported "no
+  providers found" for a specialty with 10 real matches at that location. Not a grounding
+  failure (nothing was fabricated), but a real usability/correctness gap worth naming
+  separately from the `oneOf` finding above. Fixed by adding a verified `^[0-9A-Z]{9}X$`
+  pattern (decisions.md P19) so a mistranscribed code becomes an explicit `validation_error`
+  the model can see and retry from. General lesson: any tool parameter the model fills in by
+  copying a value out of a prior tool result (not by reasoning from the user's request) is a
+  transcription-error risk — constrain its format wherever the real data has one.
 - **Test filenames must be repo-unique, not just per-package-unique** — found real in M4:
   `--import-mode=importlib` plus per-package `tests/__init__.py` means two identically-named
   test files in different packages (`claims-agent/tests/test_tools.py` and

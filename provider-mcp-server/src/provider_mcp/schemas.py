@@ -22,27 +22,23 @@ SEARCH_PROVIDERS_NEAR_SCHEMA = {
     "additionalProperties": False,
     "properties": {
         "location": {
-            "oneOf": [
-                {
-                    "type": "object",
-                    "required": ["zip"],
-                    "additionalProperties": False,
-                    "properties": {"zip": {"type": "string", "pattern": "^[0-9]{5}$"}},
-                },
-                {
-                    "type": "object",
-                    "required": ["lat", "lon"],
-                    "additionalProperties": False,
-                    "properties": {
-                        "lat": {"type": "number", "minimum": -90, "maximum": 90},
-                        "lon": {"type": "number", "minimum": -180, "maximum": 180},
-                    },
-                },
-            ]
+            "type": "object",
+            "additionalProperties": False,
+            "properties": {
+                "zip": {"type": "string", "pattern": "^[0-9]{5}$"},
+                "lat": {"type": "number", "minimum": -90, "maximum": 90},
+                "lon": {"type": "number", "minimum": -180, "maximum": 180},
+            },
         },
         "taxonomy_codes": {
             "type": "array",
-            "items": {"type": "string"},
+            # NUCC codes are 10 chars, alphanumeric, always ending in "X" -- verified
+            # against all 883 real codes in data/reference/providers/taxonomy_reference.csv,
+            # zero exceptions (design.md §14 Risks: found live in M6 that a model can
+            # mistranscribe a code from a prior tool result, e.g. drop the trailing "X" --
+            # this pattern turns that into an explicit validation_error instead of a
+            # silently misleading zero-results response).
+            "items": {"type": "string", "pattern": "^[0-9A-Z]{9}X$"},
             "minItems": 1,
             "maxItems": 10,
         },

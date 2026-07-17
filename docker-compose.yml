@@ -241,3 +241,25 @@ services:
         condition: service_healthy
     stdin_open: true
     tty: true
+
+  # ── Provider search agent (run-once CLI) ───────────────────────────────────
+  # Real MCP client/host (design.md §3.1, §8.2) -- spawns provider-mcp-server as a local
+  # child process over stdio; that server calls provider-registry over HTTP in turn.
+  # ANTHROPIC_API_KEY/CLAUDE_API_KEY is REQUIRED (decisions.md P18) -- unlike
+  # claims-agent/provider-curation-agent, this agent has no deterministic fallback since
+  # its whole job is natural-language decomposition.
+  provider-search-agent:
+    build:
+      context: .
+      dockerfile: provider-search-agent/Dockerfile
+    container_name: fhir-agent-provider-search-agent
+    profiles: ["phase3"]
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      CLAUDE_API_KEY: ${CLAUDE_API_KEY:-}
+      PROVIDER_REGISTRY_URL: http://provider-registry:8002
+    depends_on:
+      provider-registry:
+        condition: service_healthy
+    stdin_open: true
+    tty: true
