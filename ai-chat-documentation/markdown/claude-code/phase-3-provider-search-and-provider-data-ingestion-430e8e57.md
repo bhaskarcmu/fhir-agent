@@ -421,8 +421,23 @@ Both checks pass: default profile unchanged (`fhir`, `triage`, `mcp-agent`), and
 
 Now pushing and opening the PR:
 
+**M2 done. PR opened:** [github.com/bhaskarcmu/fhir-agent/pull/41](https://github.com/bhaskarcmu/fhir-agent/pull/41) — branch `feature/m2-provider-registry-service`, off updated `main`.
+
+**Housekeeping:** confirmed PR #40 merged, switched to `main`, pulled, deleted `docs/provider-search-design` (origin + local).
+
+**What's in PR #41** — `provider-registry-service`, the internal FastAPI service behind the future MCP server: taxonomy resolution (rapidfuzz + synonyms), `HaversineSqlLocationSearch` behind the `LocationSearchPort` interface, `get_provider` with the deactivated-record policy, the 5-class error taxonomy from `design.md` §8.4, and the rate-limit middleware named in §12.1. 34 tests, split so validation/taxonomy tests need no database at all and location/registry tests are DB-backed but self-skip when Postgres is unreachable.
+
+I didn't just write this and claim it works — I installed a real Postgres 16 in this environment and ran everything against it, which caught two genuine bugs a read-through wouldn't have:
+
+1. A psycopg3 type-inference crash on a nullable filter parameter (fixed with an explicit cast).
+2. Writing the Terraform stub and actually running `terraform validate` turned up that **Phase 2's own precedent stub doesn't validate either** (invalid HCL syntax in `rxclaim-emulator/infra/main.tf`) — an independent, accidental confirmation of the cloud-honesty finding from PR #40. I left Phase 2's file alone since it's out of scope here, but flagged it in the PR description for visibility.
+
+Full root `pytest` suite: 147 passed, nothing broken. `docker compose config` confirms the default stack is untouched and the new opt-in `phase3` profile is correctly scoped.
+
+**Next up once #41 is reviewed: M3** — NPPES ingestion for the pilot state (NC).
+
 <details>
-<summary>Execution details — 223 tool events</summary>
+<summary>Execution details — 226 tool events</summary>
 
 ### Turn 1 activity
 
@@ -744,6 +759,13 @@ feat(provider-registry): M2 — provider-registry-service (design.md §13)
 
 New internal-only FastAPI service implementing the deterministic core Pr…`
 - **Bash** `git push -u origin feature/m2-provider-registry-service`
+- **Bash** `cd /workspaces/fhir-agent
+gh pr create --title "feat(provider-registry): M2 — provider-registry-service" --body "$(cat <<'EOF'
+## Summary
+
+M2 of Phase 3 (design.md §13): `provider-registry-service`, t…`
+- **TodoWrite** `{"todos": [{"content": "Scaffold provider-registry-service package (pyproject, src layout)", "status": "completed", "activeForm": "Scaffolding provider-registry-service package"}, {"content": "Write s…`
+- **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase3-planning-state.md`
 
 </details>
 
@@ -754,6 +776,6 @@ New internal-only FastAPI service implementing the deterministic core Pr…`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 14:38 UTC
+- **Last updated:** 17 July 2026, 14:39 UTC
 - **Turns:** 8
 - **Status:** Incomplete
