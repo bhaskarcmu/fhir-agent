@@ -728,8 +728,12 @@ This is valuable enough to save as a durable memory too — applies to any futur
 
 Now let's re-seed and run the full groundedness eval suite to confirm all 3 pass with the fix:
 
+All 3 pass. Let's confirm self-skip behavior (no API key, no DB):
+
+Now let's manually verify the full agent against the real production dataset (12,582 providers), matching the M5 pattern:
+
 <details>
-<summary>Execution details — 545 tool events</summary>
+<summary>Execution details — 549 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1686,6 +1690,15 @@ ss -ltn 2>/dev/null | grep 8002 || echo "port 8002 free"`
 - **Bash** `cd /workspaces/fhir-agent
 TEST_DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›localhost:5432/provider_registry_test" \
   python3 -m pytest provider-search-agent/tests/test_groundedness…`
+- **Bash** `cd /workspaces/fhir-agent
+env -u ANTHROPIC_API_KEY -u CLAUDE_API_KEY python3 -m pytest provider-search-agent/tests/test_groundedness_eval.py -v --import-mode=importlib 2>&1 | tail -10
+echo "---no DB--…`
+- **TodoWrite** `{"todos": [{"content": "Verify MCP client env-inheritance behavior (done - safe-listed only)", "status": "completed", "activeForm": "Verifying MCP client env-inheritance behavior"}, {"content": "Scaff…`
+- **Bash** `export DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›localhost:5432/provider_registry"
+cd /workspaces/fhir-agent/provider-registry-service
+nohup python3 -m uvicorn provider_registry.m…`
+- **Bash** `cd /workspaces/fhir-agent
+python3 -m provider_search_agent --query "Find a family medicine doctor accepting new patients near ZIP 59601, Montana"`
 
 </details>
 
@@ -1696,6 +1709,6 @@ TEST_DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 15:52 UTC
+- **Last updated:** 17 July 2026, 15:53 UTC
 - **Turns:** 12
 - **Status:** Incomplete
