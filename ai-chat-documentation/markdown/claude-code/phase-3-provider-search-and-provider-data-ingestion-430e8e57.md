@@ -714,8 +714,10 @@ Found it exactly: Claude is passing `"location": '{"zip": "27514"}'` — a JSON-
 
 That didn't fix it either — even with the type hint, Claude still stringifies the nested object. This is a known class of LLM tool-calling quirk with `oneOf`-typed object parameters. Let me try a different fix: flatten the schema (drop `oneOf`, let the registry service's existing Pydantic validator handle the "exactly one of zip/lat-lon" cross-field rule, since it already does):
 
+This was the real fix — first try, clean native object, correct grounded results. Let's verify nothing else broke, and that the cross-field validation (exactly one of zip/lat-lon) still works via the registry service's existing Pydantic validator:
+
 <details>
-<summary>Execution details — 528 tool events</summary>
+<summary>Execution details — 531 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1642,6 +1644,17 @@ from provider_search_agent.agent import search
 async def main():
     result = await search('Find an endocrinologist near ZIP 27514', verbose=True…`
 - **Read** `/workspaces/fhir-agent/provider-mcp-server/src/provider_mcp/schemas.py`
+- **Edit** `/workspaces/fhir-agent/provider-mcp-server/src/provider_mcp/schemas.py`
+- **Bash** `cd /workspaces/fhir-agent
+python3 -c "
+import asyncio
+from provider_search_agent.agent import search
+
+async def main():
+    result = await search('Find an endocrinologist near ZIP 27514', verbose=True…`
+- **Bash** `cd /workspaces/fhir-agent
+TEST_DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›localhost:5432/provider_registry_test" \
+  python3 -m pytest provider-mcp-server/tests/ -v --import-mode=i…`
 
 </details>
 
@@ -1652,6 +1665,6 @@ async def main():
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 15:49 UTC
+- **Last updated:** 17 July 2026, 15:50 UTC
 - **Turns:** 12
 - **Status:** Incomplete
