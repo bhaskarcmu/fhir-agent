@@ -30,10 +30,10 @@
     "present": true,
     "raw_filename": "430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb.jsonl",
     "source_deleted_at": null,
-    "status": "complete",
+    "status": "incomplete",
     "title": "Phase 3 - provider search and provider data ingestion",
-    "turns": 4,
-    "updated_at": "2026-07-17T14:12:16.989000+00:00"
+    "turns": 5,
+    "updated_at": "2026-07-17T14:14:15.908000+00:00"
   },
   "49895199-bfa2-470d-ba8d-4bd7737fd12b": {
     "archived_at": "2026-07-14T17:34:06.474356+00:00",
