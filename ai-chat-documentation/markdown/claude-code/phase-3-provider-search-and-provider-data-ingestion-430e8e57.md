@@ -134,8 +134,22 @@ Answer the open questions yourself using best judgement. Then commit these docum
 
 Let me verify one factual item (Phase 2's actual internal service-to-service auth pattern) before finalizing, rather than guess.
 
+Verified: Phase 2 has **no application-layer auth on internal service-to-service calls** — trust is network-isolation only (`ingress=internal` + IAM invoker + VPC connector), confirmed in `HttpTriageClient.java:50-55`, `HttpLegacyClient.java:23-29`, `HapiFhirClient.java:24-31`, and `docs/phase2/plan.md:36-40,167-170`. I'll apply that same pattern rather than inventing new auth.
+
+Now updating both docs: resolving the open questions with rationale, and reworking the milestone plan to drop "Phase" labels internally while introducing **Milestone 3b** terminology... 
+
+Correction — updating the milestone plan so the GCP deployment step is called **Milestone 3b** per your naming.
+
+Now updating the non-goals, KPIs, and resolving the open questions section:
+
+Now the "Out of scope" and open-questions sections:
+
+Now replacing the open-questions section with resolved decisions:
+
+PRD is updated. Now the design doc — reworking the milestone plan and resolving its open questions.
+
 <details>
-<summary>Execution details — 17 tool events</summary>
+<summary>Execution details — 30 tool events</summary>
 
 ### Turn 1 activity
 
@@ -159,6 +173,19 @@ Let me verify one factual item (Phase 2's actual internal service-to-service aut
 - **Bash** `grep -rniE "internal.*auth|service.*token|x-internal|shared.*secret|api.?key" claims-service/ rxclaim-emulator/ docs/phase2/ 2>/dev/null | grep -viE "kong|key-auth.yaml|apikey header" | head -50`
 - **Bash** `grep -rniE "httpx|RestTemplate|WebClient|okhttp" claims-service/src/main/java --include=*.java -l 2>/dev/null | xargs -I{} sh -c 'echo ==={}===; grep -niE "header|auth|token" {}' 2>/dev/null | head -6…`
 - **Agent** `Verify Phase 2 internal service auth`
+- **Read** `/tmp/claude-1000/-workspaces-fhir-agent/430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb/scratchpad/phase3/prd.md`
+- **Edit** `/tmp/claude-1000/-workspaces-fhir-agent/430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb/scratchpad/phase3/prd.md`
+- **Edit** `/tmp/claude-1000/-workspaces-fhir-agent/430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb/scratchpad/phase3/prd.md`
+- **Edit** `/tmp/claude-1000/-workspaces-fhir-agent/430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb/scratchpad/phase3/prd.md`
+- **TodoWrite** `{"todos": [{"content": "Resolve open questions with best judgment in prd.md", "status": "in_progress", "activeForm": "Resolving open questions in prd.md"}, {"content": "Resolve open questions + rework…`
+- **Edit** `/tmp/claude-1000/-workspaces-fhir-agent/430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb/scratchpad/phase3/prd.md`
+- **Edit** `/tmp/claude-1000/-workspaces-fhir-agent/430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb/scratchpad/phase3/prd.md`
+- **Edit** `/tmp/claude-1000/-workspaces-fhir-agent/430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb/scratchpad/phase3/prd.md`
+- **Edit** `/tmp/claude-1000/-workspaces-fhir-agent/430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb/scratchpad/phase3/prd.md`
+- **Edit** `/tmp/claude-1000/-workspaces-fhir-agent/430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb/scratchpad/phase3/prd.md`
+- **Edit** `/tmp/claude-1000/-workspaces-fhir-agent/430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb/scratchpad/phase3/design.md`
+- **Edit** `/tmp/claude-1000/-workspaces-fhir-agent/430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb/scratchpad/phase3/design.md`
+- **TodoWrite** `{"todos": [{"content": "Resolve open questions with best judgment in prd.md", "status": "completed", "activeForm": "Resolving open questions in prd.md"}, {"content": "Resolve open questions + rework m…`
 
 </details>
 
@@ -169,6 +196,6 @@ Let me verify one factual item (Phase 2's actual internal service-to-service aut
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 13:38 UTC
+- **Last updated:** 17 July 2026, 13:41 UTC
 - **Turns:** 2
 - **Status:** Complete
