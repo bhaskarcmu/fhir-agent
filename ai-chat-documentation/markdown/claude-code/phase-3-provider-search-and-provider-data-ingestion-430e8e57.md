@@ -385,8 +385,42 @@ Now adding the docker-compose services. Let me view the tail of the file first t
 
 Let me add a startup hook to `main.py` that applies `schema.sql` automatically — mirroring how the Java services auto-run `schema.sql` via Spring Boot:
 
+Now let's write the Dockerfile, mirroring `triage-service/Dockerfile`'s style:
+
+Now appending the docker-compose services:
+
+Now let's actually install and run a local Postgres to prove the tests pass — not just assert they should:
+
+Good — matches the docker-compose `postgres:16-alpine` version. Installing:
+
+Postgres is running on 5432. Now creating the test role/database matching my `TEST_DATABASE_URL` default:
+
+Connection works. Now installing the Python package and running the test suite for real:
+
+Installed cleanly. Now running the test suite for real:
+
+Real bug caught by actually running against Postgres — psycopg3 can't infer the type of a `NULL` parameter compared against an `int` column. Fixing with an explicit cast:
+
+That's real-world geography, not a bug — Chapel Hill to Raleigh is ~25.1 miles, just outside the fixture's 25-mile test radius. Widening the test radius to be robust:
+
+Let's verify the "no-DB-needed" tests are genuinely independent, by running them in isolation with no `DATABASE_URL` set:
+
+Confirmed. Let me also verify the self-skip behavior by pointing `TEST_DATABASE_URL` at a port nothing is listening on:
+
+Both properties confirmed for real, not assumed. Now updating root `pytest.ini` and finalizing todos:
+
+Dockerfile is already done. Now the Terraform Cloud Run stub, modeled on `rxclaim-emulator/infra/main.tf`:
+
+Now let's actually run `terraform validate` — proving the stub is syntactically and semantically valid, not just claimed:
+
+That confirms it — even Phase 2's precedent stub doesn't pass `terraform validate` (same syntax bug). Won't touch Phase 2's file (out of scope), but I'll make sure mine actually validates, unlike the precedent. Fixing:
+
+Let's also validate the `docker-compose.yml` changes don't break anything and are syntactically correct (mirroring Phase 2's CI gate practice):
+
+Both checks pass: default profile unchanged (`fhir`, `triage`, `mcp-agent`), and the new `phase3` profile correctly adds `postgres` + `provider-registry`, with valid YAML throughout. Let's clean up the test artifact and finalize:
+
 <details>
-<summary>Execution details — 182 tool events</summary>
+<summary>Execution details — 221 tool events</summary>
 
 ### Turn 1 activity
 
@@ -639,6 +673,69 @@ ls /workspaces/fhir-agent/provider-registry-servic…`
 - **Bash** `wc -l /workspaces/fhir-agent/docker-compose.yml
 sed -n '170,260p' /workspaces/fhir-agent/docker-compose.yml`
 - **Read** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/main.py`
+- **Write** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/init_db.py`
+- **Write** `/workspaces/fhir-agent/provider-registry-service/Dockerfile`
+- **Read** `/workspaces/fhir-agent/docker-compose.yml`
+- **Edit** `/workspaces/fhir-agent/docker-compose.yml`
+- **Bash** `apt-cache policy postgresql 2>&1 | head -5`
+- **Bash** `sudo apt-get install -y postgresql postgresql-contrib 2>&1 | tail -15`
+- **Bash** `sudo service postgresql start 2>&1; sleep 2; sudo service postgresql status 2>&1; pg_lsclusters 2>&1`
+- **Bash** `sudo -u postgres psql -c "CREATE ROLE provider_registry WITH LOGIN PASSWORD 'provider_registry' SUPERUSER;" 2>&1
+sudo -u postgres psql -c "CREATE DATABASE provider_registry_test OWNER provider_registr…`
+- **Bash** `sudo -n true 2>&1 && echo OK || echo FAIL
+sudo -n -u postgres true 2>&1 && echo OK2 || echo FAIL2`
+- **Bash** `sudo -n -l 2>&1 | head -20`
+- **Bash** `sudo su postgres -c "psql -c \"CREATE ROLE provider_registry WITH LOGIN PASSWORD 'provider_registry' SUPERUSER;\"" 2>&1
+sudo su postgres -c "psql -c 'CREATE DATABASE provider_registry_test OWNER provi…`
+- **Bash** `PGPASSWORD=provider_registry psql -h localhost -U provider_registry -d provider_registry_test -c "SELECT 1;" 2>&1`
+- **Bash** `python3 -m pip install -e "provider-registry-service[dev]" 2>&1 | tail -30`
+- **Bash** `python3 -m pytest provider-registry-service/src/provider_registry/tests -v --import-mode=importlib 2>&1 | tail -80`
+- **Bash** `grep -n "entity_type)s" /workspaces/fhir-agent/provider-registry-service/src/provider_registry/location.py`
+- **Edit** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/location.py`
+- **Bash** `python3 -m pytest provider-registry-service/src/provider_registry/tests -v --import-mode=importlib 2>&1 | tail -60`
+- **Bash** `python3 -c "
+import math
+def haversine(lat1, lon1, lat2, lon2):
+    R = 3959
+    phi1, phi2 = math.radians(lat1), math.radians(lat2)
+    dphi = math.radians(lat2-lat1)
+    dlambda = math.radians(lon2-…`
+- **Bash** `grep -n "radius_miles=25" /workspaces/fhir-agent/provider-registry-service/src/provider_registry/tests/test_location_search.py`
+- **Read** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/tests/test_location_search.py`
+- **Edit** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/tests/test_location_search.py`
+- **Bash** `python3 -m pytest provider-registry-service/src/provider_registry/tests -v --import-mode=importlib 2>&1 | tail -45`
+- **Bash** `env -u DATABASE_URL -u TEST_DATABASE_URL python3 -m pytest provider-registry-service/src/provider_registry/tests/test_api_validation.py provider-registry-service/src/provider_registry/tests/test_taxon…`
+- **Bash** `TEST_DATABASE_URL="postgresql://x:‹redacted:url-credentials›localhost:59999/nope" python3 -m pytest provider-registry-service/src/provider_registry/tests/test_registry.py -v --import-mode=importlib 2>&1 | tail -15`
+- **TodoWrite** `{"todos": [{"content": "Scaffold provider-registry-service package (pyproject, src layout)", "status": "completed", "activeForm": "Scaffolding provider-registry-service package"}, {"content": "Write s…`
+- **Write** `/workspaces/fhir-agent/provider-registry-service/infra/main.tf`
+- **Bash** `cd /workspaces/fhir-agent/provider-registry-service/infra && terraform init -backend=false 2>&1 | tail -15`
+- **Bash** `cd /workspaces/fhir-agent/rxclaim-emulator/infra && terraform validate 2>&1 | head -20`
+- **Edit** `/workspaces/fhir-agent/provider-registry-service/infra/main.tf`
+- **Bash** `cd /workspaces/fhir-agent/provider-registry-service/infra && terraform init -backend=false 2>&1 | tail -10 && terraform validate 2>&1`
+- **Bash** `cd /workspaces/fhir-agent
+grep -n "terraform" .gitignore 2>/dev/null
+ls provider-registry-service/infra/
+rm -rf provider-registry-service/infra/.terraform provider-registry-service/infra/.terraform.lo…`
+- **Read** `/workspaces/fhir-agent/pytest.ini`
+- **Edit** `/workspaces/fhir-agent/pytest.ini`
+- **TodoWrite** `{"todos": [{"content": "Scaffold provider-registry-service package (pyproject, src layout)", "status": "completed", "activeForm": "Scaffolding provider-registry-service package"}, {"content": "Write s…`
+- **Bash** `python3 -m pytest 2>&1 | tail -40`
+- **Bash** `cd /workspaces/fhir-agent
+docker compose config --profile phase3 > /tmp/compose-phase3.out 2>&1; echo "exit: $?"
+tail -40 /tmp/compose-phase3.out
+echo "---default (no profile) unchanged check---"
+dock…`
+- **Bash** `docker compose version
+COMPOSE_PROFILES=phase3 docker compose config --services 2>&1
+echo "---full config check (syntax only)---"
+docker compose config -q 2>&1; echo "exit: $?"`
+- **Bash** `rm -f /tmp/compose-phase3.out
+cd /workspaces/fhir-agent
+find provider-registry-service -name "__pycache__" -o -name "*.egg-info" -o -name ".pytest_cache" | xargs rm -rf
+git status --short`
+- **Bash** `cd /workspaces/fhir-agent
+git add -A -- provider-registry-service docker-compose.yml pytest.ini
+git status`
 
 </details>
 
@@ -649,6 +746,6 @@ sed -n '170,260p' /workspaces/fhir-agent/docker-compose.yml`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 14:32 UTC
+- **Last updated:** 17 July 2026, 14:38 UTC
 - **Turns:** 8
 - **Status:** Incomplete
