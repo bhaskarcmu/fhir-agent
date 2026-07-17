@@ -476,8 +476,12 @@ Real, verified, working. Now `fetch_zcta_centroids.py`:
 
 Let's run it for real:
 
+Now running it for real against NC (the M3 pilot state):
+
+Excellent — 5,770 real, unique NC provider records in ~9 seconds. Let's inspect data quality before moving on:
+
 <details>
-<summary>Execution details — 288 tool events</summary>
+<summary>Execution details — 295 tool events</summary>
 
 ### Turn 1 activity
 
@@ -925,6 +929,33 @@ def check(term):
     q = urllib.parse.urlencode({'version': '2.1', 'state': 'NC', 'taxonomy_description': term, 'limit': 200, 'skip': 0})
     url…`
 - **TodoWrite** `{"todos": [{"content": "Update design.md milestone table: mark M1/M2 done with real verified results; resolve §6 diagram/prose inconsistency (direct DB writes)", "status": "completed", "activeForm": "…`
+- **Write** `/workspaces/fhir-agent/data/scripts/provider_ingest/fetch_nppes.py`
+- **Bash** `time python3 data/scripts/provider_ingest/fetch_nppes.py --state NC`
+- **Bash** `python3 -c "
+import json
+data = json.load(open('data/reference/providers/nppes_nc.json'))
+print('total:', len(data))
+print('entity_type counts:', {t: sum(1 for r in data if r['entity_type']==t) for t…`
+- **Bash** `python3 -c "
+import json, csv
+data = json.load(open('data/reference/providers/nppes_nc.json'))
+provider_codes = set(t['code'] for r in data for t in r['taxonomies'])
+ref_codes = set()
+with open('data/…`
+- **Bash** `python3 -c "
+import json, csv
+data = json.load(open('data/reference/providers/nppes_nc.json'))
+zip_centroids = set()
+with open('data/reference/providers/zip_centroids.csv') as f:
+    for row in csv.Di…`
+- **Bash** `python3 -c "
+import json
+data = json.load(open('data/reference/providers/nppes_nc.json'))
+unresolved_zips = set()
+for r in data:
+    z = r['addresses'][0]['zip5'] if r['addresses'] and r['addresses'][…`
+- **Bash** `grep "^27710," /tmp/zcta_work/2024_Gaz_zcta_national.txt 2>/dev/null || echo "27710 not in national Gazetteer centroids at all"
+grep "27710" /workspaces/fhir-agent/data/reference/providers/zip_centroi…`
 
 </details>
 
@@ -935,6 +966,6 @@ def check(term):
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 14:57 UTC
+- **Last updated:** 17 July 2026, 14:59 UTC
 - **Turns:** 9
 - **Status:** Incomplete
