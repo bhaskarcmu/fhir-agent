@@ -606,8 +606,10 @@ Now updating `README.md`'s canonical status:
 
 Now let's finalize — check status, clean caches, stage, commit:
 
+Now pushing and opening the PR:
+
 <details>
-<summary>Execution details — 412 tool events</summary>
+<summary>Execution details — 414 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1282,6 +1284,12 @@ git status --short`
 - **TodoWrite** `{"todos": [{"content": "Scaffold provider-curation-agent package (mirrors claims-agent structure)", "status": "completed", "activeForm": "Scaffolding provider-curation-agent package"}, {"content": "Wr…`
 - **Bash** `cd /workspaces/fhir-agent
 git add -A -- provider-curation-agent data/reference/providers/nppes_ca.json data/reference/providers/nppes_mt.json .ona/automations.yaml CLAUDE.md docker-compose.yml docs/ph…`
+- **Bash** `cd /workspaces/fhir-agent
+git commit -m "$(cat <<'EOF'
+feat(provider-curation-agent): M4 — AI run-summary agent + CA/MT expansion
+
+New provider-curation-agent/ package, deliberately mirroring claims-a…`
+- **Bash** `git push -u origin feature/m4-provider-curation-agent`
 
 </details>
 
@@ -1292,6 +1300,6 @@ git add -A -- provider-curation-agent data/reference/providers/nppes_ca.json dat
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 15:24 UTC
+- **Last updated:** 17 July 2026, 15:25 UTC
 - **Turns:** 10
 - **Status:** Incomplete
