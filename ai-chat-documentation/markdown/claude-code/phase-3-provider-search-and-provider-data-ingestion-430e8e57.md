@@ -766,8 +766,23 @@ Now `README.md`'s canonical status:
 
 Now let's stage, commit, and push:
 
+PR number matched (#45). Finalizing.
+
+**M6 done. PR opened:** [github.com/bhaskarcmu/fhir-agent/pull/45](https://github.com/bhaskarcmu/fhir-agent/pull/45) — branch `feature/m6-provider-search-agent`.
+
+This closes the protocol boundary the whole phase was built for: `provider-search-agent` discovers `provider-mcp-server`'s tools live via a real `tools/list` call, with no hardcoded schemas.
+
+Running real queries against the real stack (not just the scripted eval) surfaced two genuine bugs, both fixed and verified by re-running the exact queries that exposed them:
+
+1. **Live Claude reliably stringified a `oneOf`-typed parameter** — 12/12 consecutive failures on the same query, even after an explicit type hint. Fixed by flattening the schema. This was general enough that I saved it as a durable, repo-wide memory rather than just a Phase 3 note — it applies to any future tool schema, not just this one.
+2. **Claude once dropped a character transcribing a taxonomy code between tool calls**, which silently produced a misleading "no results" instead of an error. Fixed with a format constraint verified against all 883 real NUCC codes.
+
+Manual verification against the full 12,582-provider dataset held up well beyond the fixes too — a Montana query honestly flagged the known data gap rather than guessing, and a Los Angeles query returned correctly-grounded real physicians.
+
+Root `pytest`: **196 passed** (162 passed / 34 skipped when neither Postgres nor an LLM key is available — checked both independently). Next up once #45 merges: **M7**, the `docker-compose` demo profile — the last milestone before Phase 3b's cloud deployment.
+
 <details>
-<summary>Execution details — 592 tool events</summary>
+<summary>Execution details — 595 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1808,6 +1823,13 @@ feat(provider-search-agent): M6 — the real MCP client/host, protocol boundary 
 
 provider-search-agent is a genuine MCP client/host (desig…`
 - **Bash** `git push -u origin feature/m6-provider-search-agent`
+- **Bash** `cd /workspaces/fhir-agent
+gh pr create --title "feat(provider-search-agent): M6 — the real MCP client/host, protocol boundary complete" --body "$(cat <<'EOF'
+## Summary
+
+M6 of Phase 3 (design.md §13):…`
+- **TodoWrite** `{"todos": [{"content": "Verify MCP client env-inheritance behavior (done - safe-listed only)", "status": "completed", "activeForm": "Verifying MCP client env-inheritance behavior"}, {"content": "Scaff…`
+- **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase3-planning-state.md`
 
 </details>
 
@@ -1818,6 +1840,6 @@ provider-search-agent is a genuine MCP client/host (desig…`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 16:01 UTC
+- **Last updated:** 17 July 2026, 16:02 UTC
 - **Turns:** 12
 - **Status:** Incomplete
