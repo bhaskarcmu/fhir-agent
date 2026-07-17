@@ -584,8 +584,22 @@ Now let's run the full root pytest suite for the final real numbers:
 
 Something is very wrong here — the tests listed under `provider-curation-agent/tests/test_tools.py` are actually `claims-agent`'s test functions (`test_adjudicate_posts_to_claims_service_and_returns_decision`), not mine. This is a real module-collision bug hiding my actual tests. Investigating immediately before reporting any numbers:
 
+Found the root cause: `--import-mode=importlib` with `__init__.py`-based packages both named `tests` produces the *same* dotted module name (`tests.test_tools`) for both `claims-agent/tests/test_tools.py` and my new file — Python's `sys.modules` cache then silently serves the first one loaded for both. Let me check for any other collisions before fixing:
+
+Only one collision — my new `test_tools.py`. Renaming it to avoid the clash:
+
+Now let's clean caches and re-run the full suite to get accurate, non-duplicated numbers:
+
+Fixed — my real 7 tests now run correctly. Let's get the final full-suite count:
+
+Let's also verify the full-suite skip behavior when Postgres is unreachable, for completeness:
+
+Now updating `design.md`'s milestone table:
+
+Now appending M4's real results after M3's block:
+
 <details>
-<summary>Execution details — 388 tool events</summary>
+<summary>Execution details — 402 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1227,6 +1241,26 @@ find provider-curation-agent -name "__pycache__" -o -name "*.egg-info" -o -name 
 python3 -m pytest -v 2>&1 | tail -50`
 - **Bash** `cd /workspaces/fhir-agent
 python3 -m pytest -v 2>&1 | grep -E "test_tools\.py|test_missing_database_url|TestLatestRunReadback"`
+- **Bash** `cd /workspaces/fhir-agent
+find . -path ./node_modules -prune -o -name "test_*.py" -print 2>/dev/null | xargs -n1 basename | sort | uniq -c | sort -rn | awk '$1>1'`
+- **Bash** `git -C /workspaces/fhir-agent mv provider-curation-agent/tests/test_tools.py provider-curation-agent/tests/test_ingestion_tools.py 2>/dev/null || mv /workspaces/fhir-agent/provider-curation-agent/test…`
+- **Bash** `cd /workspaces/fhir-agent
+find . -name "__pycache__" -path "*/provider-curation-agent/*" -exec rm -rf {} + 2>/dev/null
+find . -name "__pycache__" -path "*/claims-agent/*" -exec rm -rf {} + 2>/dev/null…`
+- **Bash** `cd /workspaces/fhir-agent
+TEST_DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›localhost:5432/provider_registry_test" \
+  python3 -m pytest 2>&1 | tail -10`
+- **Bash** `cd /workspaces/fhir-agent
+TEST_DATABASE_URL="postgresql://x:‹redacted:url-credentials›localhost:59999/nope" python3 -m pytest 2>&1 | tail -6`
+- **TodoWrite** `{"todos": [{"content": "Scaffold provider-curation-agent package (mirrors claims-agent structure)", "status": "completed", "activeForm": "Scaffolding provider-curation-agent package"}, {"content": "Wr…`
+- **Bash** `grep -n "| M4 |" /workspaces/fhir-agent/docs/phase3/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Bash** `gh pr list --state all --limit 5 --json number,title 2>&1`
+- **Read** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Bash** `sed -n '789,801p' /workspaces/fhir-agent/docs/phase3/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
 
 </details>
 
@@ -1237,6 +1271,6 @@ python3 -m pytest -v 2>&1 | grep -E "test_tools\.py|test_missing_database_url|Te
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 15:21 UTC
+- **Last updated:** 17 July 2026, 15:23 UTC
 - **Turns:** 10
 - **Status:** Incomplete
