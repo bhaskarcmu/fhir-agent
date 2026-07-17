@@ -754,8 +754,20 @@ Now let's check for filename collisions and run the full suite:
 
 No collisions. Now running the full suite:
 
+196 passed = 186 + 10 new (7 unit tests + 3 real groundedness evals). Let's confirm self-skip for the full suite too:
+
+Now updating the docs with final M6 results.
+
+Next should be #45. Updating the milestone table:
+
+Now the "Verified, per milestone" block:
+
+Now `README.md`'s canonical status:
+
+Now let's stage, commit, and push:
+
 <details>
-<summary>Execution details — 575 tool events</summary>
+<summary>Execution details — 590 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1770,6 +1782,26 @@ echo "check complete"`
 - **Bash** `cd /workspaces/fhir-agent
 find provider-search-agent -name "__pycache__" -o -name "*.egg-info" -o -name ".pytest_cache" | xargs rm -rf
 TEST_DATABASE_URL="postgresql://provider_registry:provider_regist…`
+- **Bash** `cd /workspaces/fhir-agent
+env -u ANTHROPIC_API_KEY -u CLAUDE_API_KEY TEST_DATABASE_URL="postgresql://x:‹redacted:url-credentials›localhost:59999/nope" python3 -m pytest 2>&1 | tail -6`
+- **TodoWrite** `{"todos": [{"content": "Verify MCP client env-inheritance behavior (done - safe-listed only)", "status": "completed", "activeForm": "Verifying MCP client env-inheritance behavior"}, {"content": "Scaff…`
+- **Bash** `gh pr list --state all --limit 3 --json number,title 2>&1`
+- **Bash** `grep -n "| M6 |" /workspaces/fhir-agent/docs/phase3/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Bash** `grep -n "M5\*\* (PR #44)" /workspaces/fhir-agent/docs/phase3/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Bash** `sed -n '851,855p' /workspaces/fhir-agent/docs/phase3/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase3/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/README.md`
+- **Bash** `cd /workspaces/fhir-agent
+find provider-search-agent -name "__pycache__" -o -name "*.egg-info" -o -name ".pytest_cache" | xargs rm -rf
+git status --short`
+- **TodoWrite** `{"todos": [{"content": "Verify MCP client env-inheritance behavior (done - safe-listed only)", "status": "completed", "activeForm": "Verifying MCP client env-inheritance behavior"}, {"content": "Scaff…`
+- **Bash** `cd /workspaces/fhir-agent
+git add -A -- provider-search-agent provider-mcp-server/src/provider_mcp/schemas.py .ona/automations.yaml CLAUDE.md docker-compose.yml docs/phase3 pytest.ini
+git status --sho…`
 
 </details>
 
@@ -1780,6 +1812,6 @@ TEST_DATABASE_URL="postgresql://provider_registry:provider_regist…`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 15:58 UTC
+- **Last updated:** 17 July 2026, 16:01 UTC
 - **Turns:** 12
 - **Status:** Incomplete
