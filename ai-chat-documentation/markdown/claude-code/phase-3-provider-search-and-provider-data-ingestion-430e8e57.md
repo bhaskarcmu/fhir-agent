@@ -708,8 +708,10 @@ Fixing the warning — applying `asyncio` mark only to the actual async tests:
 
 Now the groundedness eval harness — the key milestone deliverable ("100% of NPIs in an agent transcript resolve via `get_provider`"):
 
+This is a genuinely interesting real result — not a crash, but the guardrail correctly refusing to fabricate when a tool call kept failing. Let me investigate exactly why `search_providers_near` failed, with verbose tracing:
+
 <details>
-<summary>Execution details — 521 tool events</summary>
+<summary>Execution details — 524 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1612,6 +1614,20 @@ python3 -m pytest provider-search-agent/tests/test_agent.py -v --import-mode=imp
 - **Bash** `cd /workspaces/fhir-agent
 TEST_DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›localhost:5432/provider_registry_test" \
   python3 -m pytest provider-search-agent/tests/test_groundedness…`
+- **Bash** `cd /workspaces/fhir-agent
+export DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›localhost:5432/provider_registry_test"
+export PROVIDER_REGISTRY_URL="http://127.0.0.1:8002"
+python3 -c "…`
+- **Bash** `cd /workspaces/fhir-agent/provider-registry-service
+DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›localhost:5432/provider_registry_test" \
+  nohup python3 -m uvicorn provider_registry…`
+- **Bash** `cd /workspaces/fhir-agent
+python3 -c "
+import asyncio
+from provider_search_agent.agent import search
+
+async def main():
+    result = await search('Find an endocrinologist near ZIP 27514', verbose=True…`
 
 </details>
 
@@ -1622,6 +1638,6 @@ TEST_DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 15:46 UTC
+- **Last updated:** 17 July 2026, 15:47 UTC
 - **Turns:** 12
 - **Status:** Incomplete
