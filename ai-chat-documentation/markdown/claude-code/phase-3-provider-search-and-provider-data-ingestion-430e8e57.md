@@ -480,8 +480,14 @@ Now running it for real against NC (the M3 pilot state):
 
 Excellent — 5,770 real, unique NC provider records in ~9 seconds. Let's inspect data quality before moving on:
 
+Found a real, valuable data-quality issue: 730 of the 5,770 records have their queried `state=NC` match a non-practice address (NPPES's `state` filter isn't scoped to the LOCATION address). Fixing this properly rather than just noting it:
+
+Now re-running with the fix:
+
+Now 5,040 real, all confirmed-NC-practice providers. Let's re-verify the resolve rate:
+
 <details>
-<summary>Execution details — 295 tool events</summary>
+<summary>Execution details — 301 tool events</summary>
 
 ### Turn 1 activity
 
@@ -956,6 +962,21 @@ for r in data:
     z = r['addresses'][0]['zip5'] if r['addresses'] and r['addresses'][…`
 - **Bash** `grep "^27710," /tmp/zcta_work/2024_Gaz_zcta_national.txt 2>/dev/null || echo "27710 not in national Gazetteer centroids at all"
 grep "27710" /workspaces/fhir-agent/data/reference/providers/zip_centroi…`
+- **Bash** `python3 -c "
+import json, csv
+data = json.load(open('/workspaces/fhir-agent/data/reference/providers/nppes_nc.json'))
+zip_centroids = {}
+with open('/workspaces/fhir-agent/data/reference/providers/zip_…`
+- **Read** `/workspaces/fhir-agent/data/scripts/provider_ingest/fetch_nppes.py`
+- **Edit** `/workspaces/fhir-agent/data/scripts/provider_ingest/fetch_nppes.py`
+- **Edit** `/workspaces/fhir-agent/data/scripts/provider_ingest/fetch_nppes.py`
+- **Bash** `time python3 data/scripts/provider_ingest/fetch_nppes.py --state NC 2>&1 | tail -15`
+- **Bash** `python3 -c "
+import json, csv
+data = json.load(open('data/reference/providers/nppes_nc.json'))
+zip_centroids = set()
+with open('data/reference/providers/zip_centroids.csv') as f:
+    for row in csv.Di…`
 
 </details>
 
@@ -966,6 +987,6 @@ grep "27710" /workspaces/fhir-agent/data/reference/providers/zip_centroi…`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 14:59 UTC
+- **Last updated:** 17 July 2026, 15:00 UTC
 - **Turns:** 9
 - **Status:** Incomplete
