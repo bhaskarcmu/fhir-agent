@@ -486,8 +486,14 @@ Now re-running with the fix:
 
 Now 5,040 real, all confirmed-NC-practice providers. Let's re-verify the resolve rate:
 
+Now `run_ingestion.py` — the deterministic ETL:
+
+Now let's actually run the ingestion end-to-end against the real local Postgres `provider_registry` dev database:
+
+Idempotency confirmed. Now let's verify end-to-end through `provider-registry-service` itself with a real search query:
+
 <details>
-<summary>Execution details — 301 tool events</summary>
+<summary>Execution details — 307 tool events</summary>
 
 ### Turn 1 activity
 
@@ -977,6 +983,17 @@ data = json.load(open('data/reference/providers/nppes_nc.json'))
 zip_centroids = set()
 with open('data/reference/providers/zip_centroids.csv') as f:
     for row in csv.Di…`
+- **Write** `/workspaces/fhir-agent/data/scripts/provider_ingest/run_ingestion.py`
+- **TodoWrite** `{"todos": [{"content": "Update design.md milestone table: mark M1/M2 done with real verified results; resolve §6 diagram/prose inconsistency (direct DB writes)", "status": "completed", "activeForm": "…`
+- **Bash** `export DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›localhost:5432/provider_registry"
+time python3 data/scripts/provider_ingest/run_ingestion.py --states NC 2>&1 | tail -30`
+- **Bash** `export DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›localhost:5432/provider_registry"
+python3 data/scripts/provider_ingest/run_ingestion.py --states NC 2>&1 | tail -10`
+- **Bash** `export DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›localhost:5432/provider_registry"
+cd /workspaces/fhir-agent/provider-registry-service
+nohup python3 -m uvicorn provider_registry.m…`
+- **Bash** `echo "=== resolve_specialty: endocrinologist ==="
+curl -s -X POST http://127.0.0.1:8002/v1/taxonomy/resolve -H "Content-Type: application/json" -d '{"query": "endocrinologist"}' | python3 -m json.tool…`
 
 </details>
 
@@ -987,6 +1004,6 @@ with open('data/reference/providers/zip_centroids.csv') as f:
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 15:00 UTC
+- **Last updated:** 17 July 2026, 15:02 UTC
 - **Turns:** 9
 - **Status:** Incomplete
