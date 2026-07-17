@@ -572,8 +572,18 @@ Tests pass and self-skip correctly. Now let's actually run the agent for real to
 
 Now let's test the real LLM narration path (I have `CLAUDE_API_KEY` available):
 
+Now updating the todo list and adding the docker-compose service:
+
+That's the end of the file. Appending the curation agent service:
+
+Now validating the compose config:
+
+Now updating `pytest.ini`, `.ona/automations.yaml`, and `CLAUDE.md` for the new package:
+
+Now let's run the full root pytest suite for the final real numbers:
+
 <details>
-<summary>Execution details — 376 tool events</summary>
+<summary>Execution details — 387 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1196,6 +1206,23 @@ cd /workspaces/fhir-agent
 time python3 -m provider_curation_agent --states NC,CA,MT 2>&1`
 - **Bash** `ls /workspaces/fhir-agent/claims-agent/Dockerfile 2>&1
 cat /workspaces/fhir-agent/claims-agent/Dockerfile 2>/dev/null`
+- **Write** `/workspaces/fhir-agent/provider-curation-agent/Dockerfile`
+- **TodoWrite** `{"todos": [{"content": "Scaffold provider-curation-agent package (mirrors claims-agent structure)", "status": "completed", "activeForm": "Scaffolding provider-curation-agent package"}, {"content": "Wr…`
+- **Bash** `grep -n "provider-registry:" -A 20 /workspaces/fhir-agent/docker-compose.yml | tail -20`
+- **Read** `/workspaces/fhir-agent/docker-compose.yml`
+- **Edit** `/workspaces/fhir-agent/docker-compose.yml`
+- **Bash** `cd /workspaces/fhir-agent
+docker compose config -q 2>&1; echo "exit: $?"
+COMPOSE_PROFILES=phase3 docker compose config --services 2>&1
+echo "---default unchanged check---"
+docker compose config --serv…`
+- **TodoWrite** `{"todos": [{"content": "Scaffold provider-curation-agent package (mirrors claims-agent structure)", "status": "completed", "activeForm": "Scaffolding provider-curation-agent package"}, {"content": "Wr…`
+- **Edit** `/workspaces/fhir-agent/pytest.ini`
+- **Edit** `/workspaces/fhir-agent/.ona/automations.yaml`
+- **Edit** `/workspaces/fhir-agent/CLAUDE.md`
+- **Bash** `cd /workspaces/fhir-agent
+find provider-curation-agent -name "__pycache__" -o -name "*.egg-info" -o -name ".pytest_cache" | xargs rm -rf
+python3 -m pytest -v 2>&1 | tail -50`
 
 </details>
 
@@ -1206,6 +1233,6 @@ cat /workspaces/fhir-agent/claims-agent/Dockerfile 2>/dev/null`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 15:19 UTC
+- **Last updated:** 17 July 2026, 15:21 UTC
 - **Turns:** 10
 - **Status:** Incomplete
