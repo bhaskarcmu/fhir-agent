@@ -456,8 +456,10 @@ Confirmed real and reachable. Now the NUCC taxonomy CSV:
 
 NUCC confirmed and downloaded (884 rows, clean CSV). Now verifying the NPPES API's real behavior — pagination, response shape, and whether it actually needs `curl` (bot-blocked) like other CMS pages:
 
+Let's start with the documentation updates the user specifically asked me to prioritize. First, `design.md`'s milestone table and the §6 diagram/prose inconsistency I need to resolve:
+
 <details>
-<summary>Execution details — 247 tool events</summary>
+<summary>Execution details — 252 tool events</summary>
 
 ### Turn 1 activity
 
@@ -838,6 +840,11 @@ echo "---try known likely-deactivated test NPI from NPPES docs (1234567893 is th
 echo "---check for requirements files---"
 find /workspaces/fhir-agent/data -iname "requirements*.txt" -o -iname "pyproject.toml" 2>/dev/null
 echo "…`
+- **Bash** `cat /workspaces/fhir-agent/.ona/automations.yaml 2>/dev/null`
+- **Bash** `git checkout -b feature/m3-nppes-ingestion`
+- **TodoWrite** `{"todos": [{"content": "Update design.md milestone table: mark M1/M2 done with real verified results; resolve §6 diagram/prose inconsistency (direct DB writes)", "status": "in_progress", "activeForm":…`
+- **Bash** `grep -n "^## 6\|^## 13\|calls provider-registry-service upsert" /workspaces/fhir-agent/docs/phase3/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase3/design.md`
 
 </details>
 
@@ -848,6 +855,6 @@ echo "…`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 17 July 2026, 14:49 UTC
+- **Last updated:** 17 July 2026, 14:50 UTC
 - **Turns:** 9
 - **Status:** Incomplete
