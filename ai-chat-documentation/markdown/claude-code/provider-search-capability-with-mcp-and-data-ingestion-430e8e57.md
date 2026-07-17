@@ -1,0 +1,110 @@
+# Provider search capability with MCP and data ingestion
+
+## Turn 1
+
+### Prompt
+
+You are my senior staff engineer / architect pair. We are extending an existing healthcare data platform with a new capability. Work in brainstorming mode first, then produce a draft PRD and a design proposal. Ask me clarifying questions before finalizing anything you're unsure about — do not silently assume.
+
+## Context: the existing platform (what's already built)
+
+Existing repo (github.com/bhaskarcmu/fhir-agent): a FHIR-based healthcare data platform. Prior phases established:
+- A FHIR interoperability/audit layer (HAPI FHIR JPA), synthetic patient data (Synthea), Postgres/Neon backing store.
+- A polyglot services layer: Spring Boot (Java) for domain/façade services, Python/FastAPI for agents and clinical-decision/triage services.
+- A Kong API gateway fronting edge routes; internal/legacy services never exposed on the edge.
+- Patterns already in use: API Façade, Anti-Corruption Layer (ACL), Strangler-Fig, contract-first APIs, 12-factor services, PHI-safe-by-default, observability/SLOs, ADRs.
+- GKE for orchestration.
+- Note: the platform has previously used lightweight, in-process "agent tool" wiring. This phase is my FIRST real Model Context Protocol (MCP) server — build it fresh as a genuine MCP server; do not assume an existing MCP server to extend.
+
+## Goal of this phase (Phase 3): Provider Search
+
+Build a Provider Search capability that finds real-world healthcare providers matching a clinical need. Given (a) a patient location (or arbitrary geographic point), (b) a required specialty, and optionally (c) filters like accepting-new-patients and distance radius, return a ranked list of appropriate providers with the data needed to act on a referral.
+
+**Critical constraint:** Build on AUTHENTIC, PUBLICLY AVAILABLE provider data — NOT a paid third-party aggregator API. We own ingestion, normalization, matching, and ranking ourselves. Part of the value is demonstrating that a first-party provider-search service can replace a black-box commercial API.
+
+## Two agents to design (first-class)
+
+Introduce TWO agents plus the deterministic services they orchestrate. Propose the cleanest split; my initial thinking:
+
+1. **Provider Search / Referral agent** — takes a natural-language or structured clinical request ("find an endocrinologist within 15 miles of this ZIP who is accepting new patients"), decomposes it, calls deterministic tools (specialty resolution, location lookup, ranking) over MCP, and returns an explained, ranked result set with rationale. The agent orchestrates; it must NEVER invent provider facts — every returned provider must trace to a real ingested record.
+
+2. **Provider Data Ingestion / Curation agent** — an agent (or agentic pipeline) that ingests, normalizes, deduplicates, and reconciles provider records from multiple authoritative public sources into a canonical registry. AI helps with: fuzzy entity resolution across sources, specialty-taxonomy normalization, flagging stale/conflicting records, summarizing change events. Deterministic where it must be: identity keys, the golden-record merge rules, any coordinate assignment.
+
+For each agent specify: purpose, tools/functions it can call (all human-defined and traceable), inputs/outputs, guardrails (what it must never do), and how it stays grounded in real data.
+
+## Underlying services (deterministic core)
+
+Propose the services. Starting hypotheses (challenge/refine):
+
+- **Provider Registry service** — canonical store + golden records. Explore a diversified/polyglot persistence approach: relational (Postgres) for the authoritative golden record and lineage; a NoSQL/document or search-optimized store for high-cardinality, key-based directory reads (i.e., fetching individual provider records by unique identifier at volume); evaluate whether a graph store (Neo4j) is justified for provider↔organization↔location↔network relationships. Give trade-offs AND a recommendation.
+
+- **Specialty / Taxonomy service** — resolve and normalize specialties using the real NUCC Health Care Provider Taxonomy code set (the standard used with NPI). Map free-text clinical need → taxonomy codes.
+
+- **Location / Geospatial Search service — KEEP THIS DELIBERATELY SIMPLE FOR NOW.** Do NOT design PostGIS, Elasticsearch geo, or geohashing infrastructure yet. Instead:
+  - Pre-load a largish lookup dataset: real provider records (from NPPES) whose practice addresses have pre-computed lat/long stored as plain columns, plus a ZIP-centroid reference table (public ZIP→lat/long) so we can resolve an input ZIP to a coordinate.
+  - Implement proximity as a straightforward stub: compute great-circle (haversine) distance in application code (or a simple SQL expression) between the input coordinate and candidate providers, filter by radius, sort ascending, return nearest-N. A naive full-or-filtered scan over the pre-loaded table is FINE at this stage — correctness and a clean interface matter more than performance.
+  - Design it behind a clean, swappable interface (a LocationSearch port with a well-defined contract) so a production-grade geospatial engine can replace the stub later WITHOUT changing callers. Call out explicitly that this is a stub and note what the future real implementation would be.
+
+- **Ingestion / ETL pipeline** — how we load and refresh the registry (and the pre-computed coordinates). Batch/scheduled is fine now; note where incremental/CDC would fit later.
+
+## Non-functional / learning requirement: a REAL MCP server (must-have, zero-cost)
+
+For learning purposes, this phase MUST use an actual, hand-built Model Context Protocol (MCP) server — not a simulated or in-process stand-in. This is my first MCP server. Constraints and intent:
+
+- **Real protocol, hand-built, free.** Implement a genuine MCP server using the open-source MCP SDK (Python or TypeScript). It must implement the real MCP handshake and lifecycle (initialize, tools/list, tools/call) so it could be registered with any compliant MCP client (Claude Desktop, an IDE, or our own client). No paid services, no hosted/managed MCP product — a simple locally-runnable server (stdio transport is fine; HTTP/SSE optional) is exactly what I want.
+
+- **What the MCP server exposes:** the deterministic Phase 3 tools as MCP tools, each with a clear input/output schema and description — at minimum:
+  - `resolve_specialty` (free-text clinical need → NUCC taxonomy code[s])
+  - `search_providers_near` (coordinate/ZIP + specialty + filters → ranked nearest-N provider records from the registry, using the simple haversine stub)
+  - `get_provider` (fetch a full provider record by NPI, with lineage)
+  Optionally expose provider reference data as MCP *resources*.
+
+- **How the agent uses it:** the Provider Search / Referral agent must act as a real MCP *client/host* — connect to the MCP server, discover tools via tools/list, and invoke them via tools/call. It must NOT call the underlying services through in-process function calls that bypass the protocol; the MCP boundary is the point of the exercise. Show the transport and the tool-discovery/invocation flow in the design.
+
+- **Boundaries & guardrails:** the MCP server is internal-only (never on the Kong edge), returns only traceable, real ingested records, and enforces PHI-safe-by-default. Keep it simple enough to run locally and hand-build; call out clearly which piece is the MCP server, which is the MCP client/host, and where the protocol boundary sits.
+
+Reflect this in both the PRD (as an explicit NFR) and the design proposal (show the MCP server component, its tool contracts, the transport, and the client/host wiring in the architecture diagram).
+
+## Authoritative public data sources — research and propose the best set
+
+Identify and evaluate REAL, publicly available, authoritative U.S. provider data sources; recommend which to use and how to combine. At minimum consider:
+- **NPPES / NPI Registry** (CMS) — foundational public provider dataset (NPI, name, taxonomy, practice address); has a bulk downloadable file and an API.
+- **NUCC Health Care Provider Taxonomy** — specialty normalization.
+- **A public ZIP-code → lat/long dataset** and/or the **US Census Geocoder** — to get coordinates for input locations and to pre-compute provider coordinates for the stub.
+- Any other authoritative public sources you know of (CMS provider files, state licensing boards).
+For each: what it provides, format/access (bulk vs API), update cadence, key fields, gotchas, and fit to the golden-record model. Be accurate about what these actually contain; if unsure about current availability/schema, say so and mark it "to verify."
+
+## What to produce
+
+In this order:
+
+1. **Clarifying questions** — ask anything material before designing (scale targets, latency expectations, freshness/batch cadence, whether commercial/plan-specific network data is in scope or just public data, dataset size for the stub, MCP SDK language preference, etc.).
+
+2. **Draft PRD** — problem statement, goals & non-goals, users & use cases, functional requirements, non-functional requirements (scale, latency, freshness, availability, PHI/PII handling, compliance posture, AND the real-MCP-server learning requirement), success metrics/KPIs, explicit out-of-scope (note that eligibility determination is a FUTURE phase, not this one).
+
+3. **Design proposal** — target architecture with a text/ASCII component diagram; the two agents and their tool contracts; the deterministic services; the data model and persistence choices (polyglot trade-off analysis + clear recommendation); the ingestion pipeline; the specialty-matching + simple-proximity + ranking approach; the swappable LocationSearch stub interface (with a note on the future real engine); the hand-built MCP server (component, tool contracts, transport, client/host wiring); how it plugs into the existing Kong/FHIR/GKE platform; how existing patterns (Façade, ACL, Strangler-Fig, contract-first) apply; key API contracts (sketch main endpoints/schemas); agent guardrails/grounding; observability/SLOs; security/compliance; and a phased build/rollout sequence with risks and open questions.
+
+## Ground rules
+- Contract-first and PHI-safe-by-default, consistent with the existing platform.
+- Agents orchestrate deterministic, human-authored tools over a real MCP boundary; agents must NEVER fabricate provider facts — every provider in a result must trace to a real ingested record with lineage.
+- Prefer authentic public data for the provider registry (synthetic patients are fine on the "requesting" side).
+- Geospatial: simple haversine-over-preloaded-data stub now, clean swappable interface for later. Don't over-engineer it.
+- MCP: real, hand-built, free, locally-runnable; the agent connects as a genuine MCP client. Don't bypass the protocol.
+- Be opinionated: where there's a choice, recommend and justify. Flag uncertainties rather than guessing.
+
+Start by asking me your clarifying questions.
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
+---
+
+## Archive metadata
+
+- **Source:** Claude Code
+- **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
+- **Created:** 17 July 2026, 13:05 UTC
+- **Last updated:** 17 July 2026, 13:05 UTC
+- **Turns:** 1
+- **Status:** Incomplete
