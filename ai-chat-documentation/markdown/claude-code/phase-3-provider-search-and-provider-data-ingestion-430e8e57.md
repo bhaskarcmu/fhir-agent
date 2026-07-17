@@ -582,8 +582,10 @@ Now updating `pytest.ini`, `.ona/automations.yaml`, and `CLAUDE.md` for the new 
 
 Now let's run the full root pytest suite for the final real numbers:
 
+Something is very wrong here — the tests listed under `provider-curation-agent/tests/test_tools.py` are actually `claims-agent`'s test functions (`test_adjudicate_posts_to_claims_service_and_returns_decision`), not mine. This is a real module-collision bug hiding my actual tests. Investigating immediately before reporting any numbers:
+
 <details>
-<summary>Execution details — 387 tool events</summary>
+<summary>Execution details — 388 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1223,6 +1225,8 @@ docker compose config --serv…`
 - **Bash** `cd /workspaces/fhir-agent
 find provider-curation-agent -name "__pycache__" -o -name "*.egg-info" -o -name ".pytest_cache" | xargs rm -rf
 python3 -m pytest -v 2>&1 | tail -50`
+- **Bash** `cd /workspaces/fhir-agent
+python3 -m pytest -v 2>&1 | grep -E "test_tools\.py|test_missing_database_url|TestLatestRunReadback"`
 
 </details>
 
