@@ -805,8 +805,10 @@ Now let's validate the root module:
 
 Good, both root and child modules validate. Now `deploy-phase3.sh`:
 
+Clean — zero shellcheck issues (matching the existing `deploy.sh`'s clean bill too). Now the CI jobs:
+
 <details>
-<summary>Execution details — 622 tool events</summary>
+<summary>Execution details — 628 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1904,6 +1906,15 @@ echo "cleaned"`
 rm -rf .terraform .terraform.lock.hcl`
 - **TodoWrite** `{"todos": [{"content": "Build root Terraform module composing the 3 per-service stubs + shared Artifact Registry + Secret Manager + IAM wiring", "status": "completed", "activeForm": "Building the root…`
 - **Bash** `head -40 /workspaces/fhir-agent/deploy.sh 2>/dev/null`
+- **Write** `/workspaces/fhir-agent/deploy-phase3.sh`
+- **Bash** `bash -n /workspaces/fhir-agent/deploy-phase3.sh && echo "syntax OK"
+which shellcheck 2>/dev/null && shellcheck /workspaces/fhir-agent/deploy-phase3.sh || echo "shellcheck not installed, skipping deepe…`
+- **Bash** `sudo apt-get install -y shellcheck 2>&1 | tail -5`
+- **Bash** `shellcheck /workspaces/fhir-agent/deploy-phase3.sh
+echo "---also check deploy.sh for comparison (existing, merged file)---"
+shellcheck /workspaces/fhir-agent/deploy.sh 2>&1 | head -20`
+- **TodoWrite** `{"todos": [{"content": "Build root Terraform module composing the 3 per-service stubs + shared Artifact Registry + Secret Manager + IAM wiring", "status": "completed", "activeForm": "Building the root…`
+- **Read** `/workspaces/fhir-agent/.github/workflows/tests.yml`
 
 </details>
 
@@ -1914,6 +1925,6 @@ rm -rf .terraform .terraform.lock.hcl`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 18 July 2026, 11:20 UTC
+- **Last updated:** 18 July 2026, 11:21 UTC
 - **Turns:** 13
 - **Status:** Incomplete
