@@ -1057,8 +1057,30 @@ Now I have everything needed. Let me write the developer-guide.md extensions.
 
 Now the repo map table, boundaries, invariants, local dev loop, traps, and "adding things" sections.
 
+Now the invariants section:
+
+Now the local dev loop and traps sections:
+
+Good — my earlier edit matches root README's actual commands closely enough, but let me align it precisely (root README uses compose `run` for the curation agent seeding, not a direct python script call, and the search-agent call goes through compose too). Let me fix the local dev loop snippet for consistency.
+
+Now update the ports line and add the traps section content:
+
+Now the traps section — this is the highest-value addition, using the real bugs found during M2–M7:
+
+Now "Adding things" — add a Phase 3 entry, and "Where to continue" — add a Phase 3b pointer:
+
+developer-guide.md is done. Now on to `testing-guide.md`.
+
+Now §3 (what is tested) — add a Phase 3 Python table and update CI description:
+
+Now §4 (what is not tested) — add Phase 3 gaps:
+
+Now add Phase 3 traps to §7:
+
+testing-guide.md is done. Now `demo-guide.md`.
+
 <details>
-<summary>Execution details — 749 tool events</summary>
+<summary>Execution details — 770 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2414,6 +2436,27 @@ git checkout -b docs/phase3-documentation-pass`
 - **Edit** `/workspaces/fhir-agent/docs/developer-guide.md`
 - **Edit** `/workspaces/fhir-agent/docs/developer-guide.md`
 - **Edit** `/workspaces/fhir-agent/docs/developer-guide.md`
+- **Edit** `/workspaces/fhir-agent/docs/developer-guide.md`
+- **Edit** `/workspaces/fhir-agent/docs/developer-guide.md`
+- **Bash** `grep -n "phase3\|Phase 3" /workspaces/fhir-agent/README.md | head -80`
+- **Read** `/workspaces/fhir-agent/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/developer-guide.md`
+- **Edit** `/workspaces/fhir-agent/docs/developer-guide.md`
+- **Edit** `/workspaces/fhir-agent/docs/developer-guide.md`
+- **Edit** `/workspaces/fhir-agent/docs/developer-guide.md`
+- **Edit** `/workspaces/fhir-agent/docs/developer-guide.md`
+- **Read** `/workspaces/fhir-agent/docs/testing-guide.md`
+- **Bash** `grep -n "tests\?\b" docs/phase3/design.md | grep -iE "pass|test.*[0-9]+|[0-9]+ test" | head -60`
+- **Bash** `sed -n '810,900p' docs/phase3/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/testing-guide.md`
+- **TodoWrite** `{"todos": [{"content": "Read reference package READMEs (claims-agent, triage-service, rxclaim-emulator) for style", "status": "completed", "activeForm": "Reading reference package READMEs"}, {"content…`
+- **Edit** `/workspaces/fhir-agent/docs/testing-guide.md`
+- **Edit** `/workspaces/fhir-agent/docs/testing-guide.md`
+- **Edit** `/workspaces/fhir-agent/docs/testing-guide.md`
+- **Edit** `/workspaces/fhir-agent/docs/testing-guide.md`
+- **Edit** `/workspaces/fhir-agent/docs/testing-guide.md`
+- **Read** `/workspaces/fhir-agent/docs/demo-guide.md`
+- **Edit** `/workspaces/fhir-agent/docs/demo-guide.md`
 
 </details>
 
@@ -2424,6 +2467,6 @@ git checkout -b docs/phase3-documentation-pass`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 18 July 2026, 11:59 UTC
+- **Last updated:** 18 July 2026, 12:02 UTC
 - **Turns:** 15
 - **Status:** Incomplete
