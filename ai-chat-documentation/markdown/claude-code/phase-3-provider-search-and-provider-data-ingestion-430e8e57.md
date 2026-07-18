@@ -839,8 +839,10 @@ Now `README.md`'s final canonical status — all 7 milestones done:
 
 Clean. Let's do a final full pytest run and terraform validate sweep before committing:
 
+All four validate cleanly. Now staging, committing, and pushing:
+
 <details>
-<summary>Execution details — 687 tool events</summary>
+<summary>Execution details — 691 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2084,6 +2086,15 @@ echo "=== filename collisions ==="
 find . -name "test_*.py" | xargs -n1 basename | sort | uniq -c | awk '$1>1'
 echo "=== pytest ==="
 TEST_DATABASE_URL="postgresql://provider_…`
+- **Bash** `cd /workspaces/fhir-agent
+for dir in infra/terraform provider-registry-service/infra provider-mcp-server/infra data/scripts/provider_ingest/infra; do
+  echo "=== $dir ==="
+  (cd "$dir" && terraform in…`
+- **TodoWrite** `{"todos": [{"content": "Build root Terraform module composing the 3 per-service stubs + shared Artifact Registry + Secret Manager + IAM wiring", "status": "completed", "activeForm": "Building the root…`
+- **Bash** `cd /workspaces/fhir-agent
+git add -A -- infra deploy-phase3.sh provider-mcp-server/infra .github/workflows/tests.yml docs/phase3
+git status --short`
+- **Bash** `git diff --cached --summary | grep deploy-phase3`
 
 </details>
 
@@ -2094,6 +2105,6 @@ TEST_DATABASE_URL="postgresql://provider_…`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 18 July 2026, 11:35 UTC
+- **Last updated:** 18 July 2026, 11:36 UTC
 - **Turns:** 13
 - **Status:** Incomplete
