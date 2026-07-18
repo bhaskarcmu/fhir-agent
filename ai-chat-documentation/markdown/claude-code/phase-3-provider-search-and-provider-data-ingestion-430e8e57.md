@@ -823,8 +823,12 @@ That works reliably. The earlier issue was purely `docker compose run`'s output-
 
 Real, correct, working — through the actual shipped Docker image. Now verifying `provider-search-agent`'s Docker image (this one spawns `provider-mcp-server` as an internal child process, so it's the most complex to get right):
 
+Complete, correct, real end-to-end verification through the actual shipped Docker images — the search agent's container spawned `provider-mcp-server` internally, reached `provider-registry` over the real Docker network, and returned 10 correctly-grounded real providers. Cleaning up now.
+
+That also tore down the pre-existing `fhir` service (unrelated to my testing, running from before this session). Restoring it and native Postgres:
+
 <details>
-<summary>Execution details — 658 tool events</summary>
+<summary>Execution details — 662 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2020,6 +2024,19 @@ COMPOSE_PROFILES=phase3 docker compose build provider-search-agent 2>&1 | tail -
 docker ps -a --filter name=search_real --format "{{.Status}}"
 echo "---logs---"
 docker logs search_real 2>&1`
+- **Bash** `sleep 15
+docker ps -a --filter name=search_real --format "{{.Status}}"
+echo "---logs---"
+docker logs search_real 2>&1`
+- **Bash** `docker rm -f search_real 2>&1
+cd /workspaces/fhir-agent
+COMPOSE_PROFILES=phase3 docker compose down 2>&1 | tail -10`
+- **Bash** `cd /workspaces/fhir-agent
+docker compose up -d fhir 2>&1 | tail -10
+sudo service postgresql start 2>&1`
+- **Bash** `sleep 15
+curl -sf http://localhost:8080/fhir/metadata > /dev/null && echo "fhir server healthy" || echo "fhir server still starting"
+pg_isready -h localhost -p 5432 2>&1`
 
 </details>
 
@@ -2030,6 +2047,6 @@ docker logs search_real 2>&1`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 18 July 2026, 11:29 UTC
+- **Last updated:** 18 July 2026, 11:30 UTC
 - **Turns:** 13
 - **Status:** Incomplete
