@@ -1140,8 +1140,46 @@ The description field for this memory is still accurate. Let's finalize.
 
 Memory updated to reflect PR #46 merged/branches deleted and this documentation pass. No further action pending on my end — the PR is open for review.
 
+## Turn 16
+
+### Prompt
+
+My review findings (address these based on your judgment - do not blindly accept):
+
+___________________________________
+High: documented security enforcement does not match implemented code.
+The design claims a shared sanitize_location helper and request-logging middleware are implemented for PHI-safe location handling in design.md:746, design.md:748, design.md:670.
+The service wiring only shows rate limiting middleware, with no location-sanitizing logging middleware in main.py:47 and ratelimit.py:24.
+Impact: this is a documentation-to-code accuracy gap on a security-sensitive claim.
+High: cloud readiness wording is internally inconsistent and can mislead deployment expectations.
+Phase 3 design says per-service stubs are validated with terraform validate/plan in design.md:758.
+CI explicitly runs validate only and documents why plan is not run in tests.yml:117 and tests.yml:140.
+Impact: a new developer could overestimate deploy readiness and evidence level.
+High: provider status handling is not fully coherent across docs and ingestion/schema behavior.
+Ingestion maps non-A statuses to unknown in fetch_nppes.py:95.
+Providers table permits only active or deactivated in schema.sql:23.
+Ingestion inserts npi_status directly in run_ingestion.py:137.
+Impact: if NPPES ever returns non-A in this path, ingestion can fail on constraint mismatch; docs currently frame deactivation handling as ready infrastructure.
+Medium: documented HTTP validation taxonomy overstates current API-layer enforcement.
+Error taxonomy states bad taxonomy code format is a validation_error 400 in design.md:618.
+Search request model does not enforce taxonomy code pattern at registry HTTP layer in models.py:54.
+Pattern enforcement exists in MCP schema only, in schemas.py:36.
+Impact: direct registry API callers may get behavior different from docs.
+Medium: top-level newcomer status narrative is partly stale vs current phase completion.
+Root README current status still foregrounds only the Phase 1 walking skeleton in README.md:108, README.md:111.
+But the same README and docs index assert mature Phase 2/3 completion context in README.md:185, README.md:56, README.md:5.
+Impact: first-read onboarding can be confusing about what is actually complete today.
+
+___________________________________
+
+First, comment on the quality and applicability of the review itself; then change the docs. Make code changes if necessary if situation warrants but flag to me clearly those cases; then resubmit the PR #47
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
-<summary>Execution details — 821 tool events</summary>
+<summary>Execution details — 827 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2578,6 +2616,15 @@ Now that Phase 3 (Provider Search & Referral) is complete — all 7 milestones m
 - **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase3-planning-state.md`
 - **TodoWrite** `{"todos": [{"content": "Read reference package READMEs (claims-agent, triage-service, rxclaim-emulator) for style", "status": "completed", "activeForm": "Reading reference package READMEs"}, {"content…`
 
+### Turn 16 activity
+
+- **Bash** `git branch --show-current && git status --short`
+- **Bash** `sed -n '640,680p' docs/phase3/design.md`
+- **Bash** `grep -n "sanitize_location\|§12.1\|12.1 Threat" docs/phase3/design.md | head -30`
+- **Bash** `sed -n '711,760p' docs/phase3/design.md`
+- **Bash** `grep -rn "sanitize_location\|logging.Middleware\|request.*logging\|log.*location\|BaseHTTPMiddleware\|add_middleware" provider-registry-service/src/provider_registry/*.py`
+- **Read** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/main.py`
+
 </details>
 
 ---
@@ -2587,6 +2634,6 @@ Now that Phase 3 (Provider Search & Referral) is complete — all 7 milestones m
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 18 July 2026, 12:09 UTC
-- **Turns:** 15
+- **Last updated:** 18 July 2026, 12:24 UTC
+- **Turns:** 16
 - **Status:** Incomplete
