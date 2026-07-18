@@ -12,6 +12,7 @@ clinician. Pick the audience first, then run only what serves them.
 | **Insurer / payer** | "Can this decide claims correctly, and prove it?" | [§3](#3-the-insurer--payer-12-minutes) |
 | **Architect / developer** | "Is this real engineering or a demo?" | [§4](#4-the-architect--developer-15-minutes) |
 | **Layperson** | "What does this actually do?" | [§5](#5-the-layperson-5-minutes) |
+| **Any audience — provider search** | "Can it find a real doctor who takes this patient?" | [§5a](#5a-provider-search--referral-phase-3-6-minutes) |
 
 ---
 
@@ -362,9 +363,77 @@ docker compose --profile phase2 run --rm claims-agent --no-llm --claim '…'
 
 ---
 
+## 5a. Provider search & referral (Phase 3, 6 minutes)
+
+**A separate story from §1–§5.** Phase 3 shares no service, database, or Kong route with
+Phase 1/2 — it's its own opt-in `phase3` compose profile, and a plain `docker compose up` still
+starts only Phase 1. Works standing alone after §1's stack, or completely on its own.
+
+**Story arc:** *plain language in → a real MCP protocol call out → real public provider data
+back, with the source it came from.*
+
+**Setup — a separate seed step, real public data, not synthetic:**
+
+```bash
+docker compose --profile phase3 up --build -d postgres provider-registry
+docker compose --profile phase3 run --rm -T provider-curation-agent --states NC --no-llm   # ~20s, real NPPES data
+```
+
+> `-T` matters here: some non-interactive environments silently swallow `docker compose run`
+> output without it. If a run looks empty, `docker run -d ... && docker logs <container>` always
+> shows it.
+
+**Run — the natural-language query:**
+
+```bash
+docker compose --profile phase3 run --rm provider-search-agent \
+  --query "find an endocrinologist near 27514 who's accepting new patients"
+```
+
+Expect a short ranked list of **real** UNC-area endocrinologists — real names, real NPIs, real
+addresses — with `accepting_new_patients: unknown` on each (NPPES has no such field; the agent
+says so rather than guessing).
+
+**What to say, adapted to whoever's in the room:**
+
+- **Clinician:** "It's reading the same kind of public directory data your referral coordinator
+  would, but it does it in a few seconds and every result traces back to a real record — no
+  invented doctors."
+- **Insurer / payer:** "Sourced entirely from NPPES, the same public registry CMS itself
+  publishes — not a paid directory API. Every provider fact is grounded; there's a real test
+  suite that independently re-fetches every NPI an answer mentions and asserts it's genuine."
+- **Architect / developer:** "This is the platform's first genuine MCP integration — a real
+  hand-built server and a real client talking the actual protocol (`initialize` →
+  `tools/list` → `tools/call`), not the in-process function dispatch Phase 1's agent uses. The
+  client discovers the server's tools live; nothing is hardcoded."
+- **Layperson:** "You describe what kind of doctor you need in plain English, and it hands back
+  real doctors near you, pulled from the same public directory the government keeps."
+
+**Volunteer the weaknesses, same discipline as §4:**
+
+- Only NC/CA/MT are curated (12,582 real providers) — a bounded pull, not a national census.
+- `accepting_new_patients` is always reported `"unknown"`, never guessed — NPPES doesn't carry
+  that field.
+- No live cloud deployment yet (Phase 3b) — Terraform stubs `validate` cleanly but have never
+  been `apply`'d.
+
+**They will ask:**
+
+- *"Is this real data or made up?"* — Real. `data/scripts/provider_ingest/README.md` documents
+  the exact source URLs; the groundedness eval independently verifies every NPI an agent states.
+- *"Why a separate protocol server instead of just another tool function?"* — To actually learn
+  and demonstrate MCP as a real integration boundary, and because it's the natural seam for a
+  future non-Python or third-party client to plug into without touching agent code.
+- *"Does this connect to the patient's insurance?"* — No — deliberately out of scope. This finds
+  a provider; it doesn't check network coverage or benefits.
+
+---
+
 ## 6. Deeper paths
 
 - Run the tests at any level → [`testing-guide.md`](./testing-guide.md)
 - Understand or extend the code → [`developer-guide.md`](./developer-guide.md)
-- Why it's built this way → [`phase2/requirements.md`](./phase2/requirements.md),
+- Why Phase 2 is built this way → [`phase2/requirements.md`](./phase2/requirements.md),
   [`phase2/plan.md`](./phase2/plan.md)
+- Why Phase 3 is built this way → [`phase3/prd.md`](./phase3/prd.md),
+  [`phase3/design.md`](./phase3/design.md)

@@ -8,10 +8,12 @@ Start with what you're trying to do.
 | **Understand the code and change it** | [`developer-guide.md`](./developer-guide.md) | 20 min |
 | **Run the tests, or write good ones** | [`testing-guide.md`](./testing-guide.md) | 15 min |
 | **Operate the gateway** (local, cloud, or the migration) | [`gateway-runbook.md`](./gateway-runbook.md) | 10 min |
-| **Know why it's built this way** | [`phase2/plan.md`](./phase2/plan.md) | 30 min |
-| **Audit what was decided, and whether it still holds** | [`phase2/decisions.md`](./phase2/decisions.md) | 5 min |
+| **Know why Phase 2 is built this way** | [`phase2/plan.md`](./phase2/plan.md) | 30 min |
+| **Know why Phase 3 (Provider Search) is built this way** | [`phase3/design.md`](./phase3/design.md) | 30 min |
+| **Audit Phase 2 decisions** (status + supersession) | [`phase2/decisions.md`](./phase2/decisions.md) | 5 min |
+| **Audit Phase 3 decisions** (status + supersession) | [`phase3/decisions.md`](./phase3/decisions.md) | 5 min |
 | **Know exactly what was agreed** (normative) | [`phase2/requirements.md`](./phase2/requirements.md) | reference |
-| **Know what to build next** | [`phase2/plan.md` §16](./phase2/plan.md#16-future-work) | 5 min |
+| **Know what to build next** | [`phase2/plan.md` §16](./phase2/plan.md#16-future-work) (Phase 2) / [`phase3/README.md`](./phase3/README.md) (Phase 3b) | 5 min |
 
 ## The guides
 
@@ -51,14 +53,30 @@ cloud position, the migration and its rollback, and troubleshooting.
 - **[`source-prd.md`](./phase2/source-prd.md)** — the archived DRAFT PRD that seeded the work.
   The *input*, not the contract; kept for provenance.
 
+**[`phase3/`](./phase3/README.md)** — Provider Search & Referral. M1–M7 complete; Phase 3b
+(live cloud deployment) not started.
+
+- **[`README.md`](./phase3/README.md)** — the canonical status statement for Phase 3. Start
+  here; other Phase 3 documents link to it rather than restating status.
+- **[`prd.md`](./phase3/prd.md)** — problem, goals/non-goals, requirements, success metrics.
+- **[`design.md`](./phase3/design.md)** — architecture, both agents' tool contracts, the
+  hand-built MCP server, data model, and the **milestone plan with verified test results**
+  (§13) — updated with real numbers at every milestone, not just at the end.
+- **[`decisions.md`](./phase3/decisions.md)** — the ADR-style index (P1–P21 and counting),
+  same status-and-supersession convention as Phase 2's `decisions.md`.
+
 ## Conventions for this folder
 
 - **`requirements.md` is normative and stable.** It says *what must be true*. It does not carry
   status, milestones, branches, commits, or PR numbers — those live in git history and the plan.
-- **`plan.md` says how and in what order**, including what's next.
+- **`plan.md` / `design.md` says how and in what order**, including what's next.
 - **The guides are practical.** They tell you what to type and what will bite you.
-- **Service-level READMEs** (`claims-service/`, `triage-service/`, `gateway/`, `data/`, …) cover
-  that component's own detail. The guides link to them rather than restating them.
+- **Service-level READMEs** (`claims-service/`, `triage-service/`, `provider-registry-service/`,
+  `gateway/`, `data/`, …) cover that component's own detail. The guides link to them rather than
+  restating them.
+- **Phase 3 terminology:** internal work is tracked as **milestones** (M1, M2, …), never
+  "Phase 3.x". "Phase" is reserved for top-level phases — Phase 1, Phase 2, Phase 3, and
+  **Phase 3b** (the future live-deployment phase, mirroring Phase 2b).
 
 ## Elsewhere in the repo
 
@@ -68,4 +86,9 @@ cloud position, the migration and its rollback, and troubleshooting.
 | [`../CLAUDE.md`](../CLAUDE.md) | Working agreements: git rules, the two worktrees, how to work here (mirrored in `.clinerules`) |
 | [`../data/reference/README.md`](../data/reference/README.md) | Reference-data source catalog (CMS Part D, ACA/QHP) with verified URLs |
 | [`../data/payer-kb/README.md`](../data/payer-kb/README.md) | The curated payer knowledge base fixtures |
-| [`../gateway/README.md`](../gateway/README.md) | Kong: KIC (Phase 1, GKE) and DB-less (Phase 2) |
+| [`../data/scripts/provider_ingest/README.md`](../data/scripts/provider_ingest/README.md) | Real NPPES/NUCC/ZCTA ingestion — verified source URLs, gotchas, real result counts |
+| [`../gateway/README.md`](../gateway/README.md) | Kong: KIC (Phase 1, GKE) and DB-less (Phase 2). Phase 3 has no edge routes — everything new is internal-only. |
+| [`../provider-registry-service/README.md`](../provider-registry-service/README.md) | Phase 3's deterministic core: taxonomy + proximity search API |
+| [`../provider-mcp-server/README.md`](../provider-mcp-server/README.md) | The real, hand-built MCP server |
+| [`../provider-search-agent/README.md`](../provider-search-agent/README.md) | The real MCP client/host |
+| [`../provider-curation-agent/README.md`](../provider-curation-agent/README.md) | Ingestion run-summary agent |

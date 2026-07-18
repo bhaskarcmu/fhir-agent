@@ -59,11 +59,11 @@ class TestParseRecord(unittest.TestCase):
         self.assertEqual(record["entity_type"], 2)
         self.assertEqual(record["name"], "Acme Health System")
 
-    def test_status_other_than_a_maps_to_unknown_not_invented(self):
+    def test_status_other_than_a_maps_to_deactivated(self):
         raw = _individual("3333333333", "NC")
-        raw["basic"]["status"] = "X"  # never actually observed live, but don't guess
-        record = _mod._parse_record(raw)
-        self.assertEqual(record["npi_status"], "unknown")
+        raw["basic"]["status"] = "X"  # never actually observed live, but must still be
+        record = _mod._parse_record(raw)  # a value the schema's CHECK constraint accepts
+        self.assertEqual(record["npi_status"], "deactivated")
 
     def test_falls_back_to_any_address_when_no_location_purpose(self):
         raw = _individual("4444444444", "NC", purpose="MAILING")

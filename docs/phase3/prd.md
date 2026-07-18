@@ -1,7 +1,8 @@
 # Phase 3 PRD — Provider Search & Referral
 
-**Status:** Draft — committed locally for review, not yet opened as a PR. Open questions from
-the first draft are resolved in §9 using best judgement; flagged where you may want to override.
+**Status:** M1–M7 complete — see [`README.md`](./README.md) for the canonical status statement.
+Open questions from the first draft were resolved in §9 using best judgement; flagged where a
+later milestone overrode the original call.
 **Extends:** Phase 1 (refill-triage) and Phase 2 (claims adjudication), both unmodified
 **Owner:** TBD
 **Terminology note:** internal work within Phase 3 is tracked as **milestones** (M1, M2, ...),

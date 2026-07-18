@@ -12,10 +12,15 @@ milestone confirmed the actual response shape and two gotchas:
      terms — so widening taxonomy coverage later is growing that list, not a
      schema change (design.md §6).
   2. `basic.status` was `"A"` on every one of hundreds of sampled records —
-     never anything else. Deactivated NPIs don't appear to surface via this
-     endpoint. This script sets `npi_status` from that field honestly (only ever
-     "active" in practice, this build) rather than inventing a signal the API
-     doesn't give us.
+     never anything else in this build's samples. Deactivated NPIs don't appear
+     to surface via this endpoint in practice. Any non-"A" value maps to
+     `"deactivated"` — NPPES's own status field is binary (active vs. not), and
+     the registry schema's `npi_status` CHECK constraint only ever permits
+     `'active'`/`'deactivated'` (schema.sql). An earlier version of this script
+     mapped non-"A" to an invented third value, "unknown" — which matched no
+     real live data yet but would have violated that CHECK constraint the first
+     time NPPES ever did return a non-"A" record, silently failing an entire
+     ingestion run instead of just recording a deactivated provider.
   3. `state=NC` matches ANY of a provider's addresses, not specifically the
      practice (LOCATION) one — a provider whose mailing address is NC but whose
      actual practice is in another state still matched, ~13% of raw results in
@@ -92,7 +97,7 @@ def _parse_record(raw: dict) -> dict:
         "npi": raw["number"],
         "entity_type": entity_type,
         "name": name,
-        "npi_status": "active" if basic.get("status") == "A" else "unknown",
+        "npi_status": "active" if basic.get("status") == "A" else "deactivated",
         "addresses": [
             {
                 "address_1": a.get("address_1", ""),

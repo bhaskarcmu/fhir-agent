@@ -171,6 +171,20 @@ class HaversineSqlLocationSearch:
         return results
 
 
+def sanitize_location(zip: str | None, lat: float | None, lon: float | None) -> str:
+    """PHI-safe location summary for logs (design.md §11/§12.1): never log the raw ZIP
+    or exact coordinate a caller searched from — bucket to a 3-digit ZIP prefix or a
+    whole-degree region instead. Used explicitly by call sites that log a search
+    request (main.py's search_providers), not applied automatically to anything — the
+    request-logging middleware itself never inspects the body at all, so it structurally
+    cannot leak a raw location regardless of whether a call site remembers to sanitize."""
+    if zip:
+        return f"zip3:{zip[:3]}"
+    if lat is not None and lon is not None:
+        return f"region:{round(lat)},{round(lon)}"
+    return "unknown"
+
+
 def resolve_zip_to_coordinate(pool: ConnectionPool, zip5: str) -> Coordinate | None:
     with pool.connection() as conn, conn.cursor() as cur:
         cur.execute("SELECT lat, lon FROM zip_centroids WHERE zip5 = %s", (zip5,))

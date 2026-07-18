@@ -22,6 +22,7 @@ from fastapi import FastAPI, Path
 from . import location, registry as registry_module, taxonomy
 from .db import get_pool
 from .errors import NotFoundError, register_error_handlers
+from .logging_middleware import RequestLoggingMiddleware
 from .models import (
     HealthResponse,
     LocationInput,
@@ -45,6 +46,7 @@ app = FastAPI(
     version=VERSION,
 )
 app.add_middleware(RateLimitMiddleware)
+app.add_middleware(RequestLoggingMiddleware)  # outermost: sees the final status, incl. 429s
 register_error_handlers(app)
 
 
@@ -94,6 +96,11 @@ def resolve_specialty(request: ResolveSpecialtyRequest) -> ResolveSpecialtyRespo
     summary="Search nearest providers matching taxonomy codes and filters",
 )
 def search_providers(request: SearchProvidersRequest) -> SearchProvidersResponse:
+    log.info(
+        "search_providers request location=%s radius_miles=%s",
+        location.sanitize_location(request.location.zip, request.location.lat, request.location.lon),
+        request.radius_miles,
+    )
     pool = get_pool()
     origin = _resolve_origin(request.location, pool)
     if origin is None:
