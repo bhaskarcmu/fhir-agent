@@ -835,8 +835,12 @@ Good, reads coherently. Now let's update the "Verified, per milestone" block for
 
 Now `decisions.md` — two real M7 decisions worth formalizing:
 
+Now `README.md`'s final canonical status — all 7 milestones done:
+
+Clean. Let's do a final full pytest run and terraform validate sweep before committing:
+
 <details>
-<summary>Execution details — 680 tool events</summary>
+<summary>Execution details — 687 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2067,6 +2071,19 @@ env -u ANTHROPIC_API_KEY -u CLAUDE_API_KEY TEST_DATABASE_URL="postgresql://x:‹
 - **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
 - **Bash** `grep -n "P19" /workspaces/fhir-agent/docs/phase3/decisions.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase3/decisions.md`
+- **Read** `/workspaces/fhir-agent/docs/phase3/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/README.md`
+- **Bash** `cat /workspaces/fhir-agent/docs/phase3/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/README.md`
+- **Bash** `cd /workspaces/fhir-agent
+find . -name "__pycache__" -o -name "*.egg-info" -o -name ".pytest_cache" 2>/dev/null | grep -v node_modules | xargs rm -rf 2>/dev/null
+rm -rf infra/terraform/.terraform infr…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== filename collisions ==="
+find . -name "test_*.py" | xargs -n1 basename | sort | uniq -c | awk '$1>1'
+echo "=== pytest ==="
+TEST_DATABASE_URL="postgresql://provider_…`
 
 </details>
 
@@ -2077,6 +2094,6 @@ env -u ANTHROPIC_API_KEY -u CLAUDE_API_KEY TEST_DATABASE_URL="postgresql://x:‹
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 18 July 2026, 11:34 UTC
+- **Last updated:** 18 July 2026, 11:35 UTC
 - **Turns:** 13
 - **Status:** Incomplete
