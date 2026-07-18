@@ -6,7 +6,7 @@ tasks:
       dependencies for the FHIR service.
     command: |
       python -m pip install --upgrade pip
-      python -m pip install -e "client/clinical[dev]" -e "triage-service[dev]" -e "mcp-agent[dev]" -e "provider-registry-service[dev]" -e "provider-curation-agent[dev]" -e "provider-mcp-server[dev]"
+      python -m pip install -e "client/clinical[dev]" -e "triage-service[dev]" -e "mcp-agent[dev]" -e "provider-registry-service[dev]" -e "provider-curation-agent[dev]" -e "provider-mcp-server[dev]" -e "provider-search-agent[dev]"
       cd fhir-service
       ./mvnw -DskipTests dependency:go-offline
     triggeredBy:

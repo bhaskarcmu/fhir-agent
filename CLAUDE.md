@@ -32,7 +32,7 @@ serve different audiences and should not modify each other's code.
 
 ```
 # Python packages (editable installs + test tooling — see .ona/automations.yaml)
-python -m pip install -e "client/clinical[dev]" -e "triage-service[dev]" -e "mcp-agent[dev]" -e "provider-registry-service[dev]" -e "provider-curation-agent[dev]" -e "provider-mcp-server[dev]"
+python -m pip install -e "client/clinical[dev]" -e "triage-service[dev]" -e "mcp-agent[dev]" -e "provider-registry-service[dev]" -e "provider-curation-agent[dev]" -e "provider-mcp-server[dev]" -e "provider-search-agent[dev]"
 pytest <path>                       # run focused tests for the changed package
 
 # provider-registry-service's DB-backed tests need a local Postgres; they self-skip
