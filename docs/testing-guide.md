@@ -51,9 +51,21 @@ pytest mcp-agent/tests                        # Phase 1 agent
 pytest claims-agent/tests                     # Phase 2 explanation agent
 pytest data/scripts                           # loader/seeder logic
 
+pytest provider-registry-service/src/provider_registry/tests  # Phase 3 taxonomy/proximity search
+pytest data/scripts/provider_ingest                            # Phase 3 real NPPES/NUCC/ZCTA ETL
+pytest provider-curation-agent/tests                            # Phase 3 ingestion-narration agent
+pytest provider-mcp-server/tests                                # Phase 3 real MCP handshake
+pytest provider-search-agent/tests                              # Phase 3 MCP client + groundedness eval
+
 mvn -f claims-service/pom.xml test -Dtest=RulesEngineTest        # one class
 mvn -f claims-service/pom.xml test -Dtest=HttpTriageClientTest   # the contract test
 ```
+
+Several Phase 3 suites need a local Postgres (`docker compose --profile phase3 up -d postgres`,
+then `TEST_DATABASE_URL=postgresql://provider_registry:provider_registry@localhost:5432/provider_registry`)
+and self-skip — not error — when it's unreachable, same convention as the rest of this project.
+`provider-search-agent`'s groundedness eval additionally self-skips without an Anthropic key,
+since it makes real, billed API calls.
 
 **End-to-end** (needs the stack; self-skips if it is not up, so it is safe to collect anywhere):
 
@@ -122,9 +134,21 @@ against the live stack.
 `VersionedUrlFallbackValidationSupportTest`. Mostly upstream coverage; we own the validation
 fallback and the custom bean/interceptor tests.
 
-**CI** (`.github/workflows/tests.yml`) — three jobs: `phase1` (independence: Phase 1 suites pass
+**Python — Phase 3 (83 tests, on top of the 113 above — 196 total)**
+
+| Suite | Tests | Level | Covers |
+|---|---:|---|---|
+| `provider-registry-service` | 34 | unit + interface | Taxonomy fuzzy match, haversine proximity search, the three error-taxonomy classes, rate limiting. DB-free tests (validation/taxonomy/rate-limit) run with no `DATABASE_URL`; DB-backed tests self-skip when Postgres is unreachable |
+| `provider-mcp-server` | 14 | unit + interface (real handshake) | 7 `registry_client` tests (mocked HTTP); 7 **real MCP protocol** integration tests — genuine `initialize`/`tools/list`/`tools/call` against real subprocesses, including a real SDK schema-validation rejection and a real `not_found` path |
+| `data/scripts/provider_ingest` | 12 | unit + interface | Real NPPES/NUCC/ZCTA fetch/parse/join logic (mocked HTTP, no network) plus DB-backed idempotency tests for `run_ingestion.py` |
+| `provider-curation-agent` | 13 | unit + component | Deterministic summary rendering (no DB); ingestion-tool orchestration, mixed mocked-subprocess and DB-backed (self-skip) |
+| `provider-search-agent` | 10 | unit + end-to-end (real LLM) | 7 tool-use-loop tests, Anthropic client and MCP session both mocked; **3 real groundedness-eval tests** making genuine, billed Claude API calls through the full real stack |
+
+**CI** (`.github/workflows/tests.yml`) — five jobs: `phase1` (independence: Phase 1 suites pass
 with no Phase 2 packages installed, and the default compose stack is unchanged), `phase2-java`,
-`phase2-python`.
+`phase2-python`, `phase3-python` (the full Phase 3 suite against a real Postgres service
+container — DB-backed tests actually run in CI, not just self-skip locally), `phase3-terraform`
+(`terraform validate` in a matrix across all four Phase 3 Terraform stubs).
 
 ## 4. What is *not* tested — known gaps
 
@@ -143,6 +167,19 @@ Documenting these honestly is part of the test strategy. Each is a real hole, no
   manually.
 - **No load, performance, or soak tests**, and no chaos/failure-injection beyond the unit-level
   fault paths in `HttpTriageClientTest`.
+- **Phase 3 cloud deployment has never actually run.** `terraform plan`/`apply` and
+  `deploy-phase3.sh` are unexercised against live GCP credentials — only `terraform validate`
+  (syntax/schema, no live state) runs anywhere, including in CI. This is Phase 3b's job.
+- **Phase 3 taxonomy-match quality is not broadly evaluated.** `resolve_specialty`'s fuzzy
+  matcher is unit-tested against specific known inputs, not scored against a broad, representative
+  set of real free-text clinical phrasing. The one quality-relevant bug found (a dropped
+  character mid-transcription) was caught by running live queries, not by a systematic eval.
+- **A true full-state NPPES pull has never been run.** The committed dataset (12,582 providers,
+  NC/CA/MT) is a bounded, curated pull — a few pages per taxonomy term per state — not a census.
+  Ingestion at full-state scale, and its runtime, is untested.
+- **`accepting_new_patients` is always `"unknown"` by design** (NPPES has no such field —
+  decisions.md P6), so no test can or should assert a real value for it; this is a documented
+  data-source limitation, not a test gap.
 
 ## 5. How to write each kind of test here
 
@@ -346,6 +383,33 @@ member `000000001` had no FHIR record, so those claims now (correctly) pended. N
 because **CI doesn't run e2e**. The suite that would have caught the regression wasn't watching.
 That is now the top gap in §4, and the fix is proposed in the plan.
 
+## 6a. A second case study: the mocked-schema test that couldn't catch a real bug
+
+Shorter, and from Phase 3, but the same shape as §6: a suite that was internally consistent and
+still missed a real defect, because it tested against its own assumption rather than the real
+boundary.
+
+**The bug.** `provider-mcp-server`'s `search_providers_near` tool originally declared its
+`location` parameter as a JSON Schema `oneOf` — `{zip}` or `{lat, lon}`. `provider-search-agent`'s
+7 tool-use-loop unit tests all passed: they mock the Anthropic client, so they assert the agent
+correctly forwards *whatever the mock returns*. None of them exercised what live Claude actually
+does with that schema. Live Claude reliably serialized the whole `location` object as a JSON
+*string* instead of a native object — 12/12 consecutive attempts — which `provider-mcp-server`
+then rejected on every real call.
+
+**What caught it:** the groundedness eval (`test_groundedness_eval.py`) — the one Phase 3 test
+that makes real, billed calls through the full real stack, not a mocked one. It's slow and it
+costs money, which is exactly why it's the only test of its kind here; the lesson isn't "make
+every test real," it's **"know which of your levels is actually exercising live-model behaviour,
+and keep at least one that is."**
+
+**The fix, and the transferable lesson:** flatten the schema; push the cross-field rule
+downstream into `provider-registry-service`'s Pydantic validation instead of relying on a JSON
+Schema construct an LLM has to serialize correctly. Full detail: developer-guide.md §7,
+design.md §14, decisions.md P17. The parallel to §6 is exact: a mock that encodes your own
+assumption about the interface cannot fail when that assumption is wrong — only a real boundary
+can.
+
 ## 7. Traps when testing
 
 - **Ambient env vars.** `SPRING_DATASOURCE_URL` / `NEON_*` make `fhir-service` tests boot against
@@ -358,3 +422,13 @@ That is now the top gap in §4, and the fix is proposed in the plan.
   rather than sleep (see `seed_patients`).
 - **Spring DI failures are runtime-only.** Multiple constructors, missing `@Autowired` — unit
   tests will not catch it. Boot the service.
+- **Identically-named `tests/test_*.py` files collide silently across packages.** This repo's
+  `--import-mode=importlib` plus per-package `tests/__init__.py` means two files with the same
+  name in different packages resolve to the same module and collide in `sys.modules` — one
+  suite runs twice, the other never runs, exit code stays green throughout. Check repo-wide
+  uniqueness before adding a new test file: `find . -path '*/tests/test_*.py' -printf '%f\n' |
+  sort | uniq -d`. Full story: developer-guide.md §7, decisions.md P15.
+- **Mocking the Anthropic client tells you nothing about what live Claude actually sends.** A
+  mocked tool-use loop only proves your code handles whatever the mock returns — it cannot
+  catch a real model quirk like the `oneOf`-serialization bug in §6a. Keep at least one real,
+  billed test per agent for exactly this reason (`test_groundedness_eval.py`'s pattern).

@@ -38,8 +38,10 @@ Everything is indexed in **[`docs/`](docs/README.md)**. Start with what you're d
 | **Understand the code** and change it safely | [`docs/developer-guide.md`](docs/developer-guide.md) |
 | **Run the tests**, or write good ones | [`docs/testing-guide.md`](docs/testing-guide.md) |
 | **Operate the gateway** (local, cloud, migration) | [`docs/gateway-runbook.md`](docs/gateway-runbook.md) |
-| **Know why** it's built this way | [`docs/phase2/plan.md`](docs/phase2/plan.md) |
-| **Audit the decisions** (status + supersession) | [`docs/phase2/decisions.md`](docs/phase2/decisions.md) |
+| **Know why** Phase 2 is built this way | [`docs/phase2/plan.md`](docs/phase2/plan.md) |
+| **Know why** Phase 3 (Provider Search) is built this way | [`docs/phase3/design.md`](docs/phase3/design.md) |
+| **Audit Phase 2 decisions** (status + supersession) | [`docs/phase2/decisions.md`](docs/phase2/decisions.md) |
+| **Audit Phase 3 decisions** (status + supersession) | [`docs/phase3/decisions.md`](docs/phase3/decisions.md) |
 | **Know what was agreed** (normative requirements) | [`docs/phase2/requirements.md`](docs/phase2/requirements.md) |
 | **Know what to build next** | [`docs/phase2/plan.md` §16](docs/phase2/plan.md#16-future-work) |
 
@@ -96,6 +98,10 @@ The platform is built as a collection of microservices, designed to be cloud-agn
 | **rxclaim-emulator** *(Phase 2)* | Simulated legacy IBM i / RxClaim adjudication core: fixed-width DDS-style records, DB2/SQL400-style tables, RPG/CL-style `ADJRXCLM`. Internal-only. | ✅ Running (`--profile phase2`) |
 | **claims-service** *(Phase 2)* | Spring Boot claims-adjudication façade: anti-corruption layer + layered rules engine + Decision Contract; persists a FHIR decision graph. | ✅ Running (`--profile phase2`) |
 | **claims-agent** *(Phase 2)* | Non-authoritative agent that explains adjudication decisions in plain language. | ✅ Running (`--profile phase2`) |
+| **provider-registry-service** *(Phase 3)* | FastAPI façade over the real, curated NPPES/NUCC provider registry: taxonomy resolution + haversine proximity search. Internal-only. | ✅ Running (`--profile phase3`) |
+| **provider-mcp-server** *(Phase 3)* | The platform's first real, hand-built MCP server — genuine `initialize`/`tools/list`/`tools/call`, stdio transport. Thin adapter over `provider-registry-service`. | ✅ Running (local child process; no compose service — see [`docs/phase3/README.md`](docs/phase3/README.md)) |
+| **provider-curation-agent** *(Phase 3)* | Non-authoritative agent that orchestrates real NPPES/NUCC/ZCTA ingestion and narrates the run. | ✅ Running (`--profile phase3`) |
+| **provider-search-agent** *(Phase 3)* | Real MCP client/host: turns a natural-language clinical request into ranked, traceable providers by discovering and calling `provider-mcp-server`'s tools live. | ✅ Running (`--profile phase3`) |
 
 ---
 
@@ -173,6 +179,77 @@ pytest e2e/                                 # golden paths (needs the phase2 sta
 CI (`.github/workflows/tests.yml`) runs a **Phase-1-only** job (proving independence) plus the
 Phase 2 suites. It does **not** run the e2e suite — that gap, and everything else that is and
 isn't covered, is documented in the [testing guide](docs/testing-guide.md).
+
+---
+
+## Phase 3 — Provider Search & Referral
+
+Phase 3 answers the question Phase 1/2 don't: *"who can this patient actually see?"* Given a
+patient's location and a clinical need, it returns a ranked, explained list of **real**
+providers — sourced from authoritative public data (NPPES), not a paid third-party directory
+API — with full lineage back to the source record. **M1–M7 complete; Phase 3b (live cloud
+deployment) not started.** Full design, milestone history, and every architectural decision
+(with status tracking): [`docs/phase3/`](docs/phase3/README.md).
+
+It's also this platform's **first genuine Model Context Protocol integration**. Prior "agent
+tools" (`mcp-agent/src/agent/tools.py`) are in-process Python function dispatch; Phase 3 builds
+a real, hand-built MCP server and a real MCP client/host, talking the actual protocol
+(`initialize` → `tools/list` → `tools/call`) — not a simulation of it.
+
+Request flow (opt-in `phase3` profile):
+
+```
+provider-search-agent ──(MCP: stdio)──▶ provider-mcp-server ──(HTTP)──▶ provider-registry-service ──▶ Postgres
+  (NL request, real MCP        (real MCP server —              (taxonomy resolution +
+   client/host, discovers       genuine protocol                haversine proximity search;
+   tools live via tools/list)   boundary)                       internal-only, never on Kong edge)
+
+provider-curation-agent ──▶ data/scripts/provider_ingest/*.py ──▶ Postgres
+  (orchestrates + narrates       (real NPPES/NUCC/Census ingestion —
+   a run; NOT an MCP client)      curated to NC/CA/MT, 12,582 real providers)
+```
+
+Real, not synthetic, on the provider side: 12,582 real providers across three curated states
+(NC/CA/MT), pulled live from the NPPES NPI Registry and NUCC taxonomy sources, with lineage
+from every registry record back to its ingestion run. (Patients stay synthetic, as elsewhere in
+this repo — Phase 3 is about *finding* a provider, not about patient data.)
+
+### Run the Phase 3 demo
+
+```bash
+# Bring up Postgres + the registry service (Phase 1/2 services start automatically as
+# dependencies if you also pass their profiles; phase3 alone is self-contained)
+docker compose --profile phase3 up --build -d postgres provider-registry
+
+# Seed real data (NC only — fast; add CA,MT for the full curated set, ~1-2 min)
+docker compose --profile phase3 run --rm -T provider-curation-agent --states NC --no-llm
+
+# Ask a real question (needs ANTHROPIC_API_KEY or CLAUDE_API_KEY in .env — this agent has
+# no deterministic fallback, unlike claims-agent: its whole job is NL understanding)
+docker compose --profile phase3 run --rm provider-search-agent \
+  --query "find an endocrinologist near 27514"
+```
+
+> **Use `-T` with `docker compose run` for any Phase 3 CLI agent** (`provider-curation-agent`,
+> `provider-search-agent`) if you're scripting it non-interactively — some environments
+> silently swallow stdout without it. `docker run -d ... && docker logs <container>` is a
+> reliable fallback if output still doesn't show up. See [`docs/phase3/README.md`](docs/phase3/README.md).
+
+A plain `docker compose up` (no profile) still runs **only** the Phase 1 stack — Phase 3 is
+strictly additive, same guarantee as Phase 2.
+
+### Tests
+
+```bash
+pytest                                      # all Python suites, including Phase 3 (config in pytest.ini)
+```
+
+CI (`.github/workflows/tests.yml`) runs `phase3-python` (the full Phase 3 suite against a
+**real Postgres service container** — DB-backed tests execute for real in CI, not just
+locally) and `phase3-terraform` (`terraform validate`, matrix across all four Phase 3
+Terraform directories — deliberately `validate`, not `plan`, since `plan` needs live GCP
+credentials this project doesn't provision). The real, billed-API-call groundedness eval
+self-skips in CI (no key secret configured) — a deliberate cost-conscious choice.
 
 ---
 
@@ -267,13 +344,27 @@ cd fhir-service && ./mvnw clean verify
 - ✅ **Phase 2 (M0–M7)** — legacy emulator, adjudication façade + ACL + rules engine, Decision
   Contract, FHIR audit graph, explanation agent, compose profiles, DB-less Kong, golden paths.
   Runs end to end locally.
+- ✅ **Phase 3 (M1–M7)** — real NPPES/NUCC provider registry (12,582 real providers, 3 states),
+  a hand-built MCP server + real MCP client/host agent (this platform's first genuine MCP
+  integration), a curation agent, a root Terraform module, `deploy-phase3.sh`, and CI wired to
+  actually run the Phase 3 suite against a real Postgres service container. Runs end to end
+  locally, including through the real Docker images. Design/decisions:
+  [`docs/phase3/`](docs/phase3/README.md).
 
 ### Next
-The prioritised backlog lives in **[`docs/phase2/plan.md` §16](docs/phase2/plan.md#16-future-work)**
-with rationale for each item. The headlines: run e2e in CI (the top gap), non-regression decision
-snapshots, a circuit breaker on the triage call, the Postgres swap behind the C3 seam, and
-**M8 / Phase 2b** — the cloud deploy, which needs its root Terraform module **written** before it
-can be applied ([cloud-delivery gap](docs/phase2/plan.md#6-workstreams--milestones)).
+Phase 2's prioritised backlog lives in
+**[`docs/phase2/plan.md` §16](docs/phase2/plan.md#16-future-work)**. The headlines: run e2e in
+CI (the top gap), non-regression decision snapshots, a circuit breaker on the triage call, the
+Postgres swap behind the C3 seam, and **M8 / Phase 2b** — the cloud deploy, which needs its
+root Terraform module **written** before it can be applied
+([cloud-delivery gap](docs/phase2/plan.md#6-workstreams--milestones)).
+
+For Phase 3: **Phase 3b** — live GCP deployment (`terraform apply` + `deploy-phase3.sh`
+against a real project; nothing has been deployed yet, only `terraform validate`). Also
+tracked but not built: an `accepting_new_patients` data source (NPPES has none — every
+provider reports `unknown`, honestly, rather than guessing), and a taxonomy-matcher quality
+pass (found real: `resolve_specialty("endocrinologist")` returns `ambiguous` against the full
+NUCC code set — see [`docs/phase3/design.md` §14](docs/phase3/design.md#14-risks)).
 
 Longer-standing: EHR emulators (`epic-emulator/`, `athena-emulator/` are placeholders),
 drug-drug interaction rules, and load testing.

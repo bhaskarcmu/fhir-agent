@@ -1,7 +1,8 @@
 # Phase 3 Design Proposal — Provider Search & Referral
 
-**Status:** Draft — committed locally for review, not yet opened as a PR. Companion to `prd.md`.
-Open questions from the first draft are resolved in §15 using best judgement.
+**Status:** M1–M7 complete — see [`README.md`](./README.md) for the canonical status statement.
+Companion to `prd.md`. Open questions from the first draft were resolved in §15 using best
+judgement.
 **Terminology:** internal work is tracked as milestones (M1, M2, ...) — never "Phase 3.x". Phase
 3b is the one exception: it names the future GCP cloud-deployment phase, mirroring Phase 2b.
 

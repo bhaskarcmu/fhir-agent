@@ -11,11 +11,13 @@ whether it still holds*.
 
 Status values: **Accepted** (in force) · **Superseded** (replaced — successor named) ·
 **Partially delivered** (accepted, but the repo does not yet match — the gap is named).
-Nothing in Phase 3 is built yet, so every row below is currently either Accepted-as-design-intent
-or explicitly flagged as a commitment still to be verified once M2 starts — not yet capable of
-being "Partially delivered" in the way Phase 2's rows are, since there's no code yet to diverge
-from the design. That will change as milestones land; this page will be updated then, not
-rewritten to look right in hindsight (see Conventions below).
+**M1–M7 are now complete** (see [`README.md`](./README.md)'s canonical status). Every row below
+reflects the real, built, tested state as of the milestone that verified it — several (P11–P13,
+P15–P17, P19–P21) were written or amended *because* implementing that milestone surfaced a real
+finding the original design didn't anticipate, not filed in advance. The one row still open is
+**P8**: cloud-readiness stubs shipped per milestone as committed, but nothing has been `apply`'d
+to a live GCP project — that remains **Phase 3b**, tracked as its own future phase, not a gap in
+this list.
 
 ---
 
