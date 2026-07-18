@@ -1107,8 +1107,18 @@ The command works — the compose-run stdout-swallowing issue is confirmed exact
 
 Keys are present in the shell env (values not printed, per secret-handling rules). Let's run the search-agent query via the same reliable `docker run` pattern.
 
+Verified — real, live, correct result: 10 real endocrinologists near Chapel Hill with real NPIs, real MCP tool calls, honest `accepting_new_patients: unknown`. This confirms the documented demo commands and root README's example query work exactly as written.
+
+All four packages already editable-installed (confirming the pip install command in developer-guide.md/CLAUDE.md is accurate). Now let's run the Phase 3 pytest suite to confirm the documented test counts still hold.
+
+All commands and counts verified against the real stack. Now restoring the environment to its prior state — stopping the Phase 3 containers I brought up and restarting native Postgres.
+
+Environment restored cleanly — `fhir` container untouched and healthy, native Postgres back up. All documented commands are verified working with real data. Now the final steps: commit, push, and open the PR.
+
+**Current worktree:** `/workspaces/fhir-agent` · **current branch:** `docs/phase3-documentation-pass` (already created) · **target branch:** `main`. Committing and pushing now, per CLAUDE.md's proactive-branch-and-PR rule.
+
 <details>
-<summary>Execution details — 804 tool events</summary>
+<summary>Execution details — 816 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2519,6 +2529,26 @@ git checkout -b docs/phase3-documentation-pass`
 - **Bash** `grep -n "^ANTHROPIC_API_KEY\|^CLAUDE_API_KEY" /workspaces/fhir-agent/.env 2>/dev/null | sed 's/=.*/=<redacted>/'`
 - **Bash** `ls -la /workspaces/fhir-agent/.env 2>&1; echo "---"; env | grep -c "ANTHROPIC_API_KEY\|CLAUDE_API_KEY"`
 - **Bash** `docker compose --profile phase3 run --name search-test provider-search-agent --query "find an endocrinologist near 27514" > /tmp/search-run.log 2>&1; echo "compose exit: $?"; docker logs search-test 2…`
+- **Bash** `docker rm search-test >/dev/null 2>&1
+# Confirm pytest.ini + editable-install command from developer-guide.md and CLAUDE.md
+pip show provider-registry-service provider-mcp-server provider-search-agent…`
+- **Bash** `TEST_DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›localhost:5432/provider_registry" pytest provider-registry-service/src/provider_registry/tests data/scripts/provider_ingest provider…`
+- **Bash** `env -u ANTHROPIC_API_KEY -u CLAUDE_API_KEY pytest provider-search-agent/tests -q 2>&1 | tail -15`
+- **Bash** `docker compose stop postgres provider-registry 2>&1; docker compose rm -f postgres provider-registry 2>&1`
+- **Bash** `sudo service postgresql start 2>&1 && sudo service postgresql status 2>&1`
+- **Bash** `docker compose ps 2>&1; echo "---fhir healthy?---"; curl -sf http://localhost:8080/fhir/metadata >/dev/null && echo "fhir OK"`
+- **TodoWrite** `{"todos": [{"content": "Read reference package READMEs (claims-agent, triage-service, rxclaim-emulator) for style", "status": "completed", "activeForm": "Reading reference package READMEs"}, {"content…`
+- **Bash** `git status --short`
+- **Bash** `git add README.md docs/README.md docs/demo-guide.md docs/developer-guide.md docs/testing-guide.md docs/phase3/decisions.md docs/phase3/design.md docs/phase3/prd.md data/scripts/provider_ingest/README.…`
+- **Bash** `git commit -m "$(cat <<'EOF'
+docs: comprehensive Phase 3 documentation pass — package READMEs, guides, staleness fixes
+
+Now that M1-M7 are all merged, close the documentation gap found by audit: every…`
+- **Bash** `git push -u origin docs/phase3-documentation-pass 2>&1`
+- **Bash** `gh pr create --title "docs: comprehensive Phase 3 documentation pass" --body "$(cat <<'EOF'
+## Summary
+
+Now that Phase 3 (Provider Search & Referral) is complete — all 7 milestones merged (PRs #40-#46…`
 
 </details>
 
@@ -2529,6 +2559,6 @@ git checkout -b docs/phase3-documentation-pass`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 18 July 2026, 12:06 UTC
+- **Last updated:** 18 July 2026, 12:08 UTC
 - **Turns:** 15
 - **Status:** Incomplete
