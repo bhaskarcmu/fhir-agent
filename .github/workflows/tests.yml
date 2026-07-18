@@ -64,3 +64,77 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e "claims-agent[dev]"
           pytest claims-agent/tests -q
+
+  # ── Phase 3 Python services/agents ──────────────────────────────────────────
+  # A real Postgres service container so the DB-backed tests actually run here, not just
+  # self-skip -- this is the executed cloud/DB smoke test M7 named as its own deliverable
+  # (design.md §13), not left as a manual-only check. The groundedness eval
+  # (provider-search-agent/tests/test_groundedness_eval.py) self-skips in CI: it makes
+  # real, billed Claude API calls, and no ANTHROPIC_API_KEY/CLAUDE_API_KEY secret is
+  # configured here -- a deliberate cost-conscious choice, not an oversight (design.md §13).
+  phase3-python:
+    name: phase3 (python)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: provider_registry
+          POSTGRES_PASSWORD: provider_registry
+          POSTGRES_DB: provider_registry_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U provider_registry"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      TEST_DATABASE_URL: postgresql://provider_registry:provider_registry@localhost:5432/provider_registry_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Phase 3 packages
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e "provider-registry-service[dev]" -e "provider-curation-agent[dev]" \
+                      -e "provider-mcp-server[dev]" -e "provider-search-agent[dev]"
+      - name: Check for repo-wide test-filename collisions (design.md §14, decisions.md P15)
+        run: |
+          dupes=$(find . -name "test_*.py" | xargs -n1 basename | sort | uniq -c | awk '$1>1')
+          if [ -n "$dupes" ]; then echo "Duplicate test filenames found:"; echo "$dupes"; exit 1; fi
+      - name: Run Phase 3 test suites (DB-backed tests run for real against the postgres service)
+        run: |
+          pytest provider-registry-service/src/provider_registry/tests \
+                 provider-curation-agent/tests \
+                 provider-mcp-server/tests \
+                 provider-search-agent/tests \
+                 data/scripts/provider_ingest -q
+
+  # ── Phase 3 Terraform stubs ──────────────────────────────────────────────────
+  # `terraform validate` only -- not `plan` or `apply`. Plan needs live GCP provider
+  # credentials this project doesn't provision (verified, not assumed: the google provider
+  # authenticates during plan even for pure resource creation). Validate needs no
+  # credentials and no network access to GCP, so it's the real, zero-cost, executed check
+  # that's actually achievable here -- named explicitly as such rather than overclaiming a
+  # `plan` this job can't actually do for free.
+  phase3-terraform:
+    name: phase3 (terraform validate)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module:
+          - infra/terraform
+          - provider-registry-service/infra
+          - provider-mcp-server/infra
+          - data/scripts/provider_ingest/infra
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - name: terraform validate (${{ matrix.module }})
+        working-directory: ${{ matrix.module }}
+        run: |
+          terraform init -backend=false
+          terraform validate

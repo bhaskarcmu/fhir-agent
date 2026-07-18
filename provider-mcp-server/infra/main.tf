@@ -48,3 +48,11 @@ resource "google_artifact_registry_repository" "provider_mcp_server" {
   format        = "DOCKER"
   description   = "Provider Search container images, including provider-mcp-server (stdio-only until Phase 3b resolves transport)"
 }
+
+# Exposed so the root module (infra/terraform/, M7) can point the other Phase 3 services'
+# images at this same repo instead of each declaring its own -- one shared repo, not one
+# per service (design.md §13's "unreferenced fragments" lesson from Phase 2 applies to
+# infra resources too, not just missing root wiring).
+output "repository_id" {
+  value = google_artifact_registry_repository.provider_mcp_server.repository_id
+}
