@@ -819,8 +819,10 @@ Found it — `docker compose run` needs `-T` (no pseudo-TTY) in this non-interac
 
 Let me switch to a more robust diagnostic approach — run detached and fetch logs afterward via `docker logs`, avoiding any live-stream pipe race with `docker compose run`:
 
+That works reliably. The earlier issue was purely `docker compose run`'s output-capture in this sandbox — not a code bug. Let's clean up and re-verify properly using the actual entrypoint:
+
 <details>
-<summary>Execution details — 653 tool events</summary>
+<summary>Execution details — 655 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1998,6 +2000,13 @@ docker network ls --filter name=fhir-agent --format "{{.Name}}"`
 docker ps -a --filter name=curation_debug --format "{{.Status}}"
 echo "---logs---"
 docker logs curation_debug 2>&1`
+- **Bash** `docker rm -f curation_debug 2>&1
+docker run -d --name curation_real --network fhir-agent_default \
+  -e DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›postgres:5432/provider_registry"…`
+- **Bash** `sleep 15
+docker ps -a --filter name=curation_real --format "{{.Status}}"
+echo "---logs---"
+docker logs curation_real 2>&1`
 
 </details>
 
@@ -2008,6 +2017,6 @@ docker logs curation_debug 2>&1`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 18 July 2026, 11:28 UTC
+- **Last updated:** 18 July 2026, 11:29 UTC
 - **Turns:** 13
 - **Status:** Incomplete
