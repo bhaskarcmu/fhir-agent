@@ -879,8 +879,14 @@ Confirmed merged.
 
 This is a substantial audit. Let me start by surveying what documentation exists — both top-level and per-package — to find the gaps before touching anything.
 
+Given the scope, let me set up a plan and read a couple of reference package READMEs to match their style before writing the five missing ones.
+
+**Git op:** worktree `/workspaces/fhir-agent`, current branch `main`, target: new branch — creating it now, first, before any other work (the lesson from M7).
+
+Now reading reference package READMEs to match style:
+
 <details>
-<summary>Execution details — 712 tool events</summary>
+<summary>Execution details — 718 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2194,6 +2200,14 @@ cat docs/README.md 2>/de…`
 - **Read** `/workspaces/fhir-agent/docs/developer-guide.md`
 - **Read** `/workspaces/fhir-agent/docs/demo-guide.md`
 - **Read** `/workspaces/fhir-agent/docs/testing-guide.md`
+- **TodoWrite** `{"todos": [{"content": "Read reference package READMEs (claims-agent, triage-service, rxclaim-emulator) for style", "status": "in_progress", "activeForm": "Reading reference package READMEs"}, {"conte…`
+- **Bash** `cd /workspaces/fhir-agent
+git status
+git checkout -b docs/phase3-documentation-pass`
+- **Read** `/workspaces/fhir-agent/claims-agent/README.md`
+- **Read** `/workspaces/fhir-agent/triage-service/README.md`
+- **Read** `/workspaces/fhir-agent/rxclaim-emulator/README.md`
+- **TodoWrite** `{"todos": [{"content": "Read reference package READMEs (claims-agent, triage-service, rxclaim-emulator) for style", "status": "completed", "activeForm": "Reading reference package READMEs"}, {"content…`
 
 </details>
 
@@ -2204,6 +2218,6 @@ cat docs/README.md 2>/de…`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 18 July 2026, 11:50 UTC
+- **Last updated:** 18 July 2026, 11:51 UTC
 - **Turns:** 14
 - **Status:** Incomplete
