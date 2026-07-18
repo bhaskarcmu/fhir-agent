@@ -1208,8 +1208,48 @@ That's already accurate (doesn't mention "unknown"), no change needed there. Now
 
 Let's add proper traceability for these fixes in `decisions.md` and note the implementation gap honestly in `design.md`, matching the project's own "never edited to look right in hindsight" discipline.
 
+Now add the decisions.md entries (P22–P24) documenting all three review-driven fixes:
+
+Let's also add the `npi_status` finding to §14 Risks, matching the style of the other documented findings there.
+
+Let me also add a concise trap to `developer-guide.md`'s traps list — the "design doc claimed an enforcement mechanism that was never wired in" pattern is a broadly useful lesson beyond just Phase 3.
+
+Now let's run the full Phase 3 suite once more end-to-end to confirm nothing broke, then review the complete diff before committing.
+
+Now let's add a "Verified" entry to design.md's milestone block for this review pass, following the project's own established pattern:
+
+Good, no hardcoded counts there to update. Now let's run the complete test suite one final time and check the full diff before committing.
+
+79+10 = 89 Phase 3 tests, matching the documented 89. Total confirmed: 202. Let's review the complete diff for sanity before committing.
+
+This all looks right in scope and size. Let's do a final sanity check by inspecting `main.py`'s diff directly.
+
+Fixing import order to match the existing alphabetical convention:
+
+Let's do a final full re-run to confirm everything still works after that cleanup, then commit and push.
+
+All green. Now committing and pushing to the same branch (PR #47 will update automatically), then resubmitting.
+
+**Current worktree:** `/workspaces/fhir-agent` · **current branch:** `docs/phase3-documentation-pass` · **target:** `main` (PR #47 already open on this branch — pushing new commits updates it, no new branch/PR needed).
+
+Now let's add a comment to PR #47 summarizing the review response, and restore the local Postgres/environment state.
+
+Clean working tree, both commits pushed. PR **[#47](https://github.com/bhaskarcmu/fhir-agent/pull/47)** is updated with commit `b0c070c` and a review-response comment.
+
+## Summary
+
+**Review quality:** solid — all 5 findings held up under verification, each cited exact file:line locations, and the review correctly distinguished "docs are wrong" from "code has a latent bug," which mattered here since 3 of the 5 turned out to be real code gaps, not just prose issues.
+
+**What I did:**
+- **3 real code fixes** (flagged, not silent): implemented the `sanitize_location()`/request-logging middleware that `design.md` had claimed but `main.py` never actually had; fixed a latent `npi_status` schema-mismatch bug in `fetch_nppes.py` that would have failed an entire ingestion run the first time NPPES ever returned a non-`"A"` status; and closed a taxonomy-code validation gap where `provider-registry-service`'s own HTTP API lacked the pattern constraint that only existed in the MCP tool schema.
+- **2 docs-only fixes**: corrected `design.md`'s "validate/plan" overclaim to match what's actually run (`validate` only), and added a pointer from root README's stale "Current Status" section to the (also complete) Phase 2/3 sections.
+- Added `decisions.md` P22–P24 and updated `design.md` §14 Risks, following the project's own "never edited to look right in hindsight" rule — these are named as post-M7 review findings, not backdated into M2/M6.
+- Added 6 new tests covering exactly the gaps found; full Phase 3 suite re-verified at **202 passed** against a real local Postgres.
+
+**One place I pushed back slightly:** rated the terraform wording finding as lower blast-radius than the code findings, since the rest of the doc set (`decisions.md` P20, every "Verified" record) already said the right thing — it was one leftover sentence, not a systemic claim.
+
 <details>
-<summary>Execution details — 870 tool events</summary>
+<summary>Execution details — 901 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2703,6 +2743,44 @@ try:
 - **Edit** `/workspaces/fhir-agent/provider-registry-service/README.md`
 - **Bash** `sed -n '744,750p' docs/phase3/design.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/decisions.md`
+- **Bash** `grep -n "^## 14\|P19\|taxonomy_codes.*pattern\|0-9A-Z" docs/phase3/design.md | head -20`
+- **Bash** `sed -n '970,985p' docs/phase3/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Bash** `sed -n '983,1000p' docs/phase3/design.md`
+- **Bash** `sed -n '1000,1012p' docs/phase3/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/developer-guide.md`
+- **Bash** `TEST_DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›localhost:5432/provider_registry_test" DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›localhost:5432/provider_regist…`
+- **Bash** `grep -rn "196\b" docs/ README.md CLAUDE.md 2>/dev/null`
+- **Bash** `grep -n "34\b\|provider-registry-service.*|.*unit" docs/testing-guide.md | head -5`
+- **Edit** `/workspaces/fhir-agent/docs/testing-guide.md`
+- **Bash** `grep -rn "12,582\|83 new\|34 new\|196 passed\|196 total" README.md docs/phase3/README.md docs/demo-guide.md docs/developer-guide.md 2>/dev/null`
+- **Bash** `sed -n '895,905p' docs/phase3/design.md`
+- **Bash** `sed -n '905,920p' docs/phase3/design.md`
+- **Bash** `sed -n '920,925p' docs/phase3/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Bash** `grep -n "196\|202\|test" docs/phase3/README.md`
+- **Bash** `TEST_DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›localhost:5432/provider_registry_test" DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›localhost:5432/provider_regist…`
+- **Bash** `git status --short`
+- **Bash** `git diff --stat`
+- **Bash** `git diff provider-registry-service/src/provider_registry/main.py`
+- **Read** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/main.py`
+- **Edit** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/main.py`
+- **Bash** `TEST_DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›localhost:5432/provider_registry_test" DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›localhost:5432/provider_regist…`
+- **Bash** `git branch --show-current`
+- **Bash** `git add -A
+git status --short`
+- **Bash** `git commit -m "$(cat <<'EOF'
+fix: close 3 real doc-vs-code gaps found by review, correct 2 doc inconsistencies
+
+Addresses an external review of PR #47. All 5 findings verified against the actual code…`
+- **Bash** `git push 2>&1`
+- **Bash** `gh pr comment 47 --body "$(cat <<'EOF'
+## Review response
+
+Reviewed all 5 findings against the actual code before acting (not accepted blindly). All 5 were real; 3 warranted actual code changes beyond…`
+- **Bash** `git status --short; echo "---"; git log --oneline -3`
 
 </details>
 
@@ -2713,6 +2791,6 @@ try:
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 18 July 2026, 12:29 UTC
+- **Last updated:** 18 July 2026, 12:32 UTC
 - **Turns:** 16
 - **Status:** Incomplete
