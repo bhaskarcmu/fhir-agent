@@ -821,8 +821,10 @@ Let me switch to a more robust diagnostic approach — run detached and fetch lo
 
 That works reliably. The earlier issue was purely `docker compose run`'s output-capture in this sandbox — not a code bug. Let's clean up and re-verify properly using the actual entrypoint:
 
+Real, correct, working — through the actual shipped Docker image. Now verifying `provider-search-agent`'s Docker image (this one spawns `provider-mcp-server` as an internal child process, so it's the most complex to get right):
+
 <details>
-<summary>Execution details — 655 tool events</summary>
+<summary>Execution details — 658 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2007,6 +2009,17 @@ docker run -d --name curation_real --network fhir-agent_default \
 docker ps -a --filter name=curation_real --format "{{.Status}}"
 echo "---logs---"
 docker logs curation_real 2>&1`
+- **Bash** `docker rm -f curation_real 2>&1
+cd /workspaces/fhir-agent
+COMPOSE_PROFILES=phase3 docker compose build provider-search-agent 2>&1 | tail -5`
+- **Bash** `docker run -d --name search_real --network fhir-agent_default \
+  -e PROVIDER_REGISTRY_URL="http://provider-registry:8002" \
+  -e CLAUDE_API_KEY="$CLAUDE_API_KEY" \
+  fhir-agent-provider-search-agent…`
+- **Bash** `sleep 20
+docker ps -a --filter name=search_real --format "{{.Status}}"
+echo "---logs---"
+docker logs search_real 2>&1`
 
 </details>
 
