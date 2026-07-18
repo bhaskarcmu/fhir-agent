@@ -1079,8 +1079,36 @@ Now add Phase 3 traps to §7:
 
 testing-guide.md is done. Now `demo-guide.md`.
 
+demo-guide.md done. Now let's mark progress and move to command verification before the final consistency pass and commit.
+
+Good — branch was already created first, per the lesson learned. Now let's do the consistency pass over `docs/phase3/*.md`.
+
+These are all legitimate historical references, not stale TODOs. Let me check README.md and decisions.md fully for currency.
+
+This is already fully current and consistent. Let me check `decisions.md` quickly for the latest entry count and status.
+
+Found a real staleness bug — `decisions.md`'s intro paragraph still says "Nothing in Phase 3 is built yet," which now directly contradicts the rows below it (which already cite real M3–M7 findings). Fixing it.
+
+Let me now spot-check `prd.md` for similar staleness before moving to command verification.
+
+Found more staleness — both `prd.md` and `design.md` still say "Draft — committed locally for review, not yet opened as a PR," which is long obsolete (7 PRs merged since). Let me check and fix both.
+
+Now let's verify all the newly-documented commands actually work — this is the last substantive check before committing.
+
+Good — the `fhir` container is already up from a prior session; the `phase3` profile config confirms the compose services. Let's bring up the Phase 3 stack and run the exact documented demo commands.
+
+This matches the known M7 finding — native Postgres is running and conflicts with the compose port. I'll stop native Postgres for this verification (same workaround used during M7), then restore it afterward.
+
+Postgres just needed first-time init (it was a fresh volume); it's healthy now. The registry container gave up retrying and exited — restarting it now that postgres is ready.
+
+This is by design — `provider-registry` is internal-only, no host port published, per the "never on the Kong edge" comment. That's correct and matches the README. The service is confirmed healthy internally. Now let's run the actual documented demo commands.
+
+The command works — the compose-run stdout-swallowing issue is confirmed exactly as documented, and `docker logs` gives the real output (which is real: 5,040 NC providers). Cleaning up and now testing the search-agent path.
+
+Keys are present in the shell env (values not printed, per secret-handling rules). Let's run the search-agent query via the same reliable `docker run` pattern.
+
 <details>
-<summary>Execution details — 770 tool events</summary>
+<summary>Execution details — 804 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2457,6 +2485,40 @@ git checkout -b docs/phase3-documentation-pass`
 - **Edit** `/workspaces/fhir-agent/docs/testing-guide.md`
 - **Read** `/workspaces/fhir-agent/docs/demo-guide.md`
 - **Edit** `/workspaces/fhir-agent/docs/demo-guide.md`
+- **Edit** `/workspaces/fhir-agent/docs/demo-guide.md`
+- **TodoWrite** `{"todos": [{"content": "Read reference package READMEs (claims-agent, triage-service, rxclaim-emulator) for style", "status": "completed", "activeForm": "Reading reference package READMEs"}, {"content…`
+- **Bash** `git status --short && echo "---branch---" && git branch --show-current`
+- **Bash** `wc -l docs/phase3/*.md; echo "---"; grep -n "TODO\|FIXME\|XXX\|placeholder" docs/phase3/*.md`
+- **Read** `/workspaces/fhir-agent/docs/phase3/README.md`
+- **Read** `/workspaces/fhir-agent/docs/phase3/decisions.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/decisions.md`
+- **Bash** `grep -n "not yet\|to be verified\|once M[0-9]\|will be\|TBD\|to be determined\|is built yet\|not yet built\|not yet implemented" docs/phase3/prd.md docs/phase3/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase3/prd.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/prd.md`
+- **Read** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Bash** `docker compose ps --format json 2>/dev/null | head -20; echo "---"; docker compose --profile phase3 config --services 2>&1`
+- **Bash** `docker compose --profile phase3 up --build -d postgres provider-registry 2>&1 | tail -30`
+- **Bash** `sudo service postgresql status 2>&1; echo "---"; ss -ltnp 2>/dev/null | grep 5432`
+- **Bash** `sudo service postgresql stop 2>&1`
+- **Bash** `docker compose --profile phase3 up -d postgres provider-registry 2>&1 | tail -20`
+- **Bash** `sleep 3 && curl -sf http://localhost:8002/health && echo`
+- **Bash** `docker compose logs provider-registry --tail 40 2>&1`
+- **Bash** `docker compose ps 2>&1; echo "---networks---"; docker network ls | grep fhir-agent; echo "---inspect---"; docker inspect fhir-agent-provider-registry --format '{{json .NetworkSettings.Networks}}' 2>&1`
+- **Bash** `sleep 5 && docker compose logs provider-registry --tail 10 2>&1; echo "---health---"; docker inspect fhir-agent-provider-registry --format '{{.State.Health.Status}}'`
+- **Bash** `docker inspect fhir-agent-postgres --format '{{json .NetworkSettings.Networks}}' 2>&1; echo "---"; docker exec fhir-agent-provider-registry sh -c "cat /etc/resolv.conf" 2>&1; echo "---ping---"; docker…`
+- **Bash** `docker compose ps -a 2>&1; echo "---logs---"; docker compose logs postgres --tail 40 2>&1`
+- **Bash** `docker compose --profile phase3 up -d provider-registry 2>&1 | tail -10 && sleep 5 && docker compose ps provider-registry 2>&1`
+- **Bash** `sleep 8 && docker compose ps provider-registry postgres 2>&1 && curl -sf http://localhost:8002/health && echo`
+- **Bash** `grep -n -A 15 "provider-registry:" /workspaces/fhir-agent/docker-compose.yml | head -25`
+- **Bash** `docker compose --profile phase3 run --rm -T provider-curation-agent --states NC --no-llm 2>&1 | tail -30`
+- **Bash** `docker ps -a --filter "name=provider-curation-agent" --format "{{.Names}}\t{{.Status}}" 2>&1`
+- **Bash** `docker compose --profile phase3 run --name curation-test provider-curation-agent --states NC --no-llm > /tmp/curation-run.log 2>&1; echo "exit: $?"; wc -l /tmp/curation-run.log; tail -40 /tmp/curation…`
+- **Bash** `docker logs curation-test 2>&1; echo "---inspect exit code---"; docker inspect curation-test --format '{{.State.ExitCode}} {{.State.Status}}'`
+- **Bash** `docker rm curation-test >/dev/null 2>&1; echo cleaned`
+- **Bash** `grep -n "^ANTHROPIC_API_KEY\|^CLAUDE_API_KEY" /workspaces/fhir-agent/.env 2>/dev/null | sed 's/=.*/=<redacted>/'`
+- **Bash** `ls -la /workspaces/fhir-agent/.env 2>&1; echo "---"; env | grep -c "ANTHROPIC_API_KEY\|CLAUDE_API_KEY"`
+- **Bash** `docker compose --profile phase3 run --name search-test provider-search-agent --query "find an endocrinologist near 27514" > /tmp/search-run.log 2>&1; echo "compose exit: $?"; docker logs search-test 2…`
 
 </details>
 
@@ -2467,6 +2529,6 @@ git checkout -b docs/phase3-documentation-pass`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 18 July 2026, 12:02 UTC
+- **Last updated:** 18 July 2026, 12:06 UTC
 - **Turns:** 15
 - **Status:** Incomplete
