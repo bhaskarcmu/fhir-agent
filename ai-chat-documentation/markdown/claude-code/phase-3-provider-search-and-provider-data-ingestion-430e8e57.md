@@ -841,8 +841,18 @@ Clean. Let's do a final full pytest run and terraform validate sweep before comm
 
 All four validate cleanly. Now staging, committing, and pushing:
 
+Good, executable bit preserved. Now committing:
+
+I made an error — I committed directly to `main` without creating a feature branch first for M7 (unlike M2–M6). Checking whether this reached `origin` before fixing it:
+
+Now resetting local `main` back to match `origin/main` (safe — the commit is preserved on the feature branch, and this never reached `origin`):
+
+That's expected — `git reset --hard origin/main` correctly reverted `main`'s working tree to the pre-M7 state; my actual M7 work is safe on the new feature branch. Switching to it now to push and open the PR:
+
+Confirmed clean, all M7 work intact on the feature branch. Now pushing and opening the PR:
+
 <details>
-<summary>Execution details — 691 tool events</summary>
+<summary>Execution details — 698 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2095,6 +2105,35 @@ for dir in infra/terraform provider-registry-service/infra provider-mcp-server/i
 git add -A -- infra deploy-phase3.sh provider-mcp-server/infra .github/workflows/tests.yml docs/phase3
 git status --short`
 - **Bash** `git diff --cached --summary | grep deploy-phase3`
+- **Bash** `cd /workspaces/fhir-agent
+git commit -m "$(cat <<'EOF'
+feat(provider-search): M7 — Phase 3 complete: root Terraform, deploy script, CI, real e2e
+
+The last milestone before Phase 3b. Builds the three d…`
+- **Bash** `cd /workspaces/fhir-agent
+git status
+echo "---compare to origin/main---"
+git fetch origin main 2>&1
+git log origin/main --oneline -3`
+- **Bash** `cd /workspaces/fhir-agent
+git branch feature/m7-docker-compose-e2e
+git checkout feature/m7-docker-compose-e2e
+echo "--- now on feature branch, verify commit is there ---"
+git log --oneline -2`
+- **Bash** `cd /workspaces/fhir-agent
+git checkout main
+git status`
+- **Bash** `cd /workspaces/fhir-agent
+git reset --hard origin/main
+git status
+git log --oneline -3`
+- **Bash** `cd /workspaces/fhir-agent
+git checkout feature/m7-docker-compose-e2e
+git status
+echo "---confirm files are the M7 versions again---"
+git log --oneline -1`
+- **Bash** `cd /workspaces/fhir-agent
+git push -u origin feature/m7-docker-compose-e2e`
 
 </details>
 
@@ -2105,6 +2144,6 @@ git status --short`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 18 July 2026, 11:36 UTC
+- **Last updated:** 18 July 2026, 11:37 UTC
 - **Turns:** 13
 - **Status:** Incomplete
