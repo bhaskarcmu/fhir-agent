@@ -827,8 +827,12 @@ Complete, correct, real end-to-end verification through the actual shipped Docke
 
 That also tore down the pre-existing `fhir` service (unrelated to my testing, running from before this session). Restoring it and native Postgres:
 
+Consistent. Now let's finalize the docs with real M7 results.
+
+Next should be #46. Updating the milestone table:
+
 <details>
-<summary>Execution details — 663 tool events</summary>
+<summary>Execution details — 670 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2041,6 +2045,14 @@ pg_isready -h localhost -p 5432 2>&1`
 find . -name "test_*.py" | xargs -n1 basename | sort | uniq -c | awk '$1>1'
 echo "collision check done"
 find . -name "__pycache__" -o -name "*.egg-info" -o -name ".pytest_cac…`
+- **Bash** `cd /workspaces/fhir-agent
+env -u ANTHROPIC_API_KEY -u CLAUDE_API_KEY TEST_DATABASE_URL="postgresql://x:‹redacted:url-credentials›localhost:59999/nope" python3 -m pytest 2>&1 | tail -6`
+- **TodoWrite** `{"todos": [{"content": "Build root Terraform module composing the 3 per-service stubs + shared Artifact Registry + Secret Manager + IAM wiring", "status": "completed", "activeForm": "Building the root…`
+- **Bash** `gh pr list --state all --limit 3 --json number,title 2>&1`
+- **Bash** `grep -n "| M7 |" /workspaces/fhir-agent/docs/phase3/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Bash** `grep -n "Phase 3 will not repeat that specific gap" /workspaces/fhir-agent/docs/phase3/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase3/design.md`
 
 </details>
 
@@ -2051,6 +2063,6 @@ find . -name "__pycache__" -o -name "*.egg-info" -o -name ".pytest_cac…`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 18 July 2026, 11:31 UTC
+- **Last updated:** 18 July 2026, 11:32 UTC
 - **Turns:** 13
 - **Status:** Incomplete
