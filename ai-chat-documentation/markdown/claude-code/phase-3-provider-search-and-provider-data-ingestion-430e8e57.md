@@ -886,7 +886,7 @@ Given the scope, let me set up a plan and read a couple of reference package REA
 Now reading reference package READMEs to match style:
 
 <details>
-<summary>Execution details — 719 tool events</summary>
+<summary>Execution details — 721 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2209,6 +2209,8 @@ git checkout -b docs/phase3-documentation-pass`
 - **Read** `/workspaces/fhir-agent/rxclaim-emulator/README.md`
 - **TodoWrite** `{"todos": [{"content": "Read reference package READMEs (claims-agent, triage-service, rxclaim-emulator) for style", "status": "completed", "activeForm": "Reading reference package READMEs"}, {"content…`
 - **Write** `/workspaces/fhir-agent/provider-registry-service/README.md`
+- **Write** `/workspaces/fhir-agent/provider-mcp-server/README.md`
+- **Write** `/workspaces/fhir-agent/provider-curation-agent/README.md`
 
 </details>
 
