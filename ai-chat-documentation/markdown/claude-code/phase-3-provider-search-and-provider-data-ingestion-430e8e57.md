@@ -880,7 +880,7 @@ Confirmed merged.
 This is a substantial audit. Let me start by surveying what documentation exists — both top-level and per-package — to find the gaps before touching anything.
 
 <details>
-<summary>Execution details — 707 tool events</summary>
+<summary>Execution details — 712 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2189,6 +2189,11 @@ echo "=== root README.md: phase3/provider mentions ==="
 grep -n -i "phase 3\|provider-\|provider_" README.md | head -20
 echo "=== docs/README.md ==="
 cat docs/README.md 2>/de…`
+- **Read** `/workspaces/fhir-agent/README.md`
+- **Read** `/workspaces/fhir-agent/docs/README.md`
+- **Read** `/workspaces/fhir-agent/docs/developer-guide.md`
+- **Read** `/workspaces/fhir-agent/docs/demo-guide.md`
+- **Read** `/workspaces/fhir-agent/docs/testing-guide.md`
 
 </details>
 
