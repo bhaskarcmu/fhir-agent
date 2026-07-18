@@ -889,8 +889,10 @@ Now `provider-search-agent/README.md`:
 
 Now inserting a full "Phase 3" section right after the Phase 2 section, before "Getting Started":
 
+Now the big one — `developer-guide.md`. Let me extend it section by section, matching its exact structure and voice.
+
 <details>
-<summary>Execution details — 738 tool events</summary>
+<summary>Execution details — 740 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2232,6 +2234,8 @@ git checkout -b docs/phase3-documentation-pass`
 - **TodoWrite** `{"todos": [{"content": "Read reference package READMEs (claims-agent, triage-service, rxclaim-emulator) for style", "status": "completed", "activeForm": "Reading reference package READMEs"}, {"content…`
 - **Edit** `/workspaces/fhir-agent/docs/README.md`
 - **Read** `/workspaces/fhir-agent/docs/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/README.md`
+- **TodoWrite** `{"todos": [{"content": "Read reference package READMEs (claims-agent, triage-service, rxclaim-emulator) for style", "status": "completed", "activeForm": "Reading reference package READMEs"}, {"content…`
 
 </details>
 
@@ -2242,6 +2246,6 @@ git checkout -b docs/phase3-documentation-pass`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 18 July 2026, 11:55 UTC
+- **Last updated:** 18 July 2026, 11:56 UTC
 - **Turns:** 14
 - **Status:** Incomplete
