@@ -134,11 +134,11 @@ against the live stack.
 `VersionedUrlFallbackValidationSupportTest`. Mostly upstream coverage; we own the validation
 fallback and the custom bean/interceptor tests.
 
-**Python — Phase 3 (83 tests, on top of the 113 above — 196 total)**
+**Python — Phase 3 (89 tests, on top of the 113 above — 202 total)**
 
 | Suite | Tests | Level | Covers |
 |---|---:|---|---|
-| `provider-registry-service` | 34 | unit + interface | Taxonomy fuzzy match, haversine proximity search, the three error-taxonomy classes, rate limiting. DB-free tests (validation/taxonomy/rate-limit) run with no `DATABASE_URL`; DB-backed tests self-skip when Postgres is unreachable |
+| `provider-registry-service` | 40 | unit + interface | Taxonomy fuzzy match, haversine proximity search, the three error-taxonomy classes, rate limiting, PHI-safe request logging (`sanitize_location`). DB-free tests (validation/taxonomy/rate-limit/logging) run with no `DATABASE_URL`; DB-backed tests self-skip when Postgres is unreachable |
 | `provider-mcp-server` | 14 | unit + interface (real handshake) | 7 `registry_client` tests (mocked HTTP); 7 **real MCP protocol** integration tests — genuine `initialize`/`tools/list`/`tools/call` against real subprocesses, including a real SDK schema-validation rejection and a real `not_found` path |
 | `data/scripts/provider_ingest` | 12 | unit + interface | Real NPPES/NUCC/ZCTA fetch/parse/join logic (mocked HTTP, no network) plus DB-backed idempotency tests for `run_ingestion.py` |
 | `provider-curation-agent` | 13 | unit + component | Deterministic summary rendering (no DB); ingestion-tool orchestration, mixed mocked-subprocess and DB-backed (self-skip) |

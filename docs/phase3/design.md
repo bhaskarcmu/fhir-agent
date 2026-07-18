@@ -743,11 +743,15 @@ profile even though the *auth mechanism* carries over unchanged. Reasoning, expl
   - *Replay* — no auth token exists to replay; a captured request is just a repeatable read
     against public data. Not a meaningful risk given nothing PHI is returned or stored.
   - *Log/telemetry leakage of the raw search location* — the "never log in plaintext" rule
-    (PRD §6) is currently just a sentence with no enforcement mechanism named. Fixed here: it's
-    enforced the way this codebase already enforces PHI-safe logging elsewhere — a shared
-    `sanitize_location()` helper used in `provider-registry-service`'s request-logging
-    middleware (state/region bucket only, per §11), not a policy left to individual call sites
-    to remember.
+    (PRD §6) is enforced the way this codebase already enforces PHI-safe logging elsewhere: a
+    shared `location.sanitize_location()` helper (state/region bucket only, per §11) that
+    `search_providers` calls explicitly before logging anything about a request, plus a
+    `RequestLoggingMiddleware` that structurally cannot leak the raw body — it never reads it,
+    logging only method/path/status/duration. **This was named as the design intent from M2
+    onward but not actually implemented until a post-M7 documentation review found the gap**
+    between what this section claimed and what `provider-registry-service` actually shipped
+    (decisions.md P22) — named here rather than silently backdated, per this doc set's own
+    "never edited to look right in hindsight" rule.
 
 ## 13. Milestone plan
 
@@ -755,7 +759,8 @@ Internal work is tracked as milestones, not sub-phases — no "Phase 3.x" labels
 Following Phase 2's *intent* (design + stub the cloud posture at every milestone; defer the
 live `terraform apply` to its own follow-on phase), every milestone that adds a deployable
 component also produces a **cloud-readiness stub** — a Dockerfile and a per-service Terraform
-module sketch, validated with `terraform validate`/`plan` but never applied.
+module sketch, validated with `terraform validate` but never `plan`'d or applied — `plan`
+needs live GCP credentials this project doesn't provision even for CI (decisions.md P20).
 
 > ### ⚠️ Do not read "cloud-readiness stub" as "Phase 3b is just `terraform apply`"
 >
@@ -913,6 +918,17 @@ not just the claim):
   commands via `docker run -d` + `docker logs`, which reliably showed the real output `docker
   compose run` had been swallowing. `docker compose config` reconfirmed the default profile
   unchanged and `phase3` profile correctly scoped throughout.
+- **Post-M7 documentation review** (PR #47): a full documentation audit found three real
+  gaps between what this doc set claimed and what the code actually did — not just prose
+  issues. Fixed and reverified: (1) `sanitize_location()` + `RequestLoggingMiddleware`,
+  named in §12.1 since M2, built for real (decisions.md P22); (2) `fetch_nppes.py`'s
+  `npi_status` mapping corrected from an invented `"unknown"` value to `deactivated`,
+  matching `schema.sql`'s CHECK constraint (decisions.md P23); (3) the `taxonomy_codes`
+  pattern constraint (P19) applied to `provider-registry-service`'s own HTTP-layer model,
+  not just the MCP tool schema (decisions.md P24). Full root `pytest` — **202 passed**
+  (196 from M7 + 6 new: 5 `sanitize_location`/logging-middleware tests, 1 HTTP-layer
+  malformed-taxonomy-code test), run against a real local Postgres. `terraform validate`
+  unaffected (no `.tf` changes this pass).
 
 ### 13.1 Phase 3b — GCP cloud deployment (future, out of scope here)
 
@@ -974,7 +990,11 @@ started:
   pattern (decisions.md P19) so a mistranscribed code becomes an explicit `validation_error`
   the model can see and retry from. General lesson: any tool parameter the model fills in by
   copying a value out of a prior tool result (not by reasoning from the user's request) is a
-  transcription-error risk — constrain its format wherever the real data has one.
+  transcription-error risk — constrain its format wherever the real data has one. **That fix
+  originally landed only in the MCP tool schema** — a post-M7 review found
+  `provider-registry-service`'s own HTTP-layer model had no matching constraint, so a direct
+  (non-MCP) caller wouldn't have gotten the same protection; closed in both places now
+  (decisions.md P24).
 - **Test filenames must be repo-unique, not just per-package-unique** — found real in M4:
   `--import-mode=importlib` plus per-package `tests/__init__.py` means two identically-named
   test files in different packages (`claims-agent/tests/test_tools.py` and
@@ -991,6 +1011,16 @@ started:
   until the next manual re-run. `npi_status` filtering prevents an *already-known*
   deactivated provider from surfacing, but doesn't shrink the detection lag itself — only a
   scheduled refresh (explicitly out of scope this build, §6) would.
+- **A schema/ingestion value mismatch that never fired in practice, but would have failed an
+  entire ingestion run** — found real in a post-M7 review: `fetch_nppes.py` mapped any NPPES
+  status other than `"A"` to an invented third value, `"unknown"`, while `schema.sql`'s
+  `npi_status` CHECK constraint (and every Pydantic model) only ever permit `active`/
+  `deactivated`. Never triggered live because every sampled NPPES record has come back `"A"`
+  (P11) — but the first non-`"A"` record NPPES ever returned would have failed that row's
+  upsert instead of correctly recording a deactivated provider. Fixed to map to `deactivated`
+  (decisions.md P23). General lesson: a value invented at one layer (ingestion) that isn't
+  validated against the constraint another layer (schema) actually enforces is a latent bug
+  that passes every test until the one input nobody happened to sample arrives for real.
 - **NPPES public API rate limits** — verified empirically in M3: ~30 requests over ~10s at a
   0.2s inter-request pacing hit no throttling (5,770 raw records across 10 taxonomy terms × 3
   pages). Still undocumented officially — the pacing is precautionary, not proven necessary.

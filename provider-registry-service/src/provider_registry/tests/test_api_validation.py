@@ -36,6 +36,18 @@ def test_search_location_with_both_zip_and_latlon_is_400():
     assert resp.status_code == 400
 
 
+def test_search_malformed_taxonomy_code_is_400_validation_error():
+    # Mirrors provider-mcp-server's identical pattern constraint (design.md §14 Risks,
+    # decisions.md P19) — a caller hitting this HTTP API directly, not through MCP, must
+    # get the same 400 instead of a silently misleading zero-result search.
+    resp = client.post(
+        "/v1/providers/search",
+        json={"location": {"zip": "27514"}, "taxonomy_codes": ["207RE0101"]},  # dropped trailing "X"
+    )
+    assert resp.status_code == 400
+    assert resp.json()["error_type"] == "validation_error"
+
+
 def test_search_radius_out_of_bounds_is_400():
     resp = client.post(
         "/v1/providers/search",

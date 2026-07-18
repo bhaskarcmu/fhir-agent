@@ -107,6 +107,11 @@ The platform is built as a collection of microservices, designed to be cloud-agn
 
 ## Current Status
 
+**This section covers Phase 1 (the original walking skeleton) specifically.** Phase 2
+(claims adjudication) and Phase 3 (provider search) are also complete and run locally —
+see their own sections below, or [Status & future work](#status--future-work) for the
+full picture across all three.
+
 The end-to-end walking skeleton runs locally and via Docker Compose:
 **mcp-agent → triage-service → fhir-service**. A natural-language clinician query
 resolves a patient, evaluates drug-allergy risk, and returns a structured

@@ -332,6 +332,15 @@ other's never run, **with a passing exit code throughout**. Before adding any ne
 file, check it's unique repo-wide: `find . -path '*/tests/test_*.py' -printf '%f\n' | sort |
 uniq -d`. See [[pytest-test-filename-collision]], design.md §14, decisions.md P15.
 
+**A design doc can name an enforcement mechanism that was never actually wired in.**
+`design.md` §12.1 described a `sanitize_location()` helper and a request-logging middleware
+enforcing PHI-safe location handling — for five milestones, before anyone checked `main.py`
+against the claim. It wasn't there; `RateLimitMiddleware` was the only middleware that
+existed. Found by a documentation review that read the actual wiring, not just the doc
+(decisions.md P22). The general lesson: "Fixed here" in a design doc describes an intent
+until something in the codebase actually points back at it — treat a security-relevant claim
+with no corresponding file/line reference as unverified, not as done.
+
 **A dropped character in a taxonomy code produces a silent false negative, not an error.**
 Found in Phase 3 M6: live Claude once transcribed a NUCC taxonomy code between tool calls with
 a character dropped, producing a plausible-looking but wrong code. `search_providers_near`

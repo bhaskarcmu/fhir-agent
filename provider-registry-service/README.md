@@ -11,7 +11,7 @@ never the other way around.
 | Route | What it does |
 |---|---|
 | `POST /v1/taxonomy/resolve` | Free-text clinical need → ranked NUCC taxonomy codes. Deterministic fuzzy match (`rapidfuzz` + a small synonym table) — no LLM call, fully traceable. |
-| `POST /v1/providers/search` | `{location, taxonomy_codes, radius_miles, limit, accepting_new_patients?, entity_type?}` → nearest-N real providers, sorted by distance. Haversine over a state-scoped full scan (`location.py`'s `LocationSearchPort` — a deliberate stub, not PostGIS). |
+| `POST /v1/providers/search` | `{location, taxonomy_codes, radius_miles, limit, accepting_new_patients?, entity_type?}` → nearest-N real providers, sorted by distance. Haversine over a state-scoped full scan (`location.py`'s `LocationSearchPort` — a deliberate stub, not PostGIS). Each `taxonomy_codes` entry is pattern-validated (`^[0-9A-Z]{9}X$`) at this HTTP layer too, mirroring `provider-mcp-server`'s identical MCP-schema constraint — a caller hitting this API directly gets the same 400 `validation_error` a malformed code would otherwise silently turn into a misleading zero-result search. |
 | `GET /v1/providers/{npi}` | Full registry record by NPI, with lineage. Still returns a **deactivated** record explicitly (never a bare 404) — a caller with a stale NPI on file needs to see *why*, not get an error that looks like a data problem. |
 | `GET /health` | `{"status": "ok", "version": "..."}` |
 
@@ -50,8 +50,20 @@ this service is read-only.
 
 `accepting_new_patients` is deliberately not a column — NPPES has no such field, and every
 search response reports it as `"unknown"` rather than guessing (decisions.md P6).
-`npi_status` (`active`/`deactivated`) is real and enforced: `search_providers_near` excludes
-deactivated providers by default.
+`npi_status` (`active`/`deactivated`, `schema.sql`'s CHECK constraint enforces exactly those
+two values) is real and enforced: `search_providers_near` excludes deactivated providers by
+default. Ingestion (`fetch_nppes.py`) maps any NPPES status other than `"A"` to `deactivated`
+— every sampled record has come back `"A"` in practice (decisions.md P11), but the mapping is
+written to match the schema's binary model regardless, not to assume that never changes.
+
+## Logging (PHI-safe by construction, design.md §11/§12.1)
+
+`RequestLoggingMiddleware` (`logging_middleware.py`) logs one line per request — method,
+path, status, duration — and never reads the request body, so it structurally cannot leak a
+raw search location regardless of what any given route does. `search_providers` separately
+logs a sanitized location summary via `location.sanitize_location()` (a 3-digit ZIP prefix or
+whole-degree region, never the exact ZIP or coordinate a caller searched from) before it logs
+anything about the request at all.
 
 ## Environment variables
 

@@ -2,9 +2,17 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, model_validator
+
+# NUCC codes are 10 chars, alphanumeric, always ending in "X" — verified against all 883
+# real codes in data/reference/providers/taxonomy_reference.csv, zero exceptions. Mirrors
+# provider-mcp-server/src/provider_mcp/schemas.py's identical constraint on the MCP tool
+# schema (design.md §14 Risks, decisions.md P19) — enforced here too so a caller hitting
+# this HTTP API directly, not just through the MCP layer, gets the same 400
+# validation_error instead of a silently misleading zero-result search.
+_TaxonomyCode = Annotated[str, Field(pattern=r"^[0-9A-Z]{9}X$")]
 
 
 class HealthResponse(BaseModel):
@@ -51,7 +59,7 @@ class LocationInput(BaseModel):
 
 class SearchProvidersRequest(BaseModel):
     location: LocationInput
-    taxonomy_codes: list[str] = Field(min_length=1, max_length=10)
+    taxonomy_codes: list[_TaxonomyCode] = Field(min_length=1, max_length=10)
     radius_miles: float = Field(default=25.0, gt=0, le=200)
     limit: int = Field(default=10, ge=1, le=50)
     accepting_new_patients: bool | None = None
