@@ -831,8 +831,12 @@ Consistent. Now let's finalize the docs with real M7 results.
 
 Next should be #46. Updating the milestone table:
 
+Good, reads coherently. Now let's update the "Verified, per milestone" block for M7:
+
+Now `decisions.md` — two real M7 decisions worth formalizing:
+
 <details>
-<summary>Execution details — 670 tool events</summary>
+<summary>Execution details — 680 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2053,6 +2057,16 @@ env -u ANTHROPIC_API_KEY -u CLAUDE_API_KEY TEST_DATABASE_URL="postgresql://x:‹
 - **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
 - **Bash** `grep -n "Phase 3 will not repeat that specific gap" /workspaces/fhir-agent/docs/phase3/design.md`
 - **Read** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Bash** `sed -n '790,796p' /workspaces/fhir-agent/docs/phase3/design.md`
+- **Bash** `grep -n "M6\*\* (PR #45)" /workspaces/fhir-agent/docs/phase3/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Bash** `sed -n '886,896p' /workspaces/fhir-agent/docs/phase3/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Bash** `grep -n "^### 13.1" -A 25 /workspaces/fhir-agent/docs/phase3/design.md | head -30`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Bash** `grep -n "P19" /workspaces/fhir-agent/docs/phase3/decisions.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/decisions.md`
 
 </details>
 
@@ -2063,6 +2077,6 @@ env -u ANTHROPIC_API_KEY -u CLAUDE_API_KEY TEST_DATABASE_URL="postgresql://x:‹
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 18 July 2026, 11:32 UTC
+- **Last updated:** 18 July 2026, 11:34 UTC
 - **Turns:** 13
 - **Status:** Incomplete
