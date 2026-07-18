@@ -768,18 +768,36 @@ module sketch, validated with `terraform validate`/`plan` but never applied.
 > test in CI** — and concluded "Phase 2b is not 'terraform apply, not new construction'... Real
 > authoring work remains."
 >
-> Phase 3 will not repeat that specific gap **by naming the same three deliverables as their
-> own milestone-tracked items**, not as an implied side-effect of per-service stubs:
-> 1. A root Terraform module (`infra/terraform/` or equivalent) that actually composes the
->    per-service stubs — added as an explicit M7 deliverable below, not assumed to exist because
->    the per-service pieces do.
-> 2. A `deploy-phase3.sh` (or equivalent) — same treatment.
-> 3. An executed cloud smoke test in CI (not just "a stub exists") — same treatment.
+> Phase 3 did not repeat that specific gap — **M7 actually built all three**, not just named
+> them as future milestone-tracked items:
+> 1. **A root Terraform module** (`infra/terraform/main.tf`) that actually composes the
+>    per-service stubs (`module` blocks referencing M2/M3/M5's directories) plus the pieces
+>    Phase 2's gap analysis named as missing — Artifact Registry, a Secret Manager secret —
+>    with the wiring between them (one shared image repo, not one per service). `terraform
+>    validate` passed for real. Two things named as deliberately excluded rather than silently
+>    omitted: no Cloud SQL resource (Postgres is Neon, matching how fhir-service already
+>    handles it — checked, not assumed, that no `.tf` file anywhere in this repo provisions a
+>    database directly); no VPC connector (Neon's public endpoint + TLS doesn't need one).
+> 2. **`deploy-phase3.sh`** — a real, complete script (terraform apply → build/push the three
+>    images → re-apply so Cloud Run picks up the digests), `bash -n` and `shellcheck` clean
+>    (zero issues, same bar as the existing `deploy.sh`). Not executed — Phase 3b hasn't
+>    started — but it's the script Phase 2 never wrote, not a placeholder for one.
+> 3. **An executed cloud smoke test in CI**, not just "a stub exists": `.github/workflows/
+>    tests.yml` gained a `phase3-terraform` job running `terraform validate` (matrix across
+>    all four Phase 3 Terraform directories) on every push/PR — deliberately `validate`, not
+>    `plan`: `plan` needs live GCP provider credentials this project doesn't provision, so
+>    `validate` is the real, zero-cost, credential-free check that's actually achievable, named
+>    as such rather than overclaiming a `plan` this CI job can't actually do for free
+>    (decisions.md). A `phase3-python` job also runs the full Phase 3 test suite against a
+>    real Postgres service container in CI — not just locally, and not self-skipping there.
 >
-> Even with those three named, **Phase 3b is still real authoring work**, not a single command
-> — the honest claim is "the design and per-service config won't need to change," not "nothing
-> is left to build." Treat every "Cloud-readiness stub" cell below as a **design commitment**,
-> and check the repo before citing one as a delivered artifact — the same caution Phase 2's own
+> Even with those three built, **Phase 3b is still real authoring work**, not a single command
+> — `terraform apply`, `deploy-phase3.sh`, and a live GCP project have never actually been
+> exercised together end-to-end (only `validate`, never `plan`/`apply`, per point 3 above). The
+> honest claim is "the design, per-service config, and composition are real and validated," not
+> "nothing is left to build." Treat every "Cloud-readiness stub" cell below as a **design
+> commitment**, and check the repo before citing one as a delivered artifact — the same caution
+> Phase 2's own
 > docs now carry.
 
 | Milestone | Status | Scope | Cloud-readiness stub |
@@ -790,7 +808,7 @@ module sketch, validated with `terraform validate`/`plan` but never applied.
 | M4 | ✅ Done (PR #43) | `provider-curation-agent`: wraps M3 with an AI run-summary; expand ingestion to the full curated set (NC, CA, MT) | n/a — CLI tool, no new deployable surface |
 | M5 | ✅ Done (PR #44) | `provider-mcp-server`: real MCP server (stdio), wired to the registry service; integration test proving the actual `initialize`/`tools-list`/`tools-call` handshake | Dockerfile + Terraform packaging stub (Artifact Registry only, deliberately **not** a Cloud Run Service resource — see §13.1: stdio doesn't cross a network boundary, so a Cloud Run Service resource here would validate cleanly while being undeployable) — `terraform validate` passed |
 | M6 | ✅ Done (PR #45) | `provider-search-agent`: real MCP client/host, Anthropic tool-use loop, groundedness eval suite | n/a — CLI tool; spawns the MCP server as a local child process |
-| M7 | ⏳ Not started | `docker-compose` demo profile bundling all four new components; end-to-end local verification | **Root Terraform module** (`infra/terraform/`) composing the M2/M3 per-service stubs + `deploy-phase3.sh` + an executed cloud smoke test wired into CI (stub-target, no live spend) — the three items the callout above names explicitly, not left implied. `terraform validate`/`plan` across everything (still not applied) |
+| M7 | ✅ Done (PR #46) | `docker-compose` demo profile bundling all four new components; end-to-end local verification | **Root Terraform module** (`infra/terraform/`) composing the M2/M3/M5 per-service stubs + `deploy-phase3.sh` + an executed cloud smoke test wired into CI (stub-target, no live spend) — the three items the callout above names explicitly, not left implied, and all three actually built this time (Phase 2 named the same three and built none of them). `terraform validate` across everything (still not applied) — `terraform plan` deliberately excluded from the CI smoke test; see the decisions.md entry for why. |
 
 **Verified, per milestone** (updated as each lands — see each PR for the full command output,
 not just the claim):
@@ -873,6 +891,27 @@ not just the claim):
   correctly and honestly flagged the known `accepting_new_patients` data gap (never guessed);
   a real Los Angeles query returned 10 real endocrinologists with correct lineage after the
   taxonomy-code fix.
+- **M7** (PR #46): full root `pytest` — **196 passed** (unchanged from M6 — M7 added no new
+  Python packages/tests, only infra/Docker/CI). Self-skip reconfirmed (162 passed, 34 skipped
+  with neither DB nor LLM key available). `terraform validate` passed for the new root module
+  (`infra/terraform/`) and all three composed per-service modules; `deploy-phase3.sh` is
+  `bash -n` and `shellcheck` clean. **All four Phase 3 Docker images actually built and run
+  together for the first time this milestone** (previously each service was only verified via
+  direct Python invocation, never through its own shipped Dockerfile): `docker compose build`
+  succeeded for all four; `provider-curation-agent`'s real container ingested all three states
+  (7,542 added + 5,040 updated = 12,582 total, matching M3/M4's numbers exactly) against a
+  fresh `docker-compose` Postgres; `provider-search-agent`'s real container — which spawns
+  `provider-mcp-server` as an internal child process, the most integration-heavy of the four
+  images — correctly resolved "cardiologist" (retrying to "cardiovascular disease" after an
+  initial weak match) and returned 10 real, correctly-grounded, correctly-sourced Los Angeles
+  cardiologists over the real Docker network (`provider-search-agent` → spawned
+  `provider-mcp-server` → HTTP → `provider-registry` → Postgres). One environment-specific
+  finding, not a code bug: `docker compose run` silently swallowed stdout in this sandbox
+  without the `-T` flag (disables pseudo-TTY allocation) — worth remembering for anyone
+  scripting `docker compose run` non-interactively here, confirmed by isolating the exact same
+  commands via `docker run -d` + `docker logs`, which reliably showed the real output `docker
+  compose run` had been swallowing. `docker compose config` reconfirmed the default profile
+  unchanged and `phase3` profile correctly scoped throughout.
 
 ### 13.1 Phase 3b — GCP cloud deployment (future, out of scope here)
 
@@ -880,13 +919,23 @@ Same intent as Phase 2b — but stated with the correction the callout above mak
 **real authoring work landing on top of M2–M7's stubs**, not a single command. Scope, once
 started:
 
-- `terraform apply` using M7's root module — the module that actually composes
-  `provider-registry-service` and `provider-mcp-server`'s per-service stubs, Cloud SQL/Neon,
-  Secret Manager, Artifact Registry, and the VPC connector — not the per-service stubs in
-  isolation, which is exactly what Phase 2 had at this stage and found insufficient.
-- Correctly scope IAM invoker bindings and VPC connector reach so the network-isolation-only
-  trust assumption in §12.1 actually holds — an explicit acceptance criterion for this
-  milestone, not an assumed side-effect of "ingress=internal" as a label.
+- `terraform apply` using M7's root module (`infra/terraform/main.tf`) — the module that
+  actually composes `provider-registry-service`, `provider-mcp-server`, and the ingestion
+  Cloud Run Job's per-service stubs, plus the shared Artifact Registry repo and Secret
+  Manager secret — not the per-service stubs in isolation, which is exactly what Phase 2 had
+  at this stage and found insufficient. **Corrected from the first draft**, which speculated
+  a Cloud SQL instance and a VPC connector before the root module existed: neither is in the
+  real module. Postgres is Neon (external SaaS, matching how fhir-service already handles it
+  in Phase 1/2 — no Terraform-managed database anywhere in this repo); no VPC connector is
+  needed since Neon is reached over its public endpoint with TLS, not a private network path.
+  Setting the Secret Manager secret's actual value (the Neon connection string) is a manual,
+  out-of-band step — `deploy-phase3.sh` prints the exact command, never runs it itself.
+- Correctly scope IAM invoker bindings so the network-isolation-only trust assumption in
+  §12.1 actually holds — an explicit acceptance criterion for this milestone, not an assumed
+  side-effect of "ingress=internal" as a label.
+- Actually run `terraform plan`/`apply` against a live GCP project — M7's CI smoke test
+  deliberately only runs `validate` (no live credentials provisioned for CI), so `plan` and
+  `apply` remain genuinely untested until Phase 3b, not just formally "left for later."
 - **No new application-layer auth** — matches the verified Phase 2 pattern (PRD §9): internal
   calls carry no API key/bearer/shared-secret header; isolation is enforced entirely by Cloud Run
   ingress + IAM, not by the application.
