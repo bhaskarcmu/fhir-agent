@@ -811,8 +811,16 @@ Now let's do the real end-to-end docker-compose verification — building and ru
 
 Now let's build the full `phase3` profile stack:
 
+All images built. Now bringing up the stack and seeding real data via `provider-curation-agent`:
+
+Both healthy and reachable. Now running `provider-curation-agent` to seed real data through the actual Docker image:
+
+Found it — `docker compose run` needs `-T` (no pseudo-TTY) in this non-interactive sandbox, or output gets silently swallowed. Re-running the real seed:
+
+Let me switch to a more robust diagnostic approach — run detached and fetch logs afterward via `docker logs`, avoiding any live-stream pipe race with `docker compose run`:
+
 <details>
-<summary>Execution details — 634 tool events</summary>
+<summary>Execution details — 653 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1935,6 +1943,61 @@ sleep 1
 ss -ltn 2>/dev/null | grep 5432 || echo "port 5432 free"`
 - **Bash** `cd /workspaces/fhir-agent
 COMPOSE_PROFILES=phase3 docker compose build postgres provider-registry provider-curation-agent provider-search-agent 2>&1 | tail -60`
+- **Bash** `cd /workspaces/fhir-agent
+COMPOSE_PROFILES=phase3 docker compose up -d postgres provider-registry 2>&1 | tail -20`
+- **Bash** `sleep 3
+cd /workspaces/fhir-agent
+docker compose ps postgres provider-registry
+echo "---health check via internal network---"
+docker compose exec -T provider-registry python3 -c "import urllib.request…`
+- **Bash** `cd /workspaces/fhir-agent
+COMPOSE_PROFILES=phase3 docker compose run --rm provider-curation-agent --states NC --no-llm 2>&1 | tail -20`
+- **Bash** `docker ps -a --filter "name=provider-curation-agent-run" --format "{{.Names}}: {{.Status}}"`
+- **Bash** `cd /workspaces/fhir-agent
+COMPOSE_PROFILES=phase3 docker compose run --rm provider-curation-agent --states NC --no-llm > /tmp/curation_run.log 2>&1
+cat /tmp/curation_run.log`
+- **Bash** `cd /workspaces/fhir-agent
+COMPOSE_PROFILES=phase3 docker compose run --rm provider-curation-agent --states NC --no-llm
+echo "EXIT CODE: $?"`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== sanity check: does docker compose run show basic output at all? ==="
+COMPOSE_PROFILES=phase3 docker compose run --rm --entrypoint python provider-curation-agent -c…`
+- **Bash** `cd /workspaces/fhir-agent
+COMPOSE_PROFILES=phase3 docker compose run --rm --entrypoint python provider-curation-agent -m provider_curation_agent --states NC --no-llm
+echo "EXIT: $?"`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== with -u flag ==="
+COMPOSE_PROFILES=phase3 docker compose run --rm --entrypoint python provider-curation-agent -u -m provider_curation_agent --states NC --no-llm
+ech…`
+- **Bash** `cd /workspaces/fhir-agent
+echo "=== with -T (no pseudo-tty) ==="
+COMPOSE_PROFILES=phase3 docker compose run --rm -T --entrypoint python provider-curation-agent -c "print('hello2'); import os; print('D…`
+- **Bash** `cd /workspaces/fhir-agent
+COMPOSE_PROFILES=phase3 docker compose run --rm -T provider-curation-agent --states NC --no-llm`
+- **Bash** `cd /workspaces/fhir-agent
+COMPOSE_PROFILES=phase3 docker compose run --rm -T provider-curation-agent --states NC --no-llm 2>&1
+echo "EXIT: $?"
+echo "=== check if data dirs exist in the image ==="
+COMP…`
+- **Bash** `cat -n /workspaces/fhir-agent/provider-curation-agent/Dockerfile`
+- **Bash** `cd /workspaces/fhir-agent
+COMPOSE_PROFILES=phase3 docker compose run --rm -T --entrypoint sh provider-curation-agent -c "ls -la /app/data/scripts/provider_ingest/ && echo --- && ls -la /app/data/refer…`
+- **Bash** `cd /workspaces/fhir-agent
+COMPOSE_PROFILES=phase3 docker compose run --rm -T --entrypoint python3 provider-curation-agent -c "
+import sys
+sys.argv = ['provider_curation_agent', '--states', 'NC', '--no…`
+- **Bash** `cd /workspaces/fhir-agent
+timeout 50 docker compose run --rm -T -e DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›postgres:5432/provider_registry" \
+  --entrypoint python3 provider-cur…`
+- **Bash** `cd /workspaces/fhir-agent
+docker network ls --filter name=fhir-agent --format "{{.Name}}"`
+- **Bash** `docker run -d --name curation_debug --network fhir-agent_default \
+  -e DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›postgres:5432/provider_registry" \
+  --entrypoint python3 fhir-ag…`
+- **Bash** `sleep 8
+docker ps -a --filter name=curation_debug --format "{{.Status}}"
+echo "---logs---"
+docker logs curation_debug 2>&1`
 
 </details>
 
@@ -1945,6 +2008,6 @@ COMPOSE_PROFILES=phase3 docker compose build postgres provider-registry provider
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 18 July 2026, 11:22 UTC
+- **Last updated:** 18 July 2026, 11:28 UTC
 - **Turns:** 13
 - **Status:** Incomplete
