@@ -799,8 +799,14 @@ Let's plan M7 concretely. Checking Phase 2's actual gap more precisely — CI ha
 
 Let's build the root Terraform module first, then do the full docker-compose end-to-end test. Starting with the module:
 
+Now updating the root module to reference this output instead of duplicating the resource:
+
+Now let's validate the root module:
+
+Good, both root and child modules validate. Now `deploy-phase3.sh`:
+
 <details>
-<summary>Execution details — 607 tool events</summary>
+<summary>Execution details — 622 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1872,6 +1878,32 @@ find /workspaces/fhir-agent/fhir-service -iname "*.tf" 2>/dev/null
 grep -rln "NEON_" /workspaces/fhir-agent --include="*.tf"…`
 - **Write** `/workspaces/fhir-agent/infra/terraform/main.tf`
 - **Read** `/workspaces/fhir-agent/provider-mcp-server/infra/main.tf`
+- **Read** `/workspaces/fhir-agent/provider-mcp-server/infra/main.tf`
+- **Bash** `cat -n /workspaces/fhir-agent/provider-mcp-server/infra/main.tf`
+- **Edit** `/workspaces/fhir-agent/provider-mcp-server/infra/main.tf`
+- **Edit** `/workspaces/fhir-agent/infra/terraform/main.tf`
+- **Bash** `grep -n "provider-mcp-server is intentionally NOT composed" /workspaces/fhir-agent/infra/terraform/main.tf`
+- **Bash** `echo "=== provider-registry-service/infra/main.tf variables ==="
+grep -n "^variable" -A 3 /workspaces/fhir-agent/provider-registry-service/infra/main.tf
+echo "=== data/scripts/provider_ingest/infra/ma…`
+- **Edit** `/workspaces/fhir-agent/infra/terraform/main.tf`
+- **Bash** `cd /workspaces/fhir-agent/infra/terraform && terraform init -backend=false 2>&1 | tail -15`
+- **Bash** `terraform validate 2>&1`
+- **Bash** `terraform fmt -diff 2>&1`
+- **Bash** `cat >> /workspaces/fhir-agent/infra/terraform/main.tf << 'EOF'
+
+output "artifact_registry_repository" {
+  value = module.provider_mcp_server.repository_id
+}
+
+output "database_url_secret_id" {
+  value…`
+- **Bash** `rm -rf /workspaces/fhir-agent/infra/terraform/.terraform /workspaces/fhir-agent/infra/terraform/.terraform.lock.hcl
+echo "cleaned"`
+- **Bash** `cd /workspaces/fhir-agent/provider-mcp-server/infra && terraform init -backend=false 2>&1 | tail -5 && terraform validate 2>&1
+rm -rf .terraform .terraform.lock.hcl`
+- **TodoWrite** `{"todos": [{"content": "Build root Terraform module composing the 3 per-service stubs + shared Artifact Registry + Secret Manager + IAM wiring", "status": "completed", "activeForm": "Building the root…`
+- **Bash** `head -40 /workspaces/fhir-agent/deploy.sh 2>/dev/null`
 
 </details>
 
@@ -1882,6 +1914,6 @@ grep -rln "NEON_" /workspaces/fhir-agent --include="*.tf"…`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 18 July 2026, 11:18 UTC
+- **Last updated:** 18 July 2026, 11:20 UTC
 - **Turns:** 13
 - **Status:** Incomplete
