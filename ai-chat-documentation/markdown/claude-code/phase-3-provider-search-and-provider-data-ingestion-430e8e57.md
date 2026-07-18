@@ -828,7 +828,7 @@ Complete, correct, real end-to-end verification through the actual shipped Docke
 That also tore down the pre-existing `fhir` service (unrelated to my testing, running from before this session). Restoring it and native Postgres:
 
 <details>
-<summary>Execution details — 662 tool events</summary>
+<summary>Execution details — 663 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2037,6 +2037,10 @@ sudo service postgresql start 2>&1`
 - **Bash** `sleep 15
 curl -sf http://localhost:8080/fhir/metadata > /dev/null && echo "fhir server healthy" || echo "fhir server still starting"
 pg_isready -h localhost -p 5432 2>&1`
+- **Bash** `cd /workspaces/fhir-agent
+find . -name "test_*.py" | xargs -n1 basename | sort | uniq -c | awk '$1>1'
+echo "collision check done"
+find . -name "__pycache__" -o -name "*.egg-info" -o -name ".pytest_cac…`
 
 </details>
 
@@ -2047,6 +2051,6 @@ pg_isready -h localhost -p 5432 2>&1`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 18 July 2026, 11:30 UTC
+- **Last updated:** 18 July 2026, 11:31 UTC
 - **Turns:** 13
 - **Status:** Incomplete
