@@ -851,8 +851,20 @@ That's expected — `git reset --hard origin/main` correctly reverted `main`'s w
 
 Confirmed clean, all M7 work intact on the feature branch. Now pushing and opening the PR:
 
+PR #46 matched my prediction. Finalizing.
+
+**M7 done. PR opened:** [github.com/bhaskarcmu/fhir-agent/pull/46](https://github.com/bhaskarcmu/fhir-agent/pull/46) — branch `feature/m7-docker-compose-e2e`.
+
+One thing to flag directly: partway through I caught that I'd committed this work straight to `main` instead of a feature branch — a genuine slip on my part after six clean milestones. I fixed it before pushing anything (moved the commit to a proper branch, reset local `main` back to match `origin/main`; `origin/main` itself was never touched), and it's called out plainly in the PR description rather than glossed over.
+
+On the actual work: this milestone builds the three things Phase 2 named but never delivered — a real root Terraform module (composing M2/M3/M5's stubs, correcting an earlier speculative guess about needing Cloud SQL/a VPC connector once I could see what the module actually required), a real `deploy-phase3.sh` (`shellcheck`-clean, unexecuted since Phase 3b hasn't started), and CI that actually runs `terraform validate` plus the full Phase 3 test suite against a real Postgres container on every PR.
+
+The most valuable verification: all four Phase 3 Docker images were built and run together for the first time, not just their Python code in isolation. Real ingestion through `provider-curation-agent`'s actual container, and a real natural-language query through `provider-search-agent`'s actual container — which has to spawn `provider-mcp-server` internally and reach `provider-registry` over the real Docker network — came back with 10 correctly-grounded Los Angeles cardiologists.
+
+**Phase 3 (M1–M7) is complete pending this PR's merge.** Only Phase 3b — live GCP deployment — remains, and it hasn't started.
+
 <details>
-<summary>Execution details — 698 tool events</summary>
+<summary>Execution details — 701 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2134,6 +2146,13 @@ echo "---confirm files are the M7 versions again---"
 git log --oneline -1`
 - **Bash** `cd /workspaces/fhir-agent
 git push -u origin feature/m7-docker-compose-e2e`
+- **Bash** `cd /workspaces/fhir-agent
+gh pr create --title "feat(provider-search): M7 — Phase 3 complete: root Terraform, deploy script, CI, real e2e" --body "$(cat <<'EOF'
+## Summary
+
+The last milestone before P…`
+- **TodoWrite** `{"todos": [{"content": "Build root Terraform module composing the 3 per-service stubs + shared Artifact Registry + Secret Manager + IAM wiring", "status": "completed", "activeForm": "Building the root…`
+- **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase3-planning-state.md`
 
 </details>
 
@@ -2144,6 +2163,6 @@ git push -u origin feature/m7-docker-compose-e2e`
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 18 July 2026, 11:37 UTC
+- **Last updated:** 18 July 2026, 11:38 UTC
 - **Turns:** 13
 - **Status:** Incomplete
