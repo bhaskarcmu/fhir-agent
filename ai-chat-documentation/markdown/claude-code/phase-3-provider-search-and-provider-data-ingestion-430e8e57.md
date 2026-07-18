@@ -1117,8 +1117,31 @@ Environment restored cleanly — `fhir` container untouched and healthy, native 
 
 **Current worktree:** `/workspaces/fhir-agent` · **current branch:** `docs/phase3-documentation-pass` (already created) · **target branch:** `main`. Committing and pushing now, per CLAUDE.md's proactive-branch-and-PR rule.
 
+Now updating the `phase3-planning-state` memory to reflect PR #46 (merged, branches deleted) and this documentation pass.
+
+The description field for this memory is still accurate. Let's finalize.
+
+## Summary
+
+**Documentation audit complete.** Files changed: 13 (5 new package READMEs + 8 modified docs), branch `docs/phase3-documentation-pass`, commit `d2d02ab`, PR **[#47](https://github.com/bhaskarcmu/fhir-agent/pull/47)** open against `main`.
+
+**Added:**
+- READMEs for all 5 Phase 3 packages (previously none existed)
+- Root `README.md` and `docs/README.md`: Phase 3 nav, service tables, request-flow diagrams
+- `docs/developer-guide.md`: a third "phase" in the mental model, a full search-request lifecycle table, Phase 3 invariants and repo-map entries, 5 real traps from M2–M7, an "adding an MCP tool" recipe
+- `docs/testing-guide.md`: real per-package test counts (83 new, 196 total), updated CI jobs, honest gaps, a second case study (§6a)
+- `docs/demo-guide.md`: new §5a Phase 3 walkthrough with per-audience talking points
+
+**Fixed (found during the audit):** `docs/phase3/decisions.md` still claimed "nothing in Phase 3 is built yet" despite rows below it citing real M3–M7 findings; `prd.md`/`design.md` still had "Draft — not yet opened as a PR" headers, stale since PR #40.
+
+**Validation performed:** brought up the real `phase3` compose stack, ran the actual documented curation-agent and search-agent commands end-to-end (10 real Chapel Hill endocrinologists returned via a live MCP tool-use loop), ran the Phase 3 pytest suites against real Postgres (83 passed, matching the documented count), then restored the environment (native Postgres restarted, Phase 3 containers torn down, `fhir` container left untouched).
+
+**Known limitation:** the `provider-search-agent` groundedness-eval tests (3 of its 10) weren't run in the pytest pass to avoid unnecessary billed API calls — the live manual query already exercised that exact path successfully.
+
+Memory updated to reflect PR #46 merged/branches deleted and this documentation pass. No further action pending on my end — the PR is open for review.
+
 <details>
-<summary>Execution details — 816 tool events</summary>
+<summary>Execution details — 821 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2549,6 +2572,11 @@ Now that M1-M7 are all merged, close the documentation gap found by audit: every
 ## Summary
 
 Now that Phase 3 (Provider Search & Referral) is complete — all 7 milestones merged (PRs #40-#46…`
+- **TodoWrite** `{"todos": [{"content": "Read reference package READMEs (claims-agent, triage-service, rxclaim-emulator) for style", "status": "completed", "activeForm": "Reading reference package READMEs"}, {"content…`
+- **Read** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase3-planning-state.md`
+- **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase3-planning-state.md`
+- **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase3-planning-state.md`
+- **TodoWrite** `{"todos": [{"content": "Read reference package READMEs (claims-agent, triage-service, rxclaim-emulator) for style", "status": "completed", "activeForm": "Reading reference package READMEs"}, {"content…`
 
 </details>
 
@@ -2559,6 +2587,6 @@ Now that Phase 3 (Provider Search & Referral) is complete — all 7 milestones m
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 18 July 2026, 12:08 UTC
+- **Last updated:** 18 July 2026, 12:09 UTC
 - **Turns:** 15
 - **Status:** Incomplete
