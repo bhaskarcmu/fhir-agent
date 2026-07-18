@@ -797,8 +797,10 @@ Now researching M7's actual scope before implementing — checking Phase 2's CI 
 
 Let's plan M7 concretely. Checking Phase 2's actual gap more precisely — CI has zero Phase 3 coverage today, and no root Terraform module exists anywhere. This gives me real, well-scoped work rather than a formality.
 
+Let's build the root Terraform module first, then do the full docker-compose end-to-end test. Starting with the module:
+
 <details>
-<summary>Execution details — 603 tool events</summary>
+<summary>Execution details — 605 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1864,6 +1866,10 @@ echo…`
 - **TodoWrite** `{"todos": [{"content": "Build root Terraform module composing the 3 per-service stubs + shared Artifact Registry + Secret Manager + IAM wiring", "status": "pending", "activeForm": "Building the root T…`
 - **Bash** `docker info 2>&1 | head -10
 docker ps 2>&1 | head -5`
+- **Bash** `mkdir -p /workspaces/fhir-agent/infra/terraform`
+- **Bash** `grep -rn "NEON\|neon" /workspaces/fhir-agent/fhir-service/infra 2>/dev/null
+find /workspaces/fhir-agent/fhir-service -iname "*.tf" 2>/dev/null
+grep -rln "NEON_" /workspaces/fhir-agent --include="*.tf"…`
 
 </details>
 
