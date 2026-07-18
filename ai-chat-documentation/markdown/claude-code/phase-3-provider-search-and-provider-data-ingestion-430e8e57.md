@@ -1180,8 +1180,36 @@ Now let's check `models.py:54` and `schemas.py:36` for finding #4 (taxonomy code
 
 Now finding #5 — README.md's status-narrative staleness.
 
+Good — now let's check `errors.py` briefly to confirm how 400s render, then implement all code changes.
+
+Good, this confirms Pydantic validation errors already map to 400 automatically. Now implementing the code fixes.
+
+**Fix A — `sanitize_location()` + real request-logging middleware:**
+
+Now wire it into `main.py` and add the sanitized log line to the search handler:
+
+Now a test for `sanitize_location` and the logging middleware:
+
+**Fix B — `npi_status` schema mismatch (`unknown` → `deactivated`):**
+
+No stray doc references to fix there. Now **Fix C — taxonomy code pattern at the HTTP layer**:
+
+Now let's run the full Phase 3 Python suite to confirm all the code changes are correct.
+
+No skips — all 52 tests ran against the real database and passed, including the 6 new tests covering the review fixes. Now let's verify the middleware doesn't break the live stack, and check the diff for the models.py change is syntactically sound with a quick import check.
+
+All three code fixes verified working. Now let's fix the documentation issues — **Finding #2 (terraform validate/plan wording)** and **Finding #5 (README "Current Status" staleness)**.
+
+Good — reads cleanly and now matches the rest of the document. Now the root README's "Current Status" section:
+
+Now let's update `provider-registry-service/README.md` to reflect the two now-real code additions (logging middleware, taxonomy pattern), and check `data/scripts/provider_ingest/README.md` for any stale reference.
+
+That's already accurate (doesn't mention "unknown"), no change needed there. Now update `provider-registry-service/README.md`:
+
+Let's add proper traceability for these fixes in `decisions.md` and note the implementation gap honestly in `design.md`, matching the project's own "never edited to look right in hindsight" discipline.
+
 <details>
-<summary>Execution details — 839 tool events</summary>
+<summary>Execution details — 870 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2638,6 +2666,43 @@ Now that Phase 3 (Provider Search & Referral) is complete — all 7 milestones m
 - **Read** `/workspaces/fhir-agent/README.md`
 - **Read** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/location.py`
 - **Read** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/ratelimit.py`
+- **Bash** `ls provider-registry-service/src/provider_registry/tests/`
+- **Read** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/tests/test_api_validation.py`
+- **Bash** `sed -n '1,50p' provider-registry-service/src/provider_registry/errors.py`
+- **Edit** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/location.py`
+- **Write** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/logging_middleware.py`
+- **Edit** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/main.py`
+- **Edit** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/main.py`
+- **Edit** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/main.py`
+- **Read** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/tests/test_ratelimit.py`
+- **Write** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/tests/test_logging_middleware.py`
+- **Edit** `/workspaces/fhir-agent/data/scripts/provider_ingest/fetch_nppes.py`
+- **Edit** `/workspaces/fhir-agent/data/scripts/provider_ingest/fetch_nppes.py`
+- **Edit** `/workspaces/fhir-agent/data/scripts/provider_ingest/test_fetch_nppes.py`
+- **Bash** `grep -rn '"unknown"' data/scripts/provider_ingest/README.md docs/phase3/design.md docs/phase3/decisions.md 2>/dev/null | grep -i "npi_status\|status"`
+- **Edit** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/models.py`
+- **Edit** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/models.py`
+- **Edit** `/workspaces/fhir-agent/provider-registry-service/src/provider_registry/tests/test_api_validation.py`
+- **Bash** `sudo service postgresql status 2>&1 | head -3`
+- **Bash** `TEST_DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›localhost:5432/provider_registry_test" DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›localhost:5432/provider_regist…`
+- **Bash** `TEST_DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›localhost:5432/provider_registry_test" DATABASE_URL="postgresql://provider_registry:‹redacted:url-credentials›localhost:5432/provider_regist…`
+- **Bash** `python3 -c "
+import sys
+sys.path.insert(0, 'provider-registry-service/src')
+from provider_registry.models import SearchProvidersRequest
+from pydantic import ValidationError
+try:
+    SearchProvidersReq…`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Bash** `sed -n '754,762p' docs/phase3/design.md`
+- **Edit** `/workspaces/fhir-agent/README.md`
+- **Bash** `grep -n "npi_status\|deactivat\|unknown" data/scripts/provider_ingest/README.md`
+- **Edit** `/workspaces/fhir-agent/provider-registry-service/README.md`
+- **Edit** `/workspaces/fhir-agent/provider-registry-service/README.md`
+- **Read** `/workspaces/fhir-agent/provider-registry-service/README.md`
+- **Edit** `/workspaces/fhir-agent/provider-registry-service/README.md`
+- **Bash** `sed -n '744,750p' docs/phase3/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase3/design.md`
 
 </details>
 
@@ -2648,6 +2713,6 @@ Now that Phase 3 (Provider Search & Referral) is complete — all 7 milestones m
 - **Source:** Claude Code
 - **Session ID:** `430e8e57-d6b5-46cb-89d1-1b01e1ad7fcb`
 - **Created:** 17 July 2026, 13:05 UTC
-- **Last updated:** 18 July 2026, 12:26 UTC
+- **Last updated:** 18 July 2026, 12:29 UTC
 - **Turns:** 16
 - **Status:** Incomplete
