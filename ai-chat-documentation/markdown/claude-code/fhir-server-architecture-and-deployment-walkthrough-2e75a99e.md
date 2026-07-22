@@ -14,6 +14,35 @@ I'll explore the fhir-service directory to build an accurate picture before expl
 
 This confirms it's the **hapi-fhir-jpaserver-starter** codebase. Let me confirm via the pom.xml, then check the Dockerfile and the profile-specific config files (application.yaml, application-neon.yaml, application-cds.yaml, application-elastic.yaml) and the test config to understand the H2/Postgres/Neon split.
 
+## (1) What was downloaded, and what it can do
+
+What lives in [fhir-service/](fhir-service/) is not a library you added as a Maven dependency — it's the **HAPI FHIR JPA Server Starter**, a complete, vendored reference-implementation project published by the HAPI FHIR org (package prefix `ca.uhn.fhir.jpa.starter`, pinned to `hapi-fhir` parent POM `8.8.0` — see [pom.xml](fhir-service/pom.xml)). "Downloaded" is accurate in the sense that its full source tree was pulled in and then customized (Neon profile, MCP bridge classes, Docker/K8s manifests are this repo's additions on top of the stock starter).
+
+What that code gives you, out of the box:
+
+- **A conformant FHIR R4 REST API** — generic create/read/update/search/history/transaction for every FHIR resource type, versioned with ETag/`If-Match` optimistic locking, plus a self-describing `CapabilityStatement` at `/fhir/metadata`.
+- **A JPA persistence engine**, not per-resource tables: resources are stored as versioned JSON blobs (`HFJ_RESOURCE`/`HFJ_RES_VER`) alongside extracted search-parameter index tables. This is *why* the same code runs unmodified against H2 or Postgres — only the Hibernate dialect changes.
+- **A large set of optional subsystems**, present in the jar but switched off by config flags in [application.yaml](fhir-service/src/main/resources/application.yaml): MDM patient-matching, CQL/Clinical Reasoning + CDS Hooks, Elasticsearch/Lucene full-text search, bulk import/export, subscriptions, GraphQL, IG package installation, multitenancy/partitioning.
+- **Operational surface**: Spring Boot Actuator health/liveness/readiness/Prometheus endpoints, Swagger UI, an embedded web "tester" UI.
+- **A Spring AI MCP bridge** (`McpServerConfig`, `McpFhirBridge`) — this HAPI starter version exposes FHIR operations directly as MCP tools from the FHIR server itself. That's a *second*, separate MCP surface from the Python `mcp-agent` package described in CLAUDE.md — worth keeping in mind so the two aren't conflated as the same integration point.
+
+## (2) Is your framing correct?
+
+Mostly, with a few precisions worth adding:
+
+**"Java code was downloaded"** — correct, but it's a whole buildable reference application (the HAPI FHIR JPA Starter), not a snippet or a single dependency.
+
+**"Containerized deployable Spring Boot solution"** — "solution" is fine informally; more precise terms here would be **service** or **server** (this repo already calls it `fhir-service`, one of several `*-service` modules — "solution" tends to imply a bundled product rather than one component of a platform). One technical nuance: it packages as `packaging: war` in the POM, not `jar`. Spring Boot's repackage plugin (`loaderImplementation=CLASSIC`) turns that WAR into a self-executable artifact with embedded Tomcat, which is why the [Dockerfile](fhir-service/Dockerfile) runs `java -jar app.war` even though the file is a WAR — same artifact could also be dropped into an external servlet container if ever needed. That's a deliberate HAPI-starter convention, not an inconsistency.
+
+**"Multiple DB profiles to enable fast development and robust performance in production"** — the mechanism is right (Spring `SPRING_PROFILES_ACTIVE`, default = H2, `neon` = Neon serverless Postgres, per [README.md](fhir-service/README.md#database-profiles) and [application-neon.yaml](fhir-service/src/main/resources/application-neon.yaml)), but I'd correct the *reason*: it's not primarily about performance, it's about **durability and shareability**. H2 here runs `jdbc:h2:mem:...` — in-memory, wiped on restart, and unusable across multiple replicas since each pod would have its own isolated database. Neon gives you persistence and a single shared datastore multiple instances can point at. "Robust performance" undersells the actual gap H2 can't close.
+
+A few things worth folding into your mental model that weren't in your description:
+
+- **Schema management is auto-DDL, not migrations.** `hibernate.hbm2ddl.auto: update` lets Hibernate alter the schema at boot; Flyway is present as a dependency but explicitly `enabled: false`. That's fine for a dev/demo H2 database, but it's a real gap for "production robustness" — no versioned migration history, no rollback path, risk of schema drift against a live Neon database. Worth a deliberate decision, not an oversight, if this ever needs to be hardened.
+- **Container hardening is already fairly mature**: the [Dockerfile](fhir-service/Dockerfile) uses a multi-stage build (JDK+Maven to build, JRE-only to run, smaller attack surface), a non-root user, and container-aware JVM flags (`MaxRAMPercentage=75.0`, `ExitOnOutOfMemoryError`). The [k8s/deployment.yaml](fhir-service/k8s/deployment.yaml) adds `runAsNonRoot`, dropped Linux capabilities, `readOnlyRootFilesystem: true` (with an `emptyDir` for Tomcat's `/tmp` writes), and probe/resource values that were tuned from an actual GKE OOM incident (1Gi → OOMKilled, bumped to 2Gi) — that's real production learning baked into config, not boilerplate.
+- **Security/authN/authZ isn't handled here at all** — the FHIR server has no auth of its own; that's delegated entirely to the Kong gateway sitting in front of it, per the repo's stated architecture. So "robust performance in production" should really be read as "robust *persistence and orchestration*" — the security posture is a separate layer.
+- **Most of HAPI's advanced capability is dormant, not absent.** MDM, CQL/CDS Hooks, Elasticsearch search, bulk export — all compiled in, all toggled off. That's a meaningful asset: turning these on later is a config change, not new engineering, if the platform's roadmap ever needs them.
+
 <details>
 <summary>Execution details — 8 tool events</summary>
 
@@ -37,6 +66,6 @@ This confirms it's the **hapi-fhir-jpaserver-starter** codebase. Let me confirm 
 - **Source:** Claude Code
 - **Session ID:** `2e75a99e-6530-4b28-82f9-b3b5ee1df979`
 - **Created:** 22 July 2026, 14:25 UTC
-- **Last updated:** 22 July 2026, 14:25 UTC
+- **Last updated:** 22 July 2026, 14:26 UTC
 - **Turns:** 1
 - **Status:** Complete
