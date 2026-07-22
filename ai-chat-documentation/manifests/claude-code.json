@@ -11,6 +11,18 @@
     "turns": 4,
     "updated_at": "2026-07-13T11:29:05.356000+00:00"
   },
+  "2e75a99e-6530-4b28-82f9-b3b5ee1df979": {
+    "archived_at": "2026-07-22T14:25:46.500950+00:00",
+    "created_at": "2026-07-22T14:25:03.840000+00:00",
+    "md_filename": "fhir-server-architecture-and-deployment-walkthrough-2e75a99e.md",
+    "present": true,
+    "raw_filename": "2e75a99e-6530-4b28-82f9-b3b5ee1df979.jsonl",
+    "source_deleted_at": null,
+    "status": "complete",
+    "title": "FHIR server architecture and deployment walkthrough",
+    "turns": 1,
+    "updated_at": "2026-07-22T14:25:31.384000+00:00"
+  },
   "4122fa87-767c-455f-9397-ab0d1fff4f85": {
     "archived_at": "2026-07-13T15:07:16.770377+00:00",
     "created_at": "2026-07-13T11:36:02.630000+00:00",
