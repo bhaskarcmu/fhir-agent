@@ -125,6 +125,16 @@ This makes "demonstrably working" checkable: **it means spec-conformant to those
 
 Two things I made a judgment call on but you may want to override:
 
+Got it — proxy-in-front-of-fhir-service, new top-level `epic-emulator/` directory. Updating the problem statement accordingly:
+
+- **Integration architecture:** epic-emulator is a proxy/gateway layer in front of `fhir-service`. It forwards standard CRUD to the real service and layers Epic auth (SMART Backend Services), the medication/allergy extension handling, and the three named quirks as request/response transforms. Single source of truth for FHIR data — no duplicate fixtures, reuses whatever `fhir-service` already has seeded.
+- **Consequence worth flagging now:** testing epic-emulator requires both processes running (epic-emulator + fhir-service), unlike the standalone option. Worth deciding later whether local dev/CI spins up both automatically or whether that's left manual for Phase 4.
+- **Repo location:** `epic-emulator/` as a new top-level directory, own Maven build/pom — same pattern as `fhir-service/`, `triage-service/`, `mcp-agent/` in the existing layout table. It'll depend on `fhir-service` only at runtime (HTTP calls), not as a build dependency.
+
+That resolves the two open architecture-adjacent questions. The problem statement is otherwise as revised above: source-of-truth specs named (SMART Backend Services, medication/allergy-scoped extensions, 3 bounded quirks), stakeholder-assessment criterion replaced with the self-directed prescription-refill-triage acceptance test, security callout on fake-only credentials, and the tightened zero-artifact/no-internal-DTO check.
+
+Say the word when you want to move to drafting the actual PRD.
+
 <details>
 <summary>Execution details — 1 tool event</summary>
 
@@ -141,6 +151,6 @@ Two things I made a judgment call on but you may want to override:
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 12:39 UTC
+- **Last updated:** 31 July 2026, 12:45 UTC
 - **Turns:** 2
 - **Status:** Complete
