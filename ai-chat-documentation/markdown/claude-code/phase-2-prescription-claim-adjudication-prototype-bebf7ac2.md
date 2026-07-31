@@ -5058,6 +5058,90 @@ Regarding the agent:
 
 Let me ground this in your actual agent code before answering — especially for the "what work was done" and "how to program it" parts.
 
+Grounding these in your actual agent: the loop is [agent.py](mcp-agent/src/agent/agent.py) — `run_query(client, user_input, messages)` takes a `messages` list and returns the grown one; `interactive_mode` keeps that list across turns; there's a `SYSTEM_PROMPT` constant passed on every call; model is `claude-sonnet-4-5`, `MAX_TOKENS=1024`. That's the whole memory-and-control surface, so I'll anchor to it.
+
+## 1. Long-term vs short-term memory — what they mean
+
+**Short-term (a.k.a. working memory) = the `messages` list.** It's the running transcript the model sees *this turn*: your query, the model's tool calls, the tool results, its replies. In your code it lives in RAM as a Python list, grows each turn inside one `interactive_mode` session, and **dies when the process exits**. It's bounded by the context window and by cost (you resend the whole list every turn).
+
+**Long-term memory = anything that survives across sessions:** past conversations, learned preferences, a knowledge base you retrieve from. **Your agent has none of this today** — every `--query` invocation (`docker compose run --rm`) starts with `messages = []`. A fresh brain each time.
+
+The considerations differ sharply:
+
+| | Short-term | Long-term |
+|---|---|---|
+| Lives | in the context window | in a store (DB, vector index, files) |
+| Fails by | overflowing / cost growth | going **stale** or leaking |
+| You manage by | trimming, summarizing | retrieval (RAG), TTLs, curation |
+
+**The clinical twist that matters here:** in this design, **FHIR *is* the agent's long-term memory** — deliberately. Clinical facts live in `fhir-service`, not in the agent, and the agent re-fetches them each time. That's the right call: clinical data changes, and a system that *recalls* "no allergies" from last week instead of *re-reading* the chart is the fail-open bug in a different costume. So the rule of thumb: **short-term memory for conversational flow; system-of-record (FHIR) for anything you'd act on.** Never let the agent's recall substitute for a fresh read.
+
+## 2. Deployment — memory & compute
+
+The agent is **I/O-bound and nearly stateless**, which is the good news:
+
+- **Compute is cheap; it's mostly *waiting*** — on the Anthropic API and on tool calls (FHIR/triage). CPU per request is trivial. So you scale **horizontally** with many small instances, and the real "cost" is **tokens**, not cores.
+- **Token cost grows with conversation length.** You resend the whole `messages` list every turn, so a 20-turn chat pays for the transcript ~20 times — cost climbs roughly quadratically. This is the single biggest prod cost lever, and it's why context trimming (Q4) is a cost feature, not just a correctness one.
+- **Memory footprint = sum of all *active* context windows.** One conversation is tiny; 10,000 concurrent ones each holding a fat transcript (FHIR bundles bloat fast) is not. If you keep sessions in-process you can't scale out cleanly and you lose them on restart/deploy.
+- **The deployment decision that follows:** to run this as a real service, **externalize the session** (`messages` → Redis/DB keyed by a session id) so the service itself stays stateless — any instance can serve any turn, no sticky sessions, restarts are safe. Your current CLI sidesteps all of this by being one-shot, which is fine for a demo and a real limitation for prod.
+- Plus the usual: **API rate limits** (the Anthropic account is a shared quota — a burst of agents can throttle each other), **cold starts** (matters on Cloud Run — the same `min-instances` concern as HAPI), and **secret management** for the API key.
+
+## 3. Observability in prod
+
+Agents are harder to observe than a normal service because they're **non-deterministic and multi-step** — one user turn can be N model calls and M tool calls. So you instrument the *loop*, not just the request:
+
+- **Trace the whole run with OpenTelemetry** (the plan already intends OTel → Cloud Trace): one span per agent run, child spans per `client.messages.create` call and per tool execution. You want to see the *shape* of the reasoning — which tools, in what order, how many turns to resolve.
+- **Metrics to emit per turn:** input/output tokens (= cost), latency per model call and per tool, `stop_reason` distribution, tool error rate, turns-to-resolution, and how often it emits HIGH. These tell you cost, health, and behavioural drift.
+- **PHI-safe by construction (R14) — this is the one you cannot get wrong.** The `messages` contain patient names, meds, allergies. Traces and logs must record **structure and IDs, not raw PHI** — log "called `assess_refill_risk(patient=P123)` → HIGH", never the transcript. Same discipline as never echoing secrets.
+- **Capture traces for *evaluation*, not just debugging.** Store `(input → tool calls → output)` so you can replay and score: did it call the right tools, did it stay grounded, did it hallucinate a risk level. That replay corpus is how you catch regressions in a component with no deterministic output.
+- **Use `--no-llm` as a live oracle.** You already have a deterministic path (`claims-agent --no-llm`). In prod you can run it alongside and **alert when the LLM's explanation disagrees with the deterministic decision** — cheap, powerful drift detection that most agent systems don't have.
+
+## 4. Conversation follow-ups
+
+**What's already done:** `run_query` is deliberately written to take `messages` in and return them out — the docstring says *"The caller can pass messages back in for multi-turn conversation."* `interactive_mode` does exactly that: it holds one `messages` list and grows it every turn. So **inside one interactive REPL session, follow-ups work** — the model sees the whole prior exchange (including tool results), so *"what about her other medication?"* resolves without you re-naming the patient. That's real, and it's a clean design (the loop is stateless; the caller owns the memory).
+
+**What's *not* done:** the one-shot `--query` path never persists. Every `docker compose run --rm` is a new process with `messages = []`, so follow-ups **don't survive across CLI invocations** — only within a live session.
+
+**What could be done, roughly in order:**
+- **Persist sessions** (externalize `messages`, Q2) so follow-ups survive a real API and horizontal scaling.
+- **Context management** — right now history grows **unbounded**, so a long chat eventually gets expensive and then overflows the window. Add trimming/summarization of old turns.
+- **Tool-result compaction** — FHIR bundles are large; keep a reference/summary in-context and the full payload out-of-band.
+- **Re-fetch, don't recall** — for a clinical follow-up, re-query FHIR rather than trust a risk level from 5 turns ago; anchor safety to a fresh tool call so the model can't "remember" a stale HIGH as LOW.
+
+## 5. "Programming" the agent with natural-language rules
+
+You already have the mechanism — it's `SYSTEM_PROMPT`, passed as `system=` on every model call. **Editing that string *is* programming the agent.** Your two example rules map straight onto it:
+
+```python
+SYSTEM_PROMPT = """You are a clinical decision-support assistant. You do NOT make
+clinical judgements yourself.
+
+(1) Before assessing anything, unambiguously identify BOTH the patient and the
+    specific medication/prescription in question. If either is unclear or matches
+    more than one record, ask ONE clarifying question and call no tools until it
+    is resolved.
+
+(2) Return exactly one of: DISPENSE · REVIEW · DO NOT DISPENSE — taken directly
+    from assess_refill_risk's output. Never invent a risk level or clinical
+    reasoning of your own."""
+```
+
+That's the easy 80%. But here's the senior-engineer caveat, and it's the whole thesis of your project restated:
+
+**A natural-language rule in a prompt is *steering*, not a *guarantee*.** The model will usually follow it and can still deviate. For rules that are merely *stylistic* ("be concise," "always cite the RiskAssessment ID"), the prompt is enough. For rules that are **invariants** — "only ever 3 responses," "never reason clinically" — back them with **deterministic code**, because you cannot let a probabilistic system be the last line of defence on a safety rule.
+
+Concretely, for your two:
+- **Rule 2 ("only 3 responses")** — enforce it, don't just ask for it. Whitelist/validate the output against the enum in code, or expose the decision as a *tool with an enum output* so the shape is structurally forced. A prompt says "please"; a validator says "no."
+- **Rule 2 ("don't think clinically")** — your **architecture already guarantees this**, which is the point: the agent holds no clinical logic; `triage`/`rules` decide. The prompt reinforces it; the anti-corruption boundary makes it true. That's fail-closed thinking applied to prompting.
+
+Two more ways to "program" it beyond the prompt, worth knowing:
+- **Tool design is programming.** The tools you expose and their schemas *bound* what the agent can do — a narrow tool set with enum outputs is a stronger constraint than any sentence.
+- **A rules/policy file.** You could lift the NL rules out of the code into a `policy.md` (or config) that gets loaded into the system prompt at startup — so a developer edits rules without touching Python, and the rules are versioned and reviewable. That's a small, high-value "could-do" that fits how you've structured everything else.
+
+**The one-liner:** the system prompt is where you write the soft rules; the tool schemas and downstream validators are where you *enforce* the hard ones — and "don't decide anything clinical" is already enforced by architecture, not hope.
+
+If it's useful, I can turn the improved `SYSTEM_PROMPT` + an output-validator into an actual small PR against `mcp-agent`, wired with a couple of tests — same branch-and-PR flow as everything else.
+
 <details>
 <summary>Execution details — 655 tool events</summary>
 
@@ -6639,6 +6723,6 @@ sed -n '20…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 31 July 2026, 22:11 UTC
+- **Last updated:** 31 July 2026, 22:13 UTC
 - **Turns:** 75
 - **Status:** Incomplete
