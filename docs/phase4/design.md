@@ -109,8 +109,7 @@ interceptor so a request can be affected by zero, one, or more of them without t
    Missing/invalid/expired → `401` with the Epic-shaped `OperationOutcome` from §6/quirk C.
 
 All keys involved are dummy, generated for local dev use only, and clearly marked non-production
-in logs and config (PRD FR8) — never handled as if they were real secrets (see
-[[secret-values-never-print]]).
+in logs and config (PRD FR8) — never handled or logged as if they were real secrets.
 
 ## 5. Extension handling — concrete approach
 
@@ -188,8 +187,7 @@ not make live sandbox access a build dependency.
 
 - A health endpoint (`/actuator/health` or equivalent), matching `rxclaim-emulator`'s convention.
 - Structured logs for auth failures and quirk rejections (useful for a developer debugging why a
-  call didn't behave like plain `fhir-service`) — tokens and keys are never logged in full (see
-  [[secret-values-never-print]]).
+  call didn't behave like plain `fhir-service`) — tokens and keys are never logged in full.
 - No SLOs/SLIs this phase — this is an internal dev/test tool with no production traffic to set a
   target against, same reasoning Phase 3 used for its own internal services.
 
