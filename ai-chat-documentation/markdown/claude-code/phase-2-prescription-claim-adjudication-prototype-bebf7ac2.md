@@ -4931,7 +4931,82 @@ Show a mure detailed architecture diagram. Include an SQS like queue in front of
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Good questions — let me answer the FHIR one directly first, because it changes the picture:
+
+**Yes, `fhir-service` is central to Phase 2** — more than in Phase 1. It's used for **three reads and one write**:
+- **read** — resolve `Patient/member-{id}` (the fail-closed patient lookup)
+- **read** — idempotency check (does a `ClaimResponse` for this `decisionId` already exist?)
+- **read** — triage pulls the member's meds + allergies from it
+- **write** — persist the decision artefact graph (`Claim → ClaimResponse → Task → Provenance → RiskAssessment`)
+
+So it's both the audit store and the clinical data source. Here's the detailed view with the façade as a layer, the rules engine and ACL as separate blocks, and the queue in front of the legacy core:
+
+```
+   claims-agent ──┐        ┌──────────────── Kong edge (opt-in `gateway`) ─────────────┐
+   (explains,     ├───────▶│  key-auth · rate-limit · routes: /claims  /fhir  /triage  │
+    non-authorit.)│        └───────────────────────────────┬───────────────────────────┘
+   reviewer/API ──┘                                         │ POST /claims/adjudicate
+                                                            ▼
+ ╔══════════════════════════ claims-service  (modern stack, Java) ═══════════════════════════╗
+ ║                                                                                            ║
+ ║  ┌───────────────────────────────  API FAÇADE  (layer)  ────────────────────────────────┐ ║
+ ║  │  intake · validate (R17.6 → 400 + OperationOutcome) · idempotency check · assemble    │ ║
+ ║  │  the canonical claim · orchestrate the pipeline · return the decision                 │ ║
+ ║  └───────┬──────────────────────┬──────────────────────┬───────────────────────┬────────┘ ║
+ ║          │ (1)                   │ (2)                   │ (3)                    │ (4)      ║
+ ║          ▼                       ▼                       ▼                        ▼         ║
+ ║  ┌──────────────┐      ┌──────────────────┐    ┌──────────────────┐    ┌──────────────────┐║
+ ║  │ RULES ENGINE │      │ Patient resolve  │    │      ACL         │    │  FHIR artefact   │║
+ ║  │ (Decision    │      │  + FHIR client   │    │ (anti-corruption │    │  builder         │║
+ ║  │  Contract)   │      │                  │    │  layer)          │    │                  │║
+ ║  │ deterministic│      │ read Patient/    │    │ builds fixed-    │    │ builds the       │║
+ ║  │ accumulate → │      │ member-{id}      │    │ width DDS record │    │ decision graph;  │║
+ ║  │  resolve     │      │                  │    │ · ONLY block     │    │ one atomic tx    │║
+ ║  │ DENY>PEND>   │      │                  │    │  that speaks     │    │ (idempotent)     │║
+ ║  │  REVIEW>appr │      │                  │    │  legacy format   │    │                  │║
+ ║  └──────────────┘      └────────┬─────────┘    └────────┬─────────┘    └────────┬─────────┘║
+ ╚═══════════════════════════════╪═══════════════════════╪═══════════════════════╪══════════╝
+      clinical safety │           │ read                   │ legacy pricing        │ write graph
+                      ▼           ▼                        ▼ (fixed-width req)      ▼
+            ┌──────────────────┐  │              ┌────────────────────┐            │
+            │  triage-service  │  │              │   SQS-like QUEUE   │            │
+            │  (reused Phase 1,│  │      req ───▶│  request  ─┐       │            │
+            │   unchanged)     │  │              │  response ◀┘       │            │
+            │  drug-allergy →  │  │              └─────────┬──────────┘            │
+            │  fail closed     │  │                        │ decouples modern      │
+            └────────┬─────────┘  │                        ▼ path from the legacy  │
+                     │ reads      │              ┌────────────────────┐  mainframe │
+                     │ meds/      │              │  rxclaim-emulator  │  (durable, │
+                     │ allergies  │              │  IBM i / RxClaim   │  retryable,│
+                     ▼            ▼              │  ADJRXCLM · DB2/   │  back-     │
+            ┌─────────────────────────────────┐ │  SQL400 fixed-width│  pressure) │
+            │          fhir-service           │ │  ⚠ INTERNAL ONLY   │            │
+            │          HAPI FHIR R4           │ │  no edge route,    │            │
+            │  reads:  patient resolve,       │ │  no published port │            │
+            │          idempotency check,     │ └────────────────────┘            │
+            │          triage inputs          │◀──────────────────────────────────┘
+            │  writes: Claim, ClaimResponse,  │        (decision artefact graph)
+            │          Task, Provenance,      │
+            │          RiskAssessment         │
+            └─────────────────────────────────┘
+
+  Legend / principles
+  ───────────────────
+  FAÇADE      one entry point; owns validation, idempotency, orchestration — no domain logic
+  RULES ENGINE  modern stack; deterministic, accumulate-then-resolve; the thing that DECIDES
+  ACL         the only place the legacy fixed-width format exists — quarantines the mainframe
+  QUEUE       decouples the fast modern path from the slow, batch-oriented legacy core
+  Strangler fig: the legacy core is WRAPPED, not rewritten. Reads/writes flow through the façade.
+  Phase 2 is additive — plain `docker compose up` still runs only Phase 1.
+```
+
+**Two honesty notes on the queue**, since you asked me to place it "at the appropriate place":
+
+1. **It's the architecturally right place, but it's design-intent — not what the prototype does today.** Right now `claims-service` calls the emulator **synchronously** over HTTP (`HttpLegacyClient`). The queue belongs exactly where I drew it: on the ACL→legacy-core path, because the IBM i core is the slowest, least elastic dependency, and a queue buys durability, retry, and back-pressure — the classic mainframe-integration pattern.
+
+2. **It changes the interaction model, and that's the interesting trade-off.** A synchronous call lets the `ClaimResponse` carry pricing *in the same request*. Put a real queue there and pricing becomes **asynchronous** — the claim would be accepted/pended immediately and priced on the callback. That's often the *right* answer at scale (mainframe throughput is finite), but it's a genuine design decision, not a free drop-in. Worth flagging in an interview as "here's the lever and here's what it costs," rather than presenting it as already-built.
+
+Want me to render this as a **shareable Mermaid artifact** (clean boxes, a URL you could pull up or drop in a doc)? At this level of detail it'd read a lot more clearly than ASCII — and it's easy to keep iterating on.
 
 <details>
 <summary>Execution details — 650 tool events</summary>
@@ -6489,6 +6564,6 @@ echo "════ remote ════"; git branch -r`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 31 July 2026, 18:59 UTC
+- **Last updated:** 31 July 2026, 19:01 UTC
 - **Turns:** 73
 - **Status:** Incomplete

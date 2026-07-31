@@ -591,8 +591,14 @@ Let me isolate whether this is deterministic or a flake, by running just this te
 
 The failure is deterministic, not flaky. Let me get the full exception chain rather than just the tail:
 
+Found it — the shared `HttpClient` singleton is trying to reuse a pooled keep-alive connection to the stub server across two separate requests, but the JDK's lightweight test `HttpServer` doesn't keep that connection alive reliably between them, causing a real (not flaky) EOF on the second call. Fixing by building a fresh `HttpClient` per request — safe for a dev-tool proxy, and it removes this whole class of bug against any backend, not just the test stub.
+
+Now let's re-run the full suite to confirm this fixes it and doesn't break anything else:
+
+That didn't fix it — my hypothesis was wrong. Let me get the full exception again to look more carefully.
+
 <details>
-<summary>Execution details — 236 tool events</summary>
+<summary>Execution details — 241 tool events</summary>
 
 ### Turn 2 activity
 
@@ -947,6 +953,11 @@ mkdir -p epic-emulator/src/main/java/com/healthcare/epic/quirks`
 - **Bash** `mvn -f epic-emulator/pom.xml test -Dtest=QuirksIntegrationTest#nextLink_isReplacedWithAnOpaqueToken_andResolvesOnFollowUp 2>&1 | tail -60`
 - **Bash** `mvn -f epic-emulator/pom.xml test -Dtest=QuirksIntegrationTest#nextLink_isReplacedWithAnOpaqueToken_andResolvesOnFollowUp 2>&1 | grep -n "ERROR.*com.healthcare\|Exception\|^2026.*ERROR" | head -40`
 - **Bash** `mvn -f epic-emulator/pom.xml test -Dtest=QuirksIntegrationTest#nextLink_isReplacedWithAnOpaqueToken_andResolvesOnFollowUp 2>&1 | sed -n '57,90p'`
+- **Read** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/proxy/FhirProxyClient.java`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/proxy/FhirProxyClient.java`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/proxy/FhirProxyClient.java`
+- **Bash** `mvn -f epic-emulator/pom.xml test 2>&1 | grep -E "Tests run|ERROR|BUILD"`
+- **Bash** `mvn -f epic-emulator/pom.xml test -Dtest=QuirksIntegrationTest#nextLink_isReplacedWithAnOpaqueToken_andResolvesOnFollowUp 2>&1 > /tmp/claude-1000/-workspaces-fhir-agent/265be5b6-c550-4af6-bed7-7be2bca…`
 
 </details>
 
@@ -957,6 +968,6 @@ mkdir -p epic-emulator/src/main/java/com/healthcare/epic/quirks`
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 19:00 UTC
+- **Last updated:** 31 July 2026, 19:01 UTC
 - **Turns:** 15
 - **Status:** Complete
