@@ -228,8 +228,16 @@ Write up a PRD for the problem statement we agreed on so far.  Assume in the PRD
 
 Working tree is clean on `main`. I'll create a feature branch and write the PRD there, following this repo's default of not committing planning docs directly to `main`.
 
+Now committing and opening a PR per this repo's default workflow (feature branch, never commit to `main`).
+
+**Done.** PRD is at [docs/phase4/prd.md](docs/phase4/prd.md) on branch `docs/phase4-epic-emulator-prd`, commit `84187b2`, PR: https://github.com/bhaskarcmu/fhir-agent/pull/48
+
+Structure mirrors the Phase 3 PRD convention (problem statement → goals → non-goals → use cases → functional/non-functional requirements → out-of-scope table → success metrics → decisions → forward note). It locks in everything from this conversation: the three capability areas verbatim, the compressed monolith-first rationale, proxy-in-front-of-`fhir-service` architecture, new top-level `epic-emulator/` directory, the closed extension/quirk scope, explicit exclusion of `triage-service`/`claims-service` logic, and the "free self-service Epic access" assumption flagged as provisional pending the design doc.
+
+**Known limitation:** this is planning-only — no code, no validation run (there's nothing to test yet). The design doc is the next step whenever you're ready, and it should pin down the specific Epic documentation version to target and validate the access assumption for real.
+
 <details>
-<summary>Execution details — 11 tool events</summary>
+<summary>Execution details — 16 tool events</summary>
 
 ### Turn 2 activity
 
@@ -250,6 +258,17 @@ Working tree is clean on `main`. I'll create a feature branch and write the PRD 
 - **Read** `/workspaces/fhir-agent/docs/phase3/prd.md`
 - **Bash** `git status --porcelain; git branch --show-current`
 - **Bash** `git checkout -b docs/phase4-epic-emulator-prd && mkdir -p docs/phase4`
+- **Write** `/workspaces/fhir-agent/docs/phase4/prd.md`
+- **Bash** `git add docs/phase4/prd.md && git status --porcelain`
+- **Bash** `git commit -m "$(cat <<'EOF'
+docs(phase4): add epic-emulator PRD
+
+Scopes Phase 4 to a monolith-first epic-emulator (auth, extension,
+quirk emulation as one Spring Boot service proxying fhir-service),…`
+- **Bash** `git push -u origin docs/phase4-epic-emulator-prd`
+- **Bash** `gh pr create --title "docs(phase4): epic-emulator PRD" --body "$(cat <<'EOF'
+## Summary
+- Adds `docs/phase4/prd.md` — PRD for Phase 4 (epic-emulator), scoped to a monolith-first build of Epic auth emu…`
 
 </details>
 
@@ -260,6 +279,6 @@ Working tree is clean on `main`. I'll create a feature branch and write the PRD 
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 17:47 UTC
+- **Last updated:** 31 July 2026, 17:49 UTC
 - **Turns:** 6
 - **Status:** Complete
