@@ -792,7 +792,7 @@ Good — quirk B fails loud (explicit 502), unlike the pagination issue which fa
 Confirmed — the standard test suite's patient only has 1 allergy record (well within the cap), which is exactly why this bug was never caught before. Now tearing down the extra processes from this investigation.
 
 <details>
-<summary>Execution details — 409 tool events</summary>
+<summary>Execution details — 410 tool events</summary>
 
 ### Turn 2 activity
 
@@ -1431,6 +1431,9 @@ find epic-emulator/src/test -name "…`
 - **Bash** `grep -rn "for.*range\|22\|21\|>.*20\|multiple.*allerg\|multiple.*medication" epic-emulator/src/test/java/com/healthcare/epic/QuirksIntegrationTest.java | head -10
 echo "---"
 grep -c "entry\[" epic-emu…`
+- **Bash** `grep -n "epic\|Epic\|Phase 4" docs/demo-guide.md | head -10
+echo "---"
+wc -l docs/demo-guide.md`
 
 </details>
 
