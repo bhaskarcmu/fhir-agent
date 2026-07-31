@@ -694,8 +694,20 @@ Now let's check the `epic-emulator` log for any errors during this real run befo
 
 Clean run, no errors. Now writing the permanent, rerunnable e2e acceptance script following this repo's existing `e2e/` conventions.
 
+Now writing the permanent e2e acceptance test:
+
+Let's actually run this test against the live stack to verify it works for real, not just trust that it should:
+
+Excellent — genuinely passes against the live stack. Let me run it once more to confirm repeatability.
+
+Let's also verify it correctly self-skips when the stack isn't reachable (important safety property):
+
+No filename collisions, unique repo-wide. Now let's write the coupling note (PRD G6).
+
+Now cleanly tearing down the background processes.
+
 <details>
-<summary>Execution details — 329 tool events</summary>
+<summary>Execution details — 339 tool events</summary>
 
 ### Turn 2 activity
 
@@ -1199,6 +1211,21 @@ grep -n "def \|PUT\|POST\|fixed\|logical" data/scripts/seed_demo.py | head -30`
 - **Edit** `/workspaces/fhir-agent/data/scripts/seed_demo.py`
 - **Edit** `/workspaces/fhir-agent/data/scripts/seed_demo.py`
 - **Edit** `/workspaces/fhir-agent/data/scripts/seed_demo.py`
+- **Write** `/workspaces/fhir-agent/e2e/test_epic_emulator_acceptance.py`
+- **Bash** `python3 -m pytest e2e/test_epic_emulator_acceptance.py -v 2>&1 | tail -60`
+- **Bash** `python3 -m pytest e2e/test_epic_emulator_acceptance.py -v 2>&1 | tail -15`
+- **Bash** `EPIC_EMULATOR_URL=http://localhost:19999 python3 -m pytest e2e/test_epic_emulator_acceptance.py -v 2>&1 | tail -15`
+- **Bash** `python3 -m pytest --collect-only -q 2>&1 | grep -i "epic_emulator_acceptance\|error" | head -10
+echo "exit code check done (empty = not collected by root pytest, as expected)"`
+- **Bash** `find . -name "test_epic_emulator_acceptance.py" -not -path "*/node_modules/*" 2>/dev/null
+find . -iname "test_*.py" -not -path "*/.git/*" | xargs -n1 basename | sort | uniq -d`
+- **TodoWrite** `{"todos": [{"content": "Add apikey-header fallback to epic-emulator's auth gate (accepts existing Kong-style header, zero triage-service changes)", "status": "completed", "activeForm": "Adding apikey-…`
+- **Write** `/workspaces/fhir-agent/docs/phase4/coupling-note.md`
+- **TodoWrite** `{"todos": [{"content": "Add apikey-header fallback to epic-emulator's auth gate (accepts existing Kong-style header, zero triage-service changes)", "status": "completed", "activeForm": "Adding apikey-…`
+- **Bash** `echo "=== processes I started manually ==="
+ps aux | grep -E "epic-emulator|uvicorn.*800[12]" | grep -v grep
+echo
+echo "=== killing my manually-started epic-emulator (pid 3266169) and any lingering ma…`
 
 </details>
 
@@ -1209,6 +1236,6 @@ grep -n "def \|PUT\|POST\|fixed\|logical" data/scripts/seed_demo.py | head -30`
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 19:31 UTC
+- **Last updated:** 31 July 2026, 19:34 UTC
 - **Turns:** 16
 - **Status:** Complete
