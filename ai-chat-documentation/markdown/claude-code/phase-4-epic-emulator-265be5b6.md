@@ -629,8 +629,25 @@ Now the top-level `docs/README.md`:
 
 Final verification pass, then commit and open the PR.
 
+Clean — exactly the intended `send()`/`forwardAbsolute()` refactor, no leftover from the mistaken hypothesis. Committing, pushing, and opening the PR.
+
+## M4 done — PR #52
+
+**Branch cleanup:** `feature/phase4-m3-extension-handling` deleted (local + remote).
+
+**M4 implementation** (branch `feature/phase4-m4-quirks`, PR: https://github.com/bhaskarcmu/fhir-agent/pull/52) — the most involved milestone, all three quirks:
+
+- **Quirk A (pagination)**: caps/injects `_count`, replaces response `Bundle` next-links with an opaque continuation token, resolved by a new endpoint.
+- **Quirk B (required params)**: rejects `MedicationRequest` searches missing `patient`/`status` before `fhir-service` is ever called.
+- **Quirk C (error shape)**: Epic-style `OperationOutcome` errors, applied to quirk B's rejection and retrofitted onto M2's auth-gate `401` — deliberately *not* applied to the OAuth token endpoint's own errors (different protocol layer).
+- **23/23 tests pass**, verified stable across repeated runs.
+
+**Worth flagging — a real debugging detour:** hit a deterministic (not flaky) connection error on the pagination-continuation test. My first hypothesis — a shared `HttpClient` reusing a stale pooled connection — was wrong. I reverted that change rather than leave an incorrect claim in the code once I found the real cause: my own test stub threw an NPE (`ConcurrentHashMap` rejecting a null query value) that looked like a network failure from the client side. Fixed in the test, not production code.
+
+**Known limitation:** only the automated suite ran — no manual run against a live `fhir-service` with real seeded data. Ready for M5 (the acceptance case + coupling note) whenever you want it — that's the last milestone in the Phase 4 plan.
+
 <details>
-<summary>Execution details — 276 tool events</summary>
+<summary>Execution details — 283 tool events</summary>
 
 ### Turn 2 activity
 
@@ -1029,6 +1046,21 @@ grep -n '\[\[' epic-emulator/README.md docs/phase4/*.md docs/README.md 2>/dev/nu
 echo "(none = clean)"
 echo
 echo "=== full test run (twice, to check stability) ==="…`
+- **Bash** `git diff epic-emulator/src/main/java/com/healthcare/epic/proxy/FhirProxyClient.java`
+- **TodoWrite** `{"todos": [{"content": "Write EpicOperationOutcome helper (quirk C shape)", "status": "completed", "activeForm": "Writing EpicOperationOutcome helper"}, {"content": "Write RequiredSearchParameterInter…`
+- **Bash** `git add -A -- epic-emulator docs/README.md docs/phase4
+git status --porcelain`
+- **Bash** `git commit -m "$(cat <<'EOF'
+feat(phase4 M4): the three quirks -- pagination, required params, error shape
+
+New quirks/ package implementing all three named quirks (PRD FR4-FR6):
+
+- Quirk A (paginatio…`
+- **Bash** `git push -u origin feature/phase4-m4-quirks`
+- **Bash** `gh pr create --title "feat(phase4 M4): the three quirks -- pagination, required params, error shape" --body "$(cat <<'EOF'
+## Summary
+- New `quirks/` package implementing all three named quirks (PRD F…`
+- **TodoWrite** `{"todos": [{"content": "Write EpicOperationOutcome helper (quirk C shape)", "status": "completed", "activeForm": "Writing EpicOperationOutcome helper"}, {"content": "Write RequiredSearchParameterInter…`
 
 </details>
 
@@ -1039,6 +1071,6 @@ echo "=== full test run (twice, to check stability) ==="…`
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 19:06 UTC
+- **Last updated:** 31 July 2026, 19:07 UTC
 - **Turns:** 15
 - **Status:** Complete
