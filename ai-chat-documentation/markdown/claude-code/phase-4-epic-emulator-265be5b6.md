@@ -646,6 +646,16 @@ Clean — exactly the intended `send()`/`forwardAbsolute()` refactor, no leftove
 
 **Known limitation:** only the automated suite ran — no manual run against a live `fhir-service` with real seeded data. Ready for M5 (the acceptance case + coupling note) whenever you want it — that's the last milestone in the Phase 4 plan.
 
+## Turn 16
+
+### Prompt
+
+PR #52 merged. Delete merged branches and proceed to M5
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 283 tool events</summary>
 
@@ -1071,6 +1081,6 @@ New quirks/ package implementing all three named quirks (PRD FR4-FR6):
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 19:07 UTC
-- **Turns:** 15
-- **Status:** Complete
+- **Last updated:** 31 July 2026, 19:19 UTC
+- **Turns:** 16
+- **Status:** Incomplete
