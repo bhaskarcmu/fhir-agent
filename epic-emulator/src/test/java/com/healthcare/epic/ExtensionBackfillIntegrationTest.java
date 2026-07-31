@@ -211,7 +211,8 @@ class ExtensionBackfillIntegrationTest {
                         + "{\"resource\":{\"resourceType\":\"Patient\",\"id\":\"7\"}}"
                         + "]}");
 
-        JsonNode bundle = MAPPER.readTree(getWithToken("/fhir/MedicationRequest"));
+        // patient+status required since M4's quirk B now gates MedicationRequest search.
+        JsonNode bundle = MAPPER.readTree(getWithToken("/fhir/MedicationRequest?patient=1&status=active"));
         JsonNode entries = bundle.path("entry");
 
         assertThat(entries.get(0).path("resource").path("extension")).hasSize(1);

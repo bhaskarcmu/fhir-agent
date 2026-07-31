@@ -12,17 +12,18 @@ still holds*.
 Status values: **Accepted** (in force) · **Superseded** (replaced — successor named) ·
 **Partially delivered** (accepted, but the repo does not yet match — the gap is named).
 
-**M1, M2, and M3 are built** (see [`README.md`](./README.md)'s canonical status); E1–E9 and E11–E12
-are now verified against real, tested code (E2's proxy architecture, E3's directory, E7's
-read-time backfill approach — both halves now exercised by M3's tests). E9 is a
-documentation-format decision, not code. **E10 remains genuinely partial** — M2 made one real,
-verifiable attempt (§7/design.md) and confirmed the Epic documentation site is real and public at
-a shell level, but the Epic-specific technical parameters were not retrievable that way; M2's auth
-flow was built against the public base SMART Backend Services spec instead, which is a legitimate
-source in its own right, not a workaround. E11 records the RS384-only scoping choice found while
-building M2; E12 (new) records that M3's concrete resource-type scoping is `MedicationRequest`,
-not the PRD's more generic "Medication" — found by checking what the reference workflow actually
-reads, not assumed.
+**M1, M2, M3, and M4 are built** (see [`README.md`](./README.md)'s canonical status); E1–E9 and
+E11–E14 are now verified against real, tested code (E2's proxy architecture, E3's directory, E7's
+read-time backfill approach, all three quirks in E5/E13/E14). E9 is a documentation-format
+decision, not code. **E10 remains genuinely partial** — M2 made one real, verifiable attempt
+(§7/design.md) and confirmed the Epic documentation site is real and public at a shell level, but
+the Epic-specific technical parameters were not retrievable that way; M2's auth flow, and M4's
+quirk specifics, were built against the public base SMART Backend Services spec and structurally-
+representative placeholders instead, which is legitimate but not the same as Epic-confirmed. E11
+records the RS384-only scoping choice found while building M2; E12 records that M3's concrete
+resource-type scoping is `MedicationRequest`, not the PRD's more generic "Medication" — found by
+checking what the reference workflow actually reads, not assumed; E13/E14 (new) record M4's
+pagination-token and error-shape-scoping choices.
 
 ---
 
@@ -42,6 +43,8 @@ reads, not assumed.
 | **E10** | The specific Epic documentation version to target for conformance, and the exact real values behind each quirk/extension (§6's table), are **not yet pinned** | 🟡 Partially delivered | M2 made one real attempt: `fhir.epic.com/Documentation?docId=oauth2` is genuinely public (no login), dated "Last updated: October 31, 2025," with a menu entry for backend OAuth 2.0 — but the specific technical parameters (JWT claim details, scope format, rate limits) are rendered behind interactive navigation, not retrievable by a plain page fetch. No account registration was attempted (an inherently human step). M2's auth flow was instead built directly against the public, normative **SMART Backend Services** spec (HL7/SMART Health IT) — a legitimate independent source, not a stand-in. The gap: Epic's own specific parameter values, and `design.md` §6's quirk table, remain "structurally representative," not "confirmed against Epic's own docs." Rationale: [`design.md` §7](./design.md#7-authoritative-documentation--the-one-open-action-item). |
 | **E11** | Client-assertion signing supports **RS384 only** — the spec's other allowed algorithm, ES384 (EC keys), is not implemented | ✅ Accepted | Found while building M2: supporting EC keys too would add a second key-handling path in `ClientAssertionValidator` for marginal value at this stage. Documented as a known simplification, not a silent gap — worth revisiting only if a real Epic sandbox test ever requires ES384. Rationale: [`design.md` §4/§14](./design.md#4-auth-flow--concrete-contract). |
 | **E12** | Extension emulation concretely targets **`MedicationRequest`**, not the generic "Medication" the PRD names | ✅ Accepted | Found while building M3: checked what the reference workflow actually reads rather than assuming — `triage-service`/`client/clinical` query `GET /MedicationRequest?patient=...&status=active`, never the `Medication` catalog resource. The PRD's "Medication" stays as higher-level category language; `design.md` §5 now pins the concrete resource type, same pattern as §6 pinning concrete quirk specifics. Rationale: [`design.md` §5](./design.md#5-extension-handling--concrete-approach). |
+| **E13** | Pagination continuation (quirk A) uses an **opaque, in-memory server-side token** (`Map<token, realUrl>`), not a self-describing one (e.g. base64 or signed) | ✅ Accepted | Simpler, and there was never a reason for the caller to be able to inspect or reconstruct the real URL — an opaque lookup is the more faithful emulation of "you must follow the link verbatim" anyway. Pagination cap default (20, `epic.quirks.pagination.max-count`) is a demonstrably-below-typical-defaults value, not derived from any real Epic-documented number — still unverified per E10. Rationale: [`design.md` §6/§14](./design.md#14-decisions-resolving-open-questions-using-best-judgement). |
+| **E14** | Quirk C's `OperationOutcome` shape is applied only to rejections on the **FHIR API surface** (quirk B, the M2 auth gate) — deliberately **not** to `TokenController`'s own OAuth2 token-endpoint errors | ✅ Accepted | Wrapping an OAuth2 error in a FHIR resource would be a category mismatch; real Epic's token endpoint returns standard OAuth2 errors too, not FHIR resources. `TokenController`'s `error`/`error_description` shape is intentionally unchanged. Rationale: [`design.md` §6](./design.md#6-quirks--concrete-pinned-choices-built-in-m4-values-still-pending-validation), [`quirks/EpicOperationOutcome`](../../epic-emulator/src/main/java/com/healthcare/epic/quirks/EpicOperationOutcome.java). |
 
 ## Conventions
 

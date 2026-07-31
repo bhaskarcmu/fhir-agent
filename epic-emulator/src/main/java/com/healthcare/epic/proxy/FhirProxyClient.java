@@ -54,9 +54,24 @@ public class FhirProxyClient {
     public ProxiedResponse forward(
             String method, String pathAndQuery, HttpHeaders requestHeaders, byte[] body)
             throws IOException, InterruptedException {
+        return send(method, baseUrl + pathAndQuery, requestHeaders, body);
+    }
+
+    /**
+     * Forwards to an already-absolute URL rather than {@code baseUrl + path} — used by pagination
+     * continuation (quirk A), where the resolved token maps back to fhir-service's own real
+     * next-page URL, which already includes its own host/port/query.
+     */
+    public ProxiedResponse forwardAbsolute(String method, String absoluteUrl, HttpHeaders requestHeaders)
+            throws IOException, InterruptedException {
+        return send(method, absoluteUrl, requestHeaders, null);
+    }
+
+    private ProxiedResponse send(
+            String method, String uri, HttpHeaders requestHeaders, byte[] body)
+            throws IOException, InterruptedException {
         HttpRequest.Builder builder =
-                HttpRequest.newBuilder(URI.create(baseUrl + pathAndQuery))
-                        .timeout(Duration.ofSeconds(30));
+                HttpRequest.newBuilder(URI.create(uri)).timeout(Duration.ofSeconds(30));
         for (Map.Entry<String, List<String>> entry : requestHeaders.entrySet()) {
             String name = entry.getKey();
             if (HOP_BY_HOP.contains(name.toLowerCase(Locale.ROOT))) {

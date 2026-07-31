@@ -2,14 +2,17 @@
 
 > ## Canonical status
 >
-> **M1 + M2 + M3 built.** `epic-emulator/` is a real Spring Boot module: a pass-through proxy
+> **M1 + M2 + M3 + M4 built.** `epic-emulator/` is a real Spring Boot module: a pass-through proxy
 > (forwards every request to `fhir-service` unchanged, verified by 3 tests), gated behind a
 > simulated SMART Backend Services JWT client-assertion auth flow (verified by 6 more tests — the
 > full flow, plus rejection of no-header/garbage-token/expired-assertion/wrong-key/unknown-client
-> requests), now also backfilling a placeholder Epic-style extension on `MedicationRequest`/
+> requests), backfilling a placeholder Epic-style extension on `MedicationRequest`/
 > `AllergyIntolerance` reads that don't already have one (verified by 6 more tests — bare resource,
-> Bundle search results, idempotency, out-of-scope resource types, and write round-tripping). No
-> quirks yet — that's M4, not started. `decisions.md` indexes 12 decisions (`E1`–`E12`).
+> Bundle search results, idempotency, out-of-scope resource types, and write round-tripping), and
+> now exhibiting all three named quirks — pagination cap + opaque continuation, the required-
+> search-parameter rejection, and Epic-shaped `OperationOutcome` errors, the last of which was also
+> retrofitted onto M2's auth-gate rejection (verified by 8 more tests). 23 tests total across the
+> module. `decisions.md` indexes 14 decisions (`E1`–`E14`).
 >
 > M2's other stated task — pinning a specific Epic documentation version — is **only partially
 > done**: one real check confirmed Epic's docs site is genuinely public at a shell level (dated
@@ -30,8 +33,8 @@
 > - [`../../epic-emulator/README.md`](../../epic-emulator/README.md) — the module's own README:
 >   how the proxy and auth flow work, build/test/run instructions.
 >
-> **What's next:** M4 — the three named quirks (pagination, required search-parameter combination,
-> `OperationOutcome` error shape). Not started; no timeline set.
+> **What's next:** M5 — the acceptance case (re-point the existing prescription-refill-risk-triage
+> scenario at `epic-emulator`) and the coupling note for Phase 5. Not started; no timeline set.
 
 ## What Phase 4 is
 

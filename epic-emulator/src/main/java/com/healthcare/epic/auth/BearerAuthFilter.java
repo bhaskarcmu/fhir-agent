@@ -1,5 +1,6 @@
 package com.healthcare.epic.auth;
 
+import com.healthcare.epic.quirks.EpicOperationOutcome;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -11,10 +12,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
  * Gates every proxied FHIR call behind a valid bearer token (PRD FR2/FR8). Missing or invalid
- * tokens get a plain OAuth2-style 401 — not yet Epic's {@code OperationOutcome} shape. That
- * upgrade is FR6/quirk C, scoped to M4; M2's own definition of done (design.md &sect;12) only
- * requires rejection, not a specific error body, so this is a deliberate sequencing choice, not
- * a dropped requirement.
+ * tokens get Epic's {@code OperationOutcome} error shape (quirk C, design.md &sect;6/&sect;14) —
+ * this was deliberately deferred from M2 to here rather than dropped; M2's own definition of done
+ * only required rejection, not a specific error body.
  */
 @Component
 @Order(1)
@@ -45,8 +45,12 @@ public class BearerAuthFilter extends OncePerRequestFilter {
         if (token == null || tokenStore.validate(token).isEmpty()) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setHeader("WWW-Authenticate", "Bearer error=\"invalid_token\"");
-            response.setContentType("application/json");
-            response.getWriter().write("{\"error\":\"invalid_token\"}");
+            response.setContentType("application/fhir+json");
+            response
+                    .getOutputStream()
+                    .write(
+                            EpicOperationOutcome.json(
+                                    "invalid-token", "Missing, invalid, or expired bearer token"));
             return;
         }
 
