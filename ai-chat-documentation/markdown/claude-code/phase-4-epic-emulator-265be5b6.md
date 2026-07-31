@@ -720,8 +720,14 @@ Now adding a note about the `apikey` fallback near the auth section, and updatin
 
 Now updating the Phase 4 canonical status page:
 
+Now updating the top-level `docs/README.md`:
+
+Now adding a link from the PRD's forward note to the coupling note:
+
+Let me verify the `seed_demo.py` change didn't break anything (it's covered by `pytest.ini`'s `data/scripts` testpath):
+
 <details>
-<summary>Execution details — 360 tool events</summary>
+<summary>Execution details — 370 tool events</summary>
 
 ### Turn 2 activity
 
@@ -1261,6 +1267,20 @@ echo "=== killing my manually-started epic-emulator (pid 3266169) and any linger
 - **Edit** `/workspaces/fhir-agent/epic-emulator/README.md`
 - **Read** `/workspaces/fhir-agent/docs/phase4/README.md`
 - **Read** `/workspaces/fhir-agent/docs/phase4/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/README.md`
+- **Bash** `grep -n "phase4\|Phase 4\|M5 next\|E1.*E14" docs/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/README.md`
+- **Read** `/workspaces/fhir-agent/docs/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/README.md`
+- **Bash** `grep -n "^## 10\." docs/phase4/prd.md`
+- **Read** `/workspaces/fhir-agent/docs/phase4/prd.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/prd.md`
+- **Bash** `python3 -m pytest data/scripts/ -v 2>&1 | tail -30`
+- **Bash** `echo "=== stray [[ ]] check ==="
+grep -rn '\[\[' epic-emulator/README.md docs/phase4/*.md docs/README.md e2e/test_epic_emulator_acceptance.py 2>/dev/null
+echo "(none = clean)"
+echo
+echo "=== full Java…`
 
 </details>
 
@@ -1271,6 +1291,6 @@ echo "=== killing my manually-started epic-emulator (pid 3266169) and any linger
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 19:36 UTC
+- **Last updated:** 31 July 2026, 19:37 UTC
 - **Turns:** 16
 - **Status:** Complete
