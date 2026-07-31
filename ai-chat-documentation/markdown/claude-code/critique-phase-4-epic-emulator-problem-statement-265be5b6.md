@@ -456,7 +456,7 @@ PR #49 Merged. Delete the merged branches and proceed to M2
 Confirmed merged. **Current worktree:** `/workspaces/fhir-agent` — **current branch:** `feature/phase4-m1-epic-emulator-skeleton` — **target:** switch to `main`, delete the merged branch (local + remote), then branch for M2.
 
 <details>
-<summary>Execution details — 105 tool events</summary>
+<summary>Execution details — 106 tool events</summary>
 
 ### Turn 2 activity
 
@@ -645,6 +645,9 @@ request to fhir-service unchanged and returning…`
 - **ToolSearch** `select:WebFetch`
 - **WebFetch** `https://fhir.epic.com/Documentation?docId=oauth2`
 - **WebFetch** `https://fhir.epic.com/Documentation?docId=oauth2`
+- **Bash** `grep -rn "jjwt\|nimbus-jose\|java-jwt\|jsonwebtoken" --include="pom.xml" . 2>/dev/null
+echo "---"
+grep -rn "jjwt\|nimbus\|java-jwt" fhir-service/pom.xml 2>/dev/null`
 
 </details>
 
