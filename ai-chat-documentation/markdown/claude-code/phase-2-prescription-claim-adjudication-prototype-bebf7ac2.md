@@ -5018,6 +5018,30 @@ Tell me the ready-made Java concelts or libraries that helped me create the rxcl
 
 Let me ground this in your actual code rather than guess — I'll read the emulator and the client that talks to it.
 
+Now I can answer accurately, grounded in your code. Here's the "off-the-shelf" inventory — what you assembled versus what you wrote by hand.
+
+## Building the emulator
+
+**Spring Boot (`spring-boot-starter-web`)** — the whole thing that makes a legacy mainframe *look like* a reachable service. You didn't write an HTTP server, a request router, JSON/body parsing, or lifecycle management; the starter gives you an embedded **Tomcat** and Spring MVC. Your `@RestController` + `@PostMapping(consumes = TEXT_PLAIN, produces = TEXT_PLAIN)` is ~10 lines that stand in for what would really be a CICS/data-queue front door on IBM i.
+
+**Spring JDBC (`spring-boot-starter-jdbc` → `JdbcTemplate`)** — the "Db2 for i" system-of-record. `JdbcTemplate` is the ready-made piece: it hands you connection pooling, `PreparedStatement` handling (which also gets you parameterised queries / SQL-injection safety for free, R14), and row mapping, so `RxClaimCore` just writes SQL. **Deliberately *not* JPA/Hibernate** — that's the right call. An ORM would have hidden the legacy `MBRMST`/`DRGMST`/`ACCMST` "master file" tables behind entity objects and undercut the whole "this is a 40-year-old flat schema" illusion. Raw SQL over `JdbcTemplate` keeps the legacy shape honest.
+
+**H2 (`com.h2database:h2`, runtime)** — stands in for Db2/SQL400. The key convention you leaned on is Spring Boot's **automatic `schema.sql` + `data.sql` bootstrap**: drop those two files in `resources/` and Boot runs them at startup against the datasource. No migration tooling, no manual DDL execution — that's how `MBRMST`/`DRGMST`/`ACCMST` and their seed data exist.
+
+**Spring Boot Actuator** — `/actuator/health` with liveness/readiness groups, which is what your `docker compose` healthcheck and the Cloud Run probes hit. Zero code; it's just on the classpath.
+
+**Plain JDK, no library, for the fixed-width records** — this is the part worth calling out: there is **no framework** here, by design. `LegacyClaimRecord.parse()` is `String.substring(0, 9)`, `Integer.parseInt(...)`, `LocalDate.parse(..., CCYYMMDD)`; `format()` is `String.format` + manual pad/truncate. You could have reached for a copybook/fixed-width library (BeanIO, Bindy, JRecord for actual COBOL copybooks) — but for a 46-char record, stdlib `String` + `java.time` is less machinery and reads more like the real DDS layout. Good instinct.
+
+## Talking to it
+
+**Spring `RestClient`** (`HttpLegacyClient`) — the synchronous HTTP client introduced in Spring 6.1, the modern replacement for `RestTemplate`. The ready-made value is content negotiation: `.contentType(TEXT_PLAIN).accept(TEXT_PLAIN).body(record)` handles the transport so the ACL only worries about the *record*. (Interview-worthy footnote: `RestClient` is exactly where the HTTP/2 vs uvicorn body-drop bit us on the *triage* call — so for triage you dropped to the JDK's `java.net.http.HttpClient`, but for the emulator, which is Spring-on-Spring, `RestClient` works cleanly. Knowing *when the abstraction leaks* is the senior signal.)
+
+## The framing that ties it together
+
+The whole emulator is an example of **using a modern stack to impersonate a legacy one** — Spring Boot + JdbcTemplate + H2 wearing DB2/SQL400 clothes, speaking a fixed-width `text/plain` contract instead of JSON. That's what makes the strangler-fig story concrete: the *interface* is deliberately legacy (fixed-width record in, fixed-width record out, internal-only, no JSON), while the *implementation* is disposable modern scaffolding. And the one place that speaks that legacy dialect on the modern side is the **ACL** — everything above it deals in the canonical claim, never the 46-char record.
+
+If you want the one-line version for an interview: *"Spring Boot to fake the mainframe's front door, JdbcTemplate + H2 to fake its Db2 tables, deliberately plain `String`/`java.time` for the fixed-width records so the legacy shape stays visible, and Spring `RestClient` to speak its `text/plain` contract from behind an anti-corruption layer."*
+
 <details>
 <summary>Execution details — 653 tool events</summary>
 
@@ -6588,6 +6612,6 @@ echo; echo "════ how records are built/parsed — any library, or…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 31 July 2026, 19:29 UTC
+- **Last updated:** 31 July 2026, 19:30 UTC
 - **Turns:** 74
 - **Status:** Incomplete

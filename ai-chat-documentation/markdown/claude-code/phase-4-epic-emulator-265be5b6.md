@@ -690,8 +690,12 @@ Identical clinical outcome (HIGH risk, same conflict note, same basis references
 
 Both scenarios match. Let's peek at the `epic-emulator` log to confirm the extension backfill and quirks actually engaged with this real traffic, not just passed through inertly.
 
+Now let's check the `epic-emulator` log for any errors during this real run before finalizing:
+
+Clean run, no errors. Now writing the permanent, rerunnable e2e acceptance script following this repo's existing `e2e/` conventions.
+
 <details>
-<summary>Execution details — 317 tool events</summary>
+<summary>Execution details — 329 tool events</summary>
 
 ### Turn 2 activity
 
@@ -1180,6 +1184,21 @@ echo "---"
 curl -s -m 10 -H "apikey: $(cat /tmp/claude-1000/-w…`
 - **Bash** `curl -s -m 10 -H "apikey: $(cat /tmp/claude-1000/-workspaces-fhir-agent/265be5b6-c550-4af6-bed7-7be2bca6b9c4/scratchpad/epic_token.txt)" \
   "http://localhost:8092/fhir/AllergyIntolerance?patient=1" |…`
+- **Bash** `grep -i "error\|exception" /tmp/claude-1000/-workspaces-fhir-agent/265be5b6-c550-4af6-bed7-7be2bca6b9c4/scratchpad/epic-emulator.log 2>/dev/null | grep -v "^$" | head -20
+echo "(empty above = no error…`
+- **TodoWrite** `{"todos": [{"content": "Add apikey-header fallback to epic-emulator's auth gate (accepts existing Kong-style header, zero triage-service changes)", "status": "completed", "activeForm": "Adding apikey-…`
+- **Read** `/workspaces/fhir-agent/e2e/test_golden_paths.py`
+- **Read** `/workspaces/fhir-agent/e2e/conftest.py`
+- **Bash** `ls data/scripts/*.py | xargs -I{} basename {}
+echo "---"
+grep -n "def \|PUT\|POST\|fixed\|logical" data/scripts/seed_demo.py | head -30`
+- **Bash** `sed -n '1,60p' data/scripts/seed_demo.py`
+- **Bash** `sed -n '118,145p' data/scripts/seed_demo.py`
+- **Bash** `sed -n '144,200p' data/scripts/seed_demo.py`
+- **Read** `/workspaces/fhir-agent/data/scripts/seed_demo.py`
+- **Edit** `/workspaces/fhir-agent/data/scripts/seed_demo.py`
+- **Edit** `/workspaces/fhir-agent/data/scripts/seed_demo.py`
+- **Edit** `/workspaces/fhir-agent/data/scripts/seed_demo.py`
 
 </details>
 
@@ -1190,6 +1209,6 @@ curl -s -m 10 -H "apikey: $(cat /tmp/claude-1000/-w…`
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 19:30 UTC
+- **Last updated:** 31 July 2026, 19:31 UTC
 - **Turns:** 16
 - **Status:** Complete
