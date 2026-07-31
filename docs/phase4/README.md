@@ -2,10 +2,20 @@
 
 > ## Canonical status
 >
-> **M1 built.** `epic-emulator/` is a real Spring Boot module: a pass-through proxy that forwards
-> every request to `fhir-service` unchanged (method, path, query, headers, body) and returns its
-> response unchanged, verified by 3 passing tests. No auth gate, no extensions, no quirks yet —
-> those are M2–M4, not started. `decisions.md` indexes 10 locked decisions (`E1`–`E10`).
+> **M1 + M2 built.** `epic-emulator/` is a real Spring Boot module: a pass-through proxy
+> (forwards every request to `fhir-service` unchanged, verified by 3 tests) now gated behind a
+> simulated SMART Backend Services JWT client-assertion auth flow (verified by 6 more tests — the
+> full flow, plus rejection of no-header/garbage-token/expired-assertion/wrong-key/unknown-client
+> requests). No extensions, no quirks yet — those are M3/M4, not started.
+> `decisions.md` indexes 11 decisions (`E1`–`E11`).
+>
+> M2's other stated task — pinning a specific Epic documentation version — is **only partially
+> done**: one real check confirmed Epic's docs site is genuinely public at a shell level (dated
+> October 31, 2025) but the specific backend-OAuth2 technical parameters weren't retrievable by a
+> plain fetch, and no account registration was attempted (an inherently human step this build
+> can't perform). The auth flow was built against the public base SMART Backend Services spec
+> instead — see `design.md` §7 and decision E10 for the honest, non-fabricated version of what was
+> and wasn't verified.
 >
 > *This is the one canonical status statement. Other documents link here rather than restate it.*
 >
@@ -16,10 +26,10 @@
 > - [`decisions.md`](./decisions.md) — ADR-style index of every decision, same convention as
 >   Phase 2/Phase 3.
 > - [`../../epic-emulator/README.md`](../../epic-emulator/README.md) — the module's own README:
->   how the proxy works, build/test/run instructions.
+>   how the proxy and auth flow work, build/test/run instructions.
 >
-> **What's next:** M2 — auth emulation (SMART Backend Services flow) + pinning the Epic
-> documentation version. Not started; no timeline set.
+> **What's next:** M3 — extension handling (Medication/AllergyIntolerance read-time backfill).
+> Not started; no timeline set.
 
 ## What Phase 4 is
 
