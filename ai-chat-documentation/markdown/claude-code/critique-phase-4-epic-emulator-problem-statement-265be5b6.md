@@ -463,8 +463,12 @@ Now the JWT validation logic, token controller, and gating filter:
 
 Now updating `application.yml` to document the auth config shape (without baking in a static key pair — the test generates its own dynamically, which is cleaner than committing a fixed "known" keypair):
 
+Now the auth flow integration test — reusing the M1 stub-server pattern so I can prove the gate actually blocks/allows reaching the proxy, not just that the token endpoint works in isolation:
+
+Now let's build and test:
+
 <details>
-<summary>Execution details — 121 tool events</summary>
+<summary>Execution details — 125 tool events</summary>
 
 ### Turn 2 activity
 
@@ -671,6 +675,10 @@ grep -rn "jjwt\|nimbus\|java-jwt" fhir-service/pom.xml 2>/dev/null`
 - **Write** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/auth/BearerAuthFilter.java`
 - **Read** `/workspaces/fhir-agent/epic-emulator/src/main/resources/application.yml`
 - **Edit** `/workspaces/fhir-agent/epic-emulator/src/main/resources/application.yml`
+- **Write** `/workspaces/fhir-agent/epic-emulator/src/test/java/com/healthcare/epic/AuthFlowIntegrationTest.java`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/src/test/java/com/healthcare/epic/AuthFlowIntegrationTest.java`
+- **TodoWrite** `{"todos": [{"content": "Add nimbus-jose-jwt dependency to epic-emulator pom.xml", "status": "completed", "activeForm": "Adding nimbus-jose-jwt dependency"}, {"content": "Write auth config properties +…`
+- **Bash** `mvn -f epic-emulator/pom.xml test 2>&1 | tail -150`
 
 </details>
 
@@ -681,6 +689,6 @@ grep -rn "jjwt\|nimbus\|java-jwt" fhir-service/pom.xml 2>/dev/null`
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 18:32 UTC
+- **Last updated:** 31 July 2026, 18:33 UTC
 - **Turns:** 13
 - **Status:** Complete
