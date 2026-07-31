@@ -289,7 +289,30 @@ In the containerization journey above, if I worked with a platform engineer to c
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+## Yes — you can run Kubernetes locally
+
+Once you have a Docker image, you don't need any cloud account to try Kubernetes. Several tools spin up a small, real Kubernetes cluster entirely on your own machine:
+
+- **Docker Desktop's built-in Kubernetes** — a toggle in Docker Desktop that gives you a single-node cluster with no extra install.
+- **Minikube** — the most common purpose-built local cluster tool; runs Kubernetes inside a VM or container on your laptop.
+- **kind** ("Kubernetes in Docker") — runs cluster nodes as Docker containers themselves; popular for CI pipelines and quick local testing.
+- **k3s / k3d** — a stripped-down, lightweight Kubernetes distribution, often used for local dev or edge devices.
+
+Any of these lets you `kubectl apply` the exact same YAML files you'd use in the cloud. Concretely, in this repo: [fhir-service/k8s/deployment.yaml](fhir-service/k8s/deployment.yaml), `service.yaml`, `configmap.yaml`, and `namespace.yaml` could be applied against a local Minikube or kind cluster verbatim (pointing the H2 default profile instead of Neon, so there's no real database dependency either) — exactly how a platform engineer would validate manifests before ever touching GKE. Only two things differ locally: (1) there's no cloud load balancer to hand traffic to your cluster from the outside world — you use port-forwarding, a NodePort, or a tool-specific tunnel instead — and (2) there's no "serverless node" layer like Fargate or AKS Virtual Nodes, because your laptop *is* the node.
+
+## The four terms, defined from first principles
+
+**Cluster** — a pool of machines (real or virtual) that Kubernetes manages as one unit of compute. Every cluster has two kinds of members: a **control plane** (the decision-maker — tracks what *should* be running and where) and **worker nodes** (the machines that actually run your containers). In the cloud, a cluster might be a dozen real VMs. Locally, Minikube/kind fake this entirely on one laptop, with a single node playing both roles — same API, same behavior, tiny scale.
+
+**Orchestration** — the continuous, automated work of keeping reality matching a *desired state* you declared, without you manually intervening. You tell Kubernetes "I want 3 copies of this container running, each with these resource limits" (that declaration is a Deployment). Orchestration is the ongoing loop where Kubernetes checks: are there really 3 healthy copies right now? If one crashed, start a replacement. If you change "3" to "5," start 2 more. If you push a new image version, replace the old copies with new ones gradually, without ever dropping to zero running copies. It's the "keep making reality match what I asked for, forever, without me watching" layer.
+
+**Wiring** (the word I used loosely for "how traffic gets from the outside world to the right container") — this isn't one formal Kubernetes object, it's really two pieces working together:
+- A **Service** — a stable internal address/name for a group of container copies, even as individual copies are created and destroyed underneath it. Without a Service, you'd have to track the ever-changing IP addresses of individual containers yourself; the Service gives you one fixed name that always routes to whichever healthy copies currently exist.
+- A **cloud Load Balancer** (or, locally, a port-forward/tunnel) — the actual entry point from *outside* the cluster (the public internet, or your own machine) into that Service. In the cloud, requesting a "LoadBalancer"-type Service automatically provisions a real external load balancer from AWS/Azure/GCP that points at the cluster.
+
+**Ingress** — a smarter routing layer that sits in front of your Services, letting one entry point fan traffic out by rule — e.g., `/fhir` goes to the FHIR service, `/triage` goes to the triage service, or `api.example.com` gets TLS termination before being routed onward. It's the Kubernetes equivalent of a reverse-proxy config (nginx routing rules, an API gateway) rather than a simple one-service-to-one-address mapping. Ingress rules by themselves do nothing — they require an **Ingress Controller** (a piece of software, commonly nginx-based, actually running inside the cluster) to read those rules and implement the routing. This repo's actual architecture uses Kong as that traffic-routing layer, sitting in front of `fhir-service` and enforcing auth/rate-limiting — conceptually the same role as an Ingress Controller, implemented via Kong's own Kubernetes resources instead of the plain built-in `Ingress` object.
+
+**Putting the four together**: a *cluster* is the substrate; *orchestration* is what keeps your declared containers running correctly on that substrate; a Load Balancer + Service is the *wiring* that gets outside traffic in the door; *Ingress* is the smart router that then decides, once traffic is inside, which specific service it's actually meant for.
 
 <details>
 <summary>Execution details — 10 tool events</summary>
@@ -319,6 +342,6 @@ In the containerization journey above, if I worked with a platform engineer to c
 - **Source:** Claude Code
 - **Session ID:** `2e75a99e-6530-4b28-82f9-b3b5ee1df979`
 - **Created:** 22 July 2026, 14:25 UTC
-- **Last updated:** 31 July 2026, 11:31 UTC
+- **Last updated:** 31 July 2026, 11:32 UTC
 - **Turns:** 9
-- **Status:** Incomplete
+- **Status:** Complete
