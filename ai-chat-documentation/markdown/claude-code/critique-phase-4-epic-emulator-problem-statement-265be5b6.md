@@ -294,10 +294,17 @@ Take PRD-relevant content from above two prompts and expand the PRD accordingly.
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+This repo's docs conventions actually shifted between phases — worth stating before I write anything:
+
+- **Phase 2** kept `requirements.md` (normative contract) and `plan.md` (architecture + milestones) as **two separate documents**.
+- **Phase 3** consolidated: `prd.md` absorbed what `requirements.md` used to hold, and `design.md` absorbed what `plan.md` used to hold (architecture, package layout, milestone plan all live in `design.md` §1–§13). There's no separate `plan.md` in Phase 3.
+
+Since Phase 4's PRD already followed the Phase 3 naming (`prd.md`), I'll continue that convention: **no separate `plan.md`** — the milestone plan lives inside `design.md`, same as Phase 3. Now expanding the PRD and writing the design doc.
+
+Also updating the header note to point at the design doc, and tightening §9 to cross-reference it rather than duplicate.
 
 <details>
-<summary>Execution details — 18 tool events</summary>
+<summary>Execution details — 20 tool events</summary>
 
 ### Turn 2 activity
 
@@ -336,6 +343,8 @@ quirk emulation as one Spring Boot service proxying fhir-service),…`
 echo; echo "=== phase2 requirements.md headers ==="; grep -n "^#" docs/phase2/requirements.md
 echo; echo "=== phase3 design.md h…`
 - **Read** `/workspaces/fhir-agent/docs/phase3/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/prd.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/prd.md`
 
 </details>
 
@@ -346,6 +355,6 @@ echo; echo "=== phase3 design.md h…`
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 18:00 UTC
+- **Last updated:** 31 July 2026, 18:02 UTC
 - **Turns:** 9
-- **Status:** Incomplete
+- **Status:** Complete
