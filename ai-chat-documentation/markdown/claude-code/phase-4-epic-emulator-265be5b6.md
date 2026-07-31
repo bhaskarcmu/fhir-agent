@@ -581,8 +581,10 @@ That's just an IDE informational notice (not part of an open IDE project), not a
 
 Now upgrading `BearerAuthFilter` to use the Epic `OperationOutcome` shape (quirk C):
 
+Now writing the comprehensive quirks integration test:
+
 <details>
-<summary>Execution details — 228 tool events</summary>
+<summary>Execution details — 229 tool events</summary>
 
 ### Turn 2 activity
 
@@ -929,6 +931,7 @@ mkdir -p epic-emulator/src/main/java/com/healthcare/epic/quirks`
 - **Bash** `grep -n '"/fhir/MedicationRequest\|"/fhir/AllergyIntolerance' epic-emulator/src/test/java/com/healthcare/epic/*.java`
 - **Read** `/workspaces/fhir-agent/epic-emulator/src/test/java/com/healthcare/epic/ExtensionBackfillIntegrationTest.java`
 - **Edit** `/workspaces/fhir-agent/epic-emulator/src/test/java/com/healthcare/epic/ExtensionBackfillIntegrationTest.java`
+- **TodoWrite** `{"todos": [{"content": "Write EpicOperationOutcome helper (quirk C shape)", "status": "completed", "activeForm": "Writing EpicOperationOutcome helper"}, {"content": "Write RequiredSearchParameterInter…`
 
 </details>
 
