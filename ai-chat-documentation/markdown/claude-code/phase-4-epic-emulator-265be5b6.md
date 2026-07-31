@@ -775,8 +775,16 @@ Now, perform and document a testing plus analysys step. Wear a clinician's, busi
 
 Confirmed. Cleaning up branches.
 
+This is a substantial analysis task. Let me set up tracking, then start with the highest-value piece: actually testing whether M4's pagination quirk could cause a real clinical-safety problem I haven't checked yet.
+
+This is a significant, real finding worth verifying live, not just reading from code: M4's pagination cap could silently truncate clinical data that `client/clinical` never re-requests. Let me confirm this with an actual test.
+
+Let me rebuild to be safe (ensure it reflects the latest merged code, not a stale build):
+
+Now starting `epic-emulator` with the same test client, then seeding a patient with 25 allergy records (penicillin allergy placed at position #22, beyond the pagination cap):
+
 <details>
-<summary>Execution details — 390 tool events</summary>
+<summary>Execution details — 397 tool events</summary>
 
 ### Turn 2 activity
 
@@ -1365,6 +1373,26 @@ epic-emulator instead of fhir-serv…`
 - **Bash** `gh pr view 53 --json state,mergedAt 2>&1`
 - **Bash** `git checkout main && git pull origin main && git branch -d feature/phase4-m5-acceptance-case`
 - **Bash** `git push origin --delete feature/phase4-m5-acceptance-case`
+- **TodoWrite** `{"todos": [{"content": "Check whether client/clinical's FHIR client follows pagination Link headers (safety-critical: could the _count cap silently drop meds/allergies?)", "status": "in_progress", "ac…`
+- **Bash** `git checkout -b docs/phase5-readiness-assessment
+sed -n '340,420p' client/clinical/src/fhir_clinical_client/fhir_client.py`
+- **Bash** `curl -s -m 5 http://localhost:8080/fhir/metadata -o /dev/null -w "fhir-service: %{http_code}\n"
+grep -n "max_page_size\|search_prefetch" fhir-service/src/main/resources/application.yaml | head -5`
+- **Bash** `ls -la epic-emulator/target/*.jar 2>/dev/null || echo "jar missing, need rebuild"`
+- **Bash** `mvn -q -f epic-emulator/pom.xml -DskipTests package 2>&1 | tail -30
+ls -la epic-emulator/target/*.jar`
+- **Bash** `JWK_JSON=$(python3 -c "import json; print(json.dumps(json.load(open('e2e/fixtures/epic_emulator_test_client_public_jwk.json'))))")
+
+EPIC_AUTH_CLIENTS_0_CLIENT_ID=e2e-acceptance-test-client \
+EPIC_AUTH…`
+- **Bash** `python3 - <<'EOF'
+import httpx
+
+FHIR_BASE = "http://localhost:8080/fhir"
+HEADERS = {"Content-Type": "application/fhir+json"}
+
+def post(resource_type, body):
+    r = httpx.post(f"{FHIR_BASE}/{resource_…`
 
 </details>
 
@@ -1375,6 +1403,6 @@ epic-emulator instead of fhir-serv…`
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 19:44 UTC
+- **Last updated:** 31 July 2026, 19:45 UTC
 - **Turns:** 17
 - **Status:** Complete
