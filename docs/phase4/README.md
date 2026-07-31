@@ -2,7 +2,14 @@
 
 > ## Canonical status
 >
-> **Phase 4 complete — M1 through M5 all built.** `epic-emulator/` is a real Spring Boot module: a
+> **⚠️ All 5 milestones are built and merged, but a post-merge safety finding is still open — see
+> [`docs/phase5/phase4-testing-and-analysis.md`](../phase5/phase4-testing-and-analysis.md) §0
+> before treating this as demo-ready.** Summary: a realistic multi-allergy patient can get a
+> silent false-negative ("safe to dispense") result through `epic-emulator` due to the pagination
+> quirk (M4) combined with a pre-existing gap in `client/clinical`'s FHIR client. Not yet fixed.
+>
+> **Phase 4 milestones: complete — M1 through M5 all built.** `epic-emulator/` is a real Spring
+> Boot module: a
 > pass-through proxy (verified by 3 tests), gated behind a simulated SMART Backend Services JWT
 > client-assertion auth flow (6 more tests), backfilling a placeholder Epic-style extension on
 > `MedicationRequest`/`AllergyIntolerance` reads (6 more tests), and exhibiting all three named
@@ -40,9 +47,14 @@
 > - [`../../e2e/test_epic_emulator_acceptance.py`](../../e2e/test_epic_emulator_acceptance.py) —
 >   the live acceptance test.
 >
-> **What's next:** Phase 4 is done. A future Phase 5 would decompose along whatever the coupling
-> note actually shows, not the original three-area guess — see the coupling note and the PRD's
-> forward note (§10). No Phase 5 work has started; no timeline set.
+> **What's next:** Phase 4 is built and merged, but **not fully closed** — a post-merge
+> clinician/business/architect testing pass found a live, unresolved safety bug (pagination can
+> silently drop clinical data — see
+> [`docs/phase5/phase4-testing-and-analysis.md`](../phase5/phase4-testing-and-analysis.md) §0/§4.0)
+> that should be decided on before treating this module as demo-ready. A future Phase 5 would
+> decompose along whatever the coupling note actually shows, not the original three-area guess —
+> see the coupling note and the PRD's forward note (§10). No Phase 5 work has started; no timeline
+> set.
 
 ## What Phase 4 is
 
