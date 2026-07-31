@@ -404,8 +404,12 @@ Important find — there's already a pre-existing `epic-emulator/README.md` plac
 
 This changes the picture usefully: `epic-emulator/` and a sibling `athena-emulator/` were reserved as **placeholders back in Phase 2** (`docs/phase2/plan.md:608`, deviation D2), explicitly framed as "two EHR-specific edges prove portability, one proves nothing." Phase 4 only builds the Epic half — worth noting, not a blocker. Let me track the rest of M1 as discrete steps.
 
+Now the integration test:
+
+Now let's build and run the tests before anything else.
+
 <details>
-<summary>Execution details — 66 tool events</summary>
+<summary>Execution details — 71 tool events</summary>
 
 ### Turn 2 activity
 
@@ -537,6 +541,11 @@ echo "=== Phase 2 requirements.md deviations mention…`
 - **Write** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/proxy/FhirProxyController.java`
 - **Write** `/workspaces/fhir-agent/epic-emulator/src/main/resources/application.yml`
 - **Write** `/workspaces/fhir-agent/epic-emulator/Dockerfile`
+- **Write** `/workspaces/fhir-agent/epic-emulator/src/test/java/com/healthcare/epic/FhirProxyIntegrationTest.java`
+- **TodoWrite** `{"todos": [{"content": "Write epic-emulator pom.xml (Spring Boot 3.3.4, Java 21)", "status": "completed", "activeForm": "Writing epic-emulator pom.xml"}, {"content": "Write EpicEmulatorApplication mai…`
+- **Bash** `mvn -f epic-emulator/pom.xml -q test 2>&1 | tail -100`
+- **Bash** `mvn -f epic-emulator/pom.xml -q test 2>&1 | grep -B5 "at com.healthcare.epic.proxy.FhirProxyController.proxy" | head -40`
+- **Bash** `mvn -f epic-emulator/pom.xml -q test 2>&1 | grep -B2 "restricted\|IllegalArgumentException" | head -40`
 
 </details>
 
@@ -547,6 +556,6 @@ echo "=== Phase 2 requirements.md deviations mention…`
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 18:17 UTC
+- **Last updated:** 31 July 2026, 18:18 UTC
 - **Turns:** 12
 - **Status:** Complete
