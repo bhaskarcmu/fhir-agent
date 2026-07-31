@@ -412,8 +412,41 @@ JDK's `HttpClient` restricts more headers than the four I listed (here: `Upgrade
 
 All 3 tests pass. Now updating the pre-existing `epic-emulator/README.md` placeholder to reflect real M1 content, and cleaning up `.gitkeep`.
 
+Now writing the full replacement:
+
+Good — `target/` is already ignored. Now updating the Phase 4 docs to cross-reference the Phase 2 placeholder origin and the `athena-emulator` sibling.
+
+Now updating the canonical status callout since M1 is actually built now:
+
+Now updating `decisions.md`'s preamble, which said "nothing is built yet":
+
+Now adding a Phase 4 entry to the top-level `docs/README.md` index (it currently jumps from Phase 3 straight to "Conventions," missing Phase 4 entirely):
+
+Now adding the Phase 4 section under "Design and decisions", mirroring the Phase 3 block:
+
+Final verification: re-check for stray `[[...]]` syntax, re-run the full test suite, and confirm git status before committing.
+
+CI doesn't aggregate a root pom — each module runs independently, and CI wiring for new modules was historically added as its own later milestone (Phase 2 did this in M7, not M1), so I'm leaving that for a later Phase 4 milestone rather than scope-creeping M1. Committing now.
+
+## M1 done — PR #49
+
+**Branch cleanup:** merged `docs/phase4-epic-emulator-prd` deleted (local + remote).
+
+**M1 implementation** (branch `feature/phase4-m1-epic-emulator-skeleton`, PR: https://github.com/bhaskarcmu/fhir-agent/pull/49):
+
+- New `epic-emulator/` Spring Boot module — a pass-through proxy forwarding every request to `fhir-service` unchanged (PRD FR1). `FhirProxyClient` owns the upstream connection; `FhirProxyController` catches all paths except `/actuator/**`.
+- **3/3 tests pass** — verified with `mvn -f epic-emulator/pom.xml test`, not just written. Hit one real bug along the way (JDK `HttpClient` rejecting the `Upgrade` header) and fixed it with a catch-and-skip rather than an incomplete hardcoded list.
+- **Notable discovery:** `epic-emulator/` wasn't a new directory — it was an empty placeholder reserved back in Phase 2, alongside a sibling `athena-emulator/` that's still untouched. Corrected that framing in the docs rather than silently building over it.
+- Filled a gap from the earlier docs PR: Phase 4 was missing from the top-level `docs/README.md` index.
+
+**CI wiring deliberately deferred** — Phase 2 added its CI job in a later milestone (M7), not its first; following that precedent rather than scope-creeping M1.
+
+**Ignoring the Phase 3 CI failure** as instructed — confirmed pre-existing/unrelated to any of this work.
+
+**Known limitation:** the PR includes a manual test-plan checkbox (running `fhir-service` + `epic-emulator` together) that I haven't executed — only the automated suite ran. Say the word when you want M2 (auth emulation) started.
+
 <details>
-<summary>Execution details — 76 tool events</summary>
+<summary>Execution details — 99 tool events</summary>
 
 ### Turn 2 activity
 
@@ -555,6 +588,44 @@ echo "=== Phase 2 requirements.md deviations mention…`
 - **Bash** `mvn -f epic-emulator/pom.xml -q test 2>&1 | tail -40`
 - **Bash** `mvn -f epic-emulator/pom.xml test 2>&1 | grep -E "Tests run|BUILD SUCCESS|BUILD FAILURE"`
 - **TodoWrite** `{"todos": [{"content": "Write epic-emulator pom.xml (Spring Boot 3.3.4, Java 21)", "status": "completed", "activeForm": "Writing epic-emulator pom.xml"}, {"content": "Write EpicEmulatorApplication mai…`
+- **Write** `/workspaces/fhir-agent/epic-emulator/README.md`
+- **Read** `/workspaces/fhir-agent/epic-emulator/README.md`
+- **Write** `/workspaces/fhir-agent/epic-emulator/README.md`
+- **Bash** `rm -f epic-emulator/.gitkeep && ls -la epic-emulator/`
+- **Bash** `grep -n "target" .gitignore 2>/dev/null | head -5
+echo "---"
+git status --porcelain | head -30`
+- **Read** `/workspaces/fhir-agent/docs/phase4/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/README.md`
+- **Read** `/workspaces/fhir-agent/docs/phase4/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/README.md`
+- **Read** `/workspaces/fhir-agent/docs/phase4/decisions.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/decisions.md`
+- **Read** `/workspaces/fhir-agent/docs/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/README.md`
+- **Read** `/workspaces/fhir-agent/docs/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/README.md`
+- **TodoWrite** `{"todos": [{"content": "Write epic-emulator pom.xml (Spring Boot 3.3.4, Java 21)", "status": "completed", "activeForm": "Writing epic-emulator pom.xml"}, {"content": "Write EpicEmulatorApplication mai…`
+- **Bash** `echo "=== stray [[ ]] check in new/changed files ==="
+grep -n '\[\[' epic-emulator/README.md docs/phase4/*.md docs/README.md 2>/dev/null
+echo "(none = clean)"
+echo
+echo "=== full epic-emulator test ru…`
+- **Bash** `find . -maxdepth 1 -name "pom.xml"
+echo "---"
+cat .github/workflows/tests.yml 2>/dev/null | grep -n "epic\|mvn -f\|pom.xml" | head -30`
+- **Bash** `git add epic-emulator/ docs/README.md docs/phase4/README.md docs/phase4/decisions.md
+git status --porcelain`
+- **Bash** `git commit -m "$(cat <<'EOF'
+feat(phase4 M1): epic-emulator skeleton + pass-through proxy
+
+New Spring Boot module (Java 21, Boot 3.3.4) forwarding every
+request to fhir-service unchanged and returning…`
+- **Bash** `git push -u origin feature/phase4-m1-epic-emulator-skeleton`
+- **Bash** `gh pr create --title "feat(phase4 M1): epic-emulator skeleton + pass-through proxy" --body "$(cat <<'EOF'
+## Summary
+- New `epic-emulator/` Spring Boot module (Java 21 / Boot 3.3.4): M1 of Phase 4 — a…`
+- **TodoWrite** `{"todos": [{"content": "Write epic-emulator pom.xml (Spring Boot 3.3.4, Java 21)", "status": "completed", "activeForm": "Writing epic-emulator pom.xml"}, {"content": "Write EpicEmulatorApplication mai…`
 
 </details>
 
@@ -565,6 +636,6 @@ echo "=== Phase 2 requirements.md deviations mention…`
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 18:19 UTC
+- **Last updated:** 31 July 2026, 18:23 UTC
 - **Turns:** 12
 - **Status:** Complete
