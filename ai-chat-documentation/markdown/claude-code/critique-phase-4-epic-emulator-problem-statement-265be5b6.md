@@ -522,8 +522,16 @@ Let me fix a bug I just introduced — calling `removeContext` on a path that wa
 
 Now let's run the tests:
 
+All 15 tests pass (6 new + 3 M1 + 6 M2). Now updating docs.
+
+Milestone plan in `design.md`:
+
+Now `epic-emulator/README.md`:
+
+Now adding an extension-handling section and updating the test count summary:
+
 <details>
-<summary>Execution details — 179 tool events</summary>
+<summary>Execution details — 186 tool events</summary>
 
 ### Turn 2 activity
 
@@ -805,6 +813,13 @@ grep -rn "MedicationRequest\|AllergyIntolerance\|resourceType.*Medication" triag
 - **Edit** `/workspaces/fhir-agent/epic-emulator/src/test/java/com/healthcare/epic/ExtensionBackfillIntegrationTest.java`
 - **TodoWrite** `{"todos": [{"content": "Correct PRD/design docs: reference workflow reads MedicationRequest, not Medication", "status": "completed", "activeForm": "Correcting resource-type scoping in docs"}, {"conten…`
 - **Bash** `mvn -f epic-emulator/pom.xml test 2>&1 | tail -150`
+- **TodoWrite** `{"todos": [{"content": "Correct PRD/design docs: reference workflow reads MedicationRequest, not Medication", "status": "completed", "activeForm": "Correcting resource-type scoping in docs"}, {"conten…`
+- **Read** `/workspaces/fhir-agent/docs/phase4/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase4/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/design.md`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/README.md`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/README.md`
+- **Read** `/workspaces/fhir-agent/epic-emulator/README.md`
 
 </details>
 
@@ -815,6 +830,6 @@ grep -rn "MedicationRequest\|AllergyIntolerance\|resourceType.*Medication" triag
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 18:44 UTC
+- **Last updated:** 31 July 2026, 18:45 UTC
 - **Turns:** 14
 - **Status:** Complete
