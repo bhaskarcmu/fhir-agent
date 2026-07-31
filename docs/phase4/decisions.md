@@ -12,11 +12,12 @@ still holds*.
 Status values: **Accepted** (in force) · **Superseded** (replaced — successor named) ·
 **Partially delivered** (accepted, but the repo does not yet match — the gap is named).
 
-**Nothing is built yet** (see [`README.md`](./README.md)'s canonical status) — every row below is
-a **planning-time decision**, recorded before M1 starts, not a fact verified against running code.
-That distinction matters here more than it did in Phase 3's index: several rows (E9, E10) name
-things that are *deliberately* not yet pinned, tracked as **Partially delivered** rather than
-guessed at just to fill the table.
+**M1 is built** (see [`README.md`](./README.md)'s canonical status); E1–E5, E7, E8 are now
+verified against real, tested code (E2's proxy architecture, E3's directory, E7's read-time
+approach hasn't been exercised until M3 but the write-pass-through half is already true today).
+E9 is a documentation-format decision, not code. **E10 remains genuinely open** — the Epic
+documentation version and the exact quirk/extension values are still not pinned, tracked as
+**Partially delivered** rather than guessed at just to fill the table.
 
 ---
 

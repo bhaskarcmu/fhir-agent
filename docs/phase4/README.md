@@ -2,9 +2,10 @@
 
 > ## Canonical status
 >
-> **Planning only — no milestones started.** `prd.md` and `design.md` are drafted;
-> `decisions.md` indexes what's locked so far (10 decisions, `E1`–`E10`). **M1** (skeleton
-> module + pass-through proxy) has not begun.
+> **M1 built.** `epic-emulator/` is a real Spring Boot module: a pass-through proxy that forwards
+> every request to `fhir-service` unchanged (method, path, query, headers, body) and returns its
+> response unchanged, verified by 3 passing tests. No auth gate, no extensions, no quirks yet —
+> those are M2–M4, not started. `decisions.md` indexes 10 locked decisions (`E1`–`E10`).
 >
 > *This is the one canonical status statement. Other documents link here rather than restate it.*
 >
@@ -14,9 +15,11 @@
 >   concrete (unverified, flagged-pending-validation) choices, and the milestone plan (§12).
 > - [`decisions.md`](./decisions.md) — ADR-style index of every decision, same convention as
 >   Phase 2/Phase 3.
+> - [`../../epic-emulator/README.md`](../../epic-emulator/README.md) — the module's own README:
+>   how the proxy works, build/test/run instructions.
 >
-> **What's next:** M1 — skeleton `epic-emulator/` module with a pass-through proxy to
-> `fhir-service`. Not started; no timeline set.
+> **What's next:** M2 — auth emulation (SMART Backend Services flow) + pinning the Epic
+> documentation version. Not started; no timeline set.
 
 ## What Phase 4 is
 
@@ -52,9 +55,19 @@ scope requires it (see `design.md` §11).
 ## Relationship to Phase 1, 2, and 3
 
 Additive only. `fhir-service`, `triage-service`, `claims-service`, `mcp-agent`, and every Phase 3
-provider-search package are unmodified. `epic-emulator` is a new, standalone top-level package —
-the same "new package, not an extension of something existing" precedent Phase 2 set with
-`claims-agent` and Phase 3 repeated with its four new packages.
+provider-search package are unmodified. `epic-emulator` follows the same "standalone package, not
+an extension of something existing" precedent Phase 2 set with `claims-agent` and Phase 3 repeated
+with its four new packages.
+
+**Correction to earlier framing:** `epic-emulator/` is not actually a new directory — it already
+existed as an **empty placeholder**, reserved back in Phase 2
+([`docs/phase2/plan.md` §16](../phase2/plan.md#16-future-work), deviation D2 in
+[`docs/phase2/requirements.md`](../phase2/requirements.md#deviations-from-the-prd)), alongside a
+sibling `athena-emulator/` placeholder. That original framing describes *two* EHR-specific edges
+over one generic core as the actual portability proof ("one emulator proves nothing"). Phase 4
+builds out only the Epic half; `athena-emulator/` remains an untouched placeholder, so Phase 4
+alone does not complete that original two-emulator claim — whether it's ever built is a separate,
+later decision, not in Phase 4 or Phase 5 scope.
 
 `triage-service` and `claims-service` are deliberately **not** folded into `epic-emulator`, even
 though an earlier planning round considered it: both are already independently built and
