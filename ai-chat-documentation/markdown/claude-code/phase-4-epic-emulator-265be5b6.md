@@ -751,8 +751,20 @@ Let me check CI status, especially the `gitleaks` job I couldn't pre-verify loca
 
 I'll check CI shortly and report back.
 
+`gitleaks` passes — the allowlist config worked correctly. `phase3 (python)` fails, but that's unrelated to this PR (my diff only touches `epic-emulator/`, `docs/phase4/`, `e2e/`, and `data/scripts/seed_demo.py`). Let me confirm it's the same known issue from before.
+
+## CI status on PR #53
+
+**`gitleaks` — passes.** The `.gitleaks.toml` allowlist worked correctly on the first attempt; the checked-in test-only private key is not flagged.
+
+**`phase3 (python)` — fails, but unrelated to this PR.** Confirmed it's the same pre-existing issue reported back on PR #48: an upstream `mcp` SDK version drift (`Tool.inputSchema` → `input_schema`, now also showing `'Server' object has no attribute 'list_tools'`) breaking `provider-mcp-server`/`provider-search-agent`. This PR's diff never touches Phase 3 Python code, and the failure signature is identical to what I already diagnosed as pre-existing and unrelated.
+
+**Everything else passes**: `phase1 (independence)`, `phase2 (java)`, `phase2 (python)`, and all four `phase3 (terraform validate)` jobs.
+
+PR #53 is ready for your review — **Phase 4 (Epic Emulator) is now complete**, all five milestones built, tested, and the acceptance case verified against a real live stack.
+
 <details>
-<summary>Execution details — 384 tool events</summary>
+<summary>Execution details — 387 tool events</summary>
 
 ### Turn 2 activity
 
@@ -1332,6 +1344,9 @@ epic-emulator instead of fhir-serv…`
 ## Summary
 - **The Phase 4 acceptance case (PRD FR9/G5), verified live** -- not just a…`
 - **ScheduleWakeup** `{"delaySeconds": 90, "prompt": "Check CI status on PR #53 (feature/phase4-m5-acceptance-case), specifically the gitleaks job — verify the .gitleaks.toml allowlist for the e2e test fixture private key…`
+- **Bash** `gh pr checks 53 2>&1`
+- **Bash** `gh run view 30659954860 --job 91253547843 --log-failed 2>&1 | grep -E "AttributeError|FAILED|inputSchema" | head -15`
+- **TodoWrite** `{"todos": [{"content": "Add apikey-header fallback to epic-emulator's auth gate (accepts existing Kong-style header, zero triage-service changes)", "status": "completed", "activeForm": "Adding apikey-…`
 
 </details>
 
@@ -1342,6 +1357,6 @@ epic-emulator instead of fhir-serv…`
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 19:40 UTC
+- **Last updated:** 31 July 2026, 19:42 UTC
 - **Turns:** 16
 - **Status:** Complete
