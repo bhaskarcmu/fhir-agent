@@ -803,8 +803,28 @@ Now adding a small "Phase 5" section to the docs index, and let's do final verif
 
 Final verification pass before committing.
 
+Clean. Committing, pushing, and opening the PR.
+
+## Branch cleanup + testing/analysis document — PR #54
+
+**Branch cleanup:** `feature/phase4-m5-acceptance-case` deleted (local + remote).
+
+**The analysis surfaced a real, live safety bug**, not just a documentation exercise:
+
+Wearing the clinician's hat and testing with a realistic multi-record patient (something the existing test suite never did — its one fixture has exactly one allergy), I found that **`epic-emulator`'s pagination cap can cause `triage-service` to silently miss a drug-allergy conflict**. Verified live, not simulated: a patient with 22 allergies, penicillin allergy at position 22, returns **HIGH risk direct to `fhir-service`** but **LOW risk / "Safe to dispense" through `epic-emulator`** — `200 OK`, no error. The root cause is two-sided: `epic-emulator`'s pagination quirk truncates at 20 records by design, and `client/clinical` (Phase 1 code) never follows FHIR pagination links to get the rest.
+
+Wearing the other two hats:
+- **Architect:** confirmed this gap exists because tests checked the *mechanism* (count capped, link rewritten) but never the *consequence* (does a real caller still get the right answer). Also confirmed `epic-emulator` has zero CI wiring — this bug (or one like it) can ship silently indefinitely.
+- **Business:** `demo-guide.md` has no Phase 4 section yet — I recommend not adding one until this is resolved, since demoing it today risks showing exactly this false "safe to dispense" in front of a real audience.
+
+**I did not fix it** — that's a real decision (which of two fix approaches, and how urgently) that belongs to you, not something to make unilaterally while documenting. It's flagged prominently in both the new document (`docs/phase5/phase4-testing-and-analysis.md`) and a warning banner at the top of Phase 4's own `README.md`.
+
+**PR #54**: https://github.com/bhaskarcmu/fhir-agent/pull/54
+
+Want me to fix it now — and if so, the durable fix (make `client/clinical` follow pagination) or the fast mitigation (raise the default cap)?
+
 <details>
-<summary>Execution details — 426 tool events</summary>
+<summary>Execution details — 432 tool events</summary>
 
 ### Turn 2 activity
 
@@ -1467,6 +1487,20 @@ echo "(none = clean)"
 echo
 echo "=== full Java test suite (regression check) ==="
 mvn…`
+- **TodoWrite** `{"todos": [{"content": "Check whether client/clinical's FHIR client follows pagination Link headers (safety-critical: could the _count cap silently drop meds/allergies?)", "status": "completed", "acti…`
+- **Bash** `git add -A -- docs
+git status --porcelain`
+- **Bash** `git commit -m "$(cat <<'EOF'
+docs(phase5): clinician/business/architect testing pass on Phase 4
+
+Post-merge analysis of the completed epic-emulator (M1-M5), tested
+against real running services from t…`
+- **Bash** `git push -u origin docs/phase5-readiness-assessment`
+- **Bash** `gh pr create --title "docs(phase5): clinician/business/architect testing pass on Phase 4" --body "$(cat <<'EOF'
+## Summary
+
+A testing-and-analysis pass on the completed Phase 4 (`epic-emulator`, M1-M5…`
+- **TodoWrite** `{"todos": [{"content": "Check whether client/clinical's FHIR client follows pagination Link headers (safety-critical: could the _count cap silently drop meds/allergies?)", "status": "completed", "acti…`
 
 </details>
 
@@ -1477,6 +1511,6 @@ mvn…`
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 19:51 UTC
+- **Last updated:** 31 July 2026, 19:53 UTC
 - **Turns:** 17
 - **Status:** Complete
