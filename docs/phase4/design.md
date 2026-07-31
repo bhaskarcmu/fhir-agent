@@ -1,7 +1,8 @@
 # Phase 4 Design — Epic Emulator
 
-**Status:** DRAFT — no milestones started. Companion to [`prd.md`](./prd.md). Open questions are
-resolved in §14 using best judgement, same convention as Phase 2/3.
+**Status:** DRAFT — no milestones started; see [`README.md`](./README.md) for the canonical
+status statement. Companion to [`prd.md`](./prd.md). Open questions are resolved in §14 using
+best judgement, same convention as Phase 2/3.
 **Terminology:** internal work is tracked as milestones (M1, M2, ...) — never "Phase 4.x". A
 future **Phase 4b** would name a live-cloud-deployment phase, mirroring Phase 2b/3b, if one is
 ever needed — nothing in Phase 4 requires it (see §11).

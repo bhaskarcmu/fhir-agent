@@ -4,6 +4,10 @@
 **Companion doc:** [`design.md`](./design.md) — architecture, package layout, the three quirks'
 concrete pinned choices, and the milestone plan (no separate `plan.md`; Phase 3 already
 consolidated that into `design.md`, and this phase follows the same convention).
+**Decision index:** [`decisions.md`](./decisions.md) tracks every decision below with a status
+(Accepted / Partially delivered / Superseded), same convention as Phase 2/Phase 3.
+**Canonical status:** see [`README.md`](./README.md) — other documents link there rather than
+restate it.
 **Extends:** Phase 1 (refill-triage), Phase 2 (claims adjudication), Phase 3 (provider search) — all
 unmodified.
 **Owner:** TBD
