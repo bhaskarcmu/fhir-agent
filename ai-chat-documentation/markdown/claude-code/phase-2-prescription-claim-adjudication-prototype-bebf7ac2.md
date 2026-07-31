@@ -4923,6 +4923,16 @@ Scoping to Phase 1 and Phase 2 only, as you asked (there's later phase work in t
 
 Want this as a **rendered, shareable diagram** (a clean Mermaid artifact with a URL you could drop into a doc or pull up in a conversation)? I kept it inline for speed, but I can produce that in a couple of minutes if it's useful.
 
+## Turn 73
+
+### Prompt
+
+Show a mure detailed architecture diagram. Include an SQS like queue in front of the IBM i emulator at the apprioriate place. Show the Facade as a layer, and the ACL as a seperate block. Show the rules engine (modern stak as a seperate block). Is the FHIR service even used in Phase 2? If so, add that to the diagram!
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 650 tool events</summary>
 
@@ -6479,6 +6489,6 @@ echo "════ remote ════"; git branch -r`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 31 July 2026, 18:52 UTC
-- **Turns:** 72
+- **Last updated:** 31 July 2026, 18:59 UTC
+- **Turns:** 73
 - **Status:** Incomplete
