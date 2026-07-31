@@ -607,8 +607,30 @@ Confirmed. `ex.getRequestURI().getQuery()` returns `null` for the query-less con
 
 Now let's re-run the full suite:
 
+All 23 tests pass. Let me run it once more to confirm it's stable, not a fluke.
+
+Stable. Now updating docs for M4.
+
+Now the milestone plan (§12):
+
+Now adding new decision rows to `decisions.md`:
+
+Now updating the preamble:
+
+Now updating `epic-emulator/README.md`:
+
+Now let's add a quirks section after the extension-handling section, and update the test count:
+
+Now updating the test count and adding the `QuirksIntegrationTest` description:
+
+Now updating the Phase 4 canonical status page:
+
+Now the top-level `docs/README.md`:
+
+Final verification pass, then commit and open the PR.
+
 <details>
-<summary>Execution details — 247 tool events</summary>
+<summary>Execution details — 276 tool events</summary>
 
 ### Turn 2 activity
 
@@ -974,6 +996,39 @@ mkdir -p epic-emulator/src/main/java/com/healthcare/epic/quirks`
 - **Read** `/workspaces/fhir-agent/epic-emulator/src/test/java/com/healthcare/epic/QuirksIntegrationTest.java`
 - **Edit** `/workspaces/fhir-agent/epic-emulator/src/test/java/com/healthcare/epic/QuirksIntegrationTest.java`
 - **Bash** `mvn -f epic-emulator/pom.xml test 2>&1 | grep -E "Tests run|ERROR|BUILD"`
+- **Bash** `mvn -f epic-emulator/pom.xml test 2>&1 | grep -E "Tests run: 2|BUILD"`
+- **TodoWrite** `{"todos": [{"content": "Write EpicOperationOutcome helper (quirk C shape)", "status": "completed", "activeForm": "Writing EpicOperationOutcome helper"}, {"content": "Write RequiredSearchParameterInter…`
+- **Bash** `grep -n "^## 6\.\|^## 12\.\|^## 14\." docs/phase4/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase4/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase4/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase4/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase4/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase4/decisions.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/decisions.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/decisions.md`
+- **Bash** `grep -n "^#\|Status:\|scope\|tests\|E1[0-9]" epic-emulator/README.md | head -40`
+- **Read** `/workspaces/fhir-agent/epic-emulator/README.md`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/README.md`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/README.md`
+- **Read** `/workspaces/fhir-agent/epic-emulator/README.md`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/README.md`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/README.md`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/README.md`
+- **Read** `/workspaces/fhir-agent/docs/phase4/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/README.md`
+- **Bash** `grep -n "phase4\|Phase 4\|E1.*E12" docs/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/README.md`
+- **Read** `/workspaces/fhir-agent/docs/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/README.md`
+- **Bash** `echo "=== stray [[ ]] check ==="
+grep -n '\[\[' epic-emulator/README.md docs/phase4/*.md docs/README.md 2>/dev/null
+echo "(none = clean)"
+echo
+echo "=== full test run (twice, to check stability) ==="…`
 
 </details>
 
@@ -984,6 +1039,6 @@ mkdir -p epic-emulator/src/main/java/com/healthcare/epic/quirks`
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 19:02 UTC
+- **Last updated:** 31 July 2026, 19:06 UTC
 - **Turns:** 15
 - **Status:** Complete
