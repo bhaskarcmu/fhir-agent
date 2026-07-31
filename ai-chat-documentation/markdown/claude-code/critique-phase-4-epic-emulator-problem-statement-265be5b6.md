@@ -90,7 +90,49 @@ I want you to build a monolith first. Justify that using your best judgement - a
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Good — I'll fold my own critique points back into the statement, make judgment calls where I have enough to go on, and flag the two spots where I genuinely need your call rather than guessing. I'm keeping this at problem-statement altitude — no code, no class diagrams.
+
+## Revised Problem Statement — epic-emulator (Phase 4)
+
+**Context.** Unchanged: `fhir-service` is EHR-agnostic; `epic-emulator` simulates Epic-specific behavior on top of it so the rest of the platform can be built/tested without a real Epic sandbox.
+
+**Monolith-first, compressed.** Auth, extension-handling, and quirk-simulation are three sub-features of one small module, not three products — splitting them into separate deployables was never a real option worth defending at length. The one-paragraph version: boundaries aren't known yet, so use direct method calls internally, and let Phase 4's own build reveal whether any of the three areas turn out to share more state than expected. Fowler's MonolithFirst gets one sentence, not a page.
+
+**The actual hard problem, now named explicitly: what counts as "correct" Epic-like behavior without a real Epic sandbox?**
+Answer: treat Epic's own public documentation as the source of truth, not an internal guess —
+- **Auth** → the SMART App Launch "Backend Services" (client-credentials-style, JWT-assertion) authorization flow, which is publicly specified and is what Epic's backend systems documentation implements.
+- **Extensions** → don't emulate "any Epic extension" (unbounded). Scope to extensions relevant to this repo's existing reference workflow — medication and allergy/intolerance resources — since that's the one clinical scenario already wired end-to-end (`triage-service/src/triage/rules.py`).
+- **Quirks** → bounded to exactly three, not an open list: (1) non-standard pagination/`_count` behavior, (2) a documented non-standard search-parameter requirement (e.g., required parameter combinations Epic enforces that base R4 doesn't), (3) Epic's `OperationOutcome` error-shape deviations. If a fourth quirk is discovered mid-build, it goes on a Phase 5 backlog, not into Phase 4 scope.
+
+This makes "demonstrably working" checkable: **it means spec-conformant to those named public sources**, not "looks plausible."
+
+**Integration architecture — real choice, not guessed.** Two viable shapes; recommending the first:
+
+1. **(Recommended) Standalone Spring Boot app, own embedded HAPI FHIR JPA store** (same stack `fhir-service` already uses), with Epic-specific auth filter + extension StructureDefinitions/validators + custom interceptors for the three quirks layered on top via HAPI's native interceptor mechanism. Point the existing `data/scripts/` Synthea seeding at its port for fixtures. Fastest to build — no proxy/rewrite layer needed, and doesn't require `fhir-service` to be running to test it.
+2. **Proxy in front of `fhir-service`**: forwards CRUD to the real service, layers Epic auth/extensions/quirks as request/response transforms. More "realistic" (single source of truth for data, no duplicate fixtures) but requires designing a transform pipeline and running two processes for any test.
+
+**Clarifying the skip-table scope:** the "no inter-service network calls" rule applies to auth/extensions/quirks talking to *each other* — those stay direct method calls in-process. It does **not** forbid epic-emulator from calling `fhir-service` over HTTP if you pick option 2 above — that's an existing, already-established service boundary from the current architecture, not a new one being guessed at.
+
+**Success criteria, revised:**
+1. All three areas working end-to-end against the named public specs (auth flow completes per SMART Backend Services; the medication/allergy extensions validate/inject correctly; all three named quirks reproduce).
+2. Zero artifacts from the skip table — **plus** no internal package-level interfaces/DTOs that mimic a future REST boundary between the three areas. Direct calls and shared classes only.
+3. **Replacing the stakeholder-assessment line** (dropped per your ask to minimize business/clinical consultation): the acceptance test is running the *existing* prescription-refill-risk-triage scenario through `mcp-agent`/`triage-service` pointed at epic-emulator instead of `fhir-service`, and confirming it produces the same clinical answer. That's self-directed, uses infrastructure you already have, and needs no outside sign-off.
+4. A short written note on observed coupling (kept as-is — this is the real Phase 5 input).
+
+**Security note, added:** the auth emulation must be unmistakably test-only — dummy keys/certs, no real secret material, and some visible marker (config flag, log banner) that prevents it from ever being mistaken for a production credential path.
+
+**Sizing:** scoped so a single engineer could plausibly finish it in days, not weeks — the three-quirk cap and reference-workflow-scoped extensions above are chosen with that ceiling in mind, not just to sound minimal.
+
+Two things I made a judgment call on but you may want to override:
+
+<details>
+<summary>Execution details — 1 tool event</summary>
+
+### Turn 2 activity
+
+- **AskUserQuestion** `{"questions": [{"question": "Where should epic-emulator get its FHIR data from?", "header": "Data source", "options": [{"label": "Standalone, own embedded store (Recommended)", "description": "Own Spr…`
+
+</details>
 
 ---
 
@@ -99,6 +141,6 @@ I want you to build a monolith first. Justify that using your best judgement - a
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 12:37 UTC
+- **Last updated:** 31 July 2026, 12:39 UTC
 - **Turns:** 2
-- **Status:** Incomplete
+- **Status:** Complete
