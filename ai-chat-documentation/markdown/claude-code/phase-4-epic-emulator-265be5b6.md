@@ -658,8 +658,20 @@ Confirmed. Cleaning up branches before starting M5.
 
 Before implementing M5, let me investigate a real tension: M2 now gates every proxied call behind a bearer token, but the acceptance test needs to re-point `triage-service` at `epic-emulator` without modifying `triage-service`'s code. Let me check whether that's actually reconcilable.
 
+This surfaced a real, unavoidable gap: M2's auth gate means `triage-service` can't reach `epic-emulator` with zero code changes, since its FHIR client never sends `Authorization: Bearer` — only an optional `apikey` header (already used for Kong elsewhere in this repo). Good news: `apikey` is an existing, already-documented convention here, not something invented for this. Let me set up tracking for M5 and resolve this properly.
+
+Port 8080 is already occupied — let me check what's running there before assuming anything.
+
+fhir-service is genuinely up (real HAPI 7.2.0, auto-started by the dev environment). Let me check its current data state properly.
+
+Empty DB, fresh instance — good, ready to seed. Let me first implement the `apikey` fallback in the auth gate (the fix needed for `triage-service` compatibility), then continue the live setup.
+
+Let me add a test proving the `apikey` fallback works, then rebuild and verify:
+
+Now let's build and run the full test suite:
+
 <details>
-<summary>Execution details — 288 tool events</summary>
+<summary>Execution details — 299 tool events</summary>
 
 ### Turn 2 activity
 
@@ -1081,6 +1093,28 @@ New quirks/ package implementing all three named quirks (PRD FR4-FR6):
 - **Bash** `git push origin --delete feature/phase4-m4-quirks`
 - **Agent** `Investigate triage-service FHIR client config and auth support`
 - **Agent** `Check e2e test conventions and available Python crypto libs`
+- **TodoWrite** `{"todos": [{"content": "Add apikey-header fallback to epic-emulator's auth gate (accepts existing Kong-style header, zero triage-service changes)", "status": "in_progress", "activeForm": "Adding apike…`
+- **Bash** `git checkout -b feature/phase4-m5-acceptance-case
+which mvn java python3 uvicorn 2>&1
+python3 -c "import cryptography, jwt; print('crypto libs OK')"
+echo "--- port check ---"
+for p in 8080 8092 8001 8…`
+- **Bash** `curl -s -m 3 http://localhost:8080/fhir/metadata -o /dev/null -w "fhir metadata status: %{http_code}\n" 2>&1
+curl -s -m 3 http://localhost:8080/ -o /dev/null -w "root status: %{http_code}\n" 2>&1
+lsof…`
+- **Bash** `curl -s -m 5 "http://localhost:8080/fhir/metadata" | head -c 500
+echo
+echo "--- existing patient count ---"
+curl -s -m 5 "http://localhost:8080/fhir/Patient?_summary=count" 
+echo
+echo "--- is this our…`
+- **Bash** `curl -s -m 5 -i "http://localhost:8080/fhir/Patient?_summary=count" | tail -20`
+- **Read** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/auth/BearerAuthFilter.java`
+- **Bash** `cat -n epic-emulator/src/main/java/com/healthcare/epic/auth/BearerAuthFilter.java`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/auth/BearerAuthFilter.java`
+- **Read** `/workspaces/fhir-agent/epic-emulator/src/test/java/com/healthcare/epic/AuthFlowIntegrationTest.java`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/src/test/java/com/healthcare/epic/AuthFlowIntegrationTest.java`
+- **Bash** `mvn -f epic-emulator/pom.xml test 2>&1 | grep -E "Tests run|ERROR|BUILD"`
 
 </details>
 
@@ -1091,6 +1125,6 @@ New quirks/ package implementing all three named quirks (PRD FR4-FR6):
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 19:24 UTC
+- **Last updated:** 31 July 2026, 19:26 UTC
 - **Turns:** 16
 - **Status:** Complete
