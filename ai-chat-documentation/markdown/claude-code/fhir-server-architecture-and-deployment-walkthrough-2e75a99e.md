@@ -322,7 +322,34 @@ What is Kubernetes exactly?
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+## Kubernetes, in one sentence
+
+Kubernetes is a system that takes a stack of container images and a written description of how you want them run — how many copies, how much CPU/memory each gets, how they should be reachable — and continuously makes reality match that description, without you manually starting, restarting, or placing containers by hand.
+
+That's it. Everything else (clusters, orchestration, Services, Ingress — all the terms from your last question) are just the individual pieces that make that one sentence work.
+
+## The problem it solves
+
+Once you've containerized an application, you still face all the same problems you had running a .NET monolith on IIS across multiple compute instances, just at a finer grain now that it's split into many small services instead of one big one:
+
+- Which physical machine does each container actually run on?
+- If a container crashes or a machine dies, who notices and restarts it?
+- If you need more capacity, who decides to run more copies, and where do they go?
+- If you push a new version, how do you replace old containers with new ones without dropping traffic?
+- How does a request coming from outside find the right running copy, when copies are constantly being created and destroyed?
+
+Before Kubernetes, teams answered these questions with custom scripts, deployment runbooks, and manual load-balancer configuration — which is roughly what your IIS/load-balancer setup was doing by hand for a monolith. Kubernetes is a general-purpose, declarative answer to all of those questions at once, for any number of small containerized services.
+
+## How it's built, concretely
+
+- **Cluster** — the pool of machines Kubernetes controls (from your last question). Every cluster has a **control plane** (Kubernetes' own brain — it stores the desired state and makes scheduling decisions) and **worker nodes** (machines that actually run your containers).
+- **You declare desired state as objects, not commands.** You don't tell Kubernetes "start this container now" the way you'd run `docker run`. You write a **Deployment** object saying "I want 2 copies of this image running, each capped at 2Gi memory" (literally what [fhir-service/k8s/deployment.yaml](fhir-service/k8s/deployment.yaml) does). Kubernetes' control plane then figures out which nodes have room, places the containers there, and never stops checking that reality still matches what you asked for — that continuous enforcement loop is the **orchestration** from your previous question.
+- **Pod** — the smallest unit Kubernetes actually schedules: one or more tightly coupled containers running together on the same node, sharing a network address. Most of the time it's one container per Pod (that's the case here); a Deployment is really "keep N copies of this Pod running."
+- **Service** and **Ingress** — the "wiring" pieces from your last question, providing a stable address for a shifting set of Pods and, optionally, smart routing rules for traffic coming from outside.
+
+## Why it matters for what you've been doing
+
+Everything you walked through in the containerization journey — the Strangler Fig extraction into independently deployable services, the Dockerfile work with the platform engineer, running it locally with Minikube, deploying it to AKS/EKS — all of that exists specifically to hand a set of container images to Kubernetes and let it take over the job your load balancer + manually-managed IIS instances used to do by hand: keep the right number of healthy copies running, route traffic to them, and replace them safely when you ship a new version.
 
 <details>
 <summary>Execution details — 10 tool events</summary>
@@ -352,6 +379,6 @@ What is Kubernetes exactly?
 - **Source:** Claude Code
 - **Session ID:** `2e75a99e-6530-4b28-82f9-b3b5ee1df979`
 - **Created:** 22 July 2026, 14:25 UTC
-- **Last updated:** 31 July 2026, 11:38 UTC
+- **Last updated:** 31 July 2026, 11:39 UTC
 - **Turns:** 10
-- **Status:** Incomplete
+- **Status:** Complete
