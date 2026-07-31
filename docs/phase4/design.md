@@ -113,22 +113,39 @@ in logs and config (PRD FR8) — never handled or logged as if they were real se
 
 ## 5. Extension handling — concrete approach
 
+**Correction found while building M3:** the PRD says "Medication" generically. Checked what the
+reference workflow (`triage-service` / `client/clinical`) actually reads, rather than assuming —
+it queries **`MedicationRequest`** (`GET /MedicationRequest?patient=...&status=active`), never the
+`Medication` catalog resource. M3 targets `MedicationRequest` + `AllergyIntolerance` concretely;
+"Medication" in the PRD's higher-level language should be read as this resource, per decision E12.
+
 **Write path:** unchanged pass-through. A stock HAPI R4 server (`fhir-service`) accepts arbitrary,
 unrecognized extensions on a resource by default — nothing needs to strip or specially handle
-them. So a client that writes a Medication/AllergyIntolerance resource with Epic-style extensions
-through `epic-emulator` just has those extensions stored by `fhir-service` as-is, and they
-round-trip naturally on the next read (PRD FR3, "round-trip correctly on write").
+them. So a client that writes a `MedicationRequest`/`AllergyIntolerance` resource with Epic-style
+extensions through `epic-emulator` just has those extensions stored by `fhir-service` as-is, and
+they round-trip naturally on the next read (PRD FR3, "round-trip correctly on write").
 
-**Read path:** the only active piece. When `epic-emulator` proxies a Medication or
-AllergyIntolerance read/search and the returned resource does **not** already carry the expected
-Epic extension(s), the extension interceptor backfills a default one before returning it to the
-caller. This is what makes the *already-seeded* Synthea data (which has no Epic extensions) look
-Epic-flavored without any new fixture pipeline (PRD G4) — the backfill is synthetic and read-time
-only, never persisted back to `fhir-service`.
+**Read path:** the only active piece. When `epic-emulator` proxies a `MedicationRequest` or
+`AllergyIntolerance` read/search — bare resource **or** inside a search-result `Bundle` — and the
+returned resource does **not** already carry the expected Epic extension, the extension
+interceptor backfills a default one before returning it to the caller. This is what makes the
+*already-seeded* Synthea data (which has no Epic extensions) look Epic-flavored without any new
+fixture pipeline (PRD G4) — the backfill is synthetic and read-time only, never persisted back to
+`fhir-service`. Idempotent: a resource that already carries the extension (e.g., one a client just
+wrote) is left alone, never duplicated.
 
-**Which extensions:** scoped to whatever the prescription-refill-risk-triage reference workflow's
-data actually touches on these two resource types. The exact extension URL(s) and value(s) are
-pinned once the Epic documentation version (§7) is chosen — not invented here.
+**Which extensions, concretely:** one placeholder extension per resource type, clearly namespaced
+under a same-repo placeholder domain — **not** a claim about real Epic extension URLs, same
+honesty posture as §6's quirk placeholders and decision E10 (Epic's own specifics remain
+unverified):
+
+| Resource | Extension URL (placeholder) | Value |
+|---|---|---|
+| `MedicationRequest` | `http://epic-emulator.local/fhir/extensions/medication-therapy-class` | `valueString: "synthetic-epic-emulator-backfill"` |
+| `AllergyIntolerance` | `http://epic-emulator.local/fhir/extensions/allergy-source-system` | `valueString: "synthetic-epic-emulator-backfill"` |
+
+The value is deliberately a synthetic marker, not invented clinical content — M3's job is proving
+the *backfill-and-round-trip mechanism* works, not guessing what real Epic data would say.
 
 ## 6. Quirks — concrete pinned choices (starting design, pending validation)
 
@@ -231,10 +248,13 @@ E10 in `decisions.md` for the exact status split.
   garbage token, expired assertion, wrong signing key, unknown client). Epic-documentation-version
   pinning (this milestone's other stated task, §7) is **not** fully done — see the real (partial)
   finding recorded in §7 and decision E10.
-- **M3 — Extension handling.** Read-time backfill + write pass-through per §5, scoped to
-  Medication/AllergyIntolerance and the reference workflow's data. Definition of done: a read
-  returns the expected extension even on unmodified seeded data, and a write containing the
-  extension round-trips correctly (PRD FR3).
+- **M3 — Extension handling. ✅ Built.** `extensions/ExtensionBackfillInterceptor` (read-time
+  backfill, bare resource or inside a search Bundle) + unmodified write pass-through per §5,
+  concretely scoped to `MedicationRequest`/`AllergyIntolerance` (decision E12 corrects the PRD's
+  generic "Medication" wording). Definition of done — met: a read backfills the expected
+  extension on unmodified seeded data; an already-extended resource is left alone, not duplicated;
+  a write round-trips its extension unchanged; an out-of-scope resource type (Patient) comes back
+  byte-for-byte untouched (PRD FR3), verified by 6 passing tests.
 - **M4 — Quirks.** The three interceptors per §6. Definition of done: each of the three quirks is
   independently demonstrable against a real request (PRD FR4–FR6).
 - **M5 — Acceptance case + coupling note.** Re-point the existing prescription-refill-risk-triage

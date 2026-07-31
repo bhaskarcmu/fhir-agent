@@ -2,12 +2,14 @@
 
 > ## Canonical status
 >
-> **M1 + M2 built.** `epic-emulator/` is a real Spring Boot module: a pass-through proxy
-> (forwards every request to `fhir-service` unchanged, verified by 3 tests) now gated behind a
+> **M1 + M2 + M3 built.** `epic-emulator/` is a real Spring Boot module: a pass-through proxy
+> (forwards every request to `fhir-service` unchanged, verified by 3 tests), gated behind a
 > simulated SMART Backend Services JWT client-assertion auth flow (verified by 6 more tests — the
 > full flow, plus rejection of no-header/garbage-token/expired-assertion/wrong-key/unknown-client
-> requests). No extensions, no quirks yet — those are M3/M4, not started.
-> `decisions.md` indexes 11 decisions (`E1`–`E11`).
+> requests), now also backfilling a placeholder Epic-style extension on `MedicationRequest`/
+> `AllergyIntolerance` reads that don't already have one (verified by 6 more tests — bare resource,
+> Bundle search results, idempotency, out-of-scope resource types, and write round-tripping). No
+> quirks yet — that's M4, not started. `decisions.md` indexes 12 decisions (`E1`–`E12`).
 >
 > M2's other stated task — pinning a specific Epic documentation version — is **only partially
 > done**: one real check confirmed Epic's docs site is genuinely public at a shell level (dated
@@ -28,8 +30,8 @@
 > - [`../../epic-emulator/README.md`](../../epic-emulator/README.md) — the module's own README:
 >   how the proxy and auth flow work, build/test/run instructions.
 >
-> **What's next:** M3 — extension handling (Medication/AllergyIntolerance read-time backfill).
-> Not started; no timeline set.
+> **What's next:** M4 — the three named quirks (pagination, required search-parameter combination,
+> `OperationOutcome` error shape). Not started; no timeline set.
 
 ## What Phase 4 is
 

@@ -1,7 +1,7 @@
 # epic-emulator — Epic-flavored proxy in front of fhir-service (Phase 4)
 
-> **Status: M1 + M2 built (pass-through proxy + auth emulation).** M3 (extension handling), M4
-> (quirks), and M5 (acceptance case) are not started — see
+> **Status: M1 + M2 + M3 built (pass-through proxy + auth emulation + extension handling).** M4
+> (quirks) and M5 (acceptance case) are not started — see
 > [`docs/phase4/README.md`](../docs/phase4/README.md) for the canonical Phase 4 status.
 >
 > This module was reserved as an empty placeholder back in Phase 2
@@ -24,9 +24,12 @@ connection. Full rationale: [`docs/phase4/prd.md`](../docs/phase4/prd.md); archi
 **M1 scope:** a pass-through core only. Every request is forwarded to `fhir-service` unchanged and
 its response returned unchanged.
 
-**M2 scope (this milestone):** every proxied call now requires a bearer token, obtained via a
-simulated SMART Backend Services JWT client-assertion flow. Extension handling (M3) and the three
-quirks (M4) are not built yet.
+**M2 scope:** every proxied call requires a bearer token, obtained via a simulated SMART Backend
+Services JWT client-assertion flow.
+
+**M3 scope (this milestone):** `MedicationRequest`/`AllergyIntolerance` reads (bare or inside a
+search `Bundle`) get a placeholder Epic-style extension backfilled if missing. Writes are
+untouched. The three quirks (M4) are not built yet.
 
 ## How the proxy works
 
@@ -66,6 +69,29 @@ SMART launch flow:
 documented gap, not a silent one — decision E11); the 401 body is plain OAuth2 JSON today, not yet
 Epic's `OperationOutcome` shape (that upgrade is M4/FR6, deliberately sequenced there).
 
+## How extension handling works (M3)
+
+`extensions/ExtensionBackfillInterceptor` runs on every proxied `GET` response:
+
+- If the response is (or contains, inside a search `Bundle`) a `MedicationRequest` or
+  `AllergyIntolerance` resource **missing** its Epic-style extension, it adds one before returning
+  to the caller. This is what makes already-seeded data look Epic-flavored with no new fixture
+  pipeline — the backfill is synthetic and read-time only, never written back to `fhir-service`.
+- If the extension is **already present** (e.g., a client wrote it earlier), it's left alone —
+  never duplicated.
+- Any other resource type is returned byte-for-byte untouched, including inside a Bundle where
+  some entries are in scope and others aren't.
+- **Writes are untouched by this class entirely.** `fhir-service` already stores arbitrary
+  extensions, so a client that writes one gets it back unchanged on the next read with no special
+  handling needed.
+
+**Placeholder, not real Epic data (decision E12, design.md §5):** the extension URLs
+(`.../medication-therapy-class`, `.../allergy-source-system`, both under a same-repo
+`epic-emulator.local` placeholder domain) and the synthetic backfill value are structurally
+representative stand-ins, not a claim about Epic's real extensions — Epic's own specifics remain
+unverified (decision E10). Also corrects the PRD's generic "Medication" wording: the reference
+workflow actually reads `MedicationRequest`, so that's what M3 targets.
+
 ## API
 
 Whatever `fhir-service` exposes, gated behind a bearer token —
@@ -78,17 +104,22 @@ Whatever `fhir-service` exposes, gated behind a bearer token —
 mvn -f epic-emulator/pom.xml test
 ```
 
-9 tests, no DB (this module has no datasource at all):
+15 tests, no DB (this module has no datasource at all):
 
-- `FhirProxyIntegrationTest` (3) — pass-through `GET`/`POST` (now fetching a real token first,
-  since M2 gates everything), and actuator staying local **and** token-free.
+- `FhirProxyIntegrationTest` (3) — pass-through `GET`/`POST` (fetching a real token first, since
+  M2 gates everything), and actuator staying local **and** token-free.
 - `AuthFlowIntegrationTest` (6) — full client-assertion flow end to end (token issued, then used
   for a real gated proxied call against a stub upstream); no-header, garbage-token, expired-
   assertion, wrong-signing-key, and unknown-client rejections, each asserted at the specific layer
   that should catch it (the gate vs. the token endpoint).
+- `ExtensionBackfillIntegrationTest` (6) — backfill on a bare `MedicationRequest` and a bare
+  `AllergyIntolerance`; no duplication when already present; an out-of-scope resource type
+  (`Patient`) returned byte-for-byte unchanged; a search `Bundle` backfilling only its in-scope
+  entries; a write round-tripping its extension unchanged.
 
-Both classes stand up a stub "fhir-service" with the JDK's own `HttpServer` (same dependency-free
-pattern as `claims-service`'s `HttpTriageClientTest`) rather than pulling in a mocking library.
+All three classes stand up a stub "fhir-service" with the JDK's own `HttpServer` (same
+dependency-free pattern as `claims-service`'s `HttpTriageClientTest`) rather than pulling in a
+mocking library.
 
 ## Run locally
 
