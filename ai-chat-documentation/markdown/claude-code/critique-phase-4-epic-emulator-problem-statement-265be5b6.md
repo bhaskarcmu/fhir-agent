@@ -297,7 +297,7 @@ Take PRD-relevant content from above two prompts and expand the PRD accordingly.
 *[Claude has not completed this turn yet.]*
 
 <details>
-<summary>Execution details — 16 tool events</summary>
+<summary>Execution details — 17 tool events</summary>
 
 ### Turn 2 activity
 
@@ -329,6 +329,12 @@ quirk emulation as one Spring Boot service proxying fhir-service),…`
 - **Bash** `gh pr create --title "docs(phase4): epic-emulator PRD" --body "$(cat <<'EOF'
 ## Summary
 - Adds `docs/phase4/prd.md` — PRD for Phase 4 (epic-emulator), scoped to a monolith-first build of Epic auth emu…`
+
+### Turn 9 activity
+
+- **Bash** `echo "=== phase2 plan.md headers ==="; grep -n "^#" docs/phase2/plan.md
+echo; echo "=== phase2 requirements.md headers ==="; grep -n "^#" docs/phase2/requirements.md
+echo; echo "=== phase3 design.md h…`
 
 </details>
 
