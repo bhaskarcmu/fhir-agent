@@ -325,10 +325,10 @@ Yes, add all documentation needed for full parity. Also, summariuze the mileston
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Adding the two remaining pieces for full parity with Phase 3's doc set (`decisions.md` + `README.md`), plus small header cross-references that Phase 3 has and Phase 4 is currently missing.
 
 <details>
-<summary>Execution details — 24 tool events</summary>
+<summary>Execution details — 26 tool events</summary>
 
 ### Turn 2 activity
 
@@ -379,6 +379,8 @@ docs(phase4): expand PRD with plain-language framing, add design doc
 ### Turn 10 activity
 
 - **Read** `/workspaces/fhir-agent/docs/phase3/decisions.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/prd.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/design.md`
 
 </details>
 
@@ -389,6 +391,6 @@ docs(phase4): expand PRD with plain-language framing, add design doc
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 18:05 UTC
+- **Last updated:** 31 July 2026, 18:06 UTC
 - **Turns:** 10
-- **Status:** Incomplete
+- **Status:** Complete
