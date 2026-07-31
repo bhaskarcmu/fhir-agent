@@ -597,8 +597,18 @@ Now let's re-run the full suite to confirm this fixes it and doesn't break anyth
 
 That didn't fix it — my hypothesis was wrong. Let me get the full exception again to look more carefully.
 
+I was wrong — reverting that change since it wasn't the actual cause (and I won't leave a false claim about it in the code). Let me find the real bug: my test stub's handler calls `ConcurrentHashMap.put(key, null)` for the query-less continuation request, which throws `NullPointerException` server-side and produces exactly this "no bytes received" symptom on the client.
+
+Reverting to the original shared-client design:
+
+Now fixing the actual bug — the test stub's `null`-into-`ConcurrentHashMap` NPE:
+
+Confirmed. `ex.getRequestURI().getQuery()` returns `null` for the query-less continuation request, and `ConcurrentHashMap` throws `NullPointerException` on a null value.
+
+Now let's re-run the full suite:
+
 <details>
-<summary>Execution details — 241 tool events</summary>
+<summary>Execution details — 247 tool events</summary>
 
 ### Turn 2 activity
 
@@ -958,6 +968,12 @@ mkdir -p epic-emulator/src/main/java/com/healthcare/epic/quirks`
 - **Edit** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/proxy/FhirProxyClient.java`
 - **Bash** `mvn -f epic-emulator/pom.xml test 2>&1 | grep -E "Tests run|ERROR|BUILD"`
 - **Bash** `mvn -f epic-emulator/pom.xml test -Dtest=QuirksIntegrationTest#nextLink_isReplacedWithAnOpaqueToken_andResolvesOnFollowUp 2>&1 > /tmp/claude-1000/-workspaces-fhir-agent/265be5b6-c550-4af6-bed7-7be2bca…`
+- **Read** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/proxy/FhirProxyClient.java`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/proxy/FhirProxyClient.java`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/proxy/FhirProxyClient.java`
+- **Read** `/workspaces/fhir-agent/epic-emulator/src/test/java/com/healthcare/epic/QuirksIntegrationTest.java`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/src/test/java/com/healthcare/epic/QuirksIntegrationTest.java`
+- **Bash** `mvn -f epic-emulator/pom.xml test 2>&1 | grep -E "Tests run|ERROR|BUILD"`
 
 </details>
 
@@ -968,6 +984,6 @@ mkdir -p epic-emulator/src/main/java/com/healthcare/epic/quirks`
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 19:01 UTC
+- **Last updated:** 31 July 2026, 19:02 UTC
 - **Turns:** 15
 - **Status:** Complete
