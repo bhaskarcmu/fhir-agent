@@ -470,7 +470,7 @@ Now let's build and test:
 Expected: M1's own proxy test now fails because everything is gated behind auth — correct new behavior, but it breaks the old test's assumption of no auth. Fixing `FhirProxyIntegrationTest` to obtain a token first, same as the real flow now requires.
 
 <details>
-<summary>Execution details — 126 tool events</summary>
+<summary>Execution details — 128 tool events</summary>
 
 ### Turn 2 activity
 
@@ -682,6 +682,8 @@ grep -rn "jjwt\|nimbus\|java-jwt" fhir-service/pom.xml 2>/dev/null`
 - **TodoWrite** `{"todos": [{"content": "Add nimbus-jose-jwt dependency to epic-emulator pom.xml", "status": "completed", "activeForm": "Adding nimbus-jose-jwt dependency"}, {"content": "Write auth config properties +…`
 - **Bash** `mvn -f epic-emulator/pom.xml test 2>&1 | tail -150`
 - **Read** `/workspaces/fhir-agent/epic-emulator/src/test/java/com/healthcare/epic/FhirProxyIntegrationTest.java`
+- **Write** `/workspaces/fhir-agent/epic-emulator/src/test/java/com/healthcare/epic/FhirProxyIntegrationTest.java`
+- **Bash** `mvn -f epic-emulator/pom.xml test 2>&1 | grep -E "Tests run|ERROR|BUILD"`
 
 </details>
 
