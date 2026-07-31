@@ -167,7 +167,28 @@ What have I done related to Pharmacy Benefits Management that I can include/repu
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Phase 2 (claims-adjudication modernization) is exactly Pharmacy Benefits Management work, even though it's not labeled that way — and it hands you a working precedent for almost the exact shape of problem Phase 4 is solving. Here's what's directly usable:
+
+**1. `rxclaim-emulator/` — the architectural template, not just prior art.**
+[rxclaim-emulator/README.md](rxclaim-emulator/README.md) is a Spring Boot service that simulates a real proprietary legacy system (IBM i / RxClaim: fixed-width DDS records, DB2-style tables, its own quirky wire format) sitting behind an internal-only REST façade, with the "real" system-of-record data and an anti-corruption layer in front of it. That is structurally the same problem as epic-emulator: **simulate a real vendor's non-standard contract on top of standard data, internal-only, own H2 store, own Spring Boot module.** Repurposable directly:
+- The module layout itself (`legacy/` fixed-record classes, `core/` deterministic engine, thin REST controller, H2 via `schema.sql`) — same pattern for Epic's quirky request/response shapes.
+- The Dockerfile + `infra/main.tf` Cloud Run stub with `ingress=INTERNAL_ONLY` — literally reusable as the Phase 5 cloud-stub template for epic-emulator.
+- The test-pinning trick for the ambient `SPRING_DATASOURCE_URL`/`NEON_*` env-var gotcha (same issue CLAUDE.md already flags for `fhir-service`).
+
+**2. `claims-service`'s anti-corruption layer (`acl/LegacyAdapter`) — the exact pattern for Epic's quirk-translation layer.**
+[claims-service/README.md](claims-service/README.md) shows a proven, tested pattern for "translate between a modern canonical shape and a proprietary wire format, and make that translation the one class that knows the legacy format." That's precisely what epic-emulator's proxy layer needs to do between `fhir-service`'s base R4 and Epic's extensions/pagination/error-shape quirks — same seam, same discipline (one adapter class owns the wire-format knowledge, everything else stays canonical).
+
+**3. `data/payer-kb/` — real, grounded medication/formulary data you can repurpose as test fixtures.**
+[data/payer-kb/README.md](data/payer-kb/README.md) already has real CMS Part D + ACA QHP-grounded formulary data, an NDC↔RxCUI crosswalk, and named drug scenarios (lisinopril, semaglutide, amoxicillin + penicillin allergy). Since Phase 4's extension scope is now scoped to Medication/AllergyIntolerance resources, this is a ready-made source of realistic drug/allergy test data — no need to invent fixtures from scratch; point Synthea/seed data at drugs already grounded here.
+
+**4. Engineering patterns worth carrying over, not just code:**
+- **Fail-closed on an unavailable check** (R17.5 in claims-service: unknown ≠ safe, defaults to the conservative outcome) — directly applicable if Epic auth or extension validation can't complete; don't silently treat "couldn't validate" as "valid."
+- **Phase-independence CI gate** — Phase 2 added a CI job proving Phase 1 still passes without Phase 2 present ([phase2-planning-state.md] M7). Phase 4 should do the same: prove existing services still run/test independently of epic-emulator.
+- **Separate agent, not an extension of mcp-agent** — Phase 2 deliberately kept `claims-agent` standalone rather than bolting onto `mcp-agent`. Worth the same instinct if epic-emulator ever needs its own orchestration/test client.
+
+**What doesn't transfer:** the claims-service rules engine itself (eligibility/PA/formulary decisioning) is genuinely PBM business logic — not relevant to Epic emulation, which is a protocol/format concern, not a clinical-decision concern. Don't reach for that part.
+
+Want me to fold the "rxclaim-emulator as the direct architectural template" point into the problem statement now, or hold it for the PRD?
 
 <details>
 <summary>Execution details — 6 tool events</summary>
@@ -193,6 +214,6 @@ What have I done related to Pharmacy Benefits Management that I can include/repu
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 17:35 UTC
+- **Last updated:** 31 July 2026, 17:36 UTC
 - **Turns:** 4
-- **Status:** Incomplete
+- **Status:** Complete
