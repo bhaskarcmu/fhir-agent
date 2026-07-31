@@ -672,8 +672,26 @@ Now let's build and run the full test suite:
 
 A test-ordering bug — `stubCalls` is a shared static counter and my new test also increments it. Let me fix the original test to use a before/after delta like the other tests already do:
 
+24/24 pass. Now packaging `epic-emulator` and generating the test-client keypair for the live acceptance run.
+
+Now let's start `epic-emulator`, pointed at `fhir-service` with the test client registered:
+
+epic-emulator is up. Now seeding the drug-allergy scenario directly into `fhir-service`:
+
+Seeded: Patient/1 (Kristle Mraz, HIGH risk expected), Patient/4 (John Doe, LOW risk expected). Let's sanity-check the token flow and proxied read through `epic-emulator` before bringing up `triage-service`.
+
+The full auth + proxy flow works end-to-end for real. Now setting up `triage-service` — checking if it's already installed, then running it against both paths.
+
+Both already installed. Now starting two `triage-service` instances — one direct to `fhir-service`, one via `epic-emulator`.
+
+Both instances up. Now the real test — call `/triage/refill-risk` for the same patient through both paths:
+
+Identical clinical outcome (HIGH risk, same conflict note, same basis references — only the random assessment `id` differs, as expected). Let me also verify the LOW-risk control patient for rigor.
+
+Both scenarios match. Let's peek at the `epic-emulator` log to confirm the extension backfill and quirks actually engaged with this real traffic, not just passed through inertly.
+
 <details>
-<summary>Execution details — 303 tool events</summary>
+<summary>Execution details — 317 tool events</summary>
 
 ### Turn 2 activity
 
@@ -1121,6 +1139,47 @@ echo "--- is this our…`
 - **Edit** `/workspaces/fhir-agent/epic-emulator/src/test/java/com/healthcare/epic/AuthFlowIntegrationTest.java`
 - **Edit** `/workspaces/fhir-agent/epic-emulator/src/test/java/com/healthcare/epic/AuthFlowIntegrationTest.java`
 - **Bash** `mvn -f epic-emulator/pom.xml test 2>&1 | grep -E "Tests run|ERROR|BUILD"`
+- **TodoWrite** `{"todos": [{"content": "Add apikey-header fallback to epic-emulator's auth gate (accepts existing Kong-style header, zero triage-service changes)", "status": "completed", "activeForm": "Adding apikey-…`
+- **Bash** `ls -la e2e/ 2>/dev/null
+mkdir -p e2e/fixtures`
+- **Bash** `python3 - <<'EOF'
+import json, base64
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import serialization
+
+private_key = rsa.generate_private_key(public_…`
+- **Bash** `mvn -q -f epic-emulator/pom.xml -DskipTests package 2>&1 | tail -40
+ls -la epic-emulator/target/*.jar`
+- **Bash** `JWK_JSON=$(cat e2e/fixtures/epic_emulator_test_client_public_jwk.json | python3 -c "import json,sys; print(json.dumps(json.load(sys.stdin)))")
+echo "JWK to register: $JWK_JSON"
+
+EPIC_AUTH_CLIENTS_0_CL…`
+- **Bash** `FHIR_GATEWAY_URL=http://localhost:8080/fhir python3 data/scripts/seed_demo.py 2>&1 | tail -40`
+- **Bash** `python3 - <<'EOF'
+import time, uuid, json
+import jwt as pyjwt
+import httpx
+from cryptography.hazmat.primitives import serialization
+
+with open("e2e/fixtures/epic_emulator_test_client_private_key.pem",…`
+- **Bash** `python3 -c "import triage, fhir_clinical_client; print('already installed')" 2>&1
+pip show triage-service fhir-clinical-client 2>&1 | head -20`
+- **TodoWrite** `{"todos": [{"content": "Add apikey-header fallback to epic-emulator's auth gate (accepts existing Kong-style header, zero triage-service changes)", "status": "completed", "activeForm": "Adding apikey-…`
+- **Bash** `TOKEN=$(cat /tmp/claude-1000/-workspaces-fhir-agent/265be5b6-c550-4af6-bed7-7be2bca6b9c4/scratchpad/epic_token.txt)
+
+# Instance 1: direct to fhir-service, port 8001 (matches documented default)
+FHIR_G…`
+- **Bash** `echo "=== DIRECT (triage-service -> fhir-service, port 8080) ==="
+curl -s -m 15 -X POST http://localhost:8001/triage/refill-risk \
+  -H "Content-Type: application/json" \
+  -d '{"patient_id":"1"}' | p…`
+- **Bash** `echo "=== DIRECT — John Doe (LOW risk expected) ==="
+curl -s -m 15 -X POST http://localhost:8001/triage/refill-risk -H "Content-Type: application/json" -d '{"patient_id":"4"}' | python3 -c "import jso…`
+- **Bash** `grep -c "GET\|POST" /tmp/claude-1000/-workspaces-fhir-agent/265be5b6-c550-4af6-bed7-7be2bca6b9c4/scratchpad/epic-emulator.log 2>/dev/null
+echo "---"
+curl -s -m 10 -H "apikey: $(cat /tmp/claude-1000/-w…`
+- **Bash** `curl -s -m 10 -H "apikey: $(cat /tmp/claude-1000/-workspaces-fhir-agent/265be5b6-c550-4af6-bed7-7be2bca6b9c4/scratchpad/epic_token.txt)" \
+  "http://localhost:8092/fhir/AllergyIntolerance?patient=1" |…`
 
 </details>
 
@@ -1131,6 +1190,6 @@ echo "--- is this our…`
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 19:27 UTC
+- **Last updated:** 31 July 2026, 19:30 UTC
 - **Turns:** 16
 - **Status:** Complete
