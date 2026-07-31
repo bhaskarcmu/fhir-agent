@@ -303,8 +303,22 @@ Since Phase 4's PRD already followed the Phase 3 naming (`prd.md`), I'll continu
 
 Also updating the header note to point at the design doc, and tightening §9 to cross-reference it rather than duplicate.
 
+Now creating the design document.
+
+Still on `docs/phase4-epic-emulator-prd` with PR #48 open — I'll add these as a new commit to keep the PR up to date, per this repo's convention.
+
+**Done.** Pushed as a new commit (`c5c4fd4`) to the existing PR #48 on `docs/phase4-epic-emulator-prd`.
+
+**On the plan-vs-design question:** Phase 2 kept them separate (`requirements.md` + `plan.md`); Phase 3 consolidated to just `prd.md` + `design.md`, folding the milestone plan into `design.md`. Phase 4 follows Phase 3's convention — no `plan.md`.
+
+**PRD changes** ([docs/phase4/prd.md](docs/phase4/prd.md)): each of the three capability areas now has a plain-language gloss, plus the "three layers" rationale for why those specific quirks (pagination = how results come back, required params = what you're allowed to ask for, error shape = how you're told something went wrong) — with an explicit note that the exact resource/parameter for each is pinned in the design doc, not decided here.
+
+**New design doc** ([docs/phase4/design.md](docs/phase4/design.md)): architecture diagram (proxy in front of `fhir-service`), package layout, per-area deep dives, and — the substantive new content — concrete starting choices for the three quirks (pagination cap + forced `Link`-following, `MedicationRequest` requiring `patient`+`status` together, a placeholder Epic-style error-coding system), a read-time-backfill approach for extensions that needs no new fixtures, and an M1–M5 milestone plan. Every concrete quirk/extension value is explicitly flagged as an unverified placeholder pending the one real open action item: registering for Epic's docs and pinning a specific version (§7) — nothing is asserted as fact before it's actually checked.
+
+**Known limitation:** no `decisions.md`/`README.md` yet — Phase 3's full doc set has those too (ADR-style decision index + canonical status page), but you only asked for the PRD expansion and design doc. Happy to add them next if you want full parity before implementation starts.
+
 <details>
-<summary>Execution details — 20 tool events</summary>
+<summary>Execution details — 23 tool events</summary>
 
 ### Turn 2 activity
 
@@ -345,6 +359,12 @@ echo; echo "=== phase3 design.md h…`
 - **Read** `/workspaces/fhir-agent/docs/phase3/design.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase4/prd.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase4/prd.md`
+- **Write** `/workspaces/fhir-agent/docs/phase4/design.md`
+- **Bash** `git status --porcelain && git branch --show-current`
+- **Bash** `git add docs/phase4/prd.md docs/phase4/design.md && git commit -m "$(cat <<'EOF'
+docs(phase4): expand PRD with plain-language framing, add design doc
+
+- PRD: add plain-language gloss for each capabili…`
 
 </details>
 
@@ -355,6 +375,6 @@ echo; echo "=== phase3 design.md h…`
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 18:02 UTC
+- **Last updated:** 31 July 2026, 18:03 UTC
 - **Turns:** 9
 - **Status:** Complete
