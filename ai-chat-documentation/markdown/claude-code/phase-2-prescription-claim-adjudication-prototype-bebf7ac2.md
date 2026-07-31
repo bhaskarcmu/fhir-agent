@@ -4858,7 +4858,70 @@ Show me the high level architecture as a diagram, just Phase 1 and Phase 2
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Scoping to Phase 1 and Phase 2 only, as you asked (there's later phase work in the repo now, but I'll leave it out).
+
+```
+════════════════════════════════════════════════════════════════════════════
+  PHASE 1 — Prescription Refill Risk Triage        (default `docker compose up`)
+════════════════════════════════════════════════════════════════════════════
+
+     Clinician (natural language)
+              │  "Check refill risk for Kristle Mraz"
+              ▼
+     ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+     │   mcp-agent     │────▶│  triage-service │────▶│   fhir-service  │
+     │  LLM tool-use   │     │  drug-allergy   │     │   HAPI FHIR R4  │
+     │  orchestrator   │◀────│  rule engine    │◀────│   (H2 / Neon)   │
+     │ (no clinical    │     │  → RiskAssessmt │     │  Patient, Meds, │
+     │  logic)         │     │  HIGH/MOD/LOW   │     │  Allergies      │
+     └─────────────────┘     └─────────────────┘     └─────────────────┘
+
+──────────────────────────────────────────────────────────────────────────────
+  PHASE 2 — Claims Adjudication  (additive · `--profile phase2` [· `gateway`])
+──────────────────────────────────────────────────────────────────────────────
+
+     Claims reviewer / caller                        ┌── reused from Phase 1 ──┐
+              │  submit claim (JSON)                  ▼                         │
+              ▼                          ┌─────────────────┐                    │
+   ┌───────── Kong edge ─────────┐       │  triage-service │  clinical safety   │
+   │ (opt-in `gateway` profile)  │   ┌──▶│  (unchanged)    │  → fail closed     │
+   │  key-auth · rate-limit      │   │   └─────────────────┘                    │
+   │  routes: /claims /fhir /triage  │                                          │
+   └──────────────┬──────────────┘   │   ┌─────────────────┐                    │
+              │   │                   │   │  fhir-service   │  decision artefact │
+              ▼   ▼                   ├──▶│  (unchanged)    │  graph: Claim →    │
+     ┌─────────────────┐             │   │                 │  ClaimResponse →   │
+     │  claims-agent   │             │   └─────────────────┘  Task → Provenance │
+     │  explains the   │             │                        → RiskAssessment  │
+     │  decision       │             │   ┌─────────────────┐                    │
+     │ (non-authorit.) │             │   │ rxclaim-emulator│  legacy pricing +  │
+     └────────┬────────┘             │   │  IBM i / RxClaim│  member SOR        │
+              │ POST /claims/adjudicate  │  DDS records,   │                    │
+              ▼                       │   │  DB2/SQL400,    │  ⚠ INTERNAL ONLY   │
+     ┌─────────────────┐             │   │  ADJRXCLM       │  no edge route,    │
+     │ claims-service  │─────────────┘   └─────────────────┘  no published port │
+     │  API façade     │──────────────────────▲                                 │
+     │  · ACL (only    │                       │  wrapped, not rewritten         │
+     │    place legacy │                       └── strangler fig ────────────────┘
+     │    format lives)│
+     │  · rules engine │   deterministic · accumulate-then-resolve
+     │    (Decision    │   DENY > PEND > REVIEW > approved
+     │    Contract)    │   idempotent (one decision per claimId)
+     └─────────────────┘
+
+  Key ideas:  AI explains & orchestrates — deterministic services decide.
+              The legacy core is wrapped, not rewritten.
+              Phase 2 is strictly additive: plain `up` still runs only Phase 1.
+```
+
+**The load-bearing points**, if you're using this to explain it:
+
+- **Two agents, deliberately separate** (`mcp-agent`, `claims-agent`) — neither holds clinical or financial logic. They orchestrate and explain; the rules engine and legacy core decide.
+- **The emulator is unreachable from the edge** — no Kong route, no published port. That's what makes "API façade + anti-corruption layer" a real boundary rather than a slide.
+- **Phase 2 reuses Phase 1's triage and FHIR services untouched**, which is why the default `docker compose up` still brings up only Phase 1.
+- **Kong is opt-in locally** (the dashed edge) — everyday dev bypasses it; the `gateway` profile is for testing the gated, cloud-parity path.
+
+Want this as a **rendered, shareable diagram** (a clean Mermaid artifact with a URL you could drop into a doc or pull up in a conversation)? I kept it inline for speed, but I can produce that in a couple of minutes if it's useful.
 
 <details>
 <summary>Execution details — 650 tool events</summary>

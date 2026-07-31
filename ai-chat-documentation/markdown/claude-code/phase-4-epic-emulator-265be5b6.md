@@ -1,4 +1,4 @@
-# Critique Phase 4 epic-emulator problem statement
+# Phase 4 epic-emulator
 
 ## Turn 1
 
