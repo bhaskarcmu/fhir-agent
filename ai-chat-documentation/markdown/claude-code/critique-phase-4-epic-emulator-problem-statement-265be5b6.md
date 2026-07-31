@@ -518,8 +518,12 @@ Now adding decision E12 to `decisions.md`:
 
 Now wiring this into `FhirProxyController`:
 
+Let me fix a bug I just introduced — calling `removeContext` on a path that was never created will throw:
+
+Now let's run the tests:
+
 <details>
-<summary>Execution details — 175 tool events</summary>
+<summary>Execution details — 179 tool events</summary>
 
 ### Turn 2 activity
 
@@ -797,6 +801,10 @@ grep -rn "MedicationRequest\|AllergyIntolerance\|resourceType.*Medication" triag
 - **Edit** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/proxy/FhirProxyController.java`
 - **Edit** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/proxy/FhirProxyController.java`
 - **TodoWrite** `{"todos": [{"content": "Correct PRD/design docs: reference workflow reads MedicationRequest, not Medication", "status": "completed", "activeForm": "Correcting resource-type scoping in docs"}, {"conten…`
+- **Write** `/workspaces/fhir-agent/epic-emulator/src/test/java/com/healthcare/epic/ExtensionBackfillIntegrationTest.java`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/src/test/java/com/healthcare/epic/ExtensionBackfillIntegrationTest.java`
+- **TodoWrite** `{"todos": [{"content": "Correct PRD/design docs: reference workflow reads MedicationRequest, not Medication", "status": "completed", "activeForm": "Correcting resource-type scoping in docs"}, {"conten…`
+- **Bash** `mvn -f epic-emulator/pom.xml test 2>&1 | tail -150`
 
 </details>
 
@@ -807,6 +815,6 @@ grep -rn "MedicationRequest\|AllergyIntolerance\|resourceType.*Medication" triag
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 18:43 UTC
+- **Last updated:** 31 July 2026, 18:44 UTC
 - **Turns:** 14
 - **Status:** Complete
