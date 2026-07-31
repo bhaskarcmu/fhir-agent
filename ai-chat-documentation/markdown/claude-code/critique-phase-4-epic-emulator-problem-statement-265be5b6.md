@@ -455,8 +455,12 @@ PR #49 Merged. Delete the merged branches and proceed to M2
 
 Confirmed merged. **Current worktree:** `/workspaces/fhir-agent` — **current branch:** `feature/phase4-m1-epic-emulator-skeleton` — **target:** switch to `main`, delete the merged branch (local + remote), then branch for M2.
 
+Now the config/registry classes:
+
+Now the token store:
+
 <details>
-<summary>Execution details — 106 tool events</summary>
+<summary>Execution details — 114 tool events</summary>
 
 ### Turn 2 activity
 
@@ -648,6 +652,14 @@ request to fhir-service unchanged and returning…`
 - **Bash** `grep -rn "jjwt\|nimbus-jose\|java-jwt\|jsonwebtoken" --include="pom.xml" . 2>/dev/null
 echo "---"
 grep -rn "jjwt\|nimbus\|java-jwt" fhir-service/pom.xml 2>/dev/null`
+- **TodoWrite** `{"todos": [{"content": "Add nimbus-jose-jwt dependency to epic-emulator pom.xml", "status": "in_progress", "activeForm": "Adding nimbus-jose-jwt dependency"}, {"content": "Write auth config properties…`
+- **Bash** `git checkout -b feature/phase4-m2-auth-emulation`
+- **Read** `/workspaces/fhir-agent/epic-emulator/pom.xml`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/pom.xml`
+- **Bash** `mkdir -p epic-emulator/src/main/java/com/healthcare/epic/auth`
+- **Write** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/auth/AuthProperties.java`
+- **Write** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/auth/ClientRegistry.java`
+- **Write** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/auth/AccessTokenStore.java`
 
 </details>
 
@@ -658,6 +670,6 @@ grep -rn "jjwt\|nimbus\|java-jwt" fhir-service/pom.xml 2>/dev/null`
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 18:28 UTC
+- **Last updated:** 31 July 2026, 18:31 UTC
 - **Turns:** 13
 - **Status:** Complete
