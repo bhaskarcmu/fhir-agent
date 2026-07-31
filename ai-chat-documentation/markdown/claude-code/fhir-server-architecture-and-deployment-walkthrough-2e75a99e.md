@@ -477,7 +477,47 @@ Give me a problem statement for the epic emulator monolith development in a form
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+## Terminology check
+
+- **"Bounded context"** — correct DDD term, used correctly. A bounded context is the boundary within which a particular domain model/vocabulary applies consistently. Saying the monolith will have "coupled functionality without properly bounded contexts" is precise: it means domain concepts (auth, profiles, proprietary quirks) will bleed into each other and share code, rather than each owning a clean, self-consistent model.
+- **"Decompose into microservices"** — correct, matches the vocabulary used earlier in this conversation.
+- **One nuance worth naming explicitly**: the Strangler Fig pattern, as normally described (Fowler's original usage), applies to an *organically grown, pre-existing* legacy monolith — you inherit the mess and gradually strangle it. What you're proposing is the inverse: **deliberately engineering the "before" state on purpose**, as a teaching device, so Phase 5 has something real to decompose. That's a legitimate and common way to practice the pattern, but it's worth being precise in your own head that this is *intentional technical debt for pedagogical purposes*, not organic monolith formation — the mechanics you'll practice in Phase 5 are identical either way, but the origin story is different, and that distinction is exactly what makes the "how can I honestly say I strangled a Java monolith" claim from before land correctly: the coupling has to be real, even if it was manufactured on purpose.
+
+With that framing, here's the problem statement.
+
+---
+
+## Problem Statement — `epic-emulator` (Phase 4)
+
+**Context.** `fhir-service` is intentionally EHR-agnostic — it implements generic FHIR R4 storage and search, nothing Epic-specific. Per its own roadmap, `epic-emulator` is the still-unbuilt module meant to sit in front of / alongside it and simulate the ways a real Epic EHR integration diverges from plain FHIR: Epic-specific authentication flows, Epic's custom FHIR extensions and profiles, and Epic's proprietary API quirks. Its purpose is to let the rest of the platform (`mcp-agent`, future clinical workflows) be developed and tested against realistic Epic-like behavior without requiring access to a real Epic sandbox.
+
+**The problem to solve in Phase 4.** Build a working, end-to-end `epic-emulator` service that plausibly reproduces Epic-specific integration behavior, optimizing purely for development speed and functional completeness — **not** for clean architecture. Concretely:
+
+- Ship it as **one deployable Spring Boot application**, one Maven build, one running process.
+- It is acceptable — expected, even — for capability areas to share code directly (shared utility classes, shared in-memory state, direct class references across concerns) rather than communicating through clean internal APIs. Do not introduce internal module boundaries, internal REST calls between "areas," or premature interfaces for the sake of future decomposition. That discipline is explicitly deferred to Phase 5.
+- The goal is a real, working demo of Epic-like behavior end-to-end, built as fast as reasonably possible.
+
+**Candidate capability areas** (illustrative — refine/replace these in the PRD; the point is that they're plausible eventual bounded contexts, not that this exact split is final):
+
+1. **Epic auth emulation** — Epic's SMART-on-FHIR / backend-services OAuth2 flow (JWT-assertion client auth, token endpoint behavior).
+2. **Epic custom profile & extension handling** — validating and injecting Epic-specific FHIR extensions/profiles on top of the base R4 resources served by `fhir-service`.
+3. **Epic proprietary quirks** — simulating known Epic API idiosyncrasies that diverge from strict FHIR spec behavior (custom pagination, non-standard search params, Epic-shaped error responses).
+
+**Explicit non-goals for Phase 4** (deferred to Phase 5 on purpose):
+
+- Independent deployability of any capability area.
+- Clean internal API boundaries or bounded contexts between the areas above.
+- Containerization beyond whatever minimal Dockerfile is needed to run the whole app as one unit locally.
+- Production hardening, security review, or performance tuning.
+
+**Constraints.**
+
+- Java 21, Spring Boot, Maven — matches the toolchain already proven in `fhir-service`, so Phase 5's containerization/K8s/Kong work can reuse that path directly.
+- Must run locally with zero external EHR dependencies (no real Epic sandbox required) — mirrors `fhir-service`'s "zero-config local dev" principle.
+
+**Success criteria for Phase 4.** A developer can run `epic-emulator` locally, exercise all candidate capability areas end-to-end, and see it plausibly stand in for Epic-specific behavior in front of `fhir-service` — while the codebase remains genuinely, deliberately coupled: shared classes and cross-area dependencies within one Maven module, no internal seams.
+
+**Forward note for the PRD author.** Phase 5 will require identifying the real domain boundaries inside this monolith, decoupling any direct cross-area class/method dependencies (replacing them with REST calls or duplicated code, per the earlier `Orders`/`Users` extraction discussion), splitting into separately deployable Spring Boot services, and containerizing/deploying each behind Kong next to `fhir-service`. Keep the capability areas *identifiable* even while coupled — a completely undifferentiated "big ball of mud" with no recognizable domains would defeat the purpose of the Phase 5 exercise just as much as building it cleanly-separated in Phase 4 would.
 
 <details>
 <summary>Execution details — 12 tool events</summary>
@@ -515,6 +555,6 @@ Give me a problem statement for the epic emulator monolith development in a form
 - **Source:** Claude Code
 - **Session ID:** `2e75a99e-6530-4b28-82f9-b3b5ee1df979`
 - **Created:** 22 July 2026, 14:25 UTC
-- **Last updated:** 31 July 2026, 12:12 UTC
+- **Last updated:** 31 July 2026, 12:13 UTC
 - **Turns:** 15
-- **Status:** Incomplete
+- **Status:** Complete
