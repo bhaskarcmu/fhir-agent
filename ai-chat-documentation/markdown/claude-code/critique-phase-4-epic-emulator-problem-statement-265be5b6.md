@@ -244,7 +244,23 @@ Explain in plain and simple layperson terms what the 3 chosen capability areas a
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+**The three areas, in plain terms:**
+
+1. **Epic auth emulation — "getting in the door."**
+Before any system can read a patient's chart from a real Epic system, it has to prove who it is — not by typing a password, but through an automated handshake where the requesting app presents a kind of digital ID badge and Epic hands back a temporary access pass. Real Epic has its own specific version of this handshake. We're building a fake version of that same checkpoint so our software can practice going through Epic's exact login ritual before it ever touches a real Epic system.
+
+2. **Epic custom extensions — "reading the paperwork correctly."**
+Patient records follow a shared, standard format across most systems (medications, allergies, etc.). But Epic tacks on its own extra fields and details on top of that standard format — extra notes in the margins, essentially. We're scoping our fake version to just two kinds of records: medications and allergies, since those are exactly the two things our existing drug-allergy-safety-check feature already cares about. So this piece teaches our software to expect and handle Epic's "extra margin notes" on the records it already knows how to read.
+
+3. **Epic proprietary quirks — "using the API the way Epic expects."**
+Beyond login and data format, Epic's system also just *behaves* a little differently than the plain-vanilla standard — how many results it hands back at once, what specific combination of search filters you're required to include, and how it phrases error messages when something goes wrong. We picked exactly three of these known quirks to reproduce (not an open-ended list), so our software gets tested against real Epic-style behavior instead of being surprised by it for the first time during an actual hospital rollout.
+
+**Why these three, specifically:**
+
+Together they cover the three ways a real Epic connection would actually trip up new code: *can you get in* (auth), *do you understand what you're reading* (extensions), and *do you know how to ask for it correctly* (quirks). Nothing else about Epic gets emulated this round — the extensions are limited to the two record types tied to a feature we already have, and the quirks are capped at three named ones — specifically to keep this fast to build rather than turning into an attempt to fake all of Epic.
+
+**Why build all three together in one app, instead of three separate ones:**
+We don't yet know how tangled these three things really are in practice — for instance, the login step might end up needing to know something about the data-format step in ways we can't predict yet. Building them together first and watching what actually turns out to be interconnected is safer than guessing today and locking in the wrong split.
 
 <details>
 <summary>Execution details — 16 tool events</summary>
@@ -291,4 +307,4 @@ quirk emulation as one Spring Boot service proxying fhir-service),…`
 - **Created:** 31 July 2026, 12:31 UTC
 - **Last updated:** 31 July 2026, 17:54 UTC
 - **Turns:** 7
-- **Status:** Incomplete
+- **Status:** Complete
