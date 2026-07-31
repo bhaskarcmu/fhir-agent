@@ -167,7 +167,44 @@ Okay then, walk me through the containerization work again in layperson's termsm
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+## What "containerizing" means, first
+
+A container is a lightweight, self-contained package that bundles your application together with everything it needs to run — the code, the runtime, system libraries — so it behaves identically wherever it's run: your laptop, a colleague's machine, or a production server. It's not a full virtual machine (no separate OS being emulated); it shares the host machine's kernel but gets its own isolated filesystem, processes, and network. Docker is the tool that builds and runs these packages. You'd already done this once for the .NET monolith — here you did the same thing for a Java application.
+
+## Step 1: Building the image — a recipe, followed in stages
+
+A **Dockerfile** is a recipe: a list of steps that produces a container **image** — a frozen, ready-to-run snapshot of the application and its dependencies. Ours uses a **multi-stage build**, meaning the recipe has two separate phases that end up producing one final image:
+
+- **Stage 1 — "build."** Start from a base image that has a full Java compiler and build tool (Maven) installed. Copy in the source code, compile it, and produce the finished application artifact (a single packaged file containing the compiled app).
+- **Stage 2 — "runtime."** Start over from a *different*, smaller base image — one that only has the minimum needed to *run* Java, not compile it. Copy just the finished artifact from Stage 1 into it. Discard everything else — the compiler, the build tool, the source code.
+
+Why bother with two stages instead of one? The compiler and build tools are only needed to produce the artifact, not to run it — shipping them in your production image would make it larger and give an attacker more tools to work with if the container were ever compromised. This is exactly the same principle as `dotnet publish` producing a slim runtime-only output for your .NET monolith instead of shipping the SDK.
+
+## Step 2: Caching — don't redo work that hasn't changed
+
+Docker builds an image as a stack of **layers**, one per recipe step, and reuses a layer from a previous build if nothing that affects it has changed. Our recipe deliberately copies in the dependency list (`pom.xml`, the Maven equivalent of a `.csproj` file) and downloads all dependencies *before* copying in the actual source code. Result: if you only change application code, Docker skips re-downloading dependencies and reuses that cached layer — builds after the first one are fast. Change the dependency list itself, and that cache is invalidated, forcing a fresh download.
+
+## Step 3: Hardening the runtime image — reduce what can go wrong
+
+A few concrete choices, each addressing a specific risk:
+
+- **Run as a non-root, unprivileged user inside the container**, rather than the default root. If something inside the container is ever compromised, it can't do as much damage — it doesn't have system-administrator rights even within its own sandbox.
+- **Tell the Java runtime how much memory it's actually allowed to use** (as a percentage of the container's memory limit), so it doesn't try to use more memory than the container is permitted and get forcibly killed.
+- **Add a built-in health check** — a command Docker runs periodically to ask "are you actually working?" If the app doesn't answer correctly, Docker can flag or restart the container. This particular app needs a generous grace period before its first check, because on first startup it does a slow one-time setup step (initializing its database schema and loading reference data) that takes a few minutes.
+
+## Step 4: Running many containers reliably — Kubernetes
+
+A single container running on one machine is a good start, but production needs more: if the container crashes, something should restart it; if traffic grows, you may want several copies running; and copies shouldn't receive traffic until they're actually ready. **Kubernetes** is the system that manages all of this — you describe the *desired state* ("I want this container running, with these resource limits, checked this way"), and Kubernetes continuously works to keep reality matching that description. A few of its concepts, explained plainly:
+
+- **Deployment** — the description of what to run: which image, how many copies, how much CPU/memory each copy may use.
+- **Probes** — two different automated questions Kubernetes asks each running copy on a schedule: "are you alive?" (if no, kill and restart it) and "are you ready to receive traffic?" (if no, stop sending it requests, but don't necessarily kill it — it might just be busy or still starting up). Both were configured with a long delay before the first check, matching the app's slow startup routine.
+- **Resource requests and limits** — how much CPU and memory to reserve for a copy (the "request"), and the hard ceiling it's never allowed to exceed (the "limit"). These weren't guessed — the memory limit here was raised after a real deployment attempt got killed for running out of memory at a lower value, so the current number reflects an actual observed failure, not a theoretical estimate.
+- **Secrets vs. Config** — two separate places to store settings a running container needs. Ordinary, non-sensitive settings (which mode to run in, which database driver to use) go in one place; sensitive values (a database password embedded in a connection string) go in a separate, more restricted place. Keeping them apart means the sensitive value never has to sit in a plain configuration file that might get casually shared or checked into version control.
+- **Security context** — a bundle of "don't allow this container to do X" restrictions layered on top of the non-root user: don't allow it to gain higher privileges than it started with, strip away every special system permission it isn't using, and make its own filesystem read-only (so if something inside it did misbehave, it can't rewrite its own files). One narrow exception was carved out — a small writable scratch space — because the application briefly needs to write temporary files during its one-time startup routine, and without that exception the read-only rule would prevent it from ever starting.
+
+## Putting it together
+
+The whole exercise is two nested layers of "describe the desired end state, and let the tooling enforce it": Docker packages the application into a minimal, hardened, reproducible unit; Kubernetes then runs, monitors, and heals many instances of that unit according to rules you set once. Nothing here is specific to FHIR or healthcare — it's the same discipline you'd apply containerizing any production service, just with this particular application's own startup-time quirks (slow first boot, a temp-file write) accounted for in the specific numbers chosen.
 
 <details>
 <summary>Execution details — 10 tool events</summary>
@@ -197,6 +234,6 @@ Okay then, walk me through the containerization work again in layperson's termsm
 - **Source:** Claude Code
 - **Session ID:** `2e75a99e-6530-4b28-82f9-b3b5ee1df979`
 - **Created:** 22 July 2026, 14:25 UTC
-- **Last updated:** 31 July 2026, 10:56 UTC
+- **Last updated:** 31 July 2026, 10:57 UTC
 - **Turns:** 6
-- **Status:** Incomplete
+- **Status:** Complete
