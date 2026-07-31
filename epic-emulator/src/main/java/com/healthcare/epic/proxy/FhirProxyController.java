@@ -1,5 +1,6 @@
 package com.healthcare.epic.proxy;
 
+import com.healthcare.epic.extensions.ExtensionBackfillInterceptor;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.Collections;
@@ -30,9 +31,11 @@ public class FhirProxyController {
             Set.of("host", "content-length", "connection", "transfer-encoding");
 
     private final FhirProxyClient client;
+    private final ExtensionBackfillInterceptor extensionBackfill;
 
-    public FhirProxyController(FhirProxyClient client) {
+    public FhirProxyController(FhirProxyClient client, ExtensionBackfillInterceptor extensionBackfill) {
         this.client = client;
+        this.extensionBackfill = extensionBackfill;
     }
 
     @RequestMapping(
@@ -75,8 +78,14 @@ public class FhirProxyController {
                             }
                         });
 
+        byte[] responseBody =
+                extensionBackfill.applyIfNeeded(
+                        request.getMethod(),
+                        responseHeaders.getFirst(HttpHeaders.CONTENT_TYPE),
+                        upstream.body());
+
         return ResponseEntity.status(upstream.status())
                 .headers(responseHeaders)
-                .body(upstream.body());
+                .body(responseBody);
     }
 }
