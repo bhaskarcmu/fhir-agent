@@ -143,7 +143,21 @@ Say the word when you want to move to drafting the actual PRD.
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+**1) The three parts — correct terminology.**
+The problem statement calls them **"candidate capability areas"** (deliberately not "services" or "components," to avoid implying a decomposition commitment before Phase 5 has evidence). Functionally, each is also a working end-to-end use case inside the monolith:
+
+1. **Epic auth emulation** — SMART App Launch "Backend Services" OAuth2 flow (client-credentials-style, JWT client assertion).
+2. **Epic custom profile & extension handling** — scoped to extensions on Medication/AllergyIntolerance resources (tied to the existing prescription-refill-risk-triage reference workflow, not "any Epic extension").
+3. **Epic proprietary quirks** — bounded to exactly three: non-standard pagination/`_count` behavior, a non-standard required search-parameter combination, and `OperationOutcome` error-shape deviations.
+
+**2) Most realistic free Epic docs/sandbox.**
+**Epic on FHIR** (`fhir.epic.com`) is the real, publicly-known developer resource for this — it's Epic's own vendor developer portal and doesn't require being a hospital/Epic customer:
+
+- **Free self-service developer account** — anyone can register (no affiliation with an Epic-using health system needed) and get access to a shared **non-production sandbox tenant** with synthetic test patients, usable for both SMART app-launch and backend-services (JWT) OAuth2 flows. This is the closest thing to "real Epic behavior" available without a hospital's actual instance.
+- **Per-resource API documentation** — pages for each FHIR resource (Patient, MedicationRequest, AllergyIntolerance, etc.) listing exactly which search parameters Epic supports/partially-supports, and which Epic-specific extensions it adds on top of base R4. This is the direct source for scoping capability area #2 concretely instead of guessing.
+- **A written guide for the backend-services JWT auth flow** — this is the spec-level reference for capability area #1, independent of having live sandbox access.
+
+Caveat: Epic's documented FHIR support (search params, extensions) varies by the client's Epic software version, and the docs are versioned accordingly — worth picking one Epic version's documentation set as the fixed reference for Phase 4 rather than mixing across versions. I'd treat the sandbox as useful for auth-flow shape and response examples, and the per-resource doc pages as the primary source of truth for extensions/quirks, since sandbox data is synthetic and won't necessarily exercise every quirk you need.
 
 <details>
 <summary>Execution details — 1 tool event</summary>
@@ -163,4 +177,4 @@ Say the word when you want to move to drafting the actual PRD.
 - **Created:** 31 July 2026, 12:31 UTC
 - **Last updated:** 31 July 2026, 17:31 UTC
 - **Turns:** 3
-- **Status:** Incomplete
+- **Status:** Complete
