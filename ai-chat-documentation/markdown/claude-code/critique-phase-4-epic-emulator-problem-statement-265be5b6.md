@@ -467,8 +467,10 @@ Now the auth flow integration test — reusing the M1 stub-server pattern so I c
 
 Now let's build and test:
 
+Expected: M1's own proxy test now fails because everything is gated behind auth — correct new behavior, but it breaks the old test's assumption of no auth. Fixing `FhirProxyIntegrationTest` to obtain a token first, same as the real flow now requires.
+
 <details>
-<summary>Execution details — 125 tool events</summary>
+<summary>Execution details — 126 tool events</summary>
 
 ### Turn 2 activity
 
@@ -679,6 +681,7 @@ grep -rn "jjwt\|nimbus\|java-jwt" fhir-service/pom.xml 2>/dev/null`
 - **Edit** `/workspaces/fhir-agent/epic-emulator/src/test/java/com/healthcare/epic/AuthFlowIntegrationTest.java`
 - **TodoWrite** `{"todos": [{"content": "Add nimbus-jose-jwt dependency to epic-emulator pom.xml", "status": "completed", "activeForm": "Adding nimbus-jose-jwt dependency"}, {"content": "Write auth config properties +…`
 - **Bash** `mvn -f epic-emulator/pom.xml test 2>&1 | tail -150`
+- **Read** `/workspaces/fhir-agent/epic-emulator/src/test/java/com/healthcare/epic/FhirProxyIntegrationTest.java`
 
 </details>
 
@@ -689,6 +692,6 @@ grep -rn "jjwt\|nimbus\|java-jwt" fhir-service/pom.xml 2>/dev/null`
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 18:33 UTC
+- **Last updated:** 31 July 2026, 18:34 UTC
 - **Turns:** 13
 - **Status:** Complete
