@@ -270,7 +270,21 @@ Talk about what quirks are chosen
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+The three quirks are named as **categories** in the PRD, not yet pinned to a specific resource/example — that concrete detail was left for the design doc. Here's what each category means in plain terms, and why these three:
+
+**1. Pagination / `_count` behavior — "how much do you get per page, and how do you get the next page?"**
+When a search returns a lot of results (say, a patient's full medication history), no system sends it all back at once — it hands back a page at a time. Normally, you can ask for a page size ("give me 50 at a time") and the server tries to honor it. Epic is known to cap this differently than expected — you might ask for 50 and get fewer, or the way it tells you "here's the link to the next page" doesn't follow the plain, generic format other systems use. Code that assumes "I asked for X, I get X" or "I can construct the next-page link myself" breaks against real Epic.
+
+**2. A required search-parameter combination — "what are you allowed to ask for, and how?"**
+The generic standard is usually permissive: you can search with just one filter (e.g., "give me this patient's medications") and it works. Epic is known to be stricter for certain searches — it requires you to include a *specific combination* of filters together (e.g., you can't just ask by patient, you also have to include something like a status or date filter), and it rejects the request outright if that combination is missing, even though the generic standard would have been fine with it.
+
+**3. Error-message shape — "how does it tell you something went wrong?"**
+When a request fails (bad input, not found, etc.), there's a standard, generic shape for the error message. Epic doesn't stick to that shape exactly — it adds its own extra codes or phrases the details in its own way. Code written to expect the plain, generic error format may fail to correctly read *why* something went wrong when talking to real Epic.
+
+**Why these three, specifically:**
+They sample three different layers of "talking to the API" rather than three variations on the same theme: *how results come back* (pagination), *what you're allowed to ask for in the first place* (required parameters), and *what happens when it goes wrong* (errors). That spread is deliberate — it's a more representative slice of "what actually surprises developers building against real Epic" than picking three quirks that were all pagination-flavored, say. It also matches how Epic's own documentation is organized: per resource, it separately calls out supported search parameters and expected behaviors — these three categories map directly onto the kinds of gotchas that documentation flags.
+
+One honest gap to flag: the PRD commits to these three *categories*, worded as "at least one search operation" exhibits each — it doesn't yet say which specific resource or exact parameter combination will demonstrate them. Pinning that down (e.g., "MedicationRequest search requires `patient` + `status` together," or whatever Epic's docs actually say for a chosen resource) is design-doc work, not decided yet.
 
 <details>
 <summary>Execution details — 16 tool events</summary>
@@ -317,4 +331,4 @@ quirk emulation as one Spring Boot service proxying fhir-service),…`
 - **Created:** 31 July 2026, 12:31 UTC
 - **Last updated:** 31 July 2026, 17:57 UTC
 - **Turns:** 8
-- **Status:** Incomplete
+- **Status:** Complete
