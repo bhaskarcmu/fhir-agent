@@ -327,8 +327,30 @@ Yes, add all documentation needed for full parity. Also, summariuze the mileston
 
 Adding the two remaining pieces for full parity with Phase 3's doc set (`decisions.md` + `README.md`), plus small header cross-references that Phase 3 has and Phase 4 is currently missing.
 
+Now `decisions.md`:
+
+Now `README.md`:
+
+Committing and pushing these to the same PR, then summarizing the milestones.
+
+**Full doc-set parity done** — PR #48 now has all four documents: `prd.md`, `design.md`, `decisions.md` (E1–E10), `README.md`. Pushed as `5cfc38c`.
+
+---
+
+## Milestone summary (from `design.md` §12)
+
+| # | Milestone | What it delivers | Done when |
+|---|---|---|---|
+| **M1** | Skeleton + pass-through proxy | New `epic-emulator/` Maven module; forwards all FHIR requests to `fhir-service` unchanged; health endpoint; single-container Dockerfile | An unmodified FHIR client gets byte-identical behavior going through `epic-emulator` vs. calling `fhir-service` directly |
+| **M2** | Auth emulation | SMART Backend Services token endpoint + bearer-token gating filter; **also the point where the Epic documentation version gets pinned for real** (E10) | A registered test client completes the JWT-assertion flow and uses the token for a gated call; an unauthenticated call is rejected |
+| **M3** | Extension handling | Read-time backfill of Epic extensions on Medication/AllergyIntolerance; writes pass through unchanged | A read returns the expected extension even on old seeded data; a write containing it round-trips correctly |
+| **M4** | Quirks | The three interceptors: pagination cap, required search-parameter combination, `OperationOutcome` error shape | Each of the three quirks is independently demonstrable against a real request |
+| **M5** | Acceptance case + coupling note | Re-point the existing prescription-refill-risk-triage scenario at `epic-emulator`; write the short coupling note for Phase 5 | Same clinical outcome as against `fhir-service` directly, plus the written note on which areas shared state/logic vs. stayed separate |
+
+Nothing is started yet — this is the plan, not a status report. Only M2 depends on the one open external step (Epic developer registration), and even that degrades gracefully per `design.md` §7 if it turns out not to be as simple as assumed.
+
 <details>
-<summary>Execution details — 26 tool events</summary>
+<summary>Execution details — 30 tool events</summary>
 
 ### Turn 2 activity
 
@@ -381,6 +403,14 @@ docs(phase4): expand PRD with plain-language framing, add design doc
 - **Read** `/workspaces/fhir-agent/docs/phase3/decisions.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase4/prd.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase4/design.md`
+- **Write** `/workspaces/fhir-agent/docs/phase4/decisions.md`
+- **Write** `/workspaces/fhir-agent/docs/phase4/README.md`
+- **Bash** `git add docs/phase4/decisions.md docs/phase4/README.md docs/phase4/prd.md docs/phase4/design.md && git status --porcelain`
+- **Bash** `git commit -m "$(cat <<'EOF'
+docs(phase4): add decisions.md and README.md for full doc-set parity
+
+Completes the Phase 3-style four-document set (prd, design,
+decisions, README) for Phase 4. decisions…`
 
 </details>
 
@@ -391,6 +421,6 @@ docs(phase4): expand PRD with plain-language framing, add design doc
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 18:06 UTC
+- **Last updated:** 31 July 2026, 18:07 UTC
 - **Turns:** 10
 - **Status:** Complete
