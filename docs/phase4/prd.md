@@ -1,6 +1,9 @@
 # Phase 4 PRD — Epic Emulator
 
 **Status:** DRAFT — planning only, no implementation started.
+**Companion doc:** [`design.md`](./design.md) — architecture, package layout, the three quirks'
+concrete pinned choices, and the milestone plan (no separate `plan.md`; Phase 3 already
+consolidated that into `design.md`, and this phase follows the same convention).
 **Extends:** Phase 1 (refill-triage), Phase 2 (claims adjudication), Phase 3 (provider search) — all
 unmodified.
 **Owner:** TBD
@@ -41,12 +44,29 @@ decomposes along evidence, not the guess below.
 
 1. **Epic auth emulation** — SMART App Launch "Backend Services" OAuth2 flow (client-credentials-
    style, JWT client assertion).
+   *In plain terms:* before any system can read a patient's chart from real Epic, it has to prove
+   who it is — not with a password, but through an automated handshake where the requesting app
+   presents a signed digital assertion and Epic hands back a temporary access pass. This emulates
+   that same checkpoint, using Epic's specific version of the handshake.
 2. **Epic custom profile & extension handling** — scoped to extensions on Medication/
    AllergyIntolerance resources, tied to the existing prescription-refill-risk-triage reference
    workflow — not "any Epic extension."
+   *In plain terms:* Epic doesn't just store records in the shared, generic format — it adds its
+   own extra fields on top, including on medications and allergies. This emulates just those extra
+   fields, for just the two record types the platform's existing drug-allergy check already reads.
 3. **Epic proprietary quirks** — bounded to exactly three: non-standard pagination/`_count`
    behavior, a non-standard required search-parameter combination, and `OperationOutcome`
    error-shape deviations.
+   *In plain terms:* beyond login and data format, Epic's API just *behaves* differently in
+   documented ways — how many results come back per page, what filters you're required to
+   include together, and how it phrases an error. The three chosen quirks each sample a
+   **different layer** of that rather than three variations on one theme: **how results come
+   back** (pagination), **what you're allowed to ask for in the first place** (the required
+   parameter combination), and **how you're told something went wrong** (the error shape).
+
+   These three are named as *categories* here; the exact resource and parameter each one attaches
+   to is a concrete design choice, pinned down in [`design.md`](./design.md) §6/§14 — not decided
+   in this PRD.
 
 ## 2. Goals
 
