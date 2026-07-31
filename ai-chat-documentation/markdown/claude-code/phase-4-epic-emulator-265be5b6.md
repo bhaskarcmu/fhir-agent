@@ -569,8 +569,12 @@ Now let's write the quirk C helper (Epic-shaped `OperationOutcome`) first, since
 
 Now quirk B — required search-parameter combination:
 
+Now quirk A — pagination cap + opaque continuation:
+
+Let's look at the current `FhirProxyClient` and `FhirProxyController` to refactor cleanly:
+
 <details>
-<summary>Execution details — 214 tool events</summary>
+<summary>Execution details — 217 tool events</summary>
 
 ### Turn 2 activity
 
@@ -903,6 +907,9 @@ mkdir -p epic-emulator/src/main/java/com/healthcare/epic/quirks`
 - **TodoWrite** `{"todos": [{"content": "Write EpicOperationOutcome helper (quirk C shape)", "status": "completed", "activeForm": "Writing EpicOperationOutcome helper"}, {"content": "Write RequiredSearchParameterInter…`
 - **Write** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/quirks/RequiredSearchParameterInterceptor.java`
 - **TodoWrite** `{"todos": [{"content": "Write EpicOperationOutcome helper (quirk C shape)", "status": "completed", "activeForm": "Writing EpicOperationOutcome helper"}, {"content": "Write RequiredSearchParameterInter…`
+- **Write** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/quirks/PaginationRewriter.java`
+- **TodoWrite** `{"todos": [{"content": "Write EpicOperationOutcome helper (quirk C shape)", "status": "completed", "activeForm": "Writing EpicOperationOutcome helper"}, {"content": "Write RequiredSearchParameterInter…`
+- **Read** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/proxy/FhirProxyClient.java`
 
 </details>
 
