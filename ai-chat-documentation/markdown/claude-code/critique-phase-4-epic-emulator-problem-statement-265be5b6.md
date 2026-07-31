@@ -399,7 +399,7 @@ Confirmed merged. Cleaning up the branch now.
 Branch cleanup done (local + remote deleted). Now starting M1. Let me set up tracking and look at the existing conventions I need to mirror (`rxclaim-emulator` for module shape, `claims-service`'s HTTP client pattern for the proxy).
 
 <details>
-<summary>Execution details — 48 tool events</summary>
+<summary>Execution details — 50 tool events</summary>
 
 ### Turn 2 activity
 
@@ -505,6 +505,10 @@ find claims-service/src/main/java -path "*client*" -name "*.java" -exec cat {} \
 grep -A2 "<groupId>\|<artifactId>com.payer\|<artifactId>fhir" fhir-service/pom.xml | head -20
 echo
 echo "=== fhir-service application config (p…`
+- **Bash** `grep -rl "wiremock\|WireMock" --include="pom.xml" . 2>/dev/null
+echo "---"
+grep -rln "MockWebServer\|@SpringBootTest.*webEnvironment\|okhttp" claims-service/pom.xml rxclaim-emulator/pom.xml fhir-servi…`
+- **Read** `/workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/HttpTriageClientTest.java`
 
 </details>
 
