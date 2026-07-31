@@ -6,10 +6,10 @@
     "present": true,
     "raw_filename": "265be5b6-c550-4af6-bed7-7be2bca6b9c4.jsonl",
     "source_deleted_at": null,
-    "status": "incomplete",
+    "status": "complete",
     "title": "Phase 4 epic-emulator",
     "turns": 17,
-    "updated_at": "2026-07-31T19:43:30.972000+00:00"
+    "updated_at": "2026-07-31T19:44:23.345000+00:00"
   },
   "275938f5-2585-41fb-96d3-c1eafaffb869": {
     "archived_at": "2026-07-13T15:07:16.770377+00:00",
