@@ -793,8 +793,18 @@ Confirmed — the standard test suite's patient only has 1 allergy record (well 
 
 Now let's check demo-guide.md's structure since it doesn't mention Phase 4 at all — relevant to the business-hat findings.
 
+Now cross-linking from the relevant existing docs, following this repo's established conventions.
+
+Let me also add a pointer at the very top of the canonical status block, since someone might not read all the way to "what's next":
+
+Now updating the top-level `docs/README.md`:
+
+Now adding a small "Phase 5" section to the docs index, and let's do final verification before committing.
+
+Final verification pass before committing.
+
 <details>
-<summary>Execution details — 413 tool events</summary>
+<summary>Execution details — 426 tool events</summary>
 
 ### Turn 2 activity
 
@@ -1439,6 +1449,24 @@ wc -l docs/demo-guide.md`
 - **Bash** `grep -n "^#" docs/demo-guide.md | head -20`
 - **TodoWrite** `{"todos": [{"content": "Check whether client/clinical's FHIR client follows pagination Link headers (safety-critical: could the _count cap silently drop meds/allergies?)", "status": "completed", "acti…`
 - **Bash** `mkdir -p docs/phase5`
+- **Write** `/workspaces/fhir-agent/docs/phase5/phase4-testing-and-analysis.md`
+- **TodoWrite** `{"todos": [{"content": "Check whether client/clinical's FHIR client follows pagination Link headers (safety-critical: could the _count cap silently drop meds/allergies?)", "status": "completed", "acti…`
+- **Bash** `grep -n "What's next" docs/phase4/README.md`
+- **Read** `/workspaces/fhir-agent/docs/phase4/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/README.md`
+- **Read** `/workspaces/fhir-agent/docs/phase4/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/README.md`
+- **Bash** `grep -n "Phase 4\|phase4" docs/README.md`
+- **Read** `/workspaces/fhir-agent/docs/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/README.md`
+- **Read** `/workspaces/fhir-agent/docs/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/README.md`
+- **Bash** `echo "=== stray [[ ]] check ==="
+grep -rn '\[\[' docs/phase5/*.md docs/phase4/README.md docs/README.md 2>/dev/null
+echo "(none = clean)"
+echo
+echo "=== full Java test suite (regression check) ==="
+mvn…`
 
 </details>
 
@@ -1449,6 +1477,6 @@ wc -l docs/demo-guide.md`
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 19:49 UTC
+- **Last updated:** 31 July 2026, 19:51 UTC
 - **Turns:** 17
 - **Status:** Complete
