@@ -1,0 +1,6 @@
+{
+  "kty": "RSA",
+  "n": "i4kHoQvpMYdq19Dmppzt_zoxjY02g_QvcZ9-QJEhZAt4FAMHJkh9_mewFN1o3fl61ruJqmXMh7GVxWKorkXZOgCepjfjC-FePmhN2wB50jICzBEvt6GbQKVvWQMB_WwDSIi_U2yQmgXgw1bo0Lrf23wUe0LevAnhmc41kSg3u4T3u1irO6Wd-xUWEOBv_1gdWUnvTAjf912OmwFVigjRZD-xUrL9Z4K6EIJOxInfCmqv8OPhyBz3aFsInL6o1MKxPwtw_Fs7l0gfxHWV91rFdrNyjcOnBlEsEamEfc7Wq0c0uZ63ZfkRNt3euuODZSOAC7P7kxCsFiksTXpyE48KFQ",
+  "e": "AQAB",
+  "kid": "e2e-acceptance-test-client"
+}

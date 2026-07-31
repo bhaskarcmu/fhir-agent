@@ -15,6 +15,16 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * tokens get Epic's {@code OperationOutcome} error shape (quirk C, design.md &sect;6/&sect;14) —
  * this was deliberately deferred from M2 to here rather than dropped; M2's own definition of done
  * only required rejection, not a specific error body.
+ *
+ * <p>Also accepts the token via an {@code apikey} header as a fallback to {@code Authorization:
+ * Bearer} (decision E15, found while building M5). {@code apikey} is this repo's own existing
+ * Kong-gateway convention, already read (and forwarded) by {@code triage-service}'s FHIR client —
+ * it has no way to send an arbitrary {@code Authorization} header at all. Accepting the same
+ * already-issued token via this header, rather than editing {@code triage-service}, is what makes
+ * the acceptance case's "zero code changes to triage-service" non-goal (PRD §3) achievable: the
+ * token is still obtained through the real SMART Backend Services flow — only how it's carried on
+ * the request differs, and this is real Epic-emulator behavior every consumer can use, not a
+ * test-only shortcut restricted to the acceptance case.
  */
 @Component
 @Order(1)
@@ -36,11 +46,11 @@ public class BearerAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(
             HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
-        String header = request.getHeader("Authorization");
+        String authHeader = request.getHeader("Authorization");
         String token =
-                (header != null && header.startsWith("Bearer "))
-                        ? header.substring("Bearer ".length())
-                        : null;
+                (authHeader != null && authHeader.startsWith("Bearer "))
+                        ? authHeader.substring("Bearer ".length())
+                        : request.getHeader("apikey");
 
         if (token == null || tokenStore.validate(token).isEmpty()) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

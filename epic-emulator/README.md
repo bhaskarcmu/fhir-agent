@@ -1,7 +1,8 @@
 # epic-emulator — Epic-flavored proxy in front of fhir-service (Phase 4)
 
-> **Status: M1 + M2 + M3 + M4 built (pass-through proxy + auth emulation + extension handling +
-> the three quirks).** M5 (acceptance case + coupling note) is not started — see
+> **Status: M1–M5 built — Phase 4 complete.** Pass-through proxy, auth emulation, extension
+> handling, the three quirks, and the acceptance case are all built and verified — the last one
+> live, against a real running `fhir-service` and `epic-emulator`, not just in unit tests. See
 > [`docs/phase4/README.md`](../docs/phase4/README.md) for the canonical Phase 4 status.
 >
 > This module was reserved as an empty placeholder back in Phase 2
@@ -30,9 +31,14 @@ Services JWT client-assertion flow.
 **M3 scope:** `MedicationRequest`/`AllergyIntolerance` reads (bare or inside a search `Bundle`) get
 a placeholder Epic-style extension backfilled if missing. Writes are untouched.
 
-**M4 scope (this milestone):** the three named quirks — pagination cap + opaque continuation,
-`MedicationRequest` search's required-parameter combination, and Epic-shaped `OperationOutcome`
-errors (now also applied retroactively to M2's auth-gate rejection).
+**M4 scope:** the three named quirks — pagination cap + opaque continuation, `MedicationRequest`
+search's required-parameter combination, and Epic-shaped `OperationOutcome` errors (now also
+applied retroactively to M2's auth-gate rejection).
+
+**M5 scope (this milestone):** the acceptance case — the existing prescription-refill-risk-triage
+scenario, re-pointed at `epic-emulator` instead of `fhir-service` directly, produces the same
+clinical outcome. See [`e2e/test_epic_emulator_acceptance.py`](../e2e/test_epic_emulator_acceptance.py)
+and [`docs/phase4/coupling-note.md`](../docs/phase4/coupling-note.md).
 
 ## How the proxy works
 
@@ -64,9 +70,12 @@ SMART launch flow:
 3. `auth/ClientAssertionValidator` checks the signature against the registered public key, that
    `iss`/`sub` match and are known, `aud` matches, `exp` hasn't passed, and `jti` hasn't been
    replayed. On success, `auth/AccessTokenStore` issues a short-lived opaque bearer token.
-4. **Use the token**: every other request needs `Authorization: Bearer <token>` —
-   `auth/BearerAuthFilter` rejects anything missing/invalid/expired with a plain `401` *before* it
-   reaches the proxy. `/oauth2/token` and `/actuator/**` are exempt.
+4. **Use the token**: every other request needs `Authorization: Bearer <token>` — or the same
+   token via an **`apikey`** header (decision E15, found while building M5: `triage-service`'s
+   FHIR client can only ever send `apikey`, never an arbitrary `Authorization` header — this
+   fallback is what lets it talk to `epic-emulator` with zero code changes). `BearerAuthFilter`
+   rejects anything missing/invalid/expired *before* it reaches the proxy. `/oauth2/token` and
+   `/actuator/**` are exempt.
 
 **Known simplifications:** RS384 only (the spec also allows ES384/EC keys — not implemented, a
 documented gap, not a silent one — decision E11); the 401 body now uses Epic's `OperationOutcome`
@@ -160,6 +169,17 @@ java -Dfhir.base-url=http://localhost:8080 -jar epic-emulator/target/epic-emulat
 # fhir-service must be running at :8080 separately — see fhir-service/README.md.
 # You'll also need a registered client (epic.auth.clients) to get past the auth gate — see above.
 ```
+
+## End-to-end acceptance test (M5)
+
+[`e2e/test_epic_emulator_acceptance.py`](../e2e/test_epic_emulator_acceptance.py) proves the
+whole thing works against real, running services — not just the JDK-stub-based unit tests above.
+It re-points the existing prescription-refill-risk-triage scenario at `epic-emulator` and confirms
+the clinical outcome is unchanged, spawning its own two `triage-service` subprocesses (direct vs.
+via the emulator) and using a fixed, checked-in test-only keypair
+([`e2e/fixtures/`](../e2e/fixtures/)) to complete the real SMART Backend Services flow. See the
+test file's own docstring for exact bring-up steps; self-skips if `fhir-service`/`epic-emulator`
+aren't reachable, same convention as the existing Phase 2 e2e suite.
 
 ## Non-goals (this module, this phase)
 

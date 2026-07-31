@@ -204,6 +204,14 @@ E10 in `decisions.md` for the exact status split.
   of `fhir-service`'s, for a single test run. This is a local override, not a new default.
 - No new Kong route, no compose profile required to hit the Phase 4 success bar — an opt-in
   compose profile (mirroring Phase 2's pattern) is a reasonable follow-on but not required here.
+- **Real gap found while building M5, resolved by decision E15:** "zero code changes to
+  `triage-service`" and "everything gated behind bearer auth" (M2) turned out to be in tension —
+  `triage-service`'s FHIR client (`client/clinical`) can only ever send an `apikey` header, never
+  an arbitrary `Authorization` header, and has no extensibility point to add one. Resolved by
+  having `BearerAuthFilter` accept a valid token via `apikey` as a fallback to `Authorization:
+  Bearer` — reusing this repo's own existing Kong-gateway header convention rather than editing
+  `triage-service`. The token is still obtained through the real SMART Backend Services flow; only
+  how it's carried on the request differs. Verified live: `e2e/test_epic_emulator_acceptance.py`.
 
 ## 9. Patterns applied
 
@@ -263,10 +271,15 @@ E10 in `decisions.md` for the exact status split.
   done — met: each quirk is independently demonstrable against a real request — verified by 8
   passing tests (quirk B allow/reject, quirk A cap/inject/next-link-rewrite/continuation/unknown-
   token, quirk C's shape on both the auth gate and quirk B) (PRD FR4–FR6).
-- **M5 — Acceptance case + coupling note.** Re-point the existing prescription-refill-risk-triage
-  scenario at `epic-emulator` (§8) and confirm an unchanged clinical outcome (PRD FR9, G5); write
-  the short coupling note (PRD G6) on which of M2–M4's areas turned out to share state/logic in
-  practice.
+- **M5 — Acceptance case + coupling note. ✅ Built — Phase 4 complete.** Re-pointed the existing
+  prescription-refill-risk-triage scenario at `epic-emulator` and confirmed an unchanged clinical
+  outcome (PRD FR9, G5) — verified live, twice, with a real `fhir-service` and a real
+  `epic-emulator`, not just asserted: both the HIGH-risk (drug-allergy conflict) and LOW-risk
+  control scenarios produced identical `RiskAssessment` outcomes direct vs. via the emulator.
+  Captured as a permanent, rerunnable test, `e2e/test_epic_emulator_acceptance.py` (self-skips if
+  the stack isn't up, same convention as the existing Phase 2 e2e suite). Found and resolved a
+  real gap along the way (§8, decision E15) rather than assuming the config-only re-point would
+  just work. The coupling note (PRD G6) is [`docs/phase4/coupling-note.md`](./coupling-note.md).
 
 No milestone here assumes or requires live Epic sandbox access to be *done* — only M2's
 documentation-pinning step depends on developer registration, and even that degrades gracefully
