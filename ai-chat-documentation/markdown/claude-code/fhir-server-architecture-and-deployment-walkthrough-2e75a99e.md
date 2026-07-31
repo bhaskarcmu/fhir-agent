@@ -394,7 +394,30 @@ When eliminating project references, either by duplicating code or, preferably, 
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Yes — and it's not just "helpful," it's the actual mechanism that makes REST-based decoupling possible at all.
+
+## Why serialization is the enabling piece
+
+With a Project Reference, two components share the same memory space and the same compiled type — passing an object between them is just a method call handing over a pointer/reference. No conversion happens; both sides are the same in-process code.
+
+Once you cut that reference and go to REST, the two services become **separate processes** — possibly different machines, different languages, definitely no shared memory. There's no way to hand over "the actual object" anymore. **Serialization** is what bridges that gap: the calling service converts its in-memory object into a transmittable format (almost always JSON for REST) and sends it over HTTP; the receiving service **deserializes** that JSON back into whatever object shape it needs locally. That conversion step is the *entire* reason two independently-built services can talk to each other despite no longer sharing compiled code.
+
+## What actually replaces the Project Reference
+
+This is the more important shift: the compiler used to be the thing enforcing that both sides agreed on a type's shape (mismatch it, and the build fails). Once you move to REST+JSON, **the compiler no longer sees the other side at all** — so that enforcement has to come from somewhere else: an API contract (OpenAPI/Swagger spec), a JSON Schema, or contract tests that catch a breaking shape change before it ships. This is exactly why teams introduce **DTOs** (Data Transfer Objects) — small classes that exist purely to define the wire shape at the boundary, kept deliberately separate from internal domain models, so refactoring your internal code doesn't silently break what you're serializing to callers.
+
+## .NET / Java equivalents
+
+| .NET | Java / Spring Boot |
+|---|---|
+| `System.Text.Json` (or historically `Newtonsoft.Json`) — auto-serializes controller return values, deserializes `[FromBody]` params | **Jackson** — Spring's default, auto-wired to `@RestController` methods: return values become JSON responses, `@RequestBody` parameters are deserialized from incoming JSON |
+| DTO classes for API contracts | Same concept, same name — DTOs, kept distinct from `@Entity` JPA classes |
+
+## A concrete example already in this repo
+
+FHIR itself is built entirely on this principle. The `fhir-service` doesn't hand out Java objects to callers — it serializes each `Patient`, `Observation`, etc. into standardized JSON (or XML) per the FHIR spec, and that JSON *is* the contract, not any shared Java class. Per CLAUDE.md, the `client/clinical` library exists specifically to **deserialize** that raw FHIR JSON and remap it into domain-shaped objects ("speaks clinical domain terms, never raw FHIR bundles") — so `mcp-agent` and `triage-service` never touch the wire format directly. That deserialization-and-remapping layer is precisely the pattern you'd want when extracting your own microservice: don't let every consumer deserialize raw JSON themselves — give them a typed client library that does it once.
+
+One more option worth knowing about, since you're comparing tradeoffs: JSON-over-REST is the flexible, loosely-typed default, but if you want the compiler back in the loop on both sides, **gRPC with Protocol Buffers** is the schema-first alternative — you define the contract in a `.proto` file, and it generates strongly-typed client/server code in both languages, so a shape mismatch becomes a compile error again instead of a runtime surprise. More rigid to change, but closer to the safety you had with Project References, just across a network boundary instead of in-process.
 
 <details>
 <summary>Execution details — 10 tool events</summary>
@@ -424,6 +447,6 @@ When eliminating project references, either by duplicating code or, preferably, 
 - **Source:** Claude Code
 - **Session ID:** `2e75a99e-6530-4b28-82f9-b3b5ee1df979`
 - **Created:** 22 July 2026, 14:25 UTC
-- **Last updated:** 31 July 2026, 11:50 UTC
+- **Last updated:** 31 July 2026, 11:51 UTC
 - **Turns:** 12
-- **Status:** Incomplete
+- **Status:** Complete
