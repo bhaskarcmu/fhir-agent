@@ -461,10 +461,14 @@ How can I say that I Strangled a Java based monolith just like I did for .NET? I
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Two separate things to answer here.
+
+**On the "how can I say it" part**: the honest way to earn that claim is to actually run the same motions once, in Java tooling, not to relabel something smaller. Concretely: build (or find) a Spring Boot app with 2+ genuinely coupled concerns living in one Maven multi-module build with real inter-module dependencies, then walk the identical sequence you did in .NET — identify domain boundaries, decouple the Maven module dependencies (swap inter-module `<dependency>` references for either duplicated code or a REST call, per the last few turns), extract one concern into its own independently-buildable Spring Boot service, containerize it, deploy it behind Kong next to `fhir-service`. Do that once for real, and "I strangled a Java monolith" is a true statement using the same evidence you'd already give for the .NET one — same reasoning, same steps, different toolchain.
+
+**On what to strangle**: `fhir-service` itself is a bad target, as established — it's a vendored generic engine, not a business monolith with real domain seams. But there's a genuinely better candidate already sitting on this repo's own stated roadmap: `fhir-service/README.md` lists **`epic-emulator`** and **`athena-emulator`** as "Roadmap — not built" (Epic/Athena-specific auth stubs, custom profiles, proprietary extensions). That's not contrived — it's a real, planned platform component, and it plausibly *should* start as one bundled Spring Boot app (unclear domain boundaries early, need working code fast — the honest reason real monoliths get built) before splitting into, say, an auth/SMART-on-FHIR-emulation service and a custom-profile/extension-handling service. It reuses every piece of tooling you already have proven in this repo: Maven, Spring Boot, the Docker multi-stage pattern, the K8s manifests, Kong routing.
 
 <details>
-<summary>Execution details — 11 tool events</summary>
+<summary>Execution details — 12 tool events</summary>
 
 ### Turn 1 activity
 
@@ -486,6 +490,10 @@ How can I say that I Strangled a Java based monolith just like I did for .NET? I
 
 - **Read** `/workspaces/fhir-agent/fhir-service/src/main/resources/application-elastic.yaml`
 
+### Turn 14 activity
+
+- **AskUserQuestion** `{"questions": [{"question": "Which direction for Phase 4's Java Strangler Fig exercise?", "header": "Phase 4 scope", "multiSelect": false, "options": [{"label": "Build epic-emulator as the monolith (R…`
+
 </details>
 
 ---
@@ -495,6 +503,6 @@ How can I say that I Strangled a Java based monolith just like I did for .NET? I
 - **Source:** Claude Code
 - **Session ID:** `2e75a99e-6530-4b28-82f9-b3b5ee1df979`
 - **Created:** 22 July 2026, 14:25 UTC
-- **Last updated:** 31 July 2026, 12:03 UTC
+- **Last updated:** 31 July 2026, 12:04 UTC
 - **Turns:** 14
-- **Status:** Incomplete
+- **Status:** Complete
