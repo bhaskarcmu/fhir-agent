@@ -147,23 +147,25 @@ unverified):
 The value is deliberately a synthetic marker, not invented clinical content — M3's job is proving
 the *backfill-and-round-trip mechanism* works, not guessing what real Epic data would say.
 
-## 6. Quirks — concrete pinned choices (starting design, pending validation)
+## 6. Quirks — concrete pinned choices (built in M4, values still pending validation)
 
-These are working design choices, not verified facts about real Epic behavior — each is flagged
-for confirmation against the pinned Epic documentation version (§7) during M2–M4, the same way
-Phase 3 distinguished assumed vs. measured values rather than asserting a guess as fact.
+These are working design choices, now implemented and tested, not verified facts about real Epic
+behavior — each is flagged for confirmation against the pinned Epic documentation version (§7),
+the same way Phase 3 distinguished assumed vs. measured values rather than asserting a guess as
+fact.
 
-| Quirk | Where it applies | Design choice (to validate) |
-|---|---|---|
-| **A — Pagination/`_count`** | A search on the resource type exercised by the acceptance scenario (Medication/AllergyIntolerance) | Cap effective `_count` at a fixed maximum regardless of what the caller requests; force the caller to follow `Bundle.link[relation=next].url` verbatim (an opaque, emulator-issued token) rather than construct its own offset. |
-| **B — Required search-parameter combination** | `MedicationRequest` search | Require `patient` **and** `status` together; a request with `patient` alone — which `fhir-service`/base R4 would happily answer — is rejected with `400` even though nothing downstream actually needed the stricter rule. |
-| **C — `OperationOutcome` error shape** | Every rejection `epic-emulator` itself generates (auth failures, quirk B, malformed extension writes) | Add a custom coding to `issue[].details.coding` under a clearly-labeled placeholder system (e.g. `http://epic-emulator.local/fhir/error-codes` — **not** a real Epic URI, a same-repo placeholder) plus a short, Epic-style verbose `diagnostics` string. |
+| Quirk | Where it applies | Design choice | Implementation |
+|---|---|---|---|
+| **A — Pagination/`_count`** | `MedicationRequest`/`AllergyIntolerance` search | Cap effective `_count` at a fixed maximum (default 20, `epic.quirks.pagination.max-count`) regardless of what the caller requests; force the caller to follow `Bundle.link[relation=next].url` verbatim (an opaque, emulator-issued token) rather than construct its own offset. | `quirks/PaginationRewriter` rewrites the outgoing query and any response `next` link; `quirks/PaginationContinuationController` resolves the opaque token (`GET /fhir/_page/{token}`) back to fhir-service's real URL. |
+| **B — Required search-parameter combination** | `MedicationRequest` search | Require `patient` **and** `status` together; a request with `patient` alone — which `fhir-service`/base R4 would happily answer — is rejected with `400` even though nothing downstream actually needed the stricter rule. | `quirks/RequiredSearchParameterInterceptor`, checked in `FhirProxyController` before ever calling `fhir-service`. |
+| **C — `OperationOutcome` error shape** | Every rejection `epic-emulator` itself generates on the FHIR API surface (quirk B, the M2 auth gate) | Add a custom coding to `issue[].details.coding` under a clearly-labeled placeholder system (`http://epic-emulator.local/fhir/error-codes` — **not** a real Epic URI, a same-repo placeholder) plus a short, Epic-style verbose `diagnostics` string. Deliberately **not** applied to `TokenController`'s own OAuth2 errors — a different protocol layer with its own standard shape. | `quirks/EpicOperationOutcome`, used by both `FhirProxyController` (quirk B) and `auth/BearerAuthFilter` (upgraded from M2's plain JSON body). |
 
 **Explicit gap:** the exact real values (true pagination cap, the true required-parameter set for
 whichever resource Epic actually documents this on, the true error-coding system/codes) must be
 confirmed against the pinned Epic documentation before any of the above is described as
-"conformant" rather than "structurally representative." Until §7 is done, treat this table as a
-placeholder that is *right in shape*, not yet verified in value.
+"conformant" rather than "structurally representative." Until §7 is done, treat this table as
+correct in *shape and mechanism* (all three are independently demonstrated end-to-end by tests),
+not yet verified in *value*.
 
 ## 7. Authoritative documentation — the one open action item
 
@@ -255,8 +257,12 @@ E10 in `decisions.md` for the exact status split.
   extension on unmodified seeded data; an already-extended resource is left alone, not duplicated;
   a write round-trips its extension unchanged; an out-of-scope resource type (Patient) comes back
   byte-for-byte untouched (PRD FR3), verified by 6 passing tests.
-- **M4 — Quirks.** The three interceptors per §6. Definition of done: each of the three quirks is
-  independently demonstrable against a real request (PRD FR4–FR6).
+- **M4 — Quirks. ✅ Built.** `quirks/RequiredSearchParameterInterceptor` (B),
+  `quirks/PaginationRewriter` + `quirks/PaginationContinuationController` (A), and
+  `quirks/EpicOperationOutcome` (C, also retrofitted onto M2's auth-gate rejection). Definition of
+  done — met: each quirk is independently demonstrable against a real request — verified by 8
+  passing tests (quirk B allow/reject, quirk A cap/inject/next-link-rewrite/continuation/unknown-
+  token, quirk C's shape on both the auth gate and quirk B) (PRD FR4–FR6).
 - **M5 — Acceptance case + coupling note.** Re-point the existing prescription-refill-risk-triage
   scenario at `epic-emulator` (§8) and confirm an unchanged clinical outcome (PRD FR9, G5); write
   the short coupling note (PRD G6) on which of M2–M4's areas turned out to share state/logic in
@@ -299,7 +305,19 @@ per §7.
   spec allows both; supporting EC keys too would add a second key-handling path in
   `ClientAssertionValidator` for marginal M2 value. Documented as a known simplification (§4),
   not a silent gap.
-- **401 rejection body is plain OAuth2 JSON, not yet Epic's `OperationOutcome` shape.** §4's own
-  narrative anticipated the Epic-shaped error; M2's actual definition of done (above) only requires
-  rejection, and the `OperationOutcome` shape is explicitly FR6/quirk C, scoped to M4. Sequenced
-  this way on purpose — M4 upgrades this exact response body, it isn't a dropped requirement.
+- **401 rejection body upgraded to Epic's `OperationOutcome` shape in M4, as planned.** §4's own
+  narrative anticipated this; M2 shipped a plain OAuth2 JSON body first since its own definition of
+  done only required rejection, and M4 (quirk C, FR6) did the upgrade on schedule — not a dropped
+  requirement.
+- **Pagination cap default: 20** (`epic.quirks.pagination.max-count`), chosen as a clearly-below-
+  typical-defaults value that makes the cap visibly demonstrable in a test, not derived from any
+  real Epic-documented number — still unverified per E10.
+- **Pagination continuation is an opaque server-side token, not a signed/self-describing one.** An
+  in-memory `Map<token, realUrl>` (`PaginationRewriter`) was chosen over encoding the real URL into
+  the token itself (e.g., base64 or a signed JWT) — simpler, and the caller was never meant to be
+  able to inspect or reconstruct the real URL anyway, so there's nothing to gain from making the
+  token self-describing.
+- **Quirk C is scoped to the FHIR API surface, not `TokenController`'s OAuth2 errors.** Wrapping an
+  OAuth token-endpoint error in a FHIR `OperationOutcome` resource would be a category mismatch —
+  real Epic's backend-services token endpoint returns standard OAuth2 errors too, not FHIR
+  resources. `TokenController`'s `error`/`error_description` shape is intentionally left as-is.

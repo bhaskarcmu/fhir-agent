@@ -1,7 +1,7 @@
 # epic-emulator — Epic-flavored proxy in front of fhir-service (Phase 4)
 
-> **Status: M1 + M2 + M3 built (pass-through proxy + auth emulation + extension handling).** M4
-> (quirks) and M5 (acceptance case) are not started — see
+> **Status: M1 + M2 + M3 + M4 built (pass-through proxy + auth emulation + extension handling +
+> the three quirks).** M5 (acceptance case + coupling note) is not started — see
 > [`docs/phase4/README.md`](../docs/phase4/README.md) for the canonical Phase 4 status.
 >
 > This module was reserved as an empty placeholder back in Phase 2
@@ -27,9 +27,12 @@ its response returned unchanged.
 **M2 scope:** every proxied call requires a bearer token, obtained via a simulated SMART Backend
 Services JWT client-assertion flow.
 
-**M3 scope (this milestone):** `MedicationRequest`/`AllergyIntolerance` reads (bare or inside a
-search `Bundle`) get a placeholder Epic-style extension backfilled if missing. Writes are
-untouched. The three quirks (M4) are not built yet.
+**M3 scope:** `MedicationRequest`/`AllergyIntolerance` reads (bare or inside a search `Bundle`) get
+a placeholder Epic-style extension backfilled if missing. Writes are untouched.
+
+**M4 scope (this milestone):** the three named quirks — pagination cap + opaque continuation,
+`MedicationRequest` search's required-parameter combination, and Epic-shaped `OperationOutcome`
+errors (now also applied retroactively to M2's auth-gate rejection).
 
 ## How the proxy works
 
@@ -66,8 +69,9 @@ SMART launch flow:
    reaches the proxy. `/oauth2/token` and `/actuator/**` are exempt.
 
 **Known simplifications:** RS384 only (the spec also allows ES384/EC keys — not implemented, a
-documented gap, not a silent one — decision E11); the 401 body is plain OAuth2 JSON today, not yet
-Epic's `OperationOutcome` shape (that upgrade is M4/FR6, deliberately sequenced there).
+documented gap, not a silent one — decision E11); the 401 body now uses Epic's `OperationOutcome`
+shape (upgraded in M4, see below — the plain OAuth2 JSON it started with was a deliberate M2-scope
+choice, not a dropped requirement).
 
 ## How extension handling works (M3)
 
@@ -92,6 +96,29 @@ representative stand-ins, not a claim about Epic's real extensions — Epic's ow
 unverified (decision E10). Also corrects the PRD's generic "Medication" wording: the reference
 workflow actually reads `MedicationRequest`, so that's what M3 targets.
 
+## How the three quirks work (M4)
+
+All three live under `quirks/`, each independently demonstrable:
+
+- **A — Pagination.** `PaginationRewriter` caps/injects `_count` (default max 20,
+  `epic.quirks.pagination.max-count`) on outgoing `MedicationRequest`/`AllergyIntolerance`
+  searches, and replaces any response `Bundle.link[relation=next].url` with an opaque token URL
+  (`/fhir/_page/{token}`) — the caller can only follow it, never construct or read the real
+  fhir-service pagination URL. `PaginationContinuationController` resolves the token and forwards
+  to the real URL, re-issuing a fresh opaque token if *that* page has a further next link too.
+  Still requires a valid bearer token, and an unrecognized token gets a `404` + Epic-shaped error.
+- **B — Required search parameters.** `RequiredSearchParameterInterceptor` rejects a
+  `MedicationRequest` search missing `patient` or `status` with a `400` **before** `fhir-service`
+  is ever called — checked in `FhirProxyController` ahead of the actual proxy call.
+- **C — Error shape.** `EpicOperationOutcome` builds the `OperationOutcome` body used by quirk B's
+  rejection and by the auth gate's `401` (upgraded from M2's plain JSON). Deliberately **not**
+  applied to `TokenController`'s own OAuth2 token-endpoint errors — different protocol layer,
+  different standard shape (decision E14).
+
+**Placeholder values, same posture as everywhere else in this module:** the `_count` cap, the
+`patient`+`status` requirement, and the error-code system/codes are structurally representative,
+not confirmed against Epic's real documentation (decision E10 remains partial).
+
 ## API
 
 Whatever `fhir-service` exposes, gated behind a bearer token —
@@ -104,7 +131,7 @@ Whatever `fhir-service` exposes, gated behind a bearer token —
 mvn -f epic-emulator/pom.xml test
 ```
 
-15 tests, no DB (this module has no datasource at all):
+23 tests, no DB (this module has no datasource at all):
 
 - `FhirProxyIntegrationTest` (3) — pass-through `GET`/`POST` (fetching a real token first, since
   M2 gates everything), and actuator staying local **and** token-free.
@@ -116,6 +143,10 @@ mvn -f epic-emulator/pom.xml test
   `AllergyIntolerance`; no duplication when already present; an out-of-scope resource type
   (`Patient`) returned byte-for-byte unchanged; a search `Bundle` backfilling only its in-scope
   entries; a write round-tripping its extension unchanged.
+- `QuirksIntegrationTest` (8) — quirk B allow/reject; quirk A's `_count` cap and injection on the
+  outgoing request, next-link rewritten to an opaque token, that token resolving on follow-up,
+  the continuation endpoint still requiring auth, and an unknown token rejected; quirk C's shape
+  verified on both the auth gate's `401` and quirk B's `400`.
 
 All three classes stand up a stub "fhir-service" with the JDK's own `HttpServer` (same
 dependency-free pattern as `claims-service`'s `HttpTriageClientTest`) rather than pulling in a
