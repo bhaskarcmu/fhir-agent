@@ -573,8 +573,16 @@ Now quirk A — pagination cap + opaque continuation:
 
 Let's look at the current `FhirProxyClient` and `FhirProxyController` to refactor cleanly:
 
+Now let's create the shared `ProxyHeaders` helper and refactor `FhirProxyController` to use it:
+
+Now rewriting `FhirProxyController` with quirks B and A wired in:
+
+That's just an IDE informational notice (not part of an open IDE project), not a real error. Continuing — now the pagination continuation controller:
+
+Now upgrading `BearerAuthFilter` to use the Epic `OperationOutcome` shape (quirk C):
+
 <details>
-<summary>Execution details — 217 tool events</summary>
+<summary>Execution details — 228 tool events</summary>
 
 ### Turn 2 activity
 
@@ -910,6 +918,17 @@ mkdir -p epic-emulator/src/main/java/com/healthcare/epic/quirks`
 - **Write** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/quirks/PaginationRewriter.java`
 - **TodoWrite** `{"todos": [{"content": "Write EpicOperationOutcome helper (quirk C shape)", "status": "completed", "activeForm": "Writing EpicOperationOutcome helper"}, {"content": "Write RequiredSearchParameterInter…`
 - **Read** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/proxy/FhirProxyClient.java`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/proxy/FhirProxyClient.java`
+- **Write** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/proxy/ProxyHeaders.java`
+- **Write** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/proxy/FhirProxyController.java`
+- **TodoWrite** `{"todos": [{"content": "Write EpicOperationOutcome helper (quirk C shape)", "status": "completed", "activeForm": "Writing EpicOperationOutcome helper"}, {"content": "Write RequiredSearchParameterInter…`
+- **Write** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/quirks/PaginationContinuationController.java`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/auth/BearerAuthFilter.java`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/auth/BearerAuthFilter.java`
+- **TodoWrite** `{"todos": [{"content": "Write EpicOperationOutcome helper (quirk C shape)", "status": "completed", "activeForm": "Writing EpicOperationOutcome helper"}, {"content": "Write RequiredSearchParameterInter…`
+- **Bash** `grep -n '"/fhir/MedicationRequest\|"/fhir/AllergyIntolerance' epic-emulator/src/test/java/com/healthcare/epic/*.java`
+- **Read** `/workspaces/fhir-agent/epic-emulator/src/test/java/com/healthcare/epic/ExtensionBackfillIntegrationTest.java`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/src/test/java/com/healthcare/epic/ExtensionBackfillIntegrationTest.java`
 
 </details>
 
@@ -920,6 +939,6 @@ mkdir -p epic-emulator/src/main/java/com/healthcare/epic/quirks`
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 18:54 UTC
+- **Last updated:** 31 July 2026, 18:56 UTC
 - **Turns:** 15
 - **Status:** Complete
