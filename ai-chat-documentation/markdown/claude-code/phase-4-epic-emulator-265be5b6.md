@@ -706,8 +706,22 @@ No filename collisions, unique repo-wide. Now let's write the coupling note (PRD
 
 Now cleanly tearing down the background processes.
 
+Now updating `design.md` — milestone plan and decisions:
+
+Now the milestone plan:
+
+Now adding decision E15 to `decisions.md`:
+
+Now updating the preamble:
+
+Now updating `epic-emulator/README.md`:
+
+Now adding a note about the `apikey` fallback near the auth section, and updating the "Run locally" section:
+
+Now updating the Phase 4 canonical status page:
+
 <details>
-<summary>Execution details — 339 tool events</summary>
+<summary>Execution details — 360 tool events</summary>
 
 ### Turn 2 activity
 
@@ -1226,6 +1240,27 @@ find . -iname "test_*.py" -not -path "*/.git/*" | xargs -n1 basename | sort | un
 ps aux | grep -E "epic-emulator|uvicorn.*800[12]" | grep -v grep
 echo
 echo "=== killing my manually-started epic-emulator (pid 3266169) and any lingering ma…`
+- **TodoWrite** `{"todos": [{"content": "Add apikey-header fallback to epic-emulator's auth gate (accepts existing Kong-style header, zero triage-service changes)", "status": "completed", "activeForm": "Adding apikey-…`
+- **Bash** `grep -n "^## 8\.\|^## 12\.\|^## 14\." docs/phase4/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase4/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase4/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/design.md`
+- **Bash** `grep -n "^| \*\*E14\*\*\|^\*\*M1, M2, M3, and M4" docs/phase4/decisions.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/decisions.md`
+- **Read** `/workspaces/fhir-agent/docs/phase4/decisions.md`
+- **Read** `/workspaces/fhir-agent/docs/phase4/decisions.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/decisions.md`
+- **Bash** `grep -n "^#\|Status:\|M4 scope\|E1[0-9]\|23 tests" epic-emulator/README.md`
+- **Read** `/workspaces/fhir-agent/epic-emulator/README.md`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/README.md`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/README.md`
+- **Read** `/workspaces/fhir-agent/epic-emulator/README.md`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/README.md`
+- **Read** `/workspaces/fhir-agent/epic-emulator/README.md`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/README.md`
+- **Read** `/workspaces/fhir-agent/docs/phase4/README.md`
+- **Read** `/workspaces/fhir-agent/docs/phase4/README.md`
 
 </details>
 
@@ -1236,6 +1271,6 @@ echo "=== killing my manually-started epic-emulator (pid 3266169) and any linger
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 19:34 UTC
+- **Last updated:** 31 July 2026, 19:36 UTC
 - **Turns:** 16
 - **Status:** Complete
