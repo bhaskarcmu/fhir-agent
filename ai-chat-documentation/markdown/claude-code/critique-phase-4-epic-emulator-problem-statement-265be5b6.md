@@ -479,8 +479,29 @@ Now updating `decisions.md` — E10's status with the real finding, plus a new E
 
 Now updating `epic-emulator/README.md` for M2:
 
+Now adding an auth section and updating the API/test sections:
+
+Now updating the Phase 4 canonical status page:
+
+Now let's do a final consistency check (stray link syntax, full test re-run) before committing.
+
+Clean. Committing, pushing, and opening the PR.
+
+## M2 done — PR #50
+
+**Branch cleanup:** `feature/phase4-m1-epic-emulator-skeleton` deleted (local + remote).
+
+**M2 implementation** (branch `feature/phase4-m2-auth-emulation`, PR: https://github.com/bhaskarcmu/fhir-agent/pull/50):
+
+- Token endpoint (`POST /oauth2/token`) implementing the SMART Backend Services JWT client-assertion flow, and a filter gating every proxied call behind the resulting bearer token.
+- **9/9 tests pass** — the full flow, plus 5 distinct rejection cases each verified at the specific layer that should catch it (no header, garbage token, expired assertion, wrong signing key, unknown client).
+- **On "pin the Epic documentation version"** (M2's other stated task): I made one real check rather than fabricating a version number. `fhir.epic.com`'s backend-OAuth2 page is genuinely public and dated October 31, 2025 — but the actual technical parameters sit behind interactive navigation my fetch tool can't reach, and account registration is a step only a human can complete. I built the flow against the public, normative base SMART Backend Services spec instead and recorded this honestly as **partially resolved** in `design.md` §7 and decision E10, rather than claiming it was fully verified.
+- One new documented simplification: RS384 signing only, not ES384 (decision E11).
+
+**Known limitation:** only the automated test suite ran — no manual end-to-end run against a live `fhir-service`. Ready for M3 (extension handling) whenever you want it.
+
 <details>
-<summary>Execution details — 140 tool events</summary>
+<summary>Execution details — 153 tool events</summary>
 
 ### Turn 2 activity
 
@@ -706,6 +727,31 @@ grep -rn "jjwt\|nimbus\|java-jwt" fhir-service/pom.xml 2>/dev/null`
 - **Edit** `/workspaces/fhir-agent/docs/phase4/decisions.md`
 - **Edit** `/workspaces/fhir-agent/epic-emulator/README.md`
 - **Edit** `/workspaces/fhir-agent/epic-emulator/README.md`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/README.md`
+- **Read** `/workspaces/fhir-agent/docs/phase4/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/README.md`
+- **Bash** `grep -n "phase4\|Phase 4" docs/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/README.md`
+- **Bash** `echo "=== stray [[ ]] check ==="
+grep -n '\[\[' epic-emulator/README.md docs/phase4/*.md docs/README.md 2>/dev/null
+echo "(none = clean)"
+echo
+echo "=== full test run ==="
+mvn -f epic-emulator/pom.xml…`
+- **TodoWrite** `{"todos": [{"content": "Add nimbus-jose-jwt dependency to epic-emulator pom.xml", "status": "completed", "activeForm": "Adding nimbus-jose-jwt dependency"}, {"content": "Write auth config properties +…`
+- **Bash** `git add -A -- epic-emulator docs/README.md docs/phase4
+git status --porcelain`
+- **Bash** `git commit -m "$(cat <<'EOF'
+feat(phase4 M2): auth emulation -- SMART Backend Services flow
+
+New auth/ package: JWT client-assertion validation
+(ClientAssertionValidator, RS384 only -- decision E11),…`
+- **Bash** `git push -u origin feature/phase4-m2-auth-emulation`
+- **Bash** `gh pr create --title "feat(phase4 M2): auth emulation -- SMART Backend Services flow" --body "$(cat <<'EOF'
+## Summary
+- New `auth/` package in `epic-emulator`: a token endpoint (`POST /oauth2/token`)…`
+- **TodoWrite** `{"todos": [{"content": "Add nimbus-jose-jwt dependency to epic-emulator pom.xml", "status": "completed", "activeForm": "Adding nimbus-jose-jwt dependency"}, {"content": "Write auth config properties +…`
 
 </details>
 
@@ -716,6 +762,6 @@ grep -rn "jjwt\|nimbus\|java-jwt" fhir-service/pom.xml 2>/dev/null`
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 18:36 UTC
+- **Last updated:** 31 July 2026, 18:38 UTC
 - **Turns:** 13
 - **Status:** Complete
