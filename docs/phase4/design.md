@@ -162,6 +162,21 @@ documentation version/date was consulted, and update §6's table from "starting 
 still stands on whatever public documentation is reachable without registration — the PRD does
 not make live sandbox access a build dependency.
 
+**What M2 actually found (real attempt, not a guess):** `fhir.epic.com/Documentation?docId=oauth2`
+is genuinely public — no login wall — and shows a "Last updated: October 31, 2025" marker, with a
+menu entry for "Epic as a Backend OAuth 2.0 Client." The specific technical content of that
+section (exact JWT claim requirements, scope-naming convention, token lifetime, rate limits)
+did **not** come through a plain page fetch — it's rendered behind the site's own interactive
+navigation, not retrievable as static content. **No account registration was attempted** (that's
+an inherently human step — email verification, accepting terms — not something this build could
+do on its own). So: the site's existence and general shape is confirmed real; Epic's own specific
+parameter values remain unverified. M2's auth flow is instead built directly against the
+**base SMART Backend Services specification** (HL7/SMART Health IT, itself fully public and
+normative — RFC 7523 JWT-bearer client assertion, `client_credentials` grant, RS384/ES384-only
+signing) since that's the standard Epic's own flow is documented to follow. This is a legitimate,
+citable public source in its own right, not a stand-in for the Epic-specific gap — see decision
+E10 in `decisions.md` for the exact status split.
+
 ## 8. Integration with the existing platform
 
 - No code changes to `fhir-service`, `triage-service`, `claims-service`, or `mcp-agent`.
@@ -203,14 +218,19 @@ not make live sandbox access a build dependency.
 
 ## 12. Milestone plan
 
-- **M1 — Skeleton + pass-through proxy.** New `epic-emulator/` Maven module; `proxy/` forwards all
-  FHIR requests/responses to `fhir-service` unchanged; health endpoint; single-container
-  Dockerfile. Definition of done: an unmodified FHIR client can read/search/write through
-  `epic-emulator` and get byte-identical behavior to calling `fhir-service` directly (PRD FR1).
-- **M2 — Auth emulation.** Token endpoint + bearer-gating filter per §4; pin the Epic documentation
-  version (§7, first task). Definition of done: a registered test client can complete the JWT
-  client-assertion flow and use the resulting token to make a gated call; an unauthenticated call
-  is rejected (PRD FR2, FR8).
+- **M1 — Skeleton + pass-through proxy. ✅ Built.** New `epic-emulator/` Maven module; `proxy/`
+  forwards all FHIR requests/responses to `fhir-service` unchanged; health endpoint;
+  single-container Dockerfile. Definition of done — met: an unmodified FHIR client gets
+  byte-identical behavior through `epic-emulator` as through `fhir-service` directly (PRD FR1),
+  verified by 3 passing tests against a stub upstream.
+- **M2 — Auth emulation. ✅ Built.** `auth/TokenController` (SMART Backend Services JWT
+  client-assertion flow, RS384 only — §14) + `auth/BearerAuthFilter` gating every proxied call.
+  Definition of done — met: a registered test client completes the flow and uses the resulting
+  token for a gated call; missing/invalid/expired tokens are rejected with a plain 401 before
+  ever reaching `fhir-service` (PRD FR2, FR8), verified by 6 passing tests (valid flow, no header,
+  garbage token, expired assertion, wrong signing key, unknown client). Epic-documentation-version
+  pinning (this milestone's other stated task, §7) is **not** fully done — see the real (partial)
+  finding recorded in §7 and decision E10.
 - **M3 — Extension handling.** Read-time backfill + write pass-through per §5, scoped to
   Medication/AllergyIntolerance and the reference workflow's data. Definition of done: a read
   returns the expected extension even on unmodified seeded data, and a write containing the
@@ -255,3 +275,11 @@ per §7.
 - **Epic documentation version: not yet pinned.** Explicitly left open (§7) rather than guessed,
   since asserting a specific version without having actually registered would be exactly the kind
   of unverified claim this document is trying to avoid making elsewhere.
+- **Client-assertion signing: RS384 only, ES384 not implemented.** The base SMART Backend Services
+  spec allows both; supporting EC keys too would add a second key-handling path in
+  `ClientAssertionValidator` for marginal M2 value. Documented as a known simplification (§4),
+  not a silent gap.
+- **401 rejection body is plain OAuth2 JSON, not yet Epic's `OperationOutcome` shape.** §4's own
+  narrative anticipated the Epic-shaped error; M2's actual definition of done (above) only requires
+  rejection, and the `OperationOutcome` shape is explicitly FR6/quirk C, scoped to M4. Sequenced
+  this way on purpose — M4 upgrades this exact response body, it isn't a dropped requirement.

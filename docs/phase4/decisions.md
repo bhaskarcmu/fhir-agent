@@ -12,12 +12,15 @@ still holds*.
 Status values: **Accepted** (in force) · **Superseded** (replaced — successor named) ·
 **Partially delivered** (accepted, but the repo does not yet match — the gap is named).
 
-**M1 is built** (see [`README.md`](./README.md)'s canonical status); E1–E5, E7, E8 are now
+**M1 and M2 are built** (see [`README.md`](./README.md)'s canonical status); E1–E5, E7, E8 are now
 verified against real, tested code (E2's proxy architecture, E3's directory, E7's read-time
 approach hasn't been exercised until M3 but the write-pass-through half is already true today).
-E9 is a documentation-format decision, not code. **E10 remains genuinely open** — the Epic
-documentation version and the exact quirk/extension values are still not pinned, tracked as
-**Partially delivered** rather than guessed at just to fill the table.
+E9 is a documentation-format decision, not code. **E10 remains genuinely partial** — M2 made one
+real, verifiable attempt (§7/design.md) and confirmed the Epic documentation site is real and
+public at a shell level, but the Epic-specific technical parameters were not retrievable that way;
+M2's auth flow was built against the public base SMART Backend Services spec instead, which is a
+legitimate source in its own right, not a workaround. E11 (new) records the RS384-only scoping
+choice found while building M2.
 
 ---
 
@@ -34,7 +37,8 @@ documentation version and the exact quirk/extension values are still not pinned,
 | **E7** | Extensions round-trip via **read-time backfill only** — reads inject a default Epic extension when one isn't already present; writes pass through unchanged, since `fhir-service` already stores arbitrary extensions with no special handling needed | ✅ Accepted | Satisfies "no new fixture pipeline" (PRD G4) with the least new code. Rationale: [`design.md` §5/§14](./design.md#5-extension-handling--concrete-approach). |
 | **E8** | Auth-client registration is **dev-simple** — a config-file/in-memory JWK registration, no approval workflow or real vendor procurement process | ✅ Accepted | Matches the PRD's instruction to assume easy developer access; mirrors the *shape* of Epic's real backend-services flow (a client presents a public key) without the real-world overhead. Rationale: [`design.md` §4/§14](./design.md#4-auth-flow--concrete-contract). |
 | **E9** | **No separate `plan.md`** — the milestone plan lives inside `design.md` (§12) | ✅ Accepted | Follows Phase 3's consolidation (Phase 2 had kept `requirements.md`/`plan.md` separate; Phase 3 folded that split into `prd.md`/`design.md`). Rationale: [`design.md` §14](./design.md#14-decisions-resolving-open-questions-using-best-judgement). |
-| **E10** | The specific Epic documentation version to target for conformance, and the exact real values behind each quirk/extension (§6's table), are **not yet pinned** | 🟡 Partially delivered | Deliberately left open rather than guessed: asserting a specific Epic doc version or exact quirk values without having actually registered for access would be an unverified claim. Named as the first concrete task of M2. The gap: `design.md` §6's quirk table is "structurally representative," not yet "confirmed against a real source." Rationale: [`design.md` §7](./design.md#7-authoritative-documentation--the-one-open-action-item). |
+| **E10** | The specific Epic documentation version to target for conformance, and the exact real values behind each quirk/extension (§6's table), are **not yet pinned** | 🟡 Partially delivered | M2 made one real attempt: `fhir.epic.com/Documentation?docId=oauth2` is genuinely public (no login), dated "Last updated: October 31, 2025," with a menu entry for backend OAuth 2.0 — but the specific technical parameters (JWT claim details, scope format, rate limits) are rendered behind interactive navigation, not retrievable by a plain page fetch. No account registration was attempted (an inherently human step). M2's auth flow was instead built directly against the public, normative **SMART Backend Services** spec (HL7/SMART Health IT) — a legitimate independent source, not a stand-in. The gap: Epic's own specific parameter values, and `design.md` §6's quirk table, remain "structurally representative," not "confirmed against Epic's own docs." Rationale: [`design.md` §7](./design.md#7-authoritative-documentation--the-one-open-action-item). |
+| **E11** | Client-assertion signing supports **RS384 only** — the spec's other allowed algorithm, ES384 (EC keys), is not implemented | ✅ Accepted | Found while building M2: supporting EC keys too would add a second key-handling path in `ClientAssertionValidator` for marginal value at this stage. Documented as a known simplification, not a silent gap — worth revisiting only if a real Epic sandbox test ever requires ES384. Rationale: [`design.md` §4/§14](./design.md#4-auth-flow--concrete-contract). |
 
 ## Conventions
 

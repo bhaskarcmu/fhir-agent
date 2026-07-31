@@ -20,3 +20,17 @@ management:
     health:
       probes:
         enabled: true
+
+epic:
+  auth:
+    # This token endpoint's own URL — must match the aud claim clients put in their JWT
+    # client assertion. Update if you change server.port.
+    token-endpoint: http://localhost:8092/oauth2/token
+    token-ttl-seconds: 300
+    # Dev-simple client registration (design.md §4/§14, decision E8): add an entry per
+    # registered test client — no approval workflow, just config. Generate an RSA key pair,
+    # keep the private key to yourself, and register only the public JWK here:
+    #   clients:
+    #     - client-id: my-test-client
+    #       jwk: '{"kty":"RSA","n":"...","e":"AQAB","kid":"my-test-client"}'
+    clients: []
