@@ -49,7 +49,38 @@ Forward note for Phase 5. Decomposition boundaries should be derived from what P
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Solid structure overall — the skip-table-with-rationale and the "zero artifacts" check are good instincts. But there are real gaps, ranked by how much they matter:
+
+**1. The document justifies the easy decision and skips the hard one.**
+Most of the word count defends "don't split into 3 microservices yet." But nobody was seriously proposing that — three tightly-coupled sub-features of one emulator becoming three separate repos/deploys was never a live option worth this much argument. Citing Fowler's MonolithFirst (which is about whether a *new product* starts as microservices) to justify not over-decomposing a single module is solving a strawman. The actual hard question — **what does "correctly emulating Epic" even mean, and how do you know you got it right without a real Epic sandbox** — gets zero words. That's the riskier unknown and belongs in the problem statement, not the module-boundary question.
+
+**2. "Demonstrably working end-to-end" has no source of truth.**
+Working against what reference? Epic's published FHIR API docs / SMART Backend Services spec / App Orchard sandbox behavior? Without naming an authority to emulate against, "working" is whatever the implementer assumed, and Phase 5 (or a real Epic integration later) could discover the emulation was subtly wrong in ways the success criteria never would have caught.
+
+**3. "Proprietary quirks" is unbounded scope, not a capability.**
+Auth flow and custom extensions are concrete. "Quirks" (pagination, search params, error shapes) is an open-ended grab-bag that could expand indefinitely — which directly undermines the stated "optimized for speed" goal. This needs a specific, enumerated, closed list for Phase 4, or it'll be the thing that blows the timebox.
+
+**4. No integration story.**
+Who actually calls epic-emulator, and how does a developer switch between it and real fhir-service? Does it sit in front of fhir-service as a proxy, wrap it, or run standalone with its own store? Given the existing convention that `client/clinical` and `client/platform` serve different audiences, which one talks to epic-emulator matters and isn't addressed.
+
+**5. The MonolithFirst argument is weaker here than in its original context.**
+Fowler's pattern relies on *real production usage* revealing seams. Here the "usage" will be internal test suites exercising three areas together — which is fine, but it should be stated explicitly as the mechanism, and the success criteria should require enough test depth that the coupling findings in Phase 4's closing note are actually trustworthy, not superficial.
+
+**6. "Zero artifacts from the skip table" is necessary but gameable.**
+It's an absence check, not a correctness check. You could satisfy it letter-for-letter while still building internal package boundaries with DTO-style interfaces and strict method contracts between "areas" — i.e., paying microservice-shaped costs without any of the artifacts. Worth a note that the spirit (not just deployment artifacts) is being checked.
+
+**7. Success criterion #3's stakeholder-testing sentence is out of place.**
+"This should be done with actual testing, mimicking business and clinical stakeholder assessments" — for what is fundamentally a technical integration/auth/protocol emulator, it's unclear what a clinical stakeholder is assessing. Either this means "get a demo sign-off" or it's conflating two different kinds of validation. Needs disambiguation before it goes in a PRD.
+
+**8. Security sensitivity of the auth-emulation piece is unflagged.**
+Per this repo's own rules, security-sensitive code gets deeper scrutiny regardless of "it's just a prototype." Emulating OAuth2/SMART-on-FHIR backend-services flow means fake tokens/keys/signing — worth an explicit callout so shortcuts here don't later get mistaken for validated patterns elsewhere.
+
+**Smaller open questions worth resolving before a PRD:**
+- Where does epic-emulator physically live — new top-level dir, or a module under `fhir-service/`? Affects Maven setup and the repo table in CLAUDE.md.
+- Data/fixtures: reuse `data/scripts/` Synthea generation, or does Epic-flavored data need its own fixtures?
+- No timebox or rough size estimate for Phase 4 — "speed to prototype" isn't falsifiable without one.
+
+Want me to hold these for when you actually draft the PRD, or react to any of them now?
 
 ---
 
@@ -58,6 +89,6 @@ Forward note for Phase 5. Decomposition boundaries should be derived from what P
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 12:31 UTC
+- **Last updated:** 31 July 2026, 12:32 UTC
 - **Turns:** 1
-- **Status:** Incomplete
+- **Status:** Complete
