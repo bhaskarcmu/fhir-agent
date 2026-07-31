@@ -459,8 +459,12 @@ Now the config/registry classes:
 
 Now the token store:
 
+Now the JWT validation logic, token controller, and gating filter:
+
+Now updating `application.yml` to document the auth config shape (without baking in a static key pair — the test generates its own dynamically, which is cleaner than committing a fixed "known" keypair):
+
 <details>
-<summary>Execution details — 114 tool events</summary>
+<summary>Execution details — 121 tool events</summary>
 
 ### Turn 2 activity
 
@@ -660,6 +664,13 @@ grep -rn "jjwt\|nimbus\|java-jwt" fhir-service/pom.xml 2>/dev/null`
 - **Write** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/auth/AuthProperties.java`
 - **Write** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/auth/ClientRegistry.java`
 - **Write** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/auth/AccessTokenStore.java`
+- **Write** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/auth/ClientAssertionValidator.java`
+- **TodoWrite** `{"todos": [{"content": "Add nimbus-jose-jwt dependency to epic-emulator pom.xml", "status": "completed", "activeForm": "Adding nimbus-jose-jwt dependency"}, {"content": "Write auth config properties +…`
+- **Write** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/auth/TokenController.java`
+- **TodoWrite** `{"todos": [{"content": "Add nimbus-jose-jwt dependency to epic-emulator pom.xml", "status": "completed", "activeForm": "Adding nimbus-jose-jwt dependency"}, {"content": "Write auth config properties +…`
+- **Write** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/auth/BearerAuthFilter.java`
+- **Read** `/workspaces/fhir-agent/epic-emulator/src/main/resources/application.yml`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/src/main/resources/application.yml`
 
 </details>
 
@@ -670,6 +681,6 @@ grep -rn "jjwt\|nimbus\|java-jwt" fhir-service/pom.xml 2>/dev/null`
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 18:31 UTC
+- **Last updated:** 31 July 2026, 18:32 UTC
 - **Turns:** 13
 - **Status:** Complete
