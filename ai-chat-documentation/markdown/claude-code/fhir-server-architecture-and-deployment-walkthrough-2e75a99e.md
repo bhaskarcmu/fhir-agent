@@ -51,7 +51,26 @@ What is Hibernate and how and why did I use it?
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+## What Hibernate is
+
+Hibernate is a **Java ORM (Object-Relational Mapper)** and the most widely used implementation of the **JPA** (Jakarta Persistence API) spec. It sits between your Java objects and the SQL database: you define entity classes, and Hibernate generates the SQL to create/read/update/delete rows, translates database-specific SQL dialects, manages transactions, connection pooling hand-off, and (optionally) auto-generates/updates schema from your entity mappings.
+
+## How it's used in this project
+
+You didn't add Hibernate as a direct choice — it comes in transitively as the persistence engine underneath **HAPI FHIR's JPA server module** (`hapi-fhir-jpaserver-base`, pulled in via the `hapi-fhir` parent POM). Nothing in [pom.xml](fhir-service/pom.xml) declares `hibernate-core` directly; it's inherited. Three layers matter:
+
+1. **HAPI's storage schema is Hibernate entities**, not hand-written SQL. FHIR resources (whatever type — `Patient`, `Observation`, anything) are persisted through generic Hibernate-mapped tables (`HFJ_RESOURCE`, `HFJ_RES_VER`, `HFJ_SPIDX_*` for search-parameter indexes). This is *why* the same Java code works against H2 in dev and Postgres/Neon in prod — Hibernate is the abstraction layer that makes the SQL dialect swappable.
+
+2. **Dialect + schema config in [application.yaml](fhir-service/src/main/resources/application.yaml):**
+   - `hibernate.dialect` selects `HapiFhirH2Dialect` or `HapiFhirPostgresDialect` — Hibernate-level classes that tell it which SQL variant/types to emit for that database.
+   - `hibernate.hbm2ddl.auto: update` — Hibernate inspects your entity mappings at boot and auto-alters the schema to match (this is the "no Flyway migrations" tradeoff I flagged earlier).
+   - `spring.datasource.hikari.*` — HikariCP is the connection pool Hibernate/Spring Data JPA sits on top of; separately tuned per profile (10 connections for local H2, 5 for Neon's free-tier limits).
+
+3. **A custom override you inherited from this repo: [JpaHibernatePropertiesProvider.java](fhir-service/src/main/java/ca/uhn/fhir/jpa/starter/util/JpaHibernatePropertiesProvider.java).** This is the clearest concrete answer to "why." By default, HAPI's Hibernate dialect resolution opens a live JDBC connection to auto-detect the dialect. That breaks in this environment: when Neon's Postgres env vars (`SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver`) are exported globally but a test or local run is actually pointed at H2, the Postgres driver refuses the H2 URL and startup fails. This class fixes that by resolving the dialect from explicit Spring config first (`spring.jpa.properties.hibernate.dialect`) and only falling back to JDBC auto-detection as a last resort — avoiding the mixed-datasource crash entirely.
+
+## Why Hibernate specifically (vs. raw JDBC/SQL)
+
+Given the project's actual constraint — one Java codebase that must run unmodified against both an ephemeral in-memory H2 database (fast local dev) and a durable cloud Postgres database (Neon, production) — hand-written SQL would mean maintaining two dialect-specific query sets. Hibernate collapses that into one entity model plus a one-line dialect swap (`HapiFhirH2Dialect` ↔ `HapiFhirPostgresDialect`), which is exactly the mechanism your `neon` vs. default Spring profile split relies on. It's not an incidental dependency — it's the specific piece of infrastructure that makes the "multiple DB profiles" design from your earlier question actually work.
 
 <details>
 <summary>Execution details — 10 tool events</summary>
@@ -83,4 +102,4 @@ What is Hibernate and how and why did I use it?
 - **Created:** 22 July 2026, 14:25 UTC
 - **Last updated:** 31 July 2026, 10:42 UTC
 - **Turns:** 2
-- **Status:** Incomplete
+- **Status:** Complete
