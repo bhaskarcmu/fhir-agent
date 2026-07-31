@@ -408,8 +408,12 @@ Now the integration test:
 
 Now let's build and run the tests before anything else.
 
+JDK's `HttpClient` restricts more headers than the four I listed (here: `Upgrade`, from the test client's own HTTP/2-upgrade negotiation) — and that restricted set isn't a fixed, documented list. Catching and skipping per-header is the robust fix rather than trying to enumerate every JDK-restricted name myself.
+
+All 3 tests pass. Now updating the pre-existing `epic-emulator/README.md` placeholder to reflect real M1 content, and cleaning up `.gitkeep`.
+
 <details>
-<summary>Execution details — 71 tool events</summary>
+<summary>Execution details — 76 tool events</summary>
 
 ### Turn 2 activity
 
@@ -546,6 +550,11 @@ echo "=== Phase 2 requirements.md deviations mention…`
 - **Bash** `mvn -f epic-emulator/pom.xml -q test 2>&1 | tail -100`
 - **Bash** `mvn -f epic-emulator/pom.xml -q test 2>&1 | grep -B5 "at com.healthcare.epic.proxy.FhirProxyController.proxy" | head -40`
 - **Bash** `mvn -f epic-emulator/pom.xml -q test 2>&1 | grep -B2 "restricted\|IllegalArgumentException" | head -40`
+- **Read** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/proxy/FhirProxyClient.java`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/proxy/FhirProxyClient.java`
+- **Bash** `mvn -f epic-emulator/pom.xml -q test 2>&1 | tail -40`
+- **Bash** `mvn -f epic-emulator/pom.xml test 2>&1 | grep -E "Tests run|BUILD SUCCESS|BUILD FAILURE"`
+- **TodoWrite** `{"todos": [{"content": "Write epic-emulator pom.xml (Spring Boot 3.3.4, Java 21)", "status": "completed", "activeForm": "Writing epic-emulator pom.xml"}, {"content": "Write EpicEmulatorApplication mai…`
 
 </details>
 
@@ -556,6 +565,6 @@ echo "=== Phase 2 requirements.md deviations mention…`
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 18:18 UTC
+- **Last updated:** 31 July 2026, 18:19 UTC
 - **Turns:** 12
 - **Status:** Complete
