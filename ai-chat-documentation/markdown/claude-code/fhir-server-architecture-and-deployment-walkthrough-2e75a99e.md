@@ -467,6 +467,8 @@ Two separate things to answer here.
 
 **On what to strangle**: `fhir-service` itself is a bad target, as established — it's a vendored generic engine, not a business monolith with real domain seams. But there's a genuinely better candidate already sitting on this repo's own stated roadmap: `fhir-service/README.md` lists **`epic-emulator`** and **`athena-emulator`** as "Roadmap — not built" (Epic/Athena-specific auth stubs, custom profiles, proprietary extensions). That's not contrived — it's a real, planned platform component, and it plausibly *should* start as one bundled Spring Boot app (unclear domain boundaries early, need working code fast — the honest reason real monoliths get built) before splitting into, say, an auth/SMART-on-FHIR-emulation service and a custom-profile/extension-handling service. It reuses every piece of tooling you already have proven in this repo: Maven, Spring Boot, the Docker multi-stage pattern, the K8s manifests, Kong routing.
 
+Good — no need to commit to anything yet. To recap for when you're ready: the honest path to the claim is running the real sequence once (couple two concerns in a Maven multi-module build, decouple, extract, containerize, deploy), and `epic-emulator`/`athena-emulator` from `fhir-service`'s own roadmap is the strongest candidate since it's a genuine future need rather than manufactured practice work. Happy to help scope it out whenever you want to move on Phase 4.
+
 <details>
 <summary>Execution details — 12 tool events</summary>
 
@@ -503,6 +505,6 @@ Two separate things to answer here.
 - **Source:** Claude Code
 - **Session ID:** `2e75a99e-6530-4b28-82f9-b3b5ee1df979`
 - **Created:** 22 July 2026, 14:25 UTC
-- **Last updated:** 31 July 2026, 12:04 UTC
+- **Last updated:** 31 July 2026, 12:09 UTC
 - **Turns:** 14
 - **Status:** Complete
