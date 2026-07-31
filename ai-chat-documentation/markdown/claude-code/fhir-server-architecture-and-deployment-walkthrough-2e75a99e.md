@@ -427,7 +427,31 @@ Can I split the FHIR service itself in to smaller microservices? Why and how wou
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Technically yes, but not the way your Strangler Fig instinct would suggest — splitting it by resource type (a "Patient service," an "Observation service") is generally the wrong move here, for reasons specific to what a FHIR JPA server actually is. Here's why, and what the FHIR-appropriate version of decomposition looks like.
+
+## Why splitting by resource type doesn't work well
+
+Your .NET monolith had genuinely separate business modules (`Orders`, `Users`) with their own logic, which is why domain decomposition worked. `fhir-service` is architecturally different: it's a **single generic, resource-agnostic storage engine** — the same Hibernate/JPA code path handles `Patient`, `Observation`, `MedicationRequest`, and every other resource type identically, backed by shared tables (`HFJ_RESOURCE`, `HFJ_RES_VER`, the `HFJ_SPIDX_*` search-index tables we looked at earlier). There's no code-level seam between "Patient-handling logic" and "Observation-handling logic" the way there was between your `Orders` and `Users` projects — it's one engine, not N modules glued together.
+
+Three concrete things break if you split by resource type into separate services/databases:
+- **Referential integrity** — FHIR resources constantly reference each other (`MedicationRequest.subject` → Patient, `Observation.encounter` → Encounter). This repo's config even has `enforce_referential_integrity_on_write` as a real HAPI setting. Split resource types across databases, and you lose the ability to enforce or transactionally guarantee those links — no cross-service foreign keys.
+- **Transaction bundles** — FHIR supports atomic multi-resource writes (create a Patient, an AllergyIntolerance, and a MedicationRequest in one all-or-nothing transaction). That's a single-database feature; split storage and you'd need distributed transactions or accept partial-failure risk.
+- **Cross-resource search** — FHIR search routinely joins across types (`Observation?subject.name=Smith`, `_include`/`_revinclude`). That's a SQL join today; split into separate stores and it becomes a distributed query-and-stitch problem HAPI doesn't natively support.
+
+## The decomposition boundary that actually fits FHIR
+
+Applying your Strangler Fig / domain-decomposition instinct correctly here means drawing the boundary **around** the FHIR store, not **through** it — treat "the standardized clinical data layer" as one bounded context, and split by the business capabilities built *on top of* it instead. This repo has already done exactly that, correctly: `triage-service` (drug-allergy risk logic) and `claims-service` (adjudication) are separate microservices that *consume* the one shared `fhir-service`, rather than each owning a private slice of FHIR resources. That's the right seam — same principle as your earlier extractions, just applied to "which capability interprets the data" instead of "which resource type stores the data."
+
+## If you genuinely need to decompose or scale the FHIR layer itself
+
+A few legitimate, narrower patterns — none of them "split by resource type":
+
+- **Horizontal scaling (not a split at all)** — run more identical copies of the same `fhir-service` behind the load balancer (`replicas: 1` → N in [deployment.yaml](fhir-service/k8s/deployment.yaml)), same pattern as your IIS instances. This solves throughput, not coupling — it's the same monolith, just more of it.
+- **Read/write separation (CQRS-flavored)** — this repo already has the plumbing for this, currently unused: [application-elastic.yaml](fhir-service/src/main/resources/application-elastic.yaml) wires HAPI's optional Elasticsearch backend, which indexes resources asynchronously (`indexing.plan.synchronization.strategy: async`) for full-text/advanced search while the JPA/Postgres store stays the transactional source of truth. That's a legitimate split — heavy search/reporting traffic goes to a separate, independently scalable read store, while writes and referential integrity stay centralized.
+- **Partitioning / multi-tenancy** — HAPI has built-in partitioning support (`database_partition_mode_enabled`, `patient_id_partitioning_mode`, currently commented out in `application.yaml`). This splits data by *tenant* (e.g., per clinic or patient population), not by resource type — still one engine/codebase, logically separated data. Useful for multi-tenant scale, not really "independent microservices" in the deployability sense.
+- **Multiple FHIR stores by data domain** — some large health systems do run separate FHIR servers for, say, genomics data versus core clinical data, purely for extreme volume or regulatory isolation reasons. This reintroduces the referential-integrity and cross-store-search problems above and requires a federating gateway to paper over them — it's a real pattern, but a heavyweight one adopted for scale/compliance reasons, not for microservice modularity's sake.
+
+**Bottom line**: don't strangle-fig the FHIR server itself — strangle-fig the *business logic that sits on top of it*, which is what `triage-service` already demonstrates. If you need to scale the FHIR layer, reach for replicas, Elasticsearch read-offload, or partitioning before reaching for "split it into services."
 
 <details>
 <summary>Execution details — 11 tool events</summary>
@@ -463,4 +487,4 @@ Can I split the FHIR service itself in to smaller microservices? Why and how wou
 - **Created:** 22 July 2026, 14:25 UTC
 - **Last updated:** 31 July 2026, 11:54 UTC
 - **Turns:** 13
-- **Status:** Incomplete
+- **Status:** Complete
