@@ -791,8 +791,10 @@ Good — quirk B fails loud (explicit 502), unlike the pagination issue which fa
 
 Confirmed — the standard test suite's patient only has 1 allergy record (well within the cap), which is exactly why this bug was never caught before. Now tearing down the extra processes from this investigation.
 
+Now let's check demo-guide.md's structure since it doesn't mention Phase 4 at all — relevant to the business-hat findings.
+
 <details>
-<summary>Execution details — 410 tool events</summary>
+<summary>Execution details — 413 tool events</summary>
 
 ### Turn 2 activity
 
@@ -1434,6 +1436,9 @@ grep -c "entry\[" epic-emu…`
 - **Bash** `grep -n "epic\|Epic\|Phase 4" docs/demo-guide.md | head -10
 echo "---"
 wc -l docs/demo-guide.md`
+- **Bash** `grep -n "^#" docs/demo-guide.md | head -20`
+- **TodoWrite** `{"todos": [{"content": "Check whether client/clinical's FHIR client follows pagination Link headers (safety-critical: could the _count cap silently drop meds/allergies?)", "status": "completed", "acti…`
+- **Bash** `mkdir -p docs/phase5`
 
 </details>
 
@@ -1444,6 +1449,6 @@ wc -l docs/demo-guide.md`
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 19:48 UTC
+- **Last updated:** 31 July 2026, 19:49 UTC
 - **Turns:** 17
 - **Status:** Complete
