@@ -15,7 +15,7 @@ Start with what you're trying to do.
 | **Audit Phase 3 decisions** (status + supersession) | [`phase3/decisions.md`](./phase3/decisions.md) | 5 min |
 | **Audit Phase 4 decisions** (status + supersession) | [`phase4/decisions.md`](./phase4/decisions.md) | 5 min |
 | **Know exactly what was agreed** (normative) | [`phase2/requirements.md`](./phase2/requirements.md) | reference |
-| **Know what to build next** | [`phase2/plan.md` §16](./phase2/plan.md#16-future-work) (Phase 2) / [`phase3/README.md`](./phase3/README.md) (Phase 3b) / [`phase4/README.md`](./phase4/README.md) (Phase 4, M5 next) | 5 min |
+| **Know what to build next** | [`phase2/plan.md` §16](./phase2/plan.md#16-future-work) (Phase 2) / [`phase3/README.md`](./phase3/README.md) (Phase 3b) / [`phase4/README.md`](./phase4/README.md) (Phase 4 complete — see coupling note for Phase 5) | 5 min |
 
 ## The guides
 
@@ -67,17 +67,19 @@ cloud position, the migration and its rollback, and troubleshooting.
 - **[`decisions.md`](./phase3/decisions.md)** — the ADR-style index (P1–P21 and counting),
   same status-and-supersession convention as Phase 2's `decisions.md`.
 
-**[`phase4/`](./phase4/README.md)** — Epic Emulator. M1 (pass-through proxy), M2 (auth
-emulation), M3 (extension handling), and M4 (the three quirks) built; M5 not started. Builds out a
-module (`epic-emulator/`) that was actually reserved as an empty placeholder back in Phase 2
-(`phase2/plan.md` §16, deviation D2), alongside a sibling `athena-emulator/` placeholder that
-remains untouched.
+**[`phase4/`](./phase4/README.md)** — Epic Emulator. **Complete** — M1 (pass-through proxy), M2
+(auth emulation), M3 (extension handling), M4 (the three quirks), and M5 (the acceptance case,
+verified live) all built. Builds out a module (`epic-emulator/`) that was actually reserved as an
+empty placeholder back in Phase 2 (`phase2/plan.md` §16, deviation D2), alongside a sibling
+`athena-emulator/` placeholder that remains untouched.
 
 - **[`README.md`](./phase4/README.md)** — the canonical status statement for Phase 4.
 - **[`prd.md`](./phase4/prd.md)** — problem, goals/non-goals, requirements, success metrics.
 - **[`design.md`](./phase4/design.md)** — architecture (proxy in front of `fhir-service`),
   per-capability-area deep dives, the three quirks' concrete choices, and the milestone plan (§12).
-- **[`decisions.md`](./phase4/decisions.md)** — the ADR-style index (E1–E14), same convention.
+- **[`decisions.md`](./phase4/decisions.md)** — the ADR-style index (E1–E15), same convention.
+- **[`coupling-note.md`](./phase4/coupling-note.md)** — PRD G6: which capability areas shared
+  state/logic in practice — the evidence a future Phase 5 decomposition would use.
 
 ## Conventions for this folder
 

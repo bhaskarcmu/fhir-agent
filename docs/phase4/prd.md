@@ -220,3 +220,6 @@ change patterns (G6) — not from the three-area list above verbatim. If two are
 significant state, that's a signal they may belong in the same service even after decomposition;
 that is the intended payoff of building monolith-first, and it is what makes the Phase 4 → Phase 5
 sequence a real engineering decision rather than a staged one.
+
+**G6 is delivered:** [`coupling-note.md`](./coupling-note.md), captured after M1–M5 were actually
+built and verified live, not guessed in advance.

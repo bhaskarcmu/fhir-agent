@@ -115,7 +115,7 @@ def _medication_request(patient_id: str, display: str, rxnorm_code: str) -> dict
 # Scenarios
 # ─────────────────────────────────────────────────────────────────────────────
 
-def seed_kristle_mraz() -> None:
+def seed_kristle_mraz() -> str:
     """HIGH-risk: penicillin allergy + amoxicillin prescription."""
     print("\n── Patient 1: Kristle Mraz (HIGH risk scenario) ──")
 
@@ -139,9 +139,10 @@ def seed_kristle_mraz() -> None:
     print(f"  Expected:   HIGH — penicillin-class conflict")
     print(f"  Patient ID: {pid}")
     print(f"  Med ID:     {med['id']}")
+    return pid
 
 
-def seed_john_doe() -> None:
+def seed_john_doe() -> str:
     """LOW-risk: no allergies, routine medication."""
     print("\n── Patient 2: John Doe (LOW risk scenario) ──")
 
@@ -158,6 +159,7 @@ def seed_john_doe() -> None:
     print(f"  Expected:   LOW — no conflicts found")
     print(f"  Patient ID: {pid}")
     print(f"  Med ID:     {med['id']}")
+    return pid
 
 
 # ─────────────────────────────────────────────────────────────────────────────

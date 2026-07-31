@@ -2,25 +2,28 @@
 
 > ## Canonical status
 >
-> **M1 + M2 + M3 + M4 built.** `epic-emulator/` is a real Spring Boot module: a pass-through proxy
-> (forwards every request to `fhir-service` unchanged, verified by 3 tests), gated behind a
-> simulated SMART Backend Services JWT client-assertion auth flow (verified by 6 more tests — the
-> full flow, plus rejection of no-header/garbage-token/expired-assertion/wrong-key/unknown-client
-> requests), backfilling a placeholder Epic-style extension on `MedicationRequest`/
-> `AllergyIntolerance` reads that don't already have one (verified by 6 more tests — bare resource,
-> Bundle search results, idempotency, out-of-scope resource types, and write round-tripping), and
-> now exhibiting all three named quirks — pagination cap + opaque continuation, the required-
-> search-parameter rejection, and Epic-shaped `OperationOutcome` errors, the last of which was also
-> retrofitted onto M2's auth-gate rejection (verified by 8 more tests). 23 tests total across the
-> module. `decisions.md` indexes 14 decisions (`E1`–`E14`).
+> **Phase 4 complete — M1 through M5 all built.** `epic-emulator/` is a real Spring Boot module: a
+> pass-through proxy (verified by 3 tests), gated behind a simulated SMART Backend Services JWT
+> client-assertion auth flow (6 more tests), backfilling a placeholder Epic-style extension on
+> `MedicationRequest`/`AllergyIntolerance` reads (6 more tests), and exhibiting all three named
+> quirks — pagination cap + opaque continuation, the required-search-parameter rejection, and
+> Epic-shaped `OperationOutcome` errors, also retrofitted onto the auth gate (8 more tests). 24
+> unit/integration tests total. **M5's acceptance case is verified live**, not just in unit tests:
+> [`e2e/test_epic_emulator_acceptance.py`](../../e2e/test_epic_emulator_acceptance.py) ran the
+> actual prescription-refill-risk-triage scenario against a real running `fhir-service` and
+> `epic-emulator`, twice (HIGH-risk drug-allergy-conflict and LOW-risk control), and got identical
+> `RiskAssessment` outcomes direct vs. via the emulator both times. The coupling note (PRD G6) is
+> [`coupling-note.md`](./coupling-note.md). `decisions.md` indexes 15 decisions (`E1`–`E15`).
 >
-> M2's other stated task — pinning a specific Epic documentation version — is **only partially
-> done**: one real check confirmed Epic's docs site is genuinely public at a shell level (dated
-> October 31, 2025) but the specific backend-OAuth2 technical parameters weren't retrievable by a
-> plain fetch, and no account registration was attempted (an inherently human step this build
-> can't perform). The auth flow was built against the public base SMART Backend Services spec
-> instead — see `design.md` §7 and decision E10 for the honest, non-fabricated version of what was
-> and wasn't verified.
+> M2's other stated task — pinning a specific Epic documentation version — is **still only
+> partially done**: one real check confirmed Epic's docs site is genuinely public at a shell level
+> (dated October 31, 2025) but the specific backend-OAuth2 technical parameters weren't retrievable
+> by a plain fetch, and no account registration was attempted (an inherently human step this build
+> can't perform). The auth flow, and every quirk/extension value, were built against the public
+> base SMART Backend Services spec and structurally-representative placeholders instead — see
+> `design.md` §7 and decision E10 for the honest, non-fabricated version of what was and wasn't
+> verified. **This is the one open item a follow-on effort with real Epic sandbox access should
+> resolve first** — everything else in Phase 4 is built, tested, and (for M5) verified live.
 >
 > *This is the one canonical status statement. Other documents link here rather than restate it.*
 >
@@ -30,11 +33,16 @@
 >   concrete (unverified, flagged-pending-validation) choices, and the milestone plan (§12).
 > - [`decisions.md`](./decisions.md) — ADR-style index of every decision, same convention as
 >   Phase 2/Phase 3.
+> - [`coupling-note.md`](./coupling-note.md) — PRD G6: which capability areas shared state/logic in
+>   practice, evidence for Phase 5's decomposition.
 > - [`../../epic-emulator/README.md`](../../epic-emulator/README.md) — the module's own README:
->   how the proxy and auth flow work, build/test/run instructions.
+>   how the proxy, auth flow, extensions, and quirks work, build/test/run instructions.
+> - [`../../e2e/test_epic_emulator_acceptance.py`](../../e2e/test_epic_emulator_acceptance.py) —
+>   the live acceptance test.
 >
-> **What's next:** M5 — the acceptance case (re-point the existing prescription-refill-risk-triage
-> scenario at `epic-emulator`) and the coupling note for Phase 5. Not started; no timeline set.
+> **What's next:** Phase 4 is done. A future Phase 5 would decompose along whatever the coupling
+> note actually shows, not the original three-area guess — see the coupling note and the PRD's
+> forward note (§10). No Phase 5 work has started; no timeline set.
 
 ## What Phase 4 is
 

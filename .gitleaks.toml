@@ -1,0 +1,8 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Known non-sensitive fixtures -- not real secrets, see the path's own README"
+paths = [
+  '''e2e/fixtures/epic_emulator_test_client_private_key\.pem''',
+]

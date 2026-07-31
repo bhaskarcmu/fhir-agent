@@ -130,6 +130,7 @@ class AuthFlowIntegrationTest {
 
     @Test
     void validClientAssertion_getsAnAccessToken_usableForAGatedProxiedCall() throws Exception {
+        int before = stubCalls.get();
         String assertion =
                 signedAssertion(
                         CLIENT_KEY_PAIR, CLIENT_ID, TOKEN_ENDPOINT, Instant.now().plusSeconds(120));
@@ -156,7 +157,36 @@ class AuthFlowIntegrationTest {
 
         assertThat(proxied.getStatusCode().value()).isEqualTo(200);
         assertThat(proxied.getBody()).contains("Patient");
-        assertThat(stubCalls.get()).isEqualTo(1);
+        assertThat(stubCalls.get()).isEqualTo(before + 1); // stubCalls is shared across test methods
+    }
+
+    @Test
+    void tokenViaApikeyHeader_isAcceptedAsAFallbackToAuthorizationBearer() throws Exception {
+        // Decision E15: triage-service's FHIR client can only ever send an `apikey` header (Kong
+        // convention), never an arbitrary `Authorization` header -- this is what makes the M5
+        // acceptance case possible without editing triage-service at all.
+        String assertion =
+                signedAssertion(
+                        CLIENT_KEY_PAIR, CLIENT_ID, TOKEN_ENDPOINT, Instant.now().plusSeconds(120));
+        String accessToken =
+                (String)
+                        client.post()
+                                .uri(baseUrl() + "/oauth2/token")
+                                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                                .body(tokenRequestBody(assertion))
+                                .retrieve()
+                                .body(Map.class)
+                                .get("access_token");
+
+        ResponseEntity<String> proxied =
+                client.get()
+                        .uri(baseUrl() + "/fhir/Patient/123")
+                        .header("apikey", accessToken)
+                        .retrieve()
+                        .toEntity(String.class);
+
+        assertThat(proxied.getStatusCode().value()).isEqualTo(200);
+        assertThat(proxied.getBody()).contains("Patient");
     }
 
     @Test
