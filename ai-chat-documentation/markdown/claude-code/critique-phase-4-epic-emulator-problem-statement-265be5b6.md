@@ -530,8 +530,16 @@ Now `epic-emulator/README.md`:
 
 Now adding an extension-handling section and updating the test count summary:
 
+Now the run-locally section and Phase 4 canonical status page:
+
+Good, that section is fine as-is. Now the Phase 4 canonical status:
+
+Now updating `decisions.md`'s preamble to mention M3 and E12:
+
+Final verification pass, then commit and open the PR.
+
 <details>
-<summary>Execution details — 186 tool events</summary>
+<summary>Execution details — 199 tool events</summary>
 
 ### Turn 2 activity
 
@@ -820,6 +828,24 @@ grep -rn "MedicationRequest\|AllergyIntolerance\|resourceType.*Medication" triag
 - **Edit** `/workspaces/fhir-agent/epic-emulator/README.md`
 - **Edit** `/workspaces/fhir-agent/epic-emulator/README.md`
 - **Read** `/workspaces/fhir-agent/epic-emulator/README.md`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/README.md`
+- **Read** `/workspaces/fhir-agent/epic-emulator/README.md`
+- **Read** `/workspaces/fhir-agent/docs/phase4/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/README.md`
+- **Bash** `grep -n "Medication\b" docs/phase4/README.md | grep -v MedicationRequest`
+- **Bash** `grep -n "phase4\|Phase 4\|E1.*E11" docs/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/README.md`
+- **Bash** `grep -n "M1 and M2\|E11 (new)" docs/phase4/decisions.md`
+- **Read** `/workspaces/fhir-agent/docs/phase4/decisions.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/decisions.md`
+- **Bash** `echo "=== stray [[ ]] check ==="
+grep -n '\[\[' epic-emulator/README.md docs/phase4/*.md docs/README.md 2>/dev/null
+echo "(none = clean)"
+echo
+echo "=== full test run ==="
+mvn -f epic-emulator/pom.xml…`
 
 </details>
 
@@ -830,6 +856,6 @@ grep -rn "MedicationRequest\|AllergyIntolerance\|resourceType.*Medication" triag
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 18:45 UTC
+- **Last updated:** 31 July 2026, 18:46 UTC
 - **Turns:** 14
 - **Status:** Complete
