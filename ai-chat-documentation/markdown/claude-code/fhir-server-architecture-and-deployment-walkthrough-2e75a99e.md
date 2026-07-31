@@ -80,7 +80,29 @@ Is Hibernate equivalent to Entity Framework in the MS .NET world?
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Yes, functionally — they occupy the same slot in their respective ecosystems, but with some real differences worth knowing.
+
+## The equivalence
+
+| Concept | Java / Hibernate | .NET / Entity Framework |
+|---|---|---|
+| Spec vs implementation | JPA (spec) → Hibernate (the dominant implementation) | EF Core (Microsoft's own implementation, no separate spec) |
+| Session/unit-of-work object | `EntityManager` / Hibernate `Session` | `DbContext` |
+| Object-to-table mapping | Annotations (`@Entity`, `@Column`) or XML | Fluent API or Data Annotations (`[Key]`, `[Column]`) |
+| Query language | HQL/JPQL, Criteria API | LINQ-to-Entities |
+| Schema evolution | `hbm2ddl.auto` (auto-sync) or Flyway/Liquibase (versioned migrations, separate tools) | EF Migrations — built in, first-class (`dotnet ef migrations add`) |
+| Dialect abstraction | `Dialect` classes (what `HapiFhirH2Dialect`/`HapiFhirPostgresDialect` are in this repo) | Database Providers (`Npgsql.EntityFrameworkCore.PostgreSQL`, `Microsoft.EntityFrameworkCore.SqlServer`) |
+| Connection pooling | Delegated to HikariCP/etc. | Delegated to ADO.NET provider pooling |
+
+Both solve the identical problem: keep application code written against POCOs/POJOs while the ORM translates to portable SQL, tracks entity state/dirty-checking, and manages transactions — and both let you swap the underlying database by swapping a dialect/provider rather than rewriting queries. That swap is precisely the mechanism your `fhir-service` uses between H2 and Neon.
+
+## Where they diverge
+
+- **JPA is a spec with multiple implementations** (Hibernate, EclipseLink, OpenJPA); **EF Core is Microsoft's single official implementation** with no competing spec to target. So "Hibernate" is more like "the Newtonsoft.Json of ORMs" in terms of ecosystem dominance, but it's implementing a standard interface Spring Data JPA programs against — which is why HAPI FHIR's code talks to `EntityManager`/JPA annotations, not Hibernate's proprietary API directly, similar to how EF Core code mostly talks to `DbContext` rather than provider internals.
+- **Migrations discipline differs by convention, not capability.** EF Core teams almost universally use EF Migrations for schema changes. Hibernate *can* do the equivalent, but plenty of Java shops (this repo included — recall `hbm2ddl.auto: update` with Flyway present but disabled) lean on Hibernate's auto-DDL instead, which is roughly equivalent to using EF's `EnsureCreated()`/auto-sync mode instead of migrations — convenient for dev, riskier for production schema control. That's the .NET analogy for the gap I flagged earlier in your Neon setup.
+- **Query style**: LINQ is compile-time-checked C# integrated into the language; JPQL/HQL is a string-based query language (though the JPA Criteria API gives you a type-safe builder alternative, it's more verbose than LINQ).
+
+So: same role, same tradeoffs, different ecosystem conventions around how rigorously migrations get used.
 
 <details>
 <summary>Execution details — 10 tool events</summary>
@@ -112,4 +134,4 @@ Is Hibernate equivalent to Entity Framework in the MS .NET world?
 - **Created:** 22 July 2026, 14:25 UTC
 - **Last updated:** 31 July 2026, 10:45 UTC
 - **Turns:** 3
-- **Status:** Incomplete
+- **Status:** Complete
