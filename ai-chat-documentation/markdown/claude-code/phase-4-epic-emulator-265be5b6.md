@@ -583,8 +583,12 @@ Now upgrading `BearerAuthFilter` to use the Epic `OperationOutcome` shape (quirk
 
 Now writing the comprehensive quirks integration test:
 
+Let me fix a compile issue — one test method calls `MAPPER.readTree` (checked exception) without declaring `throws`:
+
+Let's build and run the tests.
+
 <details>
-<summary>Execution details — 229 tool events</summary>
+<summary>Execution details — 233 tool events</summary>
 
 ### Turn 2 activity
 
@@ -932,6 +936,10 @@ mkdir -p epic-emulator/src/main/java/com/healthcare/epic/quirks`
 - **Read** `/workspaces/fhir-agent/epic-emulator/src/test/java/com/healthcare/epic/ExtensionBackfillIntegrationTest.java`
 - **Edit** `/workspaces/fhir-agent/epic-emulator/src/test/java/com/healthcare/epic/ExtensionBackfillIntegrationTest.java`
 - **TodoWrite** `{"todos": [{"content": "Write EpicOperationOutcome helper (quirk C shape)", "status": "completed", "activeForm": "Writing EpicOperationOutcome helper"}, {"content": "Write RequiredSearchParameterInter…`
+- **Write** `/workspaces/fhir-agent/epic-emulator/src/test/java/com/healthcare/epic/QuirksIntegrationTest.java`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/src/test/java/com/healthcare/epic/QuirksIntegrationTest.java`
+- **TodoWrite** `{"todos": [{"content": "Write EpicOperationOutcome helper (quirk C shape)", "status": "completed", "activeForm": "Writing EpicOperationOutcome helper"}, {"content": "Write RequiredSearchParameterInter…`
+- **Bash** `mvn -f epic-emulator/pom.xml test 2>&1 | tail -200`
 
 </details>
 
@@ -942,6 +950,6 @@ mkdir -p epic-emulator/src/main/java/com/healthcare/epic/quirks`
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 18:56 UTC
+- **Last updated:** 31 July 2026, 18:57 UTC
 - **Turns:** 15
 - **Status:** Complete
