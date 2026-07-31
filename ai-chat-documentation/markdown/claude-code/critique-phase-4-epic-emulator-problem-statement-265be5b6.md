@@ -359,8 +359,31 @@ Is the documentation PR ready for review and merge by me?
 
 Let me actually verify this before answering — checking cross-reference links, header anchors, and whether any CI runs on doc-only changes, rather than just assuming it's clean.
 
+Good catch needed here — found a real defect: I left my own memory-linking syntax (`[[secret-values-never-print]]`) in the checked-in design doc twice. That's not a valid repo link; it'll render as literal double brackets on GitHub. Let me check context and fix it.
+
+I'll replace both with plain prose — no fake link, since this isn't a real in-repo document.
+
+Now checking whether this same defect exists elsewhere in the repo (pre-existing, out of scope for this PR, but worth telling you about), plus checking CI status on the PR.
+
+CI shows one failing job — `phase3 (python)` — even though this PR only touches markdown. Let me check whether that's a real regression from this PR or a pre-existing failure on `main`, since docs-only changes shouldn't be able to break Python tests.
+
+That failure (`AttributeError: 'Tool' object has no attribute 'inputSchema'`) is in `provider-search-agent`/`provider-mcp-server` — completely unrelated to this PR's markdown-only changes. Almost certainly an upstream `mcp` SDK dependency drift (renamed `inputSchema`→`input_schema`). Let me confirm it's pre-existing on `main` and not something this branch caused.
+
+Confirmed and pushed the fix. Here's the honest answer:
+
+## Yes, with one thing I just found and fixed, and one CI failure that's not yours to fix here.
+
+**What I checked:**
+- **Diff scope:** confirmed via `git diff main --stat` — this PR touches exactly 4 new files under `docs/phase4/`, nothing else. No code, no config.
+- **Internal links:** verified every cross-reference anchor (`prd.md#9-...`, `design.md#6-...`, etc.) against GitHub's actual heading-slug rules — all resolve correctly to real headers.
+- **Found and fixed a real defect:** two spots in `design.md` had leaked `[[secret-values-never-print]]` — that's my own memory-file cross-linking syntax, not valid markdown. It would have rendered as literal broken brackets on GitHub. Fixed just now (commit pushed below) — replaced with plain prose.
+- **Worth knowing, not yours to fix here:** that same `[[...]]` pattern already exists in three *already-merged* files — `docs/phase3/prd.md:127`, `docs/developer-guide.md:317,333`, `provider-mcp-server/README.md:26`. Looks like a prior session made the same mistake and it slipped through review. Separate cleanup, not blocking this PR.
+- **CI:** `phase3 (python)` is failing on this PR — 9 tests in `provider-mcp-server`/`provider-search-agent` erroring with `AttributeError: 'Tool' object has no attribute 'inputSchema'`. I confirmed this is **not caused by this PR**: the diff has zero code changes, and `main`'s last run (2026-07-18, merge of #47) passed clean. This looks like the installed `mcp` SDK picked up a newer version between then and now that renamed `Tool.inputSchema` → `input_schema`, breaking Phase 3 code unrelated to anything here. All other jobs (gitleaks, phase1, phase2, phase3 terraform-validate ×4) pass.
+
+**Bottom line:** the PR itself (docs-only, `#48`) is ready for your review and merge — the failing CI job is a pre-existing environment/dependency issue on `main`'s Phase 3 code, not something this PR introduces or is responsible for fixing. Want me to also open a quick separate issue/PR for that `mcp` SDK `inputSchema` breakage, or leave that for you to triage separately?
+
 <details>
-<summary>Execution details — 32 tool events</summary>
+<summary>Execution details — 41 tool events</summary>
 
 ### Turn 2 activity
 
@@ -429,6 +452,23 @@ grep -n "^#" docs/phase4/prd.md docs/phase4/design.md docs/phase4/decisions.md d
 echo
 echo "=== internal links used (same-file and cross-file…`
 - **Bash** `grep -n '\[\[' docs/phase4/*.md`
+- **Read** `/workspaces/fhir-agent/docs/phase4/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase4/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/design.md`
+- **Bash** `echo "=== other [[...]] occurrences in repo (outside phase4) ==="
+grep -rn '\[\[' --include="*.md" . 2>/dev/null | grep -v "/.git/" | grep -v "docs/phase4/"
+echo
+echo "=== PR checks status ==="
+gh pr…`
+- **Bash** `gh run view 30653892131 --job 91233441899 --log-failed 2>&1 | tail -60`
+- **Bash** `gh run list --branch main --workflow tests.yml --limit 5 2>&1`
+- **Bash** `git diff main --stat`
+- **Bash** `git add docs/phase4/design.md && git commit -m "$(cat <<'EOF'
+docs(phase4): fix stray memory-link syntax in design.md
+
+[[secret-values-never-print]] was my own memory cross-linking
+syntax, not valid m…`
 
 </details>
 
@@ -439,6 +479,6 @@ echo "=== internal links used (same-file and cross-file…`
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 18:09 UTC
+- **Last updated:** 31 July 2026, 18:10 UTC
 - **Turns:** 11
 - **Status:** Complete
