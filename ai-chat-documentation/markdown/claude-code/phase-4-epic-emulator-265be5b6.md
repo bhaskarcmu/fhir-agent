@@ -589,8 +589,10 @@ Let's build and run the tests.
 
 Let me isolate whether this is deterministic or a flake, by running just this test class alone:
 
+The failure is deterministic, not flaky. Let me get the full exception chain rather than just the tail:
+
 <details>
-<summary>Execution details — 234 tool events</summary>
+<summary>Execution details — 236 tool events</summary>
 
 ### Turn 2 activity
 
@@ -943,6 +945,8 @@ mkdir -p epic-emulator/src/main/java/com/healthcare/epic/quirks`
 - **TodoWrite** `{"todos": [{"content": "Write EpicOperationOutcome helper (quirk C shape)", "status": "completed", "activeForm": "Writing EpicOperationOutcome helper"}, {"content": "Write RequiredSearchParameterInter…`
 - **Bash** `mvn -f epic-emulator/pom.xml test 2>&1 | tail -200`
 - **Bash** `mvn -f epic-emulator/pom.xml test -Dtest=QuirksIntegrationTest#nextLink_isReplacedWithAnOpaqueToken_andResolvesOnFollowUp 2>&1 | tail -60`
+- **Bash** `mvn -f epic-emulator/pom.xml test -Dtest=QuirksIntegrationTest#nextLink_isReplacedWithAnOpaqueToken_andResolvesOnFollowUp 2>&1 | grep -n "ERROR.*com.healthcare\|Exception\|^2026.*ERROR" | head -40`
+- **Bash** `mvn -f epic-emulator/pom.xml test -Dtest=QuirksIntegrationTest#nextLink_isReplacedWithAnOpaqueToken_andResolvesOnFollowUp 2>&1 | sed -n '57,90p'`
 
 </details>
 
@@ -953,6 +957,6 @@ mkdir -p epic-emulator/src/main/java/com/healthcare/epic/quirks`
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 18:59 UTC
+- **Last updated:** 31 July 2026, 19:00 UTC
 - **Turns:** 15
 - **Status:** Complete
