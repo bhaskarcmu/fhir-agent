@@ -469,8 +469,18 @@ Now let's build and test:
 
 Expected: M1's own proxy test now fails because everything is gated behind auth — correct new behavior, but it breaks the old test's assumption of no auth. Fixing `FhirProxyIntegrationTest` to obtain a token first, same as the real flow now requires.
 
+All tests pass (9/9 — 3 M1 + 6 M2). Now updating docs to reflect what was actually built and what I genuinely verified about Epic's documentation (one real, partial attempt — not fabricated).
+
+Now updating the milestone plan (§12) to mark M2 done, and §14 to add the RS384-only scoping decision:
+
+Now adding the RS384-only decision to §14:
+
+Now updating `decisions.md` — E10's status with the real finding, plus a new E11 for the RS384-only scoping:
+
+Now updating `epic-emulator/README.md` for M2:
+
 <details>
-<summary>Execution details — 128 tool events</summary>
+<summary>Execution details — 140 tool events</summary>
 
 ### Turn 2 activity
 
@@ -684,6 +694,18 @@ grep -rn "jjwt\|nimbus\|java-jwt" fhir-service/pom.xml 2>/dev/null`
 - **Read** `/workspaces/fhir-agent/epic-emulator/src/test/java/com/healthcare/epic/FhirProxyIntegrationTest.java`
 - **Write** `/workspaces/fhir-agent/epic-emulator/src/test/java/com/healthcare/epic/FhirProxyIntegrationTest.java`
 - **Bash** `mvn -f epic-emulator/pom.xml test 2>&1 | grep -E "Tests run|ERROR|BUILD"`
+- **TodoWrite** `{"todos": [{"content": "Add nimbus-jose-jwt dependency to epic-emulator pom.xml", "status": "completed", "activeForm": "Adding nimbus-jose-jwt dependency"}, {"content": "Write auth config properties +…`
+- **Read** `/workspaces/fhir-agent/docs/phase4/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase4/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase4/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase4/decisions.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/decisions.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/decisions.md`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/README.md`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/README.md`
 
 </details>
 
@@ -694,6 +716,6 @@ grep -rn "jjwt\|nimbus\|java-jwt" fhir-service/pom.xml 2>/dev/null`
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 18:34 UTC
+- **Last updated:** 31 July 2026, 18:36 UTC
 - **Turns:** 13
 - **Status:** Complete
