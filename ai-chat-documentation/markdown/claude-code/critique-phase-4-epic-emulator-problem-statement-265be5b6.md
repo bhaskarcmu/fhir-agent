@@ -538,8 +538,23 @@ Now updating `decisions.md`'s preamble to mention M3 and E12:
 
 Final verification pass, then commit and open the PR.
 
+Clean. Committing, pushing, and opening the PR.
+
+## M3 done — PR #51
+
+**Branch cleanup:** `feature/phase4-m2-auth-emulation` deleted (local + remote).
+
+**M3 implementation** (branch `feature/phase4-m3-extension-handling`, PR: https://github.com/bhaskarcmu/fhir-agent/pull/51):
+
+- New `extensions/ExtensionBackfillInterceptor`: backfills a placeholder Epic-style extension on `GET` responses for `MedicationRequest`/`AllergyIntolerance` (bare resource or inside a search `Bundle`) when missing. Writes are untouched by design.
+- **15/15 tests pass** (6 new) — bare-resource backfill for both types, idempotency (no duplication), an out-of-scope resource type returned byte-for-byte, a search `Bundle` backfilling only its in-scope entries, and a write round-tripping unchanged.
+- **Correction found while scoping this:** checked what `triage-service`/`client/clinical` actually query rather than assuming — it's `MedicationRequest`, not the generic "Medication" the PRD named. Pinned the concrete resource type in `design.md` §5 and recorded it as decision E12, same pattern already used for the quirks table.
+- Extension URLs are clearly placeholder (`epic-emulator.local` domain), not presented as real Epic data — consistent with the honesty stance from M2's auth-flow work.
+
+**Known limitation:** only the automated suite ran — no manual run against real seeded Synthea data through a live `fhir-service`. Ready for M4 (the three quirks) whenever you want it.
+
 <details>
-<summary>Execution details — 199 tool events</summary>
+<summary>Execution details — 205 tool events</summary>
 
 ### Turn 2 activity
 
@@ -846,6 +861,19 @@ echo "(none = clean)"
 echo
 echo "=== full test run ==="
 mvn -f epic-emulator/pom.xml…`
+- **TodoWrite** `{"todos": [{"content": "Correct PRD/design docs: reference workflow reads MedicationRequest, not Medication", "status": "completed", "activeForm": "Correcting resource-type scoping in docs"}, {"conten…`
+- **Bash** `git add -A -- epic-emulator docs/README.md docs/phase4
+git status --porcelain`
+- **Bash** `git commit -m "$(cat <<'EOF'
+feat(phase4 M3): extension handling -- MedicationRequest/AllergyIntolerance backfill
+
+New extensions/ package: ExtensionBackfillInterceptor backfills a
+placeholder Epic-st…`
+- **Bash** `git push -u origin feature/phase4-m3-extension-handling`
+- **Bash** `gh pr create --title "feat(phase4 M3): extension handling -- MedicationRequest/AllergyIntolerance backfill" --body "$(cat <<'EOF'
+## Summary
+- New `extensions/ExtensionBackfillInterceptor`: on a proxi…`
+- **TodoWrite** `{"todos": [{"content": "Correct PRD/design docs: reference workflow reads MedicationRequest, not Medication", "status": "completed", "activeForm": "Correcting resource-type scoping in docs"}, {"conten…`
 
 </details>
 
@@ -856,6 +884,6 @@ mvn -f epic-emulator/pom.xml…`
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 18:46 UTC
+- **Last updated:** 31 July 2026, 18:47 UTC
 - **Turns:** 14
 - **Status:** Complete
