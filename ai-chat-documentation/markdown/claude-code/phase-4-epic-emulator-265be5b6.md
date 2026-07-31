@@ -726,8 +726,33 @@ Now adding a link from the PRD's forward note to the coupling note:
 
 Let me verify the `seed_demo.py` change didn't break anything (it's covered by `pytest.ini`'s `data/scripts` testpath):
 
+Let me check whether `.gitignore` would silently exclude the fixture private key (some repos blanket-ignore `*.pem`):
+
+This will likely trip `gitleaks` (this repo's CI secret-scanner) since it's a real PEM private key block, even though it's a throwaway test fixture with no access to anything real. Let me check the existing gitleaks config for the proper way to allowlist it.
+
+Adding a proper gitleaks allowlist (standard practice for legitimate test fixtures) rather than trying to avoid or obscure the file, plus a clear README explaining what it is:
+
+Let's verify this actually works by running gitleaks locally if available:
+
+Can't verify gitleaks locally, but the config format is standard and documented — I'll check the actual PR's CI status after pushing, same as previous milestones. Committing now.
+
+Let me check CI status, especially the `gitleaks` job I couldn't pre-verify locally:
+
+## M5 done — PR #53, Phase 4 complete
+
+**Branch cleanup:** `feature/phase4-m4-quirks` deleted (local + remote).
+
+**M5 implementation** (branch `feature/phase4-m5-acceptance-case`, PR: https://github.com/bhaskarcmu/fhir-agent/pull/53) — the final milestone:
+
+- **Verified the acceptance case live**, not just written: built and started real `fhir-service` + `epic-emulator` processes, seeded the drug-allergy-conflict scenario, and ran `triage-service` twice (direct vs. via `epic-emulator`) — identical `RiskAssessment` outcomes both times, for both the HIGH-risk and LOW-risk control patients.
+- **Found and resolved a genuine, unforeseen gap**: M2's auth gate and the "zero code changes to `triage-service`" constraint were in tension, since `triage-service`'s FHIR client can only send an `apikey` header, never `Authorization`. Fixed by having the auth gate accept `apikey` as a fallback — reusing this repo's own existing Kong-gateway convention rather than touching `triage-service`.
+- New permanent, rerunnable test (`e2e/test_epic_emulator_acceptance.py`) and the PRD's G6 coupling note (`docs/phase4/coupling-note.md`), both written from what actually happened, not predicted in advance.
+- Added a `.gitleaks.toml` allowlist for the e2e fixture's test-only keypair — checking CI now since I couldn't verify gitleaks locally.
+
+I'll check CI shortly and report back.
+
 <details>
-<summary>Execution details — 370 tool events</summary>
+<summary>Execution details — 384 tool events</summary>
 
 ### Turn 2 activity
 
@@ -1281,6 +1306,32 @@ grep -rn '\[\[' epic-emulator/README.md docs/phase4/*.md docs/README.md e2e/test
 echo "(none = clean)"
 echo
 echo "=== full Java…`
+- **Bash** `git check-ignore -v e2e/fixtures/epic_emulator_test_client_private_key.pem e2e/fixtures/epic_emulator_test_client_public_jwk.json 2>&1
+echo "(no output = not ignored, will be tracked normally)"
+ls -la…`
+- **Bash** `find . -iname ".gitleaks*" -not -path "*/.git/*" 2>/dev/null
+cat .gitleaks.toml 2>/dev/null || cat .github/gitleaks.toml 2>/dev/null || echo "no gitleaks config file found"`
+- **Bash** `grep -n -A15 "gitleaks" .github/workflows/tests.yml 2>/dev/null`
+- **Bash** `grep -rln "gitleaks" .github/ 2>/dev/null
+find .github -name "*.yml" -o -name "*.yaml" 2>/dev/null`
+- **Read** `/workspaces/fhir-agent/.github/workflows/secret-scan.yml`
+- **Write** `/workspaces/fhir-agent/.gitleaks.toml`
+- **Write** `/workspaces/fhir-agent/e2e/fixtures/README.md`
+- **Bash** `which gitleaks 2>&1
+gitleaks version 2>&1`
+- **TodoWrite** `{"todos": [{"content": "Add apikey-header fallback to epic-emulator's auth gate (accepts existing Kong-style header, zero triage-service changes)", "status": "completed", "activeForm": "Adding apikey-…`
+- **Bash** `git add -A -- epic-emulator docs e2e data/scripts/seed_demo.py .gitleaks.toml
+git status --porcelain`
+- **Bash** `git commit -m "$(cat <<'EOF'
+feat(phase4 M5): acceptance case + coupling note -- Phase 4 complete
+
+Re-points the existing prescription-refill-risk-triage scenario at
+epic-emulator instead of fhir-serv…`
+- **Bash** `git push -u origin feature/phase4-m5-acceptance-case`
+- **Bash** `gh pr create --title "feat(phase4 M5): acceptance case + coupling note -- Phase 4 complete" --body "$(cat <<'EOF'
+## Summary
+- **The Phase 4 acceptance case (PRD FR9/G5), verified live** -- not just a…`
+- **ScheduleWakeup** `{"delaySeconds": 90, "prompt": "Check CI status on PR #53 (feature/phase4-m5-acceptance-case), specifically the gitleaks job — verify the .gitleaks.toml allowlist for the e2e test fixture private key…`
 
 </details>
 
@@ -1291,6 +1342,6 @@ echo "=== full Java…`
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 19:37 UTC
+- **Last updated:** 31 July 2026, 19:40 UTC
 - **Turns:** 16
 - **Status:** Complete
