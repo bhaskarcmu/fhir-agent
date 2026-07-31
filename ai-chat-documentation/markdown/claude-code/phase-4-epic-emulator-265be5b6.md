@@ -670,8 +670,10 @@ Let me add a test proving the `apikey` fallback works, then rebuild and verify:
 
 Now let's build and run the full test suite:
 
+A test-ordering bug — `stubCalls` is a shared static counter and my new test also increments it. Let me fix the original test to use a before/after delta like the other tests already do:
+
 <details>
-<summary>Execution details — 299 tool events</summary>
+<summary>Execution details — 303 tool events</summary>
 
 ### Turn 2 activity
 
@@ -1115,6 +1117,10 @@ echo "--- is this our…`
 - **Read** `/workspaces/fhir-agent/epic-emulator/src/test/java/com/healthcare/epic/AuthFlowIntegrationTest.java`
 - **Edit** `/workspaces/fhir-agent/epic-emulator/src/test/java/com/healthcare/epic/AuthFlowIntegrationTest.java`
 - **Bash** `mvn -f epic-emulator/pom.xml test 2>&1 | grep -E "Tests run|ERROR|BUILD"`
+- **Read** `/workspaces/fhir-agent/epic-emulator/src/test/java/com/healthcare/epic/AuthFlowIntegrationTest.java`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/src/test/java/com/healthcare/epic/AuthFlowIntegrationTest.java`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/src/test/java/com/healthcare/epic/AuthFlowIntegrationTest.java`
+- **Bash** `mvn -f epic-emulator/pom.xml test 2>&1 | grep -E "Tests run|ERROR|BUILD"`
 
 </details>
 
@@ -1125,6 +1131,6 @@ echo "--- is this our…`
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 19:26 UTC
+- **Last updated:** 31 July 2026, 19:27 UTC
 - **Turns:** 16
 - **Status:** Complete
