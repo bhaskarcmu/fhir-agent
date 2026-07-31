@@ -112,7 +112,40 @@ I containerized a .NET core monolith application in production in the past. Now 
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+## Terminology check
+
+"FHIR JPA Server" is correct and precise — it's literally what the upstream project calls itself (`hapi-fhir-jpaserver-starter`), and your own [README.md](fhir-service/README.md) titles it "HAPI FHIR JPA R4 Server." **JPA** here specifically means it's the Hibernate/JPA-backed persistence variant of HAPI FHIR (as opposed to, e.g., a Mongo-backed or in-memory-only FHIR server variant HAPI also offers). So "I containerized this FHIR JPA Server" is accurate and idiomatic — no correction needed.
+
+One nuance worth naming: unlike your .NET monolith, this isn't really "an app" in the monolith sense architecturally (it's one bounded service — `fhir-service` — behind a Kong gateway, alongside `triage-service`, `mcp-agent`, etc., per CLAUDE.md's request flow). But the HAPI JPA *codebase itself* is monolithic in the feature-bundling sense — MDM, CQL, Elasticsearch, bulk import/export all compile into the one artifact and are toggled by config flags rather than being separate deployables. So you containerized one microservice, built from a library that behaves like a feature-flagged monolith internally. Worth keeping that distinction straight.
+
+## How the containerization actually works here
+
+**1. Multi-stage build ([Dockerfile](fhir-service/Dockerfile)) — same principle as trimming a .NET image, different mechanics:**
+
+| Stage | .NET equivalent | This project |
+|---|---|---|
+| Build stage | `mcr.microsoft.com/dotnet/sdk` + `dotnet publish` | `eclipse-temurin:21-jdk-jammy` + `./mvnw package` |
+| Runtime stage | `mcr.microsoft.com/dotnet/aspnet` (runtime-only, no SDK) | `eclipse-temurin:21-jre-jammy` (JRE-only, no `javac`/compiler) |
+
+Same goal as your .NET publish split: keep the compiler/build toolchain out of the image you actually ship, shrinking size and attack surface.
+
+**2. Dependency-layer caching** — `COPY mvnw .mvn pom.xml` happens *before* `COPY src/`, then `mvnw dependency:go-offline` runs against just the POM. Docker only re-downloads Maven's dependency tree when `pom.xml` changes; source-only changes reuse that cached layer. This is the direct analogue of `COPY *.csproj . && dotnet restore` before `COPY . .` in a .NET Dockerfile — same trick, different package manager.
+
+**3. The artifact itself is a quirk worth understanding**: the POM sets `packaging: war`, so Maven produces `ROOT.war`, but Spring Boot's Maven plugin repackages it with an embedded Tomcat and a bootstrap loader, making it directly executable via `java -jar app.war` — no external servlet container needed. There's no real .NET equivalent to this WAR duality (a `.war` that runs like a self-contained executable); .NET's closest concept is choosing between framework-dependent (`dotnet MyApp.dll`, needs the runtime present) vs. self-contained (`./MyApp`, runtime bundled in) publish — but that's an orthogonal choice, not a dual-mode artifact like WAR-that-also-self-executes.
+
+**4. Runtime hardening in the final stage:**
+- Non-root user created explicitly (`groupadd --system fhir && useradd --system --gid fhir fhir`), same pattern as `USER app` in a hardened .NET image.
+- JVM container-awareness flags baked into `ENTRYPOINT`: `-XX:+UseContainerSupport` (respect cgroup limits), `-XX:MaxRAMPercentage=75.0` (cap heap at 75% of the container memory limit), `-XX:+ExitOnOutOfMemoryError` (crash fast rather than degrade). The .NET/CLR analogue is `DOTNET_gcServer` / `DOTNET_GCHeapHardLimitPercent` — same underlying problem (make the managed runtime respect the cgroup memory ceiling instead of reading host-level memory), different runtime's knobs.
+- A `HEALTHCHECK` instruction hitting `/actuator/health/readiness`, with `start-period=180s` — this was tuned empirically (comment in the file notes ~3 minutes against a remote Neon DB for HAPI to run schema migration + load FHIR structure definitions on first boot). That's a much longer cold-start tolerance than a typical .NET API needs; JVM class loading + Hibernate boot-time schema work + FHIR's own definition-loading step is the driver.
+
+**5. Kubernetes layer ([k8s/deployment.yaml](fhir-service/k8s/deployment.yaml)) — mechanically similar to whatever you used for the .NET monolith, with FHIR-specific tuning baked in:**
+- `livenessProbe`/`readinessProbe` both point at Spring Boot Actuator's health-group endpoints (`/actuator/health/liveness`, `/actuator/health/readiness`) with `initialDelaySeconds: 180` matching the Docker healthcheck's cold-start tolerance.
+- Resource `requests`/`limits` (1Gi/2Gi memory, 250m/1000m CPU) aren't arbitrary — the comments note the pod was actually `OOMKilled` at 1Gi during a real GKE deployment, so 2Gi is a validated floor, not a guess.
+- `securityContext`: `runAsNonRoot`, numeric UID 999 (matching the Dockerfile's `useradd --system`), all Linux capabilities dropped, `readOnlyRootFilesystem: true` — with a `volumeMounts`/`emptyDir` for `/tmp` specifically because Tomcat needs to write temp files during WAR deployment and a read-only root FS would otherwise crash startup.
+- Config split: non-secret values (Spring profile, driver class, dialect) go through a `ConfigMap`; the Neon JDBC URL (which embeds the password) is injected only via a `Secret`. That's the same secret/config separation pattern you'd apply to a .NET app's connection string in K8s — nothing FHIR-specific there.
+- `terminationGracePeriodSeconds: 60` — gives in-flight FHIR requests time to finish before SIGKILL, same concern as graceful shutdown handling in ASP.NET Core (`IHostApplicationLifetime` draining connections).
+
+**Net comparison to your .NET experience**: the shape is identical — multi-stage build, minimal runtime base image, non-root user, health probes, resource limits, secret/config separation. The differences are all runtime-specific tuning: JVM heap percentage flags instead of GC heap limits, a much longer cold-start window driven by Hibernate schema migration + FHIR definition loading, and the WAR-as-self-executable-artifact quirk that has no real .NET parallel.
 
 <details>
 <summary>Execution details — 10 tool events</summary>
@@ -144,4 +177,4 @@ I containerized a .NET core monolith application in production in the past. Now 
 - **Created:** 22 July 2026, 14:25 UTC
 - **Last updated:** 31 July 2026, 10:49 UTC
 - **Turns:** 4
-- **Status:** Incomplete
+- **Status:** Complete
