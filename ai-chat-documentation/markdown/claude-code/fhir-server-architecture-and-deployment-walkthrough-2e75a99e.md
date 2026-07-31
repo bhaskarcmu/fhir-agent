@@ -359,7 +359,32 @@ In Visual Studio, would I start first bu creating a seperate "solution" for what
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Your instinct is right, and the terminology is close — a few precise corrections, then the Java-world mapping.
+
+## What you got right, and the exact terms
+
+**Yes, "solution" is the correct term** — a Visual Studio **Solution** (`.sln`) is a container that groups multiple **Projects** (`.csproj`, each compiling to its own `.dll`/`.exe`) together for the IDE and build tooling. In a monolith, you typically have *one* solution holding *many* projects (e.g., `MyApp.Web`, `MyApp.Orders`, `MyApp.Users`, `MyApp.DataAccess`), wired together by **Project References** — a project directly referencing another project's source within the same solution.
+
+**And yes, decoupling is required, not optional** — here's the more precise reason why. A Project Reference is a **compile-time dependency**: if `Orders` has a Project Reference to `Shared`, building `Orders` transitively pulls in and rebuilds `Shared` too. That's the literal mechanism behind the "if one module has to be built, the others also have to be built" symptom you named a few turns back. Moving a project into its own new solution doesn't, by itself, fix this — if that project still needs types or logic from the old monolith's other projects, it still has a source-level dependency problem. You have to actively resolve it, usually one of three ways:
+1. **Duplicate the small bit of shared code** (accepted, common practice in microservices — cheaper than coupling two teams' build lifecycles).
+2. **Publish the genuinely shared piece as a versioned package** (a NuGet package from an internal feed) that both sides reference by version number instead of by source — this converts a compile-time coupling into a much looser, independently-versioned one.
+3. **Eliminate the dependency entirely** by replacing shared in-process code with a network call (REST/gRPC) to the other service — the actual microservice-native answer, since it means the two services no longer share a build at all, only a runtime contract.
+
+So the accurate sequence is: **strip or convert the Project References first (or during the move), then relocate the code into its own Solution with its own build pipeline.** The new-solution step is what makes it independently *buildable*; the reference-decoupling step is what makes that solution *actually able to build without the other one*.
+
+## Java / Spring Boot / Maven world equivalents
+
+| .NET / Visual Studio | Java / Maven or Gradle |
+|---|---|
+| **Solution** (`.sln`) — groups multiple projects for the IDE/build | **Multi-module Maven project** (a parent `pom.xml` listing `<modules>`) or a **Gradle multi-project build** (`settings.gradle` with `include`) |
+| **Project** (`.csproj`) — one buildable unit, compiles to a `.dll` | **Module** — its own `pom.xml`, compiles to its own `.jar`/`.war` |
+| **Project Reference** (compile-time, in-solution dependency) | **Inter-module dependency** — module A's `pom.xml` lists module B as a `<dependency>`; Maven's "reactor" build order compiles B before A. Same coupling effect. |
+| **NuGet package** (versioned, decoupled dependency from a feed) | **Published artifact from a Maven repository** (internal Nexus/Artifactory, or Maven Central) — `<dependency>` pinned to a fixed version, no source coupling |
+| **Separate solution, own repo, own CI/CD** | **Separate root Maven/Gradle project, own repo, own CI/CD pipeline** |
+
+You've actually got a live, concrete example of the *end state* sitting in this very repo: `fhir-service/`, `triage-service/`, `mcp-agent/`, `client/clinical/`, and `client/platform/` are each their own independently buildable unit — no shared multi-module umbrella build ties them together at compile time. `fhir-service` has its own standalone `pom.xml` and its own Maven build (`./mvnw clean verify`); the Python packages are each `pip install -e`'d separately (per [CLAUDE.md](CLAUDE.md)'s build section). If one of them changes, none of the others need to be rebuilt — that's the fully decoupled outcome your Strangler Fig extraction was working toward, just realized in a polyglot repo instead of a single multi-module build.
+
+One nuance worth flagging: the upstream HAPI FHIR project (whose parent POM `fhir-service` inherits from — `ca.uhn.hapi.fhir:hapi-fhir` version `8.8.0`) *is* itself a large multi-module Maven "solution" internally (dozens of `hapi-fhir-*` modules under one parent) — so the multi-module pattern absolutely exists and is common in Java too. Your repo just chose the more decoupled, separate-builds approach at the service boundary, which is the more microservice-appropriate choice.
 
 <details>
 <summary>Execution details — 10 tool events</summary>
@@ -391,4 +416,4 @@ In Visual Studio, would I start first bu creating a seperate "solution" for what
 - **Created:** 22 July 2026, 14:25 UTC
 - **Last updated:** 31 July 2026, 11:44 UTC
 - **Turns:** 11
-- **Status:** Incomplete
+- **Status:** Complete
