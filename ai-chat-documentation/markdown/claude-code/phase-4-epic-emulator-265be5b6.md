@@ -783,8 +783,16 @@ Let me rebuild to be safe (ensure it reflects the latest merged code, not a stal
 
 Now starting `epic-emulator` with the same test client, then seeding a patient with 25 allergy records (penicillin allergy placed at position #22, beyond the pagination cap):
 
+Now confirming the real end-to-end clinical consequence — does `triage-service` actually miss the drug-allergy conflict when routed through `epic-emulator`?
+
+That's the single most important finding — a severe, reproducible false-negative safety failure. Let me quickly check the remaining items (quirk B failure handling, extension leakage) before tearing down, then clean up.
+
+Good — quirk B fails loud (explicit 502), unlike the pagination issue which fails silently. Let me quickly check extension leakage into clinician-facing text, then move on.
+
+Confirmed — the standard test suite's patient only has 1 allergy record (well within the cap), which is exactly why this bug was never caught before. Now tearing down the extra processes from this investigation.
+
 <details>
-<summary>Execution details — 397 tool events</summary>
+<summary>Execution details — 409 tool events</summary>
 
 ### Turn 2 activity
 
@@ -1393,6 +1401,36 @@ HEADERS = {"Content-Type": "application/fhir+json"}
 
 def post(resource_type, body):
     r = httpx.post(f"{FHIR_BASE}/{resource_…`
+- **Bash** `PID=$(cat /tmp/claude-1000/-workspaces-fhir-agent/265be5b6-c550-4af6-bed7-7be2bca6b9c4/scratchpad/pagination_probe_patient.txt)
+echo "patient id: $PID"
+echo
+echo "=== DIRECT to fhir-service: total cou…`
+- **Bash** `TOKEN=$(python3 - <<'EOF'
+import time, uuid, jwt as pyjwt, httpx
+from cryptography.hazmat.primitives import serialization
+with open("e2e/fixtures/epic_emulator_test_client_private_key.pem", "rb") as f…`
+- **Bash** `PID=$(cat /tmp/claude-1000/-workspaces-fhir-agent/265be5b6-c550-4af6-bed7-7be2bca6b9c4/scratchpad/pagination_probe_patient.txt)
+echo "=== DIRECT triage (should be HIGH -- penicillin conflict) ==="
+cur…`
+- **Bash** `sed -n '184,210p' client/clinical/src/fhir_clinical_client/fhir_client.py`
+- **Bash** `grep -n "FHIRClientError\|except\|try:" triage-service/src/triage/main.py | head -30`
+- **Bash** `sed -n '145,180p' triage-service/src/triage/main.py`
+- **Bash** `grep -n "_parse_medication\|_parse_allergy" client/clinical/src/fhir_clinical_client/fhir_client.py | head -5
+sed -n '495,530p' client/clinical/src/fhir_clinical_client/fhir_client.py`
+- **Bash** `python3 -m pytest e2e/test_epic_emulator_acceptance.py -v 2>&1 | tail -15`
+- **Bash** `kill 3354401 3359335 3359336 2>/dev/null
+sleep 2
+ps aux | grep -E "epic-emulator|uvicorn" | grep -v grep
+echo "(only fhir-service on 8080 should remain, pre-existing)"`
+- **TodoWrite** `{"todos": [{"content": "Check whether client/clinical's FHIR client follows pagination Link headers (safety-critical: could the _count cap silently drop meds/allergies?)", "status": "completed", "acti…`
+- **Bash** `echo "=== epic-emulator size ==="
+find epic-emulator/src -name "*.java" | xargs wc -l | tail -1
+find epic-emulator/src/main -name "*.java" | wc -l
+echo "main files"
+find epic-emulator/src/test -name "…`
+- **Bash** `grep -rn "for.*range\|22\|21\|>.*20\|multiple.*allerg\|multiple.*medication" epic-emulator/src/test/java/com/healthcare/epic/QuirksIntegrationTest.java | head -10
+echo "---"
+grep -c "entry\[" epic-emu…`
 
 </details>
 
@@ -1403,6 +1441,6 @@ def post(resource_type, body):
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 19:45 UTC
+- **Last updated:** 31 July 2026, 19:48 UTC
 - **Turns:** 17
 - **Status:** Complete
