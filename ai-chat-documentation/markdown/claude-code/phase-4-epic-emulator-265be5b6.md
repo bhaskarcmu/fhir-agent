@@ -656,8 +656,10 @@ PR #52 merged. Delete merged branches and proceed to M5
 
 Confirmed. Cleaning up branches before starting M5.
 
+Before implementing M5, let me investigate a real tension: M2 now gates every proxied call behind a bearer token, but the acceptance test needs to re-point `triage-service` at `epic-emulator` without modifying `triage-service`'s code. Let me check whether that's actually reconcilable.
+
 <details>
-<summary>Execution details — 286 tool events</summary>
+<summary>Execution details — 287 tool events</summary>
 
 ### Turn 2 activity
 
@@ -1077,6 +1079,7 @@ New quirks/ package implementing all three named quirks (PRD FR4-FR6):
 - **Bash** `gh pr view 52 --json state,mergedAt 2>&1`
 - **Bash** `git checkout main && git pull origin main && git branch -d feature/phase4-m4-quirks`
 - **Bash** `git push origin --delete feature/phase4-m4-quirks`
+- **Agent** `Investigate triage-service FHIR client config and auth support`
 
 </details>
 
