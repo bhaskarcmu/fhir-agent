@@ -10,10 +10,12 @@ Start with what you're trying to do.
 | **Operate the gateway** (local, cloud, or the migration) | [`gateway-runbook.md`](./gateway-runbook.md) | 10 min |
 | **Know why Phase 2 is built this way** | [`phase2/plan.md`](./phase2/plan.md) | 30 min |
 | **Know why Phase 3 (Provider Search) is built this way** | [`phase3/design.md`](./phase3/design.md) | 30 min |
+| **Know why Phase 4 (Epic Emulator) is built this way** | [`phase4/design.md`](./phase4/design.md) | 15 min |
 | **Audit Phase 2 decisions** (status + supersession) | [`phase2/decisions.md`](./phase2/decisions.md) | 5 min |
 | **Audit Phase 3 decisions** (status + supersession) | [`phase3/decisions.md`](./phase3/decisions.md) | 5 min |
+| **Audit Phase 4 decisions** (status + supersession) | [`phase4/decisions.md`](./phase4/decisions.md) | 5 min |
 | **Know exactly what was agreed** (normative) | [`phase2/requirements.md`](./phase2/requirements.md) | reference |
-| **Know what to build next** | [`phase2/plan.md` §16](./phase2/plan.md#16-future-work) (Phase 2) / [`phase3/README.md`](./phase3/README.md) (Phase 3b) | 5 min |
+| **Know what to build next** | [`phase2/plan.md` §16](./phase2/plan.md#16-future-work) (Phase 2) / [`phase3/README.md`](./phase3/README.md) (Phase 3b) / [`phase4/README.md`](./phase4/README.md) (Phase 4, M2 next) | 5 min |
 
 ## The guides
 
@@ -64,6 +66,17 @@ cloud position, the migration and its rollback, and troubleshooting.
   (§13) — updated with real numbers at every milestone, not just at the end.
 - **[`decisions.md`](./phase3/decisions.md)** — the ADR-style index (P1–P21 and counting),
   same status-and-supersession convention as Phase 2's `decisions.md`.
+
+**[`phase4/`](./phase4/README.md)** — Epic Emulator. M1 (pass-through proxy) built; M2–M5 not
+started. Builds out a module (`epic-emulator/`) that was actually reserved as an empty placeholder
+back in Phase 2 (`phase2/plan.md` §16, deviation D2), alongside a sibling `athena-emulator/`
+placeholder that remains untouched.
+
+- **[`README.md`](./phase4/README.md)** — the canonical status statement for Phase 4.
+- **[`prd.md`](./phase4/prd.md)** — problem, goals/non-goals, requirements, success metrics.
+- **[`design.md`](./phase4/design.md)** — architecture (proxy in front of `fhir-service`),
+  per-capability-area deep dives, the three quirks' concrete choices, and the milestone plan (§12).
+- **[`decisions.md`](./phase4/decisions.md)** — the ADR-style index (E1–E10), same convention.
 
 ## Conventions for this folder
 

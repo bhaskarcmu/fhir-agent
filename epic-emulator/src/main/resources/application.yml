@@ -1,0 +1,22 @@
+server:
+  port: 8092   # next available port after claims-service (8090) and rxclaim-emulator (8091)
+
+spring:
+  application:
+    name: epic-emulator
+
+fhir:
+  # Root of fhir-service — NOT including /fhir. The incoming request's own path (e.g.
+  # /fhir/Patient) is forwarded verbatim, so pointing a consumer's FHIR base URL at
+  # http://localhost:8092/fhir just works with no path rewriting (PRD UC1).
+  base-url: http://localhost:8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
