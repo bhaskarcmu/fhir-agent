@@ -508,10 +508,18 @@ PR #50 merged. Delete the merged branches and proceed to M3
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Confirmed merged, and I found something worth correcting: the reference workflow actually reads `MedicationRequest` (not `Medication`) + `AllergyIntolerance`. I'll scope M3 to match reality rather than the PRD's more generic wording. First, branch cleanup.
+
+Now starting M3. Let me set up tracking and create the branch.
+
+Rather than rewriting the PRD's many high-level "Medication" references, I'll follow the same pattern used for quirks: PRD stays general, `design.md` pins the concrete resource type — with an honest correction note, since the actual reference workflow reads `MedicationRequest`, not `Medication`.
+
+Now adding decision E12 to `decisions.md`:
+
+Now wiring this into `FhirProxyController`:
 
 <details>
-<summary>Execution details — 153 tool events</summary>
+<summary>Execution details — 175 tool events</summary>
 
 ### Turn 2 activity
 
@@ -763,6 +771,33 @@ New auth/ package: JWT client-assertion validation
 - New `auth/` package in `epic-emulator`: a token endpoint (`POST /oauth2/token`)…`
 - **TodoWrite** `{"todos": [{"content": "Add nimbus-jose-jwt dependency to epic-emulator pom.xml", "status": "completed", "activeForm": "Adding nimbus-jose-jwt dependency"}, {"content": "Write auth config properties +…`
 
+### Turn 14 activity
+
+- **Bash** `gh pr view 50 --json state,mergedAt 2>&1
+echo "---"
+grep -rn "MedicationRequest\|AllergyIntolerance\|resourceType.*Medication" triage-service/src/triage/*.py client/clinical/src/**/*.py 2>/dev/null |…`
+- **Bash** `git checkout main && git pull origin main && git branch -d feature/phase4-m2-auth-emulation`
+- **Bash** `git push origin --delete feature/phase4-m2-auth-emulation`
+- **TodoWrite** `{"todos": [{"content": "Correct PRD/design docs: reference workflow reads MedicationRequest, not Medication", "status": "in_progress", "activeForm": "Correcting resource-type scoping in docs"}, {"cont…`
+- **Bash** `git checkout -b feature/phase4-m3-extension-handling`
+- **Bash** `grep -n "Medication\b" docs/phase4/prd.md docs/phase4/design.md docs/phase4/decisions.md docs/phase4/README.md | grep -v "MedicationRequest"`
+- **Read** `/workspaces/fhir-agent/docs/phase4/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase4/decisions.md`
+- **Read** `/workspaces/fhir-agent/docs/phase4/decisions.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/decisions.md`
+- **Bash** `grep -n "E1.*E1\|11 decision\|E10\`.\+E11\|decisions.*E" docs/phase4/decisions.md docs/phase4/README.md docs/README.md | head -20`
+- **TodoWrite** `{"todos": [{"content": "Correct PRD/design docs: reference workflow reads MedicationRequest, not Medication", "status": "completed", "activeForm": "Correcting resource-type scoping in docs"}, {"conten…`
+- **Bash** `mkdir -p epic-emulator/src/main/java/com/healthcare/epic/extensions`
+- **Write** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/extensions/EpicExtensions.java`
+- **TodoWrite** `{"todos": [{"content": "Correct PRD/design docs: reference workflow reads MedicationRequest, not Medication", "status": "completed", "activeForm": "Correcting resource-type scoping in docs"}, {"conten…`
+- **Write** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/extensions/ExtensionBackfillInterceptor.java`
+- **Read** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/proxy/FhirProxyController.java`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/proxy/FhirProxyController.java`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/proxy/FhirProxyController.java`
+- **Edit** `/workspaces/fhir-agent/epic-emulator/src/main/java/com/healthcare/epic/proxy/FhirProxyController.java`
+- **TodoWrite** `{"todos": [{"content": "Correct PRD/design docs: reference workflow reads MedicationRequest, not Medication", "status": "completed", "activeForm": "Correcting resource-type scoping in docs"}, {"conten…`
+
 </details>
 
 ---
@@ -772,6 +807,6 @@ New auth/ package: JWT client-assertion validation
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 18:39 UTC
+- **Last updated:** 31 July 2026, 18:43 UTC
 - **Turns:** 14
-- **Status:** Incomplete
+- **Status:** Complete
