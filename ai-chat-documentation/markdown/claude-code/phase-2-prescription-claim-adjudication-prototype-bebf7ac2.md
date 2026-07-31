@@ -5042,6 +5042,22 @@ The whole emulator is an example of **using a modern stack to impersonate a lega
 
 If you want the one-line version for an interview: *"Spring Boot to fake the mainframe's front door, JdbcTemplate + H2 to fake its Db2 tables, deliberately plain `String`/`java.time` for the fixed-width records so the legacy shape stays visible, and Spring `RestClient` to speak its `text/plain` contract from behind an anti-corruption layer."*
 
+## Turn 75
+
+### Prompt
+
+Regarding the agent:
+
+1. What are the long term and short term memory considerations? What do these even mean?
+2. With regards to memory and compute, what are the deployment considerations?
+3. How to implement observability in prod for the agent?
+4. How do "conversation follow ups" work? What work was done and could be done for this?
+5. As a developer, how can I "program" the agent using some simple natural language rules, such as "(1) Disambuguate clearly what the patent name is and what is the medication, enough to find the actual prescription being evaluated. (2) REspond with one of 3 (or few) responses that are allowed, dont think clinitally about anything"
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 653 tool events</summary>
 
@@ -6612,6 +6628,6 @@ echo; echo "════ how records are built/parsed — any library, or…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 31 July 2026, 19:30 UTC
-- **Turns:** 74
+- **Last updated:** 31 July 2026, 22:11 UTC
+- **Turns:** 75
 - **Status:** Incomplete
