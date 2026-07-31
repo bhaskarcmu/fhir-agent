@@ -2143,6 +2143,61 @@ Analyze Phase 1 for me and explain how the agent was built for risk triage
 
 I'll ground this in the current code. Let me re-read the risk-triage agent's implementation (it's the "Phase 1" reference workflow — prescription refill risk triage).
 
+Here's a full analysis of **Phase 1 — Prescription Refill Risk Triage** and, specifically, how the risk‑triage agent ([mcp-agent](mcp-agent/src/agent/)) was built.
+
+## What Phase 1 is
+
+Phase 1 is the platform's **reference workflow**: a clinician asks a natural‑language question ("Check refill risk for Kristle Mraz") and gets back a structured, auditable safety recommendation. The request flows through three layers:
+
+```
+mcp-agent  ──►  triage-service  ──►  fhir-service
+(orchestrate)   (clinical rules)     (patient data)
+```
+
+The single most important design decision, stated right in the module docstring ([agent.py:9](mcp-agent/src/agent/agent.py#L9)): **"The agent contains no clinical logic. It orchestrates tool calls and composes narratives. Clinical logic lives in the triage service."** Everything about how the agent is built follows from that rule.
+
+## How the agent was built
+
+**1. Raw Anthropic tool‑use, no framework.** It's a direct loop over the Messages API ([agent.py:90](mcp-agent/src/agent/agent.py#L90)) — `model = claude-sonnet-4-5`, `max_tokens = 1024`. No LangChain/LlamaIndex. That keeps the control flow explicit and auditable, which matters in healthcare.
+
+**2. A system prompt that encodes the *workflow*, not the *clinical rules*.** [agent.py:50](mcp-agent/src/agent/agent.py#L50) tells the model its role (clinical decision support), the **mandatory tool order** ("always call `get_patient_summary` first to resolve the name to an ID. Then call `assess_refill_risk`"), the required output fields (name, risk level, clinical reason, **FHIR RiskAssessment ID for audit**, recommendation), and guardrails ("be direct and emphatic" on HIGH; "Never fabricate patient data").
+
+**3. Exactly two tools** ([tools.py:29](mcp-agent/src/agent/tools.py#L29)):
+- `get_patient_summary(name)` → searches FHIR via the `fhir_clinical_client` library, resolving a name to a patient ID + demographics; returns structured "found / not‑found / multiple‑matches" so the model can reason about ambiguity.
+- `assess_refill_risk(patient_id, medication_id?)` → an HTTP `POST` to the triage service; it does **not** compute risk itself, it delegates.
+
+**4. The agent loop** ([run_query, agent.py:72](mcp-agent/src/agent/agent.py#L72)): call the model → if `stop_reason == "tool_use"`, run each requested tool via the `execute_tool` dispatcher ([tools.py:221](mcp-agent/src/agent/tools.py#L221)), feed the JSON results back as `tool_result` blocks, and repeat until the model returns final text. Messages are threaded so it supports multi‑turn conversation, and there's a verbose trace (`[tool] get_patient_summary → found: …`) for transparency.
+
+## Where the risk is actually decided (deliberately *outside* the agent)
+
+The clinical judgment lives in the triage service's rule engine ([rules.py](triage-service/src/triage/rules.py)) — priority‑ordered, first‑match‑wins pure functions:
+
+| Rule | Trigger | Risk |
+|---|---|---|
+| Penicillin conflict | penicillin‑family drug **+** penicillin allergy | **HIGH** |
+| Duplicate therapeutic class | ≥2 drugs in the same class | MODERATE |
+| High‑criticality allergy | any `criticality: high` allergy + meds | MODERATE |
+| (default) | nothing fires | LOW |
+
+The service fetches meds + allergies from FHIR, runs `evaluate()`, and returns a **FHIR `RiskAssessment`** whose `basis` field references the exact `MedicationRequest` and `AllergyIntolerance` that triggered the verdict ([main.py](triage-service/src/triage/main.py)). The agent's job is only to surface that.
+
+## End‑to‑end, for "Check refill risk for Kristle Mraz"
+
+1. Agent → `get_patient_summary("Kristle Mraz")` → FHIR resolves `Patient/2`.
+2. Agent → `assess_refill_risk("2")` → triage pulls Amoxicillin (RxNorm 723) + Penicillin allergy (SNOMED 764146007), the penicillin rule fires → **HIGH** + `RiskAssessment` (basis: `MedicationRequest/4`, `AllergyIntolerance/3`).
+3. Agent composes the clinician‑facing narrative with the audit ID and a "do not dispense" recommendation.
+
+## Why this architecture matters (the takeaways)
+
+- **Safety:** the LLM can *present* a decision but can't *invent or override* one — the verdict comes from a deterministic engine.
+- **Auditability:** the `RiskAssessment` ID and `basis` references trace every recommendation back to source FHIR resources.
+- **Testability:** rules are pure functions unit‑tested with no LLM/server; the agent's tools are tested with mocks — which is exactly why Phase‑1 correctness can be verified sub‑second, offline.
+- **Reusability:** `fhir_clinical_client` hides all FHIR mechanics, and the triage service is callable by anything (agent, UI, `curl`), not just this agent.
+
+That same thin‑orchestrator pattern (LLM orchestrates, deterministic services decide) is what the later phases — claims adjudication and provider search/referral — reuse, which is why the repo now has parallel `*-agent` and `*-service` pairs.
+
+Want me to go deeper on any one layer — the rule engine, the FHIR client abstraction, or the agent loop's tool‑use mechanics?
+
 <details>
 <summary>Execution details — 214 tool events</summary>
 
@@ -2686,6 +2741,6 @@ echo "=== working tree (core gone?) ==="; git status --short; ls core 2>/dev/nul
 - **Source:** Claude Code
 - **Session ID:** `4122fa87-767c-455f-9397-ab0d1fff4f85`
 - **Created:** 13 July 2026, 11:36 UTC
-- **Last updated:** 31 July 2026, 20:08 UTC
+- **Last updated:** 31 July 2026, 20:09 UTC
 - **Turns:** 35
 - **Status:** Complete
