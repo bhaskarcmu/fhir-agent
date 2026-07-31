@@ -659,7 +659,7 @@ Confirmed. Cleaning up branches before starting M5.
 Before implementing M5, let me investigate a real tension: M2 now gates every proxied call behind a bearer token, but the acceptance test needs to re-point `triage-service` at `epic-emulator` without modifying `triage-service`'s code. Let me check whether that's actually reconcilable.
 
 <details>
-<summary>Execution details — 287 tool events</summary>
+<summary>Execution details — 288 tool events</summary>
 
 ### Turn 2 activity
 
@@ -1080,6 +1080,7 @@ New quirks/ package implementing all three named quirks (PRD FR4-FR6):
 - **Bash** `git checkout main && git pull origin main && git branch -d feature/phase4-m4-quirks`
 - **Bash** `git push origin --delete feature/phase4-m4-quirks`
 - **Agent** `Investigate triage-service FHIR client config and auth support`
+- **Agent** `Check e2e test conventions and available Python crypto libs`
 
 </details>
 
@@ -1090,6 +1091,6 @@ New quirks/ package implementing all three named quirks (PRD FR4-FR6):
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 19:21 UTC
+- **Last updated:** 31 July 2026, 19:23 UTC
 - **Turns:** 16
 - **Status:** Complete
