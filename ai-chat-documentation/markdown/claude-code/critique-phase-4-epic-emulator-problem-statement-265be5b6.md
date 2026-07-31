@@ -198,7 +198,17 @@ I am thnking of bundling the risk triage service and claims adjududicatiron func
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Short answer: bundling the auth/extension/quirk work into one monolith made sense because those three are unknown, unbuilt, and share a genuinely uncertain boundary. Triage-service and claims-service are the opposite case — they're already-built, already-decomposed, already-validated services with a boundary that's been deliberately tested, not guessed. Pulling their logic into epic-emulator isn't monolith-first, it's un-deciding a decision you already made and validated.
+
+**Three concrete reasons this cuts against your own goals, not just mine:**
+
+1. **You already locked "Phase 1 stays independently runnable/testable/deployable"** as a hard constraint in Phase 2 planning, and Phase 2 explicitly *reused* triage-service over HTTP rather than rebuilding its logic ("REUSE Python triage `POST /triage/refill-risk`... no rebuild" — a locked framing decision). Embedding triage/claims logic in epic-emulator creates a second copy of clinical/claims decisioning, which is exactly the kind of duplication that decision was designed to prevent.
+2. **CLAUDE.md already draws this line on purpose**: "the agent orchestrates but holds no clinical logic (rules live in `triage-service/src/triage/rules.py`)." Epic-emulator's job is to look like Epic from the outside — a protocol/format concern. Clinical risk and claims adjudication are business-logic concerns. Merging them muddies which service is authoritative for a clinical decision, which is precisely the kind of change CLAUDE.md flags for deeper scrutiny (healthcare compliance / data integrity), not a speed shortcut.
+3. **It roughly triples Phase 4's scope**, working directly against the "build fast, days not weeks" sizing you asked for a few turns ago. Two already-built services' worth of logic is a much bigger lift than three unbuilt sub-features of one new module.
+
+**What I suspect you actually want, and which does make sense:** exercise triage-service and claims-service *through* epic-emulator, not absorb their code into it. That's already consistent with the architecture you picked — epic-emulator is a proxy in front of `fhir-service`, and triage-service/claims-service already read/write against `fhir-service`. So an Epic-flavored end-to-end demo (mcp-agent or claims-agent → epic-emulator's Epic auth/extensions/quirks → fhir-service, with triage-service and claims-service in their normal place in the chain) gives you a realistic, fuller demo without duplicating a single rule. This also strengthens the acceptance test I proposed earlier — instead of just the refill-triage scenario, you could run *both* the triage scenario and a claims-adjudication scenario through epic-emulator as the acceptance bar.
+
+Want me to fold that "call, don't absorb" framing into the problem statement instead of the bundling version?
 
 <details>
 <summary>Execution details — 6 tool events</summary>
@@ -224,6 +234,6 @@ I am thnking of bundling the risk triage service and claims adjududicatiron func
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 31 July 2026, 17:40 UTC
+- **Last updated:** 31 July 2026, 17:41 UTC
 - **Turns:** 5
-- **Status:** Incomplete
+- **Status:** Complete
