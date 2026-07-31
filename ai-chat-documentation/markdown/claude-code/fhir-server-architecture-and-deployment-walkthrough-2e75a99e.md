@@ -224,6 +224,30 @@ You're correct on all three points, with one clarifying nuance worth adding.
 
 Ready for the next prompts on how you containerized it.
 
+## Turn 8
+
+### Prompt
+
+Here is what I did in the containerization journey:
+
+1. Created a "session state" server (actually a managed Redis service from Azure) that made the individual application servers stateless and enabled the load balancer to redirect traffic more evenly without "session stickiness".
+
+2. Defined what functionality (based on identifying domains relevant to the business) could be "peeled off" based on Strangler methodology.
+
+3. Took one domain at a time and understood what microservices could be implemented to implement the domain.
+
+4. Took one (or few) microservices at a time, and simply created additional application servers for each. (not containerized, but deployable and testable independently).
+
+5. Worked with platform/devops engineers for tooling and actual containerization. Understood a bit about the Dockerfile, etcm but not a deep expert on the tooling. The result of this step is not yet a deployable microservice.
+
+6. To make the service deployable, first established a Cloud mechanism for serverless execution; this meand using Kubernetes and Fargate in the AWS workd (tell me that this is in the Azure world. To test this, simply used an open source application (give me an example, please).
+
+Now, review all of the above, critique the terminology, and tell me how I should modify the steps above. I can't pretend to be a deep expert in everything!
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 10 tool events</summary>
 
@@ -252,6 +276,6 @@ Ready for the next prompts on how you containerized it.
 - **Source:** Claude Code
 - **Session ID:** `2e75a99e-6530-4b28-82f9-b3b5ee1df979`
 - **Created:** 22 July 2026, 14:25 UTC
-- **Last updated:** 31 July 2026, 11:06 UTC
-- **Turns:** 7
-- **Status:** Complete
+- **Last updated:** 31 July 2026, 11:16 UTC
+- **Turns:** 8
+- **Status:** Incomplete
