@@ -1199,7 +1199,7 @@ Now the token-budget/compaction module, grounded in the real measured numbers:
 Now let's write `context_budget` tests (pure logic, no DB needed) and a `conftest.py` for the DB-backed session store tests, following the established self-skip pattern.
 
 <details>
-<summary>Execution details — 560 tool events</summary>
+<summary>Execution details — 568 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2170,6 +2170,21 @@ python -m pip install -e "agent-platform[dev]" -q 2>&1 | tail -20`
 python -m pytest agent-platform/tests/test_context_budget.py -v 2>&1 | tail -20`
 - **Write** `/workspaces/fhir-agent/agent-platform/tests/conftest.py`
 - **Write** `/workspaces/fhir-agent/agent-platform/tests/test_session_store.py`
+- **Bash** `cd /workspaces/fhir-agent
+python -m pytest agent-platform/tests -v 2>&1 | tail -70`
+- **Bash** `docker run -d --name agent-platform-test-pg \
+  -e POSTGRES_USER=agent_platform \
+  -e POSTGRES_PASSWORD=agent_platform \
+  -e POSTGRES_DB=agent_platform_test \
+  -p 5433:5432 \
+  postgres:16-alpine 2…`
+- **Bash** `cd /workspaces/fhir-agent
+python -m pytest agent-platform/tests/test_session_store.py -v 2>&1 | tail -30`
+- **TodoWrite** `{"todos": [{"content": "Gather real token-usage data from live queries to ground the M3 budget number", "status": "completed", "activeForm": "Gathering real token-usage data"}, {"content": "Build agen…`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Bash** `wc -l /workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Bash** `sed -n '1,110p' /workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Bash** `sed -n '110,160p' /workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
 
 </details>
 
@@ -2180,6 +2195,6 @@ python -m pytest agent-platform/tests/test_context_budget.py -v 2>&1 | tail -20`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 13:05 UTC
+- **Last updated:** 2 August 2026, 13:06 UTC
 - **Turns:** 18
 - **Status:** Complete
