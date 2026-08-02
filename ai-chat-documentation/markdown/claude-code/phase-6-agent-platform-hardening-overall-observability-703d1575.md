@@ -1517,8 +1517,12 @@ Now let's run these tests.
 
 All 12 pass. Now the mcp-agent chaos-style integration tests exercising `run_query`.
 
+Now running these tests.
+
+All 8 chaos-style tests pass. Now let's add API-layer tests for the concurrency limiter and `/metrics` endpoint.
+
 <details>
-<summary>Execution details — 714 tool events</summary>
+<summary>Execution details — 718 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2737,6 +2741,10 @@ print(inspect.signature(anthropic.APIConnectionError.__init__))
 - **Edit** `/workspaces/fhir-agent/agent-platform/tests/test_resilience.py`
 - **Bash** `python -m pytest agent-platform/tests/test_resilience.py -v 2>&1 | tail -50`
 - **Read** `/workspaces/fhir-agent/mcp-agent/tests/test_context_budget_integration.py`
+- **Write** `/workspaces/fhir-agent/mcp-agent/tests/test_resilience_integration.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/tests/test_resilience_integration.py`
+- **Bash** `python -m pytest mcp-agent/tests/test_resilience_integration.py -v 2>&1 | tail -80`
+- **Read** `/workspaces/fhir-agent/mcp-agent/tests/test_session_api.py`
 
 </details>
 
@@ -2747,6 +2755,6 @@ print(inspect.signature(anthropic.APIConnectionError.__init__))
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 13:55 UTC
+- **Last updated:** 2 August 2026, 13:56 UTC
 - **Turns:** 22
 - **Status:** Incomplete
