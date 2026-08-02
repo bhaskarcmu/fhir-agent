@@ -1633,8 +1633,10 @@ All 17 pass. Now the live Ollama integration test through the real agent loop.
 
 Let's also validate the full CLI end-to-end (real FHIR + triage, real Ollama) — not just `run_query` in isolation.
 
+Both reachable from the host. Now running the CLI directly against real FHIR/triage and the real Ollama model.
+
 <details>
-<summary>Execution details — 845 tool events</summary>
+<summary>Execution details — 849 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3043,6 +3045,15 @@ python -m pytest agent-platform/tests mcp-agent/tests -q 2>&1 | tail -60`
 - **Write** `/workspaces/fhir-agent/mcp-agent/tests/test_provider_integration.py`
 - **Bash** `python -m pytest mcp-agent/tests/test_provider_integration.py -v -s 2>&1 | tail -80`
 - **Bash** `docker compose up -d fhir triage 2>&1 | tail -15`
+- **Bash** `sleep 5
+docker ps --format "{{.Names}}\t{{.Status}}" | grep fhir-agent
+docker port fhir-agent-fhir
+docker port fhir-agent-triage`
+- **Bash** `export LLM_PROVIDER=openai_compatible LLM_BASE_URL=http://localhost:11434/v1 LLM_MODEL=llama3.2:1b FHIR_GATEWAY_URL=http://localhost:8080/fhir TRIAGE_SERVICE_URL=http://localhost:8001
+python3 mcp-agen…`
+- **Bash** `grep -n "agent.agent\|WORKDIR\|CMD\|ENTRYPOINT" /workspaces/fhir-agent/mcp-agent/Dockerfile`
+- **Bash** `export LLM_PROVIDER=openai_compatible LLM_BASE_URL=http://localhost:11434/v1 LLM_MODEL=llama3.2:1b FHIR_GATEWAY_URL=http://localhost:8080/fhir TRIAGE_SERVICE_URL=http://localhost:8001
+cd /workspaces/f…`
 
 </details>
 
@@ -3053,6 +3064,6 @@ python -m pytest agent-platform/tests mcp-agent/tests -q 2>&1 | tail -60`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 14:28 UTC
+- **Last updated:** 2 August 2026, 14:30 UTC
 - **Turns:** 23
 - **Status:** Incomplete
