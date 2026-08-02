@@ -1224,8 +1224,10 @@ Found another real gap — `api.py` never instruments the FastAPI app itself, so
 
 Full end-to-end persistence confirmed working correctly. Let's clean up and finalize docs.
 
+Now adding H28-H33 for M3's real decisions:
+
 <details>
-<summary>Execution details — 636 tool events</summary>
+<summary>Execution details — 639 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2338,6 +2340,9 @@ docker compose --profile phase6 stop agent-db mcp-agent-api 2>&1 | tail -5
 docker compose --profile phase6 rm -f agent-db mcp-agent-api 2>&1 | tail -5
 docker compose stop tri…`
 - **Bash** `grep -n "^| \*\*H2[0-9]\*\*" /workspaces/fhir-agent/docs/phase6/decisions.md | tail -5`
+- **Edit** `/workspaces/fhir-agent/docs/phase6/decisions.md`
+- **Bash** `grep -n "### 4.3 Memory" /workspaces/fhir-agent/docs/phase6/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase6/design.md`
 
 </details>
 
@@ -2348,6 +2353,6 @@ docker compose stop tri…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 13:21 UTC
+- **Last updated:** 2 August 2026, 13:22 UTC
 - **Turns:** 18
 - **Status:** Complete
