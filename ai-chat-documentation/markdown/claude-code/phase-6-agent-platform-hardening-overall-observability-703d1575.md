@@ -1035,7 +1035,7 @@ Found it — a pre-existing `.env` file (gitignored, tuned for host-direct runs)
 Correct now. Let's re-run the smoke test:
 
 <details>
-<summary>Execution details — 395 tool events</summary>
+<summary>Execution details — 397 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1643,6 +1643,19 @@ try:
     resp = m.assess_refill_risk(TriageReques…`
 - **Bash** `docker exec fhir-agent-triage python3 -c "print('hello world')"
 echo "exit: $?"`
+- **Bash** `for i in 1 2 3; do
+  docker exec fhir-agent-triage python3 -c "
+import urllib.request
+try:
+    r = urllib.request.urlopen('http://fhir:8080/fhir/metadata', timeout=5)
+    print('OK', r.status)
+except…`
+- **Bash** `docker exec fhir-agent-triage python3 -c "
+import time
+import triage.main as m
+from triage.models import TriageRequest
+print('sleeping 5s to mimic a long-running process...', flush=True)
+time.sleep(5)…`
 
 </details>
 
@@ -1653,6 +1666,6 @@ echo "exit: $?"`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 11:56 UTC
+- **Last updated:** 2 August 2026, 11:57 UTC
 - **Turns:** 15
 - **Status:** Complete
