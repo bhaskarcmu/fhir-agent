@@ -984,8 +984,12 @@ Good, plain `mvn` is available system-wide. Let's confirm a baseline compile.
 
 Good, available. Now building the `agent_platform.observability` module.
 
+Confirmed working. Now writing the `agent-platform` observability tests, then wiring into `mcp-agent`.
+
+All 36 pass. Now wiring OTel into `mcp-agent`.
+
 <details>
-<summary>Execution details — 220 tool events</summary>
+<summary>Execution details — 231 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1306,6 +1310,25 @@ ls -la /workspaces/fhir-agent/claims-service/target/classes/com/payer/claims/ 2>
 - **Bash** `pip index versions opentelemetry-sdk 2>&1 | head -5
 pip download --no-deps -d /tmp/otelcheck opentelemetry-sdk 2>&1 | tail -5`
 - **Edit** `/workspaces/fhir-agent/agent-platform/pyproject.toml`
+- **Write** `/workspaces/fhir-agent/agent-platform/src/agent_platform/observability.py`
+- **Edit** `/workspaces/fhir-agent/agent-platform/src/agent_platform/__init__.py`
+- **Bash** `python -m pip install -e "agent-platform[dev]" -q 2>&1 | tail -30`
+- **Bash** `python -c "
+from agent_platform import setup_tracing, get_tracer, safe_set_attributes, start_span
+setup_tracing('test-service')
+tracer = get_tracer('test')
+with start_span('test.span', tracer, {'patie…`
+- **Bash** `python -c "
+from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.sdk.trace.export.in_mem…`
+- **Write** `/workspaces/fhir-agent/agent-platform/tests/test_observability.py`
+- **Bash** `python -m pytest agent-platform/tests/test_observability.py -v 2>&1 | tail -30`
+- **Edit** `/workspaces/fhir-agent/agent-platform/tests/test_observability.py`
+- **Bash** `python -m pytest agent-platform/tests -v 2>&1 | tail -15`
+- **TodoWrite** `{"todos": [{"content": "Explore current state: pom.xml, docker-compose.yml, client configs", "status": "completed", "activeForm": "Exploring current service configs for M2"}, {"content": "Add agent_pl…`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
 
 </details>
 
@@ -1316,6 +1339,6 @@ pip download --no-deps -d /tmp/otelcheck opentelemetry-sdk 2>&1 | tail -5`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 11:17 UTC
+- **Last updated:** 2 August 2026, 11:19 UTC
 - **Turns:** 15
 - **Status:** Complete
