@@ -218,14 +218,48 @@ as the first implementation PR, since it's cheap, independent, and the highest s
 
 Internalized — handoff doc noted, no action taken. Ready for the next piece of info.
 
+## Turn 3
+
+### Prompt
+
+Now, internalize this snippet as well, and tell me if you can find what Topic 1, topic 2, 3, 4, and 5 are. If not, I will feed you that as well:
+
+______________
+
+🧠 To be Internalized for the future comprehensive report
+I'm carrying these forward (also saved to memory phase5-agent-hardening.md):
+
+Topic 4 down to code snippets — run_query(messages)→messages mechanics, REPL persistence, the single-shot --query gap, and how each "what-could-be-done" (session store, context compaction, tool-result compaction, re-fetch-don't-recall) changes specific lines; plus provider-adapter conversation-history translation for Llama/DeepSeek.
+Topic 1 — where each memory limit is set, the rationale for each number, and the autoscale path (per-conversation compaction vs session-count scaling vs persistence store).
+Topics 2 & 3 — the actual Grafana panels and the end-to-end trace/span/attribute schema.
+Timing: produce it after the milestones (or several) land, not before.
+
+### Claude response
+
+Yes — mapping to the handoff doc's §3 topic list:
+
+- **Topic 1 = Memory** (short-term/long-term, token budget, compaction, session store, re-fetch-don't-recall)
+- **Topic 2 = Deployment + observability tie-in** (bounded queue/deadline, token-bucket limiter, rate/cost alerts, Grafana dashboards)
+- **Topic 3 = Observability (full)** — OTel traces/spans, `gen_ai.*` attributes, traceID propagation, PHI redaction
+- **Topic 4 = Follow-ups + multi-model** (provider abstraction, Llama/DeepSeek, history translation)
+- **Topic 5 = Output safety** (policy.md in system prompt, enum gate, fail-closed to REVIEW, judge)
+
+Your snippet is consistent with that: "Topic 4 down to code snippets" → follow-ups/multi-model mechanics; "Topic 1" → memory limits/autoscale; "Topics 2 & 3" → Grafana panels + trace/span schema. No gaps — I don't need you to feed the topic list separately.
+
+I'll fold this report-obligation detail into the `phase5-agent-hardening.md` memory now so it's tied to the right topic numbers.
+
 <details>
-<summary>Execution details — 3 tool events</summary>
+<summary>Execution details — 4 tool events</summary>
 
 ### Turn 1 activity
 
 - **Bash** `cat /home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase5-agent-hardening.md`
 - **Write** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase5-agent-hardening.md`
 - **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/MEMORY.md`
+
+### Turn 3 activity
+
+- **Read** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase5-agent-hardening.md`
 
 </details>
 
@@ -236,6 +270,6 @@ Internalized — handoff doc noted, no action taken. Ready for the next piece of
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 03:50 UTC
-- **Turns:** 2
+- **Last updated:** 2 August 2026, 03:52 UTC
+- **Turns:** 3
 - **Status:** Complete
