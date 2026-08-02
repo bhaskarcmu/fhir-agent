@@ -1147,8 +1147,14 @@ All 46 pass. Now wiring `mcp-agent`: layer/component tags on existing spans, and
 
 Now `triage-service`. Let's view its current observability module and main.py before extending them:
 
+Now adding `get_tracer` to `triage/observability.py`:
+
+Now `assess_refill_risk`:
+
+All 8 pass, including the verbosity-gated detailed spans working exactly as designed. Now let's add mcp-agent tests for the new layer/trace-ID additions, then move to Java.
+
 <details>
-<summary>Execution details — 476 tool events</summary>
+<summary>Execution details — 498 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1967,6 +1973,34 @@ python -m pytest agent-platform/tests -v 2>&1 | tail -60`
 - **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/format.py`
 - **Bash** `grep -n "error_block(" /workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
 - **Read** `/workspaces/fhir-agent/triage-service/src/triage/observability.py`
+- **Edit** `/workspaces/fhir-agent/triage-service/src/triage/observability.py`
+- **Read** `/workspaces/fhir-agent/triage-service/src/triage/main.py`
+- **Read** `/workspaces/fhir-agent/triage-service/src/triage/rules.py`
+- **Edit** `/workspaces/fhir-agent/triage-service/src/triage/rules.py`
+- **Edit** `/workspaces/fhir-agent/triage-service/src/triage/rules.py`
+- **Edit** `/workspaces/fhir-agent/triage-service/src/triage/observability.py`
+- **Edit** `/workspaces/fhir-agent/triage-service/src/triage/rules.py`
+- **Edit** `/workspaces/fhir-agent/triage-service/src/triage/main.py`
+- **Edit** `/workspaces/fhir-agent/triage-service/src/triage/main.py`
+- **Edit** `/workspaces/fhir-agent/triage-service/src/triage/main.py`
+- **Bash** `cd /workspaces/fhir-agent
+python -m pip install -e "triage-service[dev]" -q 2>&1 | tail -20
+python -m pytest triage-service/src/triage/tests -v 2>&1 | tail -60`
+- **Read** `/workspaces/fhir-agent/triage-service/src/triage/tests/test_tracing.py`
+- **Edit** `/workspaces/fhir-agent/triage-service/src/triage/tests/test_tracing.py`
+- **Bash** `head -20 /workspaces/fhir-agent/triage-service/src/triage/tests/test_rules.py`
+- **Edit** `/workspaces/fhir-agent/triage-service/src/triage/tests/test_tracing.py`
+- **Edit** `/workspaces/fhir-agent/triage-service/src/triage/tests/test_tracing.py`
+- **Bash** `cd /workspaces/fhir-agent
+python -m pytest triage-service/src/triage/tests/test_tracing.py -v 2>&1 | tail -50`
+- **Bash** `cd /workspaces/fhir-agent
+python -m pip install -e "mcp-agent[dev]" -q 2>&1 | tail -10
+python -m pytest mcp-agent/tests -q 2>&1 | tail -20`
+- **Read** `/workspaces/fhir-agent/mcp-agent/tests/test_tracing.py`
+- **Bash** `tail -20 /workspaces/fhir-agent/mcp-agent/tests/test_tracing.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/tests/test_tracing.py`
+- **Bash** `cd /workspaces/fhir-agent
+python -m pytest mcp-agent/tests/test_tracing.py -v 2>&1 | tail -30`
 
 </details>
 
@@ -1977,6 +2011,6 @@ python -m pytest agent-platform/tests -v 2>&1 | tail -60`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 12:38 UTC
+- **Last updated:** 2 August 2026, 12:42 UTC
 - **Turns:** 17
 - **Status:** Complete
