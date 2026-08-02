@@ -2084,8 +2084,20 @@ The background test run completed. Let's check the results.
 
 All tests pass (150 + 116 = 266 total). Now let's do the live end-to-end validation.
 
+The live CLI validation completed. Let's check the output.
+
+Both Java suites green. Now let's check the retry query for the live citations demo.
+
+While waiting, let's check whether `telemetry-schema.md` needs updating for the new `judge.*`/`knowledge.*` span attributes.
+
+Let me add the two new M6 layer entries to §3.1.
+
+The retry query completed. Let's check the output.
+
+Two real Ollama runs already prove the policy/fail-closed integration holds with a genuinely weak model. Let's now do one clean run with Claude to demonstrate citations and judge output populating for the reference HIGH-risk case.
+
 <details>
-<summary>Execution details — 1181 tool events</summary>
+<summary>Execution details — 1197 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3973,6 +3985,26 @@ grep -n "^| \*\*H5" /workspaces/fhir-agent/docs/phase6/decisions.md | tail -5`
 - **Bash** `export FHIR_GATEWAY_URL=http://localhost:8080/fhir TRIAGE_SERVICE_URL=http://localhost:8001
 unset LLM_PROVIDER LLM_MODEL LLM_BASE_URL DEPLOYMENT_ENV
 cd /workspaces/fhir-agent/mcp-agent/src && python3…`
+- **Bash** `cd /workspaces/fhir-agent/claims-service && unset SPRING_DATASOURCE_URL NEON_HOST NEON_USER NEON_PASSWORD NEON_DB 2>/dev/null; mvn -o -q clean verify > /tmp/claude-1000/-workspaces-fhir-agent/703d1575…`
+- **Bash** `cd /workspaces/fhir-agent/rxclaim-emulator && unset SPRING_DATASOURCE_URL NEON_HOST NEON_USER NEON_PASSWORD NEON_DB 2>/dev/null; mvn -o -q clean verify > /tmp/claude-1000/-workspaces-fhir-agent/703d15…`
+- **Read** `/tmp/claude-1000/-workspaces-fhir-agent/703d1575-6579-4a4a-834d-bfd055f35840/tasks/boa463a7i.output`
+- **Bash** `export FHIR_GATEWAY_URL=http://localhost:8080/fhir TRIAGE_SERVICE_URL=http://localhost:8001
+cd /workspaces/fhir-agent/mcp-agent/src && python3 -m agent.agent --query "Check refill risk for patient Kri…`
+- **Read** `/tmp/claude-1000/-workspaces-fhir-agent/703d1575-6579-4a4a-834d-bfd055f35840/scratchpad/claims_m6.log`
+- **Bash** `tail -3 /tmp/claude-1000/-workspaces-fhir-agent/703d1575-6579-4a4a-834d-bfd055f35840/scratchpad/claims_m6.log
+echo "---rxclaim---"
+tail -3 /tmp/claude-1000/-workspaces-fhir-agent/703d1575-6579-4a4a-83…`
+- **Read** `/tmp/claude-1000/-workspaces-fhir-agent/703d1575-6579-4a4a-834d-bfd055f35840/tasks/bwb2zvhvh.output`
+- **TodoWrite** `{"todos": [{"content": "Build policy.py loader in agent_platform + mcp-agent/policy.md content, wire into SYSTEM_PROMPT", "status": "completed", "activeForm": "Building policy loader and policy.md"},…`
+- **Bash** `grep -n "^## \|ALLOWED_SPAN_ATTRIBUTE_KEYS\|patient_id.*medication_id\|risk_level.*risk_assessment_id" /workspaces/fhir-agent/docs/phase6/telemetry-schema.md | head -20`
+- **Read** `/workspaces/fhir-agent/docs/phase6/telemetry-schema.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase6/telemetry-schema.md`
+- **Read** `/tmp/claude-1000/-workspaces-fhir-agent/703d1575-6579-4a4a-834d-bfd055f35840/tasks/bwb2zvhvh.output`
+- **Read** `/workspaces/fhir-agent/docs/phase6/telemetry-schema.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase6/telemetry-schema.md`
+- **Read** `/tmp/claude-1000/-workspaces-fhir-agent/703d1575-6579-4a4a-834d-bfd055f35840/tasks/bwb2zvhvh.output`
+- **Bash** `export FHIR_GATEWAY_URL=http://localhost:8080/fhir TRIAGE_SERVICE_URL=http://localhost:8001
+cd /workspaces/fhir-agent/mcp-agent/src && python3 -m agent.agent --provider anthropic --model claude-sonnet…`
 
 </details>
 
@@ -3983,6 +4015,6 @@ cd /workspaces/fhir-agent/mcp-agent/src && python3…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 16:56 UTC
+- **Last updated:** 2 August 2026, 16:59 UTC
 - **Turns:** 28
 - **Status:** Incomplete
