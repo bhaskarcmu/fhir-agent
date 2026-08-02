@@ -1222,8 +1222,10 @@ Now updating `api.py` to use `stats["trace_id"]`:
 
 Found another real gap — `api.py` never instruments the FastAPI app itself, so `/health` and `/sessions` never get a server span or trace ID. Fixing it:
 
+Full end-to-end persistence confirmed working correctly. Let's clean up and finalize docs.
+
 <details>
-<summary>Execution details — 632 tool events</summary>
+<summary>Execution details — 635 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2325,6 +2327,16 @@ export FHIR_GATEWAY_URL=http://fhir:8080/fhir
 docker compose --profile phase6 up -d --build mcp-agent-api 2>&1 | tail -15
 sleep 2
 docker exec fhir-agent-mcp-api env | grep FH…`
+- **Bash** `SESSION_ID=$(curl -s -X POST http://localhost:8010/sessions | python3 -c "import json,sys; print(json.load(sys.stdin)['session_id'])")
+echo "session_id=$SESSION_ID"
+echo "--- query 1: Kristle Mraz (HI…`
+- **Bash** `SESSION_ID="75511e5c-9aba-444d-b348-ca0106d66918"
+echo "--- query 2: follow-up in same session ---"
+curl -s -X POST "http://localhost:8010/sessions/$SESSION_ID/query" -H "Content-Type: application/jso…`
+- **Bash** `cd /workspaces/fhir-agent
+docker compose --profile phase6 stop agent-db mcp-agent-api 2>&1 | tail -5
+docker compose --profile phase6 rm -f agent-db mcp-agent-api 2>&1 | tail -5
+docker compose stop tri…`
 
 </details>
 
@@ -2335,6 +2347,6 @@ docker exec fhir-agent-mcp-api env | grep FH…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 13:19 UTC
+- **Last updated:** 2 August 2026, 13:21 UTC
 - **Turns:** 18
 - **Status:** Complete
