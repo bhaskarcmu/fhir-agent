@@ -1226,8 +1226,215 @@ Full end-to-end persistence confirmed working correctly. Let's clean up and fina
 
 Now adding H28-H33 for M3's real decisions:
 
+## Turn 19
+
+### Prompt
+
+This session is being continued from a previous conversation that ran out of context. The summary below covers the earlier portion of the conversation.
+
+Summary:
+1. Primary Request and Intent:
+
+   The overarching engagement is building out "Phase 6 — Agent Platform Hardening + Overall Observability" for the `fhir-agent` repo, milestone by milestone, following a plan the user and I jointly developed across many turns. The most recent explicit user instruction, verbatim, was: **"PR #58 merged. Delete the merged branches and proceed to M3"** — i.e., (a) confirm PR #58's merge, delete both local and remote `feature/phase6-m2-observability` branches, and (b) begin implementing Phase 6 Milestone 3 ("Context, Memory & Session Transport") using the same rigor as M1/M2: real code, real tests, live docker-compose validation, documentation updates, and a PR — without needing to ask clarifying questions except when genuinely blocked, per the user's earlier standing instruction: *"I am okay to update Phase 2's design documents for this to work well. I am also okay to expand scope to achieve gold standard and exceeding gold standard objectives. I leave it to your judgement to determine boundaries - do a deep code analysis to determine what works best. I don't want to excessively over do this, but I am okay to have configurable depth, perhaps though verbosity settings. All things considered, use your judgement, and only give me decision options if you really have to."*
+
+   M3's scope, per `docs/phase6/milestone-plan.md` (as originally written): "Give the agent a real session concept — Postgres-backed, behind a thin HTTP API — plus a token-budget policy actually set from M2's real telemetry instead of guessed," covering: (1) per-conversation token budget (real number, not guessed), (2) cross-session persistence via Postgres, (3) a thin FastAPI transport layer matching triage-service's convention, and (4) re-fetch-don't-recall discipline. Concurrent-session-count scaling is explicitly deferred to M4.
+
+2. Key Technical Concepts:
+   - OpenTelemetry (OTel): distributed tracing, spans, trace context (W3C Trace Context / `traceparent` header), `gen_ai.*` semantic conventions, `code.function.name` semantic convention (verified via `opentelemetry.semconv.attributes.code_attributes`)
+   - Custom `fhir_agent.*` telemetry namespace (`.layer`, `.component`, `.verbosity`) — established in M2, extended in M3
+   - `TELEMETRY_VERBOSITY` env var (`standard`/`detailed`) — established in M2, referenced in M3's context_budget design philosophy
+   - Postgres session persistence via `psycopg`/`psycopg_pool`, following `provider-registry-service`'s exact `db.py`/`schema.sql`/`init_db.py`/`conftest.py` self-skip-test conventions
+   - Anthropic SDK internals: `TextBlock`/`ToolUseBlock` are Pydantic `BaseModel` subclasses requiring `model_dump(mode="json")` for JSON serialization
+   - FastAPI transport pattern (`FastAPIInstrumentor`, `Response` header injection, Pydantic request/response models)
+   - Token-budget/context-compaction policy: turn-boundary detection, oldest-turn-dropping, self-correcting design (no precise per-turn token accounting, relies on real API `usage.input_tokens` measurements)
+   - `stats` dict out-parameter pattern (avoiding a breaking return-arity change to `run_query`)
+   - Graceful degradation precedent (`claims-agent`'s no-API-key fallback) applied to `mcp-agent`'s no-`DATABASE_URL` fallback
+   - Docker Compose profiles (`phase2`, `phase3`, `observability`, `phase6`) for additive, opt-in service groups
+   - pytest `--import-mode=importlib` filename-collision gotcha (same-named `test_*.py` across packages)
+   - `.env` file precedence gotcha in `docker compose` + Bash-tool shell-state-non-persistence-across-calls gotcha (both previously encountered, recurred in M3)
+   - Live/real validation discipline: every claim (token counts, trace propagation, session persistence) verified against actually-running services, not asserted from unit tests alone
+   - CLAUDE.md git workflow: feature branch + PR per change, never self-merge, ask-and-delete-after-merge branch cleanup
+
+3. Files and Code Sections:
+
+   **`agent-platform/schema.sql`** (new) — Postgres schema for session persistence:
+   ```sql
+   CREATE TABLE IF NOT EXISTS agent_sessions (
+       session_id      uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+       messages        text NOT NULL DEFAULT '[]',
+       token_count     integer NOT NULL DEFAULT 0,
+       created_at      timestamptz NOT NULL DEFAULT now(),
+       updated_at      timestamptz NOT NULL DEFAULT now()
+   );
+   ```
+   Mirrors `rxclaim-emulator`/`provider-registry-service`'s plain-SQL-file convention.
+
+   **`agent-platform/src/agent_platform/session_store.py`** (new) — Postgres-backed persistence client. Key functions: `get_pool()`/`reset_pool()` (lazy global `ConnectionPool`, `DATABASE_URL` env var, mirrors `provider_registry.db`), `_to_jsonable(obj)` (recursively calls `.model_dump(mode="json")` on Pydantic objects), `serialize_messages()`/`deserialize_messages()`, `create_session() -> str`, `load_session(session_id) -> tuple[list[dict], int]` (raises `KeyError` if unknown), `save_session(session_id, messages, token_count)` (raises `KeyError` via `cur.rowcount == 0` check if unknown).
+
+   **`agent-platform/src/agent_platform/init_db.py`** (new) — mirrors `provider_registry.init_db` exactly; applies `schema.sql` via `get_pool()`.
+
+   **`agent-platform/src/agent_platform/context_budget.py`** (new) — the token-budget policy:
+   ```python
+   TOKEN_BUDGET = ‹redacted:env-secret›  # grounded in real measured usage: 5,404 and 5,381 tokens for two complete reference-workflow queries, read from live gen_ai.usage.* span attributes via Jaeger
+
+   def _turn_boundaries(messages: list[dict]) -> list[int]:
+       return [i for i, m in enumerate(messages)
+               if m.get("role") == "user" and isinstance(m.get("content"), str)]
+
+   def compact(messages: list[dict], token_count: int, budget: int = TOKEN_BUDGET) -> tuple[list[dict], bool]:
+       if token_count <= budget:
+           return messages, False
+       boundaries = _turn_boundaries(messages)
+       if len(boundaries) <= 1:
+           return messages, False
+       return messages[boundaries[1]:], True
+   ```
+
+   **`agent-platform/src/agent_platform/__init__.py`** (modified) — added exports: `TOKEN_BUDGET, compact, create_session, load_session, save_session`.
+
+   **`agent-platform/pyproject.toml`** (modified) — added `"psycopg[binary]>=3.1"`, `"psycopg-pool>=3.2"`.
+
+   **`agent-platform/tests/conftest.py`** (new) — `db_session_store` fixture, self-skips via `_db_available()` psycopg connection check, `TEST_DATABASE_URL` default `postgresql://agent_platform:‹redacted:url-credentials›localhost:5433/agent_platform_test`, drops/recreates `agent_sessions` table per test run.
+
+   **`agent-platform/tests/test_session_store.py`** (new, 6 tests) — includes `test_save_and_reload_round_trips_anthropic_sdk_content_blocks` using real `TextBlock`/`ToolUseBlock` instances, confirming they serialize/deserialize correctly through Postgres.
+
+   **`agent-platform/tests/test_context_budget.py`** (new, 6 tests) — pure-logic tests for `compact()` and `_turn_boundaries()`, including `test_token_budget_default_is_a_reasonable_multiple_of_one_real_measured_query` pinning `TOKEN_BUDGET == 40_000`.
+
+   **`mcp-agent/src/agent/api.py`** (new) — the FastAPI transport:
+   ```python
+   app = FastAPI(title="MCP Agent API", ...)
+   setup_tracing("mcp-agent-api")
+   FastAPIInstrumentor.instrument_app(app)  # added after discovering it was missing
+
+   def _get_client() -> anthropic.Anthropic: ...  # lazy, raises RuntimeError if unconfigured
+
+   @app.get("/health", response_model=HealthResponse, tags=["ops"])
+   def health(response: Response) -> HealthResponse: ...
+
+   @app.post("/sessions", response_model=SessionCreated, tags=["sessions"])
+   def create_new_session(response: Response) -> SessionCreated: ...
+
+   @app.post("/sessions/{session_id}/query", response_model=QueryResponse, tags=["sessions"])
+   def query_session(session_id: str, body: QueryRequest, response: Response) -> QueryResponse:
+       ...
+       stats: dict = {}
+       final_text, messages = run_query(client, body.query, messages, verbose=False, token_count=token_count, stats=stats)
+       save_session(session_id, messages, stats.get("token_count", token_count))
+       trace_id = stats.get("trace_id")  # NOT current_trace_id() -- span already closed by here
+       if trace_id:
+           response.headers["X-Trace-Id"] = trace_id
+       return QueryResponse(response=final_text, trace_id=trace_id)
+   ```
+
+   **`mcp-agent/pyproject.toml`** (modified) — added `"fastapi>=0.111"`, `"uvicorn[standard]>=0.29"`, `"opentelemetry-instrumentation-fastapi>=0.48b0"`; dev extras got `"httpx>=0.27"` added.
+
+   **`mcp-agent/src/agent/agent.py`** (heavily modified):
+   - Removed `MAX_REPL_TURNS = 40` constant entirely.
+   - New imports: `compact, create_session, current_trace_id, load_session, save_session` from `agent_platform`.
+   - `run_query()` signature: `def run_query(client, user_input, messages=None, verbose=True, token_count: int = 0, stats: dict | None = None) -> tuple[str, list[dict]]:` — **return arity deliberately unchanged**.
+   - At function top: `messages, compacted = compact(messages, token_count)` with a printed notice via `error_block(...)` if compacted.
+   - Inside the root span context manager, immediately: `if stats is not None: stats["trace_id"] = current_trace_id()` (critical placement — before span can close).
+   - After each chat-span usage extraction: `if stats is not None and input_tokens is not None: stats["token_count"] = input_tokens`.
+   - `interactive_mode(client, session_id=None)` rewritten: resumes given session_id via `load_session`, or auto-creates one via `create_session()` if `DATABASE_URL` is set, else falls back to pure in-memory (mirroring `claims-agent`'s no-API-key fallback); replaced turn-count loop with `token_count = stats.get("token_count", token_count)` threading + `save_session(...)` after each turn if persisted.
+   - `non_interactive_mode(client, query, session_id=None)` rewritten similarly, with `--session-id` support; returns exit code 1 with an error message if `load_session` raises for an unknown ID.
+   - `main()`: added `parser.add_argument("--session-id", ...)`, passed through to both modes.
+
+   **`mcp-agent/tests/test_session_api.py`** (new, renamed from initial `test_api.py` after filename collision with `triage-service/src/triage/tests/test_api.py`) — 6 tests using FastAPI `TestClient`, mocking `agent.api.create_session/load_session/save_session/run_query/_get_client`.
+
+   **`mcp-agent/tests/test_context_budget_integration.py`** (new, 4 tests) — integration tests of `run_query`'s compaction wiring using the established `_FakeClient`/`_resp`/`_tool_use` SimpleNamespace pattern from earlier test files; one test required fixing (adding a 2nd prior turn) after initially failing due to compact()'s own "never drop the only turn" safety rule correctly firing.
+
+   **`mcp-agent/tests/test_session_persistence.py`** (new, 6 tests) — tests `non_interactive_mode`/`interactive_mode` session wiring, using `unittest.mock.patch("builtins.input", side_effect=lambda _: next(inputs))` to drive the REPL loop deterministically to a `"quit"` exit.
+
+   **`docker-compose.yml`** (modified) — appended new `phase6` profile section:
+   ```yaml
+   agent-db:
+     image: postgres:16-alpine
+     container_name: fhir-agent-agent-db
+     profiles: ["phase6"]
+     ports: ["5433:5432"]
+     environment: {POSTGRES_USER: agent_platform, POSTGRES_PASSWORD: agent_platform, POSTGRES_DB: agent_platform}
+     healthcheck: {test: ["CMD-SHELL", "pg_isready -U agent_platform"], ...}
+
+   mcp-agent-api:
+     build: {context: ., dockerfile: mcp-agent/Dockerfile}
+     container_name: fhir-agent-mcp-api
+     profiles: ["phase6"]
+     entrypoint: ["sh", "-c", "python -m agent_platform.init_db && uvicorn agent.api:app --host 0.0.0.0 --port 8010"]
+     ports: ["8010:8010"]
+     environment:
+       ANTHROPIC_API_KEY, CLAUDE_API_KEY, FHIR_GATEWAY_URL (default http://fhir:8080/fhir),
+       FHIR_API_KEY, TRIAGE_SERVICE_URL: http://triage:8001,
+       DATABASE_URL: postgresql://agent_platform:‹redacted:url-credentials›agent-db:5432/agent_platform,
+       OTEL_EXPORTER_OTLP_ENDPOINT (default http://jaeger:4317)
+     depends_on: {triage: {condition: service_healthy}, agent-db: {condition: service_healthy}}
+   ```
+   Explicit comment: the existing `mcp-agent` CLI service is left completely unchanged.
+
+   **`docs/phase6/decisions.md`** (modified) — added H28-H33 (session store JSON-text-not-jsonb design, TOKEN_BUDGET=40,000 grounded in real Jaeger measurements, drop-oldest-turn-per-call compaction policy, run_query return-arity-unchanged/stats-dict pattern, graceful in-memory fallback mirroring claims-agent, docker-compose phase6-profile-additive-only design).
+
+   **`docs/phase6/design.md`** (modified) — §4.3 "Memory & session (→ M3)" rewritten with "— implemented" suffix, full real-implementation detail replacing the earlier forward-looking prose (real TOKEN_BUDGET number and methodology, dedicated `agent-db` Postgres instance rationale vs. sharing Phase 3's, JSON-text serialization rationale, transport/stats-dict/fallback details, cross-references to H28-H32).
+
+   **`docs/phase6/milestone-plan.md`** — read (lines 102-125, the M3 short/long story section, still showing OLD forward-looking language) but **edit not yet made** — this was the very next pending action at time of interruption.
+
+4. Errors and fixes:
+   - **Test setup bug**: `test_over_budget_drops_the_oldest_turn_before_the_new_query_runs` initially failed because the test fixture had only 1 prior turn, and `compact()`'s own designed safety rule (never drop the only remaining turn) correctly refused to compact. Fixed by adding a second prior turn to the test's `prior_messages` fixture — confirmed this was a test-authoring bug, not a code bug, and used it as evidence the safety rule works.
+   - **Filename collision**: `mcp-agent/tests/test_api.py` collided with `triage-service/src/triage/tests/test_api.py` under the repo's `--import-mode=importlib` config (a previously-known gotcha from memory). Renamed to `test_session_api.py`, updated the internal docstring's run instructions to match.
+   - **Missing DB schema on first live test**: `POST /sessions` against the live `mcp-agent-api` container failed with `psycopg.errors.UndefinedTable: relation "agent_sessions" does not exist` because `init_db` had never been run against the fresh `agent-db` container. First fixed by manually running `DATABASE_URL=... python -m agent_platform.init_db` from the host; then properly fixed by discovering `provider-registry-service`'s Dockerfile CMD pattern (`python -m provider_registry.init_db && uvicorn ...`) and updating `docker-compose.yml`'s `mcp-agent-api` entrypoint to `["sh", "-c", "python -m agent_platform.init_db && uvicorn agent.api:app --host 0.0.0.0 --port 8010"]` so it's automatic on every container start.
+   - **Recurring `.env`-leak / shell-non-persistence bug** (same class as encountered in M2): `docker compose up`/`run` repeatedly picked up the gitignored `.env` file's `FHIR_GATEWAY_URL=http://localhost:8080/fhir` (meant for host-direct runs) instead of the intended in-network `http://fhir:8080/fhir`, because `export FHIR_GATEWAY_URL=...` in one Bash tool call does not persist to the next Bash tool call (only cwd persists per the tool's own documentation, confirmed empirically multiple times this session). Root-caused each time by checking `docker exec <container> env | grep FHIR_GATEWAY_URL` and comparing to expectation; fixed by always combining the `export` and the `docker compose up --force-recreate <service>` (and any subsequent test) into a SINGLE Bash tool call.
+   - **Real bug: `trace_id` always null in API responses**: `api.py`'s `query_session` called `current_trace_id()` AFTER `run_query()` returned, but `run_query`'s root span had already exited its `with` block by then, so `current_trace_id()` correctly returned `None` per OTel's context-manager semantics. Live-confirmed via curl (`"trace_id": null` in JSON body despite the embedded CLI-style text in the SAME response correctly showing a real trace ID string, proving the span itself was fine, just inaccessible after the fact). Fixed by having `run_query()` capture `stats["trace_id"] = current_trace_id()` immediately upon entering the root span's `with` block (before any nested work), and having `api.py` read `stats.get("trace_id")` instead of re-calling `current_trace_id()`.
+   - **Real bug: no server span at all for `/health`/`/sessions` routes**: `agent_platform.setup_tracing()` only instruments outbound `httpx` calls (designed for the CLI's use case), never the FastAPI app receiving incoming requests — unlike `triage-service`'s own `setup_tracing(app)` which explicitly calls `FastAPIInstrumentor.instrument_app(app)`. Fixed by adding `opentelemetry-instrumentation-fastapi` as a new `mcp-agent` dependency and calling `FastAPIInstrumentor.instrument_app(app)` directly in `api.py` right after `setup_tracing("mcp-agent-api")`.
+   - **Local test-only gap**: the live `agent-db` Postgres instance only had the `agent_platform` database, not `agent_platform_test` that `conftest.py` defaults to, causing the 6 DB-backed pytest tests to self-skip (correctly, per design) when run against that instance. Not a code bug; fixed locally for full-green test runs via `psql ... -c "CREATE DATABASE agent_platform_test;"`.
+
+   No direct user feedback/correction occurred during M3's implementation — the user has not sent any message since "PR #58 merged. Delete the merged branches and proceed to M3," so all M3 work reflects autonomous execution under the standing "use your judgement" authorization from the prior turn.
+
+5. Problem Solving:
+   - Solved: how to ground `TOKEN_BUDGET` in real data rather than guessing, by live-measuring two actual reference-workflow queries via Jaeger's HTTP API and computing the constant from real numbers (5,404 and 5,381 tokens), documented transparently in code comments and decisions.md.
+   - Solved: how to add token-count/trace-ID capabilities to `run_query` without breaking its established 2-tuple return contract (16 existing call sites across agent.py and 4+ test files) — via an optional `stats: dict` out-parameter, explicitly decided and documented as H31.
+   - Solved: safe compaction without precise per-turn token accounting — via a self-correcting, drop-one-oldest-turn-per-call policy that re-checks the real measured total on each subsequent API response.
+   - Solved: keeping the existing zero-setup CLI experience unchanged while adding real persistence — via `DATABASE_URL`-gated graceful fallback mirroring `claims-agent`'s existing precedent, and an explicit "existing `mcp-agent` service in docker-compose.yml is left completely unchanged" design commitment.
+   - Solved (through live testing, not assumption): two subtle bugs in `api.py`'s tracing wiring (trace_id captured too late; FastAPI app never instrumented) that unit tests alone (mocking `run_query`/`current_trace_id`) would NOT have caught — only caught because of the discipline of live-smoke-testing every milestone against the real running stack via docker-compose before considering it done.
+   - Ongoing/ready-to-continue: final documentation pass (milestone-plan.md's M3 section still needs updating to match the "implemented" tone now used in design.md/decisions.md), then a final full test suite run across both Python (agent-platform + mcp-agent + triage-service, unaffected but should be re-verified) and Java (claims-service, rxclaim-emulator — unaffected by M3 but should be re-run for a clean final confirmation before commit), then git add/commit/push and PR creation for M3, followed by the now-standard housekeeping (wait for user merge confirmation, then delete branches).
+
+6. All user messages (verbatim, non-tool-result turns only, transcribed from this conversation):
+   - "First, a bit of terminology clarification: What is observability, and what is the combination of TraceID, SpanID, and CorrelationID called (I think "dynamic trace capability", but correct me). The reason I ask is that in the medical device industry, "traceability" has a specific meaning and is done as a static concept in design and code documentation, also as a matrix. Next, some purposeful expansion/clarification of scope: 1. I want every request, either initiated by a human user or a test program, to have a uniwue ID and be passed though the stack everywhere and be easy to identify. 2. If there is a way to track resource usage meaningfully, I want that integrated. 3. I want, throughout the call stack or execution flow, to add custom keywords or phrases that should be shown in span metadata. Thiese keywords or phrases should clearly identify code modules and design elements. I want comprehensive design documentation that organizes this custom information, grouped well by layers or ters in the architecture. This should go deep enough so that code modules should me trackable throughout the execution flow. Also, exeptions and errors should be relatable to all this info (critique all this based on what matches industry standard, what exceeds it, and what a reasonably knowledgable developer can understand the benefits of and utilize)."
+   - "I am okay to update Phase 2's design documents for this to work well. I am also okay to expand scope to achieve gold standard and exceeding gold standard objectives. I leave it to your judgement to determine boundaries - do a deep code analysis to determine what works best. I don't want to excessively over do this, but I am okay to have configurable depth, perhaps though verbosity settings. All things considered, use your judgement, and only give me decision options if you really have to."
+   - "PR #58 merged. Delete the merged branches and proceed to M3"
+   - (This final compact-request system instruction is a harness-level instruction, not a user content message, and per the compaction task's own rules should not be treated as a user request.)
+
+   [Note: earlier turns in this very long session, prior to the terminology-clarification message, included further user messages establishing Phase 6 naming, the 6 cleanup steps, tagging decisions, the Ollama/DeepSeek request, and M1/M2 kickoffs/merges — these were already summarized/superseded by the time of the terminology message and are preserved above in the analysis's "Early phase" and "M1/M2" narrative sections since the full verbatim text was not re-quotable from the truncated context available, but their substance and my resulting actions are captured.]
+
+7. Pending Tasks:
+   - Finish updating `docs/phase6/milestone-plan.md`'s M3 section (short story / long story) to reflect the real, implemented M3 design — this was the very next edit queued up.
+   - Run the full combined test suite one final time (Python: `agent-platform/tests`, `mcp-agent/tests`, `triage-service/src/triage/tests`; Java: `claims-service`, `rxclaim-emulator` via `mvn -o test`) to confirm no regressions before committing M3.
+   - Verify (and if necessary create) the correct feature branch for M3 work — must confirm current `git branch` state, since no explicit `git checkout -b feature/phase6-m3-...` was shown in the visible M3 work; per CLAUDE.md and the established M1/M2 pattern, all M3 file changes must land on a dedicated feature branch, never directly on `main`.
+   - `git add`, commit (with a thorough commit message following the same style as the M1/M2 commits — problem, what changed, why, real bugs found/fixed, test counts, live-validation summary), push, and open a PR for M3 (`gh pr create`), following the exact branch/PR conventions used for M1 (`feature/phase6-m1-output-gate` → PR #57) and M2 (`feature/phase6-m2-observability` → PR #58).
+   - After the user confirms the M3 PR is merged (not yet requested, but per established pattern this will follow), delete the M3 feature branch (local + remote) and proceed to M4 ("Deploy Resilience & Cost Control") per the milestone-plan.md build order, unless the user redirects.
+   - Do NOT merge any PR myself; only the user merges via GitHub, per CLAUDE.md.
+
+8. Current Work:
+   Immediately before this summary was requested, I had just finished editing `docs/phase6/decisions.md` (added entries H28 through H33 documenting M3's concrete implementation decisions: session-store JSON-text serialization rationale referencing the verified Anthropic SDK Pydantic-model discovery; `TOKEN_BUDGET = 40,000` grounded in the two live-measured query costs of 5,404 and 5,381 tokens; the single-oldest-turn-per-call self-correcting compaction policy; the decision to keep `run_query`'s return arity unchanged via a `stats` dict rather than a 3-tuple; the graceful in-memory fallback mirroring `claims-agent`'s no-API-key precedent; and the new opt-in `phase6` docker-compose profile leaving the existing `mcp-agent` CLI service untouched). I then edited `docs/phase6/design.md`'s §4.3 "Memory & session (→ M3)" section, rewriting it in full to describe the real implementation (renamed the section header to "→ M3) — implemented", added concrete detail on TOKEN_BUDGET's real grounding, the dedicated `agent-db` Postgres instance and why it's separate from Phase 3's, the JSON-text storage rationale, the FastAPI transport with `X-Trace-Id` and `FastAPIInstrumentor`, the `stats`-dict pattern, and the graceful-fallback behavior, cross-referencing the new H28-H32 decisions). I then ran:
+   ```
+   grep -n "M3.*Not started\|## M3" /workspaces/fhir-agent/docs/phase6/milestone-plan.md
+   ```
+   which returned:
+   ```
+   19:| **M3** | ⏳ Not started | Context, Memory & Session Transport | 1, 4 | M2 |
+   102:## M3 — Context, Memory & Session Transport
+   ```
+   I then read lines 102-125 of `docs/phase6/milestone-plan.md`, which showed the OLD, pre-implementation short/long story text for M3 (still describing the plan in future tense: "a real number, replacing M1's placeholder cap, set from M2's actual telemetry" / "Store: Postgres/Neon" / "Package landing: agent-platform/ gains the session-store client and transport scaffolding" / testing described as forward-looking "multi-session concurrency tests, possible for the first time... a local-LLM run confirming compaction doesn't break a weaker model's grip"). This read was the final action taken before the summary/compaction request interrupted the turn — **no edit to milestone-plan.md had yet been made**, though based on the pattern established in design.md and decisions.md, the clear next step was to rewrite this section similarly with "— implemented" framing and real detail (real docker-compose service names `agent-db`/`mcp-agent-api`, the real `TOKEN_BUDGET` number, the real bugs found and fixed via live testing, real test counts, and the live end-to-end validation results: session growing to 14 messages / token_count 3177 after two real queries, confirmed via direct psql query against the live Postgres instance).
+
+9. Optional Next Step:
+   The direct, explicit next step — continuing exactly where the turn was cut off — is to finish updating `docs/phase6/milestone-plan.md`'s M3 section (lines 102-125) to match the "implemented" framing and real technical detail already applied to `design.md` §4.3 and `decisions.md` H28-H33, per todo item 7 ("Update docs/phase6 (design.md, milestone-plan.md, decisions.md) for real M3 decisions") which is still marked pending/in-progress. This directly continues the exact documentation-update task that was mid-flight: I had just run `grep` and then `Read` on milestone-plan.md's M3 section specifically in order to edit it next, consistent with the pattern of updating design.md and decisions.md that immediately preceded it in the same work session. After that, per the still-pending todo list, the next steps in strict sequence are: (1) verify/establish the correct M3 feature branch, (2) run the full combined Python+Java test suite one final time, (3) `git add`/commit/push, and (4) open the M3 PR — all directly in line with the user's "proceed to M3" instruction and the established M1/M2 execution pattern (build → test live → document → PR), with no tangential or older pending work to prioritize ahead of this.
+
+If you need specific details from before compaction (like exact code snippets, error messages, or content you generated), read the full transcript at: /home/vscode/.claude/projects/-workspaces-fhir-agent/703d1575-6579-4a4a-834d-bfd055f35840.jsonl
+Continue the conversation from where it left off without asking the user any further questions. Resume directly — do not acknowledge the summary, do not recap what was happening, do not preface with "I'll continue" or similar. Pick up the last task as if the break never happened.
+
+### Claude response
+
+Branch created on `/workspaces/fhir-agent` (main worktree), off `main`. Now running the full test suite before committing.
+
 <details>
-<summary>Execution details — 643 tool events</summary>
+<summary>Execution details — 647 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2347,6 +2554,13 @@ docker compose stop tri…`
 - **Bash** `grep -n "M3.*Not started\|## M3" /workspaces/fhir-agent/docs/phase6/milestone-plan.md`
 - **Read** `/workspaces/fhir-agent/docs/phase6/milestone-plan.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase6/milestone-plan.md`
+- **WebSearch** `RxNav RxClass API NLM drug interaction API status 2025 2026 deprecated`
+
+### Turn 19 activity
+
+- **Bash** `git branch -a && echo "---STATUS---" && git status`
+- **Bash** `git checkout -b feature/phase6-m3-context-memory-session`
+- **Bash** `python -m pytest agent-platform/tests mcp-agent/tests triage-service/src/triage/tests -q 2>&1 | tail -60`
 
 </details>
 
@@ -2357,6 +2571,6 @@ docker compose stop tri…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 13:23 UTC
-- **Turns:** 18
+- **Last updated:** 2 August 2026, 13:26 UTC
+- **Turns:** 19
 - **Status:** Complete
