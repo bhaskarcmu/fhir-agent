@@ -880,8 +880,10 @@ Updating `tools.py` — add `submit_decision` schema and route `assess_refill_ri
 
 Now the fail-closed rewrite of `assess_refill_risk`:
 
+Now updating `agent.py` — imports, `SYSTEM_PROMPT`, the loop logic, and the REPL turn cap.
+
 <details>
-<summary>Execution details — 147 tool events</summary>
+<summary>Execution details — 148 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1083,6 +1085,7 @@ planning doc s…`
 - **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/tools.py`
 - **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/tools.py`
 - **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/tools.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
 
 </details>
 
