@@ -1223,7 +1223,7 @@ Now updating `api.py` to use `stats["trace_id"]`:
 Found another real gap — `api.py` never instruments the FastAPI app itself, so `/health` and `/sessions` never get a server span or trace ID. Fixing it:
 
 <details>
-<summary>Execution details — 628 tool events</summary>
+<summary>Execution details — 632 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2315,6 +2315,16 @@ curl -s -X POST "http://localhost:8010/sessions/$SESSION_ID/query" -H "Content-T
 - **Bash** `cd /workspaces/fhir-agent
 python -m pip install -e "mcp-agent[dev]" -q 2>&1 | tail -20
 python -m pytest agent-platform/tests mcp-agent/tests -q 2>&1 | tail -15`
+- **Bash** `docker ps --filter "name=fhir-agent-agent-db" --format "{{.Names}}: {{.Status}} {{.Ports}}"
+pg_isready -h localhost -p 5433 -U agent_platform 2>&1`
+- **Bash** `PGPASSWORD=agent_platform psql -h localhost -p 5433 -U agent_platform -d agent_platform -c "CREATE DATABASE agent_platform_test;" 2>&1`
+- **Bash** `cd /workspaces/fhir-agent
+python -m pytest agent-platform/tests mcp-agent/tests -q 2>&1 | tail -15`
+- **Bash** `cd /workspaces/fhir-agent
+export FHIR_GATEWAY_URL=http://fhir:8080/fhir
+docker compose --profile phase6 up -d --build mcp-agent-api 2>&1 | tail -15
+sleep 2
+docker exec fhir-agent-mcp-api env | grep FH…`
 
 </details>
 
@@ -2325,6 +2335,6 @@ python -m pytest agent-platform/tests mcp-agent/tests -q 2>&1 | tail -15`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 13:18 UTC
+- **Last updated:** 2 August 2026, 13:19 UTC
 - **Turns:** 18
 - **Status:** Complete
