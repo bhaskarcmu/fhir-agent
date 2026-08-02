@@ -1968,7 +1968,7 @@ All validation passing. Let's tear down the docker stack now.
 Now let me update H4's status to Superseded and add H45-H51 (including the new M7 milestone entry).
 
 <details>
-<summary>Execution details — 1009 tool events</summary>
+<summary>Execution details — 1012 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3618,6 +3618,9 @@ echo "===H46==="
 grep -rn -B1 "H46\b" /workspaces/fhir-agent/agent-platform/s…`
 - **Bash** `grep -n "^| \*\*H4[0-4]\*\*\|^| \*\*H4\*\*" /workspaces/fhir-agent/docs/phase6/decisions.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase6/decisions.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase6/decisions.md`
+- **Bash** `grep -n "4.5 Multi-provider\|4.6 Policy" /workspaces/fhir-agent/docs/phase6/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase6/design.md`
 
 </details>
 
