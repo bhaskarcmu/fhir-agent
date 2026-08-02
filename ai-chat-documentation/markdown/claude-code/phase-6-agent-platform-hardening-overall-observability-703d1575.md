@@ -1036,8 +1036,10 @@ Correct now. Let's re-run the smoke test:
 
 Root cause found — not a bug in my instrumentation at all. It was my own tool's shell state not persisting `export` across separate commands, so `.env`'s host-oriented `FHIR_GATEWAY_URL=localhost` kept winning back. Fixing it properly in one shot:
 
+Excellent — real HIGH-risk result with a real `risk_assessment_id`. Now let's confirm the trace actually landed in Jaeger with proper cross-service propagation.
+
 <details>
-<summary>Execution details — 409 tool events</summary>
+<summary>Execution details — 414 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1732,6 +1734,26 @@ export TRIAGE_SERVICE_URL=http://triage:8001
 docker compose up -d --force-recreate triage 2>&1 | tail -5
 sleep 3
 docker exec fhi…`
+- **Bash** `sleep 3
+curl -s "http://localhost:16686/api/services" | python3 -m json.tool`
+- **Bash** `curl -s "http://localhost:16686/api/traces?service=mcp-agent&limit=1" | python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+trace = d['data'][0]
+trace_id = trace['traceID']
+print('traceID:', trace_…`
+- **Bash** `curl -s "http://localhost:16686/api/traces?service=mcp-agent&limit=1" | python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+trace = d['data'][0]
+for span in trace['spans']:
+    if span['operationNa…`
+- **Bash** `curl -s http://localhost:3000/api/health 2>&1
+echo
+curl -s http://localhost:3000/api/datasources 2>&1 -u admin:admin | python3 -c "import json,sys; d=json.load(sys.stdin); print([x.get('name') for x i…`
+- **Bash** `cd /workspaces/fhir-agent
+docker compose --profile phase2 --profile observability stop triage claims-service rxclaim-emulator jaeger prometheus grafana 2>&1 | tail -10
+docker compose --profile phase2…`
 
 </details>
 
@@ -1742,6 +1764,6 @@ docker exec fhi…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 12:00 UTC
+- **Last updated:** 2 August 2026, 12:01 UTC
 - **Turns:** 15
 - **Status:** Complete
