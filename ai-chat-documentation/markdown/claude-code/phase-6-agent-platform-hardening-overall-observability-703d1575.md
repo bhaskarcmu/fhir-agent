@@ -2038,8 +2038,10 @@ Let's live-verify the `knowledge.py` functions against the real APIs before writ
 
 Now let's extend `tools.py`'s `assess_refill_risk` to surface the flagged medication's RxNorm code for the knowledge lookup.
 
+Known `.env`-shadowing issue again. Fixing it the established way.
+
 <details>
-<summary>Execution details — 1111 tool events</summary>
+<summary>Execution details — 1116 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3833,6 +3835,27 @@ print(citation[…`
 - **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/tools.py`
 - **Bash** `cat -n /workspaces/fhir-agent/mcp-agent/src/agent/tools.py`
 - **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/tools.py`
+- **Bash** `docker ps --format "{{.Names}}" | grep -q "fhir-agent-triage$" || docker compose up -d triage 2>&1 | tail -10
+sleep 3
+FHIR_GATEWAY_URL=http://localhost:8080/fhir TRIAGE_SERVICE_URL=http://localhost:80…`
+- **Bash** `curl -sf http://localhost:8001/health 2>&1
+echo
+curl -s "http://localhost:8080/fhir/Patient?name=Mraz" | python3 -c "
+import json,sys
+d = json.load(sys.stdin)
+print('total:', d.get('total'))
+for e in…`
+- **Bash** `FHIR_GATEWAY_URL=http://localhost:8080/fhir TRIAGE_SERVICE_URL=http://localhost:8001 python3 -c "
+import sys
+sys.path.insert(0, 'mcp-agent/src')
+from agent.tools import assess_refill_risk
+import json…`
+- **Bash** `docker exec fhir-agent-triage env | grep -i fhir
+echo "---logs---"
+docker logs fhir-agent-triage --tail 20`
+- **Bash** `export FHIR_GATEWAY_URL=http://fhir:8080/fhir && docker compose up -d --force-recreate triage
+sleep 3
+docker exec fhir-agent-triage env | grep FHIR_GATEWAY_URL`
 
 </details>
 
@@ -3843,6 +3866,6 @@ print(citation[…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 16:42 UTC
+- **Last updated:** 2 August 2026, 16:43 UTC
 - **Turns:** 28
 - **Status:** Incomplete
