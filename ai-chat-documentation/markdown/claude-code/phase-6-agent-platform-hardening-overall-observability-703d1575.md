@@ -1208,8 +1208,10 @@ Now the FastAPI transport layer. First check `mcp-agent`'s pyproject.toml:
 
 Also need to update the module docstring's run instructions. Let's run it:
 
+All 6 pass. Now let's run the full mcp-agent + agent-platform suite together and update the todo list.
+
 <details>
-<summary>Execution details — 597 tool events</summary>
+<summary>Execution details — 601 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2237,6 +2239,13 @@ python -m pytest mcp-agent/tests/test_context_budget_integration.py -v 2>&1 | ta
 - **Bash** `cd /workspaces/fhir-agent
 python -m pytest mcp-agent/tests/test_context_budget_integration.py -v 2>&1 | tail -20`
 - **Bash** `grep -rln "non_interactive_mode\|interactive_mode" /workspaces/fhir-agent/mcp-agent/tests/`
+- **Write** `/workspaces/fhir-agent/mcp-agent/tests/test_session_persistence.py`
+- **Bash** `find /workspaces/fhir-agent -name "test_session_persistence.py"
+cd /workspaces/fhir-agent
+python -m pytest mcp-agent/tests/test_session_persistence.py -v 2>&1 | tail -50`
+- **TodoWrite** `{"todos": [{"content": "Gather real token-usage data from live queries to ground the M3 budget number", "status": "completed", "activeForm": "Gathering real token-usage data"}, {"content": "Build agen…`
+- **Bash** `cd /workspaces/fhir-agent
+python -m pytest agent-platform/tests mcp-agent/tests -q 2>&1 | tail -20`
 
 </details>
 
@@ -2247,6 +2256,6 @@ python -m pytest mcp-agent/tests/test_context_budget_integration.py -v 2>&1 | ta
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 13:11 UTC
+- **Last updated:** 2 August 2026, 13:12 UTC
 - **Turns:** 18
 - **Status:** Complete
