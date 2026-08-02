@@ -1901,8 +1901,10 @@ Good, real CI workflow files exist. Let me inspect them plus the README and PRD 
 
 Now rewriting `providers.py` with the three-identity model, default-to-ollama, the production guardrail, and discovery functions.
 
+All 8 pass, including the new provider-persistence and dataclass round-trip tests against a real Postgres. Now let's update `agent.py` for the new resolution shape, TTY disclosure, and discovery flags.
+
 <details>
-<summary>Execution details — 901 tool events</summary>
+<summary>Execution details — 909 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3394,6 +3396,16 @@ pip index versions agent-platform 2>&1 | head -5`
 - **TodoWrite** `{"todos": [{"content": "Rework agent_platform/providers.py: 3 provider identities (anthropic/ollama/openai_compatible), default=ollama, DEPLOYMENT_ENV production guardrail, discovery functions", "stat…`
 - **Edit** `/workspaces/fhir-agent/agent-platform/schema.sql`
 - **Read** `/workspaces/fhir-agent/agent-platform/tests/test_session_store.py`
+- **Write** `/workspaces/fhir-agent/agent-platform/tests/test_session_store.py`
+- **Read** `/workspaces/fhir-agent/agent-platform/tests/conftest.py`
+- **Bash** `python -m pip install -q -e "agent-platform[dev]" 2>&1 | tail -20`
+- **Bash** `docker ps --format "{{.Names}}" | grep -i postgres; docker ps -a --format "{{.Names}}\t{{.Status}}" | grep -i agent-db`
+- **Bash** `docker compose --profile phase6 up -d agent-db 2>&1 | tail -10
+sleep 5
+docker exec fhir-agent-agent-db psql -U agent_platform -d agent_platform -c "CREATE DATABASE agent_platform_test;" 2>&1`
+- **Bash** `python -m pytest agent-platform/tests/test_session_store.py -v 2>&1 | tail -40`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
 
 </details>
 
@@ -3404,6 +3416,6 @@ pip index versions agent-platform 2>&1 | head -5`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 15:49 UTC
+- **Last updated:** 2 August 2026, 15:50 UTC
 - **Turns:** 27
 - **Status:** Incomplete
