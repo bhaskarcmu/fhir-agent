@@ -11,7 +11,7 @@ Two families:
 
 - **D1–D8 — Deviations from the source PRD.** Where what we agreed to build differs from the
   DRAFT PRD. Full table: [`requirements.md` → Deviations](./requirements.md#deviations-from-the-prd).
-- **C1–C4 — Cloud, security & scalability decisions.** Made during design, before build. Full
+- **C1–C5 — Cloud, security & scalability decisions.** Made during design, before build. Full
   table: [`README.md`](./README.md).
 
 Status values: **Accepted** (in force) · **Superseded** (replaced — successor named) ·
@@ -40,6 +40,7 @@ Status values: **Accepted** (in force) · **Superseded** (replaced — successor
 | **C2** | Gateway | **DB-less Kong** as the canonical Phase 2 gateway — one declarative dialect, local + cloud; Phase 1 KIC untouched, unified later via the gateway-strangler | ⚠️ **Partially delivered** | **Supersedes** the config-dialect drift risk originally flagged in [`plan.md` §3](./plan.md#3-gateway--localcloud-parity), and refines **D4**. The local half runs today; the cloud half is undeployed. **Filename caveat:** the committed artifact is `kong.tmpl.yml` (a template); `kong.yml` is generated at startup — see the [gateway runbook](../gateway-runbook.md). |
 | **C3** | Rules data | **Postgres behind a repository interface** now; Bigtable/Firestore is the documented scale swap | ⚠️ **Partially delivered** | The *seam* exists and is honoured (`PayerKb` + `FilePayerKb`). The **Postgres implementation does not** — storage is file-backed. The swap is therefore an untested hypothesis; [§16 item 5](./plan.md#16-future-work). |
 | **C4** | Audit | **FHIR `Provenance`** now (with R18 invariants); BigQuery analytics plane deferred to Phase 2b | ✅ Accepted | `Provenance` is built and persisted per decision. BigQuery deliberately deferred; [§16 item 11](./plan.md#16-future-work). |
+| **C5** | Observability | **OpenTelemetry tracing + Micrometer/Prometheus metrics** (R15), designed to run per-claim/per-stage in `claims-service` and `rxclaim-emulator` | ⚠️ **Partially delivered** | Design documented ([`plan.md` §5](./plan.md#5-cloud-architecture--compute-data-security-observability-scalability)); the milestone table marked M3/M4's touchpoints "OTel tracing wired" / "Managed-Prometheus metric names," but no `opentelemetry`/`micrometer` dependency or trace/correlation-ID code exists in either service. Found post-hoc (2026-08); same gap class as D8, just previously uncaught. See the [cloud-delivery & observability gap](./plan.md#6-workstreams--milestones). |
 
 ## Later decisions (post-design, made during build)
 
