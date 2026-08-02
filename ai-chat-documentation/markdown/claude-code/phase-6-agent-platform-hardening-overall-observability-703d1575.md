@@ -449,7 +449,7 @@ Now updating the top-level `docs/README.md` roadmap:
 Adding an "Audit Phase 5 status" row and fixing the "know what to build next" row:
 
 <details>
-<summary>Execution details — 65 tool events</summary>
+<summary>Execution details — 72 tool events</summary>
 
 ### Turn 1 activity
 
@@ -536,6 +536,17 @@ Prometheus metric names,"…`
 - **Read** `/workspaces/fhir-agent/docs/README.md`
 - **Edit** `/workspaces/fhir-agent/docs/README.md`
 - **Read** `/workspaces/fhir-agent/docs/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/README.md`
+- **Bash** `git add docs/phase5/README.md docs/phase4/README.md docs/phase4/decisions.md docs/README.md && git status`
+- **Bash** `git commit -m "$(cat <<'EOF'
+docs(phase5): reserve Phase 5 for epic-emulator decomposition, not agent hardening
+
+Adds docs/phase5/README.md as the canonical status doc for Phase 5:
+reserved for decomp…`
+- **Bash** `git push origin docs/phase5-readiness-assessment`
+- **TodoWrite** `{"todos": [{"content": "Confirm both modifications make sense (naming + tagging exceptions)", "status": "completed", "activeForm": "Confirming modifications make sense"}, {"content": "Find exact histo…`
+- **Bash** `git -C /workspaces/fhir-agent status >/dev/null; mv /home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase5-agent-hardening.md /home/vscode/.claude/projects/-workspaces-fhir-agent/memory/ph…`
+- **Read** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase6-agent-hardening.md`
 
 </details>
 
