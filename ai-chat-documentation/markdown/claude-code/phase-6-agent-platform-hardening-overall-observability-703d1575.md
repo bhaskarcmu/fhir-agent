@@ -866,8 +866,22 @@ Proceed to M1
 
 Housekeeping done. Now onto M1 — let me re-read the current mcp-agent source precisely before touching it.
 
+Good, clean slate. Now let's create a feature branch and start building.
+
+Now writing the `agent-platform` package.
+
+Now the `agent-platform` unit tests:
+
+No collisions. Now writing the `agent-platform` tests.
+
+All 30 pass. Now wiring `mcp-agent`.
+
+Updating `tools.py` — add `submit_decision` schema and route `assess_refill_risk` through the fail-closed guard:
+
+Now the fail-closed rewrite of `assess_refill_risk`:
+
 <details>
-<summary>Execution details — 127 tool events</summary>
+<summary>Execution details — 147 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1049,6 +1063,26 @@ planning doc s…`
 - **Bash** `grep -rn "qualitativeRisk\|\"outcome\"\|'outcome'\|prediction" /workspaces/fhir-agent/triage-service/src/ 2>/dev/null | head -30`
 - **Bash** `sed -n '1,70p' /workspaces/fhir-agent/triage-service/src/triage/models.py`
 - **Bash** `sed -n '60,120p' /workspaces/fhir-agent/triage-service/src/triage/main.py`
+- **Bash** `grep -n "pip install\|editable" /workspaces/fhir-agent/.ona/automations.yaml 2>/dev/null | head -20`
+- **Bash** `ls /workspaces/fhir-agent/ | grep -i agent; ls /workspaces/fhir-agent/agent-platform 2>&1`
+- **Bash** `git status && git checkout -b feature/phase6-m1-output-gate`
+- **TodoWrite** `{"todos": [{"content": "Write agent-platform/ package (fail_closed.py, output_gate.py) + pyproject.toml", "status": "in_progress", "activeForm": "Writing agent-platform package"}, {"content": "Write a…`
+- **Bash** `mkdir -p /workspaces/fhir-agent/agent-platform/src/agent_platform /workspaces/fhir-agent/agent-platform/tests`
+- **Write** `/workspaces/fhir-agent/agent-platform/pyproject.toml`
+- **Write** `/workspaces/fhir-agent/agent-platform/src/agent_platform/__init__.py`
+- **Write** `/workspaces/fhir-agent/agent-platform/src/agent_platform/fail_closed.py`
+- **Write** `/workspaces/fhir-agent/agent-platform/src/agent_platform/output_gate.py`
+- **Write** `/workspaces/fhir-agent/agent-platform/tests/__init__.py`
+- **Bash** `find /workspaces/fhir-agent -name "test_fail_closed.py" -o -name "test_output_gate.py" -o -name "test_output_contract.py" -o -name "test_triage_fail_closed_stub_server.py" 2>/dev/null`
+- **Write** `/workspaces/fhir-agent/agent-platform/tests/test_fail_closed.py`
+- **Write** `/workspaces/fhir-agent/agent-platform/tests/test_output_gate.py`
+- **Bash** `python -m pip install -e "agent-platform[dev]" -q 2>&1 | tail -20`
+- **Bash** `python -m pytest agent-platform/tests -v 2>&1 | tail -60`
+- **TodoWrite** `{"todos": [{"content": "Write agent-platform/ package (fail_closed.py, output_gate.py) + pyproject.toml", "status": "completed", "activeForm": "Writing agent-platform package"}, {"content": "Write age…`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/tools.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/tools.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/tools.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/tools.py`
 
 </details>
 
@@ -1059,6 +1093,6 @@ planning doc s…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 10:45 UTC
+- **Last updated:** 2 August 2026, 10:49 UTC
 - **Turns:** 13
 - **Status:** Complete
