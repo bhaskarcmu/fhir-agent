@@ -1032,8 +1032,10 @@ Now let's run the real query through the instrumented stack:
 
 Found it — a pre-existing `.env` file (gitignored, tuned for host-direct runs) leaks `localhost` URLs into `docker compose run`, unrelated to my changes. Overriding explicitly for the smoke test:
 
+Correct now. Let's re-run the smoke test:
+
 <details>
-<summary>Execution details — 382 tool events</summary>
+<summary>Execution details — 386 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1594,6 +1596,17 @@ docker compose run --name mcp-agent-smoketest -T \
   -e OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317 \
   -e FHIR_GATEWAY_URL=http://fhir:8080/fhir \
   -e TRIAGE_SERVICE_URL=http://triage:800…`
+- **Bash** `docker logs fhir-agent-triage --tail 30 2>&1`
+- **Bash** `docker exec fhir-agent-triage env | grep -i FHIR`
+- **Bash** `cd /workspaces/fhir-agent
+export FHIR_GATEWAY_URL=http://fhir:8080/fhir
+docker compose up -d --force-recreate triage 2>&1 | tail -10
+docker exec fhir-agent-triage env | grep -i FHIR`
+- **Bash** `cd /workspaces/fhir-agent
+docker compose run --name mcp-agent-smoketest -T \
+  -e OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317 \
+  -e FHIR_GATEWAY_URL=http://fhir:8080/fhir \
+  -e TRIAGE_SERVICE_URL…`
 
 </details>
 
@@ -1604,6 +1617,6 @@ docker compose run --name mcp-agent-smoketest -T \
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 11:54 UTC
+- **Last updated:** 2 August 2026, 11:55 UTC
 - **Turns:** 15
 - **Status:** Complete
