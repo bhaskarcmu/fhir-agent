@@ -1917,8 +1917,10 @@ All 27 pass. Now let's add discovery function tests, then move to wiring `agent.
 
 Let me read the full current `agent.py` to plan the exact edits precisely.
 
+Now the imports:
+
 <details>
-<summary>Execution details — 927 tool events</summary>
+<summary>Execution details — 930 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3442,6 +3444,9 @@ os.environ.…`
 - **Bash** `python -m pytest agent-platform/tests/test_providers.py -v 2>&1 | tail -20`
 - **TodoWrite** `{"todos": [{"content": "Rework agent_platform/providers.py: 3 provider identities (anthropic/ollama/openai_compatible), default=ollama, DEPLOYMENT_ENV production guardrail, discovery functions", "stat…`
 - **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
 
 </details>
 
