@@ -448,8 +448,36 @@ Now updating the top-level `docs/README.md` roadmap:
 
 Adding an "Audit Phase 5 status" row and fixing the "know what to build next" row:
 
+Confirmed: main tip is still `9df0167`, matching Phase 4's current state. Creating the three annotated tags now.
+
+Local tags created and look correct. Pushing them to origin now (this is the shared-state action worth flagging explicitly):
+
+All six steps are done. Summary:
+
+## PRs (both open, awaiting your review/merge — I don't merge)
+
+- **[PR #55](https://github.com/bhaskarcmu/fhir-agent/pull/55)** — `docs/phase2-observability-status-correction` → `main`. Corrects the R15 "OTel tracing wired" overstatement in `docs/phase2/plan.md`/`README.md`, adds `C5` to `decisions.md`. Commit `bb955a5`.
+- **[PR #54](https://github.com/bhaskarcmu/fhir-agent/pull/54)** (existing, updated) — `docs/phase5-readiness-assessment` → `main`. New commit `1e137c1` adds `docs/phase5/README.md` (Phase 5 reservation + explicit "this is not Agent Platform Hardening" correction), `docs/phase4/decisions.md` E16 (durable pagination-bug record, new "Open" status value), cross-links from `docs/phase4/README.md`, and the Phase 5/6 roadmap update in top-level `docs/README.md`.
+
+## Tags (created and pushed to origin)
+
+- `phase2-v1` → `b605ae8` (last Phase 2 merge before Phase 3 began)
+- `phase3-v1` → `8816983` (last Phase 3 merge before Phase 4 began)
+- `phase4-v1` → `9df0167` (current `main` tip) — deliberately **not** framed as a clean boundary; the tag message states the open safety bug explicitly, unlike `phase1-v1`'s "verified good" framing
+- No `phase5-v1` — Phase 5 hasn't started, nothing to snapshot.
+
+## Memory
+
+Renamed `phase5-agent-hardening.md` → `phase6-agent-hardening.md`, updated throughout for the renumbering, and folded in the audit findings from our critique (mcp-agent's fail-closed gap, the `claims-agent` `--no-llm` pattern, the rate-limiter departure, etc.) as pre-planning context for whenever a dedicated Phase 6 session starts.
+
+## Known limitations / things to check
+
+- **Step 6's Phase 4 tag lands before PR #54 merges**, so `phase4-v1`'s tree doesn't yet contain the `E16` decisions.md entry — the tag *message* documents the bug inline so it's not invisible, but if you want the tag's tree to actually contain the durable record, it'd need re-cutting after #54 merges (I'd treat the current tag as sufficient rather than replace it, but flagging the tradeoff).
+- Both PRs are independent and can merge in either order.
+- I stayed on `docs/phase5-readiness-assessment` as the current branch — let me know if you want me to switch back to `main`.
+
 <details>
-<summary>Execution details — 75 tool events</summary>
+<summary>Execution details — 81 tool events</summary>
 
 ### Turn 1 activity
 
@@ -550,6 +578,21 @@ reserved for decomp…`
 - **Write** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase6-agent-hardening.md`
 - **Read** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/MEMORY.md`
 - **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/MEMORY.md`
+- **Bash** `git rev-parse origin/main && git log -1 --format='%H %s' origin/main
+echo ---
+git log -1 --format='%H %s' b605ae8
+echo ---
+git log -1 --format='%H %s' 8816983
+echo ---
+git log -1 --format='%H %s' 9df0…`
+- **Bash** `mkdir -p /tmp/claude-1000/-workspaces-fhir-agent/703d1575-6579-4a4a-834d-bfd055f35840/scratchpad
+cat > /tmp/claude-1000/-workspaces-fhir-agent/703d1575-6579-4a4a-834d-bfd055f35840/scratchpad/tag-phase…`
+- **Bash** `cd /workspaces/fhir-agent
+git tag -a phase2-v1 b605ae8 -F /tmp/claude-1000/-workspaces-fhir-agent/703d1575-6579-4a4a-834d-bfd055f35840/scratchpad/tag-phase2.txt
+git tag -a phase3-v1 8816983 -F /tmp/cl…`
+- **Bash** `git push origin phase2-v1 phase3-v1 phase4-v1`
+- **TodoWrite** `{"todos": [{"content": "Confirm both modifications make sense (naming + tagging exceptions)", "status": "completed", "activeForm": "Confirming modifications make sense"}, {"content": "Find exact histo…`
+- **Bash** `gh pr list --state open --json number,title,headRefName,url 2>&1`
 
 </details>
 
@@ -560,6 +603,6 @@ reserved for decomp…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 04:31 UTC
+- **Last updated:** 2 August 2026, 04:33 UTC
 - **Turns:** 7
 - **Status:** Complete
