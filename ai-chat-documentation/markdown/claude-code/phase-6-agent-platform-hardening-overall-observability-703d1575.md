@@ -1555,8 +1555,14 @@ Now updating `milestone-plan.md`'s M4 section and `telemetry-schema.md` §7.
 
 Now updating `telemetry-schema.md` §7 to mark the metric as built.
 
+176 passed. Now the Java suites for final confirmation.
+
+Both green. Now let's review the diff and commit.
+
+Everything listed matches what I intentionally changed. Staging and committing.
+
 <details>
-<summary>Execution details — 766 tool events</summary>
+<summary>Execution details — 771 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2862,6 +2868,15 @@ SESSION_ID=$(curl -sS -X POST http://localhost:8010/sess…`
 - **Bash** `docker ps --format "{{.Names}}" | grep fhir-agent || echo "no fhir-agent containers running"
 echo "---"
 python -m pytest agent-platform/tests mcp-agent/tests triage-service/src/triage/tests -q 2>&1 |…`
+- **Bash** `cd /workspaces/fhir-agent/claims-service && unset SPRING_DATASOURCE_URL NEON_HOST NEON_USER NEON_PASSWORD NEON_DB 2>/dev/null; mvn -o -q clean verify > /tmp/claude-1000/-workspaces-fhir-agent/703d1575…`
+- **Bash** `cd /workspaces/fhir-agent/rxclaim-emulator && unset SPRING_DATASOURCE_URL NEON_HOST NEON_USER NEON_PASSWORD NEON_DB 2>/dev/null; mvn -o -q clean verify > /tmp/claude-1000/-workspaces-fhir-agent/703d15…`
+- **Bash** `cd /workspaces/fhir-agent && git status`
+- **Bash** `git add agent-platform/pyproject.toml agent-platform/src/agent_platform/__init__.py agent-platform/src/agent_platform/resilience.py agent-platform/tests/test_resilience.py docker-compose.yml docs/phas…`
+- **Bash** `git commit -m "$(cat <<'EOF'
+feat(phase6): M4 — deploy resilience, cost control, Grafana dashboards
+
+Protects the one paid, external, metered call every agent turn makes
+(the LLM API) with a circuit b…`
 
 </details>
 
@@ -2872,6 +2887,6 @@ python -m pytest agent-platform/tests mcp-agent/tests triage-service/src/triage/
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 14:09 UTC
+- **Last updated:** 2 August 2026, 14:10 UTC
 - **Turns:** 22
 - **Status:** Incomplete
