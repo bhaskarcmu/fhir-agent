@@ -1925,8 +1925,10 @@ Now `main()` — add the `--list-models`/`--provider`/`--model` flags and wire e
 
 All 9 pass. Now let's run the full mcp-agent suite to see what else needs updating.
 
+Now let's rework `api.py`. Let me read the full current file.
+
 <details>
-<summary>Execution details — 943 tool events</summary>
+<summary>Execution details — 947 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3467,6 +3469,10 @@ python -m pytest mcp-agent/tests -q 2>&1 | tail -100`
 - **Bash** `python -m pytest mcp-agent/tests/test_session_persistence.py -v 2>&1 | tail -60`
 - **Bash** `python -m pytest mcp-agent/tests -q -x --deselect mcp-agent/tests/test_provider_integration.py::test_live_ollama_resolves_to_a_valid_gated_decision --deselect mcp-agent/tests/test_provider_integration…`
 - **TodoWrite** `{"todos": [{"content": "Rework agent_platform/providers.py: 3 provider identities (anthropic/ollama/openai_compatible), default=ollama, DEPLOYMENT_ENV production guardrail, discovery functions", "stat…`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/api.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/api.py`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/api.py`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/api.py`
 
 </details>
 
