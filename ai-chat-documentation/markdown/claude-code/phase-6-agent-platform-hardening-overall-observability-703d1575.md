@@ -1030,8 +1030,10 @@ All three targets are actually being scraped successfully — real, working metr
 
 Now let's run the real query through the instrumented stack:
 
+Found it — a pre-existing `.env` file (gitignored, tuned for host-direct runs) leaks `localhost` URLs into `docker compose run`, unrelated to my changes. Overriding explicitly for the smoke test:
+
 <details>
-<summary>Execution details — 372 tool events</summary>
+<summary>Execution details — 381 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1566,6 +1568,27 @@ docker rm mcp-agent-smoketest >/dev/null 2…`
 - **Edit** `/workspaces/fhir-agent/mcp-agent/Dockerfile`
 - **Bash** `cd /workspaces/fhir-agent
 docker compose build mcp-agent 2>&1 | tail -15`
+- **Bash** `cd /workspaces/fhir-agent
+docker compose run --name mcp-agent-smoketest -e OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317 mcp-agent python3 -m agent.agent --query "Check refill risk for Kristle Mraz"…`
+- **Bash** `cd /workspaces/fhir-agent
+docker compose run --name mcp-agent-smoketest -e OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317 mcp-agent --query "Check refill risk for Kristle Mraz" > /tmp/claude-1000/-wor…`
+- **Bash** `echo "FHIR_GATEWAY_URL=$FHIR_GATEWAY_URL"`
+- **Bash** `docker compose run --rm -T mcp-agent python3 -c "import os; print('FHIR_GATEWAY_URL=', os.environ.get('FHIR_GATEWAY_URL'))"`
+- **Bash** `docker compose run --rm -T --entrypoint python3 mcp-agent -c "import os; print('FHIR_GATEWAY_URL=', repr(os.environ.get('FHIR_GATEWAY_URL')))"`
+- **Bash** `docker compose run --name mcp-agent-check -T --entrypoint python3 mcp-agent -c "import os; print('FHIR_GATEWAY_URL=', repr(os.environ.get('FHIR_GATEWAY_URL')))" >/dev/null 2>&1
+docker logs mcp-agent-c…`
+- **Bash** `env | grep -i "FHIR_GATEWAY_URL\|^FHIR"
+echo "---.env file---"
+cat /workspaces/fhir-agent/.env 2>&1`
+- **Bash** `cd /workspaces/fhir-agent
+docker compose run --name mcp-agent-smoketest -T \
+  -e OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317 \
+  -e FHIR_GATEWAY_URL=http://fhir:8080/fhir \
+  -e TRIAGE_SERVICE_URL…`
+- **Bash** `export FHIR_GATEWAY_URL=http://fhir:8080/fhir
+export TRIAGE_SERVICE_URL=http://triage:8001
+cd /workspaces/fhir-agent
+docker compose up -d --force-recreate triage 2>&1 | tail -20`
 
 </details>
 
@@ -1576,6 +1599,6 @@ docker compose build mcp-agent 2>&1 | tail -15`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 11:51 UTC
+- **Last updated:** 2 August 2026, 11:54 UTC
 - **Turns:** 15
 - **Status:** Complete
