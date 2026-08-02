@@ -1990,7 +1990,7 @@ Everything staged matches intended changes. Committing.
 Committed as `7dc7a98`. Let's push and update the PR.
 
 <details>
-<summary>Execution details — 1068 tool events</summary>
+<summary>Execution details — 1070 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3707,6 +3707,10 @@ feat(phase6): M5 rework — self-hosted default, 3 provider identities, per-sess
 Substantial design-review-driven rework of M5's provider abstraction,
 per d…`
 - **Bash** `git push origin feature/phase6-m5-provider-abstraction`
+- **Bash** `gh pr edit 61 --title "Phase 6 M5: provider abstraction — self-hosted default, per-session model choice" --body "$(cat <<'EOF'
+## Summary
+Implements Phase 6 Milestone 5 — "Provider Abstraction & Cross…`
+- **TodoWrite** `{"todos": [{"content": "Rework agent_platform/providers.py: 3 provider identities (anthropic/ollama/openai_compatible), default=ollama, DEPLOYMENT_ENV production guardrail, discovery functions", "stat…`
 
 </details>
 
@@ -3717,6 +3721,6 @@ per d…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 16:29 UTC
+- **Last updated:** 2 August 2026, 16:30 UTC
 - **Turns:** 27
 - **Status:** Incomplete
