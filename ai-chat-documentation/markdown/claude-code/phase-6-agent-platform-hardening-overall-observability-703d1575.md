@@ -1215,7 +1215,7 @@ Now appending the new Phase 6 services at the end:
 All correct. Now the real end-to-end session test — create a session via the HTTP API, ask two questions, confirm persistence:
 
 <details>
-<summary>Execution details — 616 tool events</summary>
+<summary>Execution details — 618 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2283,6 +2283,15 @@ DATABASE_URL="postgresql://agent_platform:‹redacted:url-credentials›localhos
 git diff docker-compose.yml | head -100`
 - **Bash** `cd /workspaces/fhir-agent
 docker compose --profile phase6 up -d --build mcp-agent-api 2>&1 | tail -15`
+- **Bash** `docker exec fhir-agent-triage env | grep FHIR_GATEWAY_URL
+sleep 2
+docker logs fhir-agent-mcp-api --tail 10 2>&1`
+- **Bash** `cd /workspaces/fhir-agent
+export FHIR_GATEWAY_URL=http://fhir:8080/fhir
+docker compose up -d --force-recreate triage 2>&1 | tail -8
+sleep 3
+docker exec fhir-agent-triage env | grep FHIR_GATEWAY_URL
+ec…`
 
 </details>
 
@@ -2293,6 +2302,6 @@ docker compose --profile phase6 up -d --build mcp-agent-api 2>&1 | tail -15`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 13:15 UTC
+- **Last updated:** 2 August 2026, 13:16 UTC
 - **Turns:** 18
 - **Status:** Complete
