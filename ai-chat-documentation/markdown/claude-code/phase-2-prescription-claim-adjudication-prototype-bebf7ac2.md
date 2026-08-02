@@ -5142,6 +5142,30 @@ Two more ways to "program" it beyond the prompt, worth knowing:
 
 If it's useful, I can turn the improved `SYSTEM_PROMPT` + an output-validator into an actual small PR against `mcp-agent`, wired with a couple of tests — same branch-and-PR flow as everything else.
 
+## Turn 76
+
+### Prompt
+
+Establish new milestones (just plan now, read only analysis only for this prompt) to cover all 5 numbered topics above:
+
+For 1: Make a careful mental note of what yoyu said just above, and articulate and/or implement a deliberate mechanism to scale this. Explain where you specified the memory sizes and why, how you determined the limits, and how this can autoscale.
+
+For 2: Regarding memory and compute issues during deployment: This should also be tied to observability. How and whether whould I see these in Grafana for example? Talk about queueing and wait times as a first preference to maintain uptime, next talk about rate limiting or at least rate alerts or alarms to contain cost and allow for manual measures to prevent outages and minimize performance degradation.
+
+For 3: Go super full blown with observability. Tell me how I can implement my debugging and tracing experience using traceIDs, SpanIDs, and especially span metadata in the coding world for API development to this AI agent world.
+
+For 4: Tell me everything about how follow-ups are enabled down to the code snippet (not at this moment, after the planned next milestones are implemented I will ask for a comprehensive report - include this there). Fold in to this analysis all the "what could be done" items. Moreover, consider what to do if alternatives to claude, such as compute instance hosted Meta's LLM (temm me what that is calld again?) and also compute instance hosted DeepSeek alternatives can also be configured to enable and properly manage follow-ups.
+
+For 5: I want the whole shabang - A RAG with natural language rules (something like Claude.md or what you mentioned as policy.md). An option to use multiple alternatives such as Meta's LLM and DeepSeek to review important responses to make sure they follow the rules. It is an absolute must to limit the final answer to the three possible options only. Enforce by whitelisting in enums, and/or if it looks like a more modern practice,  expose the decision as a tool with an enum output so the shape is structurally forced. It is important to prevent the user from obtaining answers the LLM should not be answering.
+
+____________
+
+Critique all of the above first before making a plan. Brainsorm with me for a bit if you like before laying out the milestones plan. Remember, after the next severasl milestones, that I will ask you to create a comprenensive report. Internalize and prepare appropriate details for my future questions!
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 655 tool events</summary>
 
@@ -6723,6 +6747,6 @@ sed -n '20…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 31 July 2026, 22:13 UTC
-- **Turns:** 75
+- **Last updated:** 2 August 2026, 00:54 UTC
+- **Turns:** 76
 - **Status:** Incomplete
