@@ -1034,8 +1034,10 @@ Found it — a pre-existing `.env` file (gitignored, tuned for host-direct runs)
 
 Correct now. Let's re-run the smoke test:
 
+Root cause found — not a bug in my instrumentation at all. It was my own tool's shell state not persisting `export` across separate commands, so `.env`'s host-oriented `FHIR_GATEWAY_URL=localhost` kept winning back. Fixing it properly in one shot:
+
 <details>
-<summary>Execution details — 408 tool events</summary>
+<summary>Execution details — 409 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1724,6 +1726,12 @@ client…`
 - **Bash** `docker exec fhir-agent-triage env | grep -i FHIR
 docker inspect fhir-agent-triage --format='{{.State.StartedAt}}'
 date -u`
+- **Bash** `cd /workspaces/fhir-agent
+export FHIR_GATEWAY_URL=http://fhir:8080/fhir
+export TRIAGE_SERVICE_URL=http://triage:8001
+docker compose up -d --force-recreate triage 2>&1 | tail -5
+sleep 3
+docker exec fhi…`
 
 </details>
 
