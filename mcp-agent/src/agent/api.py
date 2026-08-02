@@ -17,21 +17,42 @@ Usage:
 Environment variables: same as agent.agent (ANTHROPIC_API_KEY/CLAUDE_API_KEY,
 FHIR_GATEWAY_URL, FHIR_API_KEY, TRIAGE_SERVICE_URL) plus DATABASE_URL
 (required -- unlike the CLI, this transport has no in-memory fallback,
-since an HTTP session with no persistence isn't a session).
+since an HTTP session with no persistence isn't a session), plus M4's
+resilience knobs (MAX_CONCURRENT_LLM_QUERIES, LLM_QUERY_QUEUE_DEADLINE_SECONDS,
+LLM_CIRCUIT_FAILURE_THRESHOLD, LLM_CIRCUIT_RESET_SECONDS,
+LLM_ALERT_TOKENS_PER_MINUTE, LLM_HARD_BACKSTOP_TOKENS_PER_MINUTE -- all
+optional, defaults in agent_platform.resilience). /metrics exposes
+Prometheus counters/histograms for LLM token usage, call outcomes, and
+rate-limit alerts (docs/phase6/decisions.md H27).
 """
 
 from __future__ import annotations
 
 import os
+import threading
 
 import anthropic
 from fastapi import FastAPI, HTTPException, Response
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from prometheus_client import make_asgi_app
 from pydantic import BaseModel
 
 from agent_platform import create_session, current_trace_id, load_session, save_session, setup_tracing
 
 from .agent import run_query
+
+# Concurrency limiter for query_session specifically -- not session count
+# (M3 left that unbounded on purpose) but LLM calls actually in flight at
+# once, which is what really threatens the single Anthropic API key's own
+# rate limits and this process's thread pool (docs/phase6/milestone-plan.md
+# M4's "concurrent-session-count scaling, deferred from M3"). A bounded
+# wait with a deadline, not an unbounded queue: a request that can't get a
+# slot within the deadline gets a 503 rather than waiting indefinitely,
+# mirroring this repo's existing timeout-not-retry-forever convention
+# (HttpTriageClient.java).
+_MAX_CONCURRENT_QUERIES = int(os.environ.get("MAX_CONCURRENT_LLM_QUERIES", "10"))
+_QUERY_QUEUE_DEADLINE_SECONDS = float(os.environ.get("LLM_QUERY_QUEUE_DEADLINE_SECONDS", "5"))
+_query_slots = threading.Semaphore(_MAX_CONCURRENT_QUERIES)
 
 app = FastAPI(
     title="MCP Agent API",
@@ -48,6 +69,10 @@ setup_tracing("mcp-agent-api")
 # HTTP of its own). query_session's own trace ID instead comes from
 # run_query's stats dict, captured before its root span closes -- see there.
 FastAPIInstrumentor.instrument_app(app)
+
+# Scraped by Prometheus the same way the Java services' /actuator/prometheus
+# already is (docs/phase6/decisions.md H27, observability/prometheus.yml).
+app.mount("/metrics", make_asgi_app())
 
 _client: anthropic.Anthropic | None = None
 
@@ -122,10 +147,32 @@ def query_session(session_id: str, body: QueryRequest, response: Response) -> Qu
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=f"Session store unavailable: {exc}")
 
-    stats: dict = {}
-    final_text, messages = run_query(
-        client, body.query, messages, verbose=False, token_count=token_count, stats=stats
-    )
+    if not _query_slots.acquire(timeout=_QUERY_QUEUE_DEADLINE_SECONDS):
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                f"Too many concurrent queries in flight (max {_MAX_CONCURRENT_QUERIES}); "
+                "retry shortly."
+            ),
+        )
+    try:
+        stats: dict = {}
+        final_text, messages = run_query(
+            client, body.query, messages, verbose=False, token_count=token_count, stats=stats
+        )
+    except anthropic.APIError as exc:
+        # A single call failure below the circuit breaker's threshold --
+        # run_query doesn't turn this into a REVIEW decision (only a
+        # tripped breaker or exceeded cost backstop does, docs/phase6/
+        # decisions.md H20); without this handler it would fall through
+        # to FastAPI's default 500, an ungraceful failure mode for a
+        # milestone specifically about deploy resilience. 502, not 500:
+        # the failure is in the upstream LLM API, not this service's own
+        # code.
+        raise HTTPException(status_code=502, detail=f"LLM API error: {exc}")
+    finally:
+        _query_slots.release()
+
     save_session(session_id, messages, stats.get("token_count", token_count))
 
     # Read from stats, not current_trace_id() -- run_query's root span has

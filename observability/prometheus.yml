@@ -33,3 +33,14 @@ scrape_configs:
     metrics_path: /actuator/prometheus
     static_configs:
       - targets: ["rxclaim-emulator:8091"]
+
+  # mcp-agent-api only exists under the phase6 profile -- this target is
+  # simply down (not an error) when observability is run without phase6,
+  # same as the other targets above when their own profile isn't up.
+  # docs/phase6/decisions.md H27 (M4): the LLM token/cost metric this
+  # scrapes only exists because M4 built it -- M2 only had per-span
+  # gen_ai.usage.* attributes, which Prometheus can't scrape.
+  - job_name: mcp-agent-api
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["mcp-agent-api:8010"]

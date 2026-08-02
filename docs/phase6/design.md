@@ -197,20 +197,58 @@ never a cached clinical read.
 UI, not a streaming design. It exists because M3's session store and M4's concurrency work are
 both untestable against a single-process REPL holding a Python list.
 
-### 4.4 Deployment resilience & cost (→ M4)
+### 4.4 Deployment resilience & cost (→ M4) — implemented
 
 - **Rate/cost posture — hybrid** ([`decisions.md` H19](./decisions.md)): alert-only for
   legitimate clinical traffic (this repo's existing rate limiters, Kong's `fhir-rate-limit` and
   `provider-registry-service`'s in-process limiter, are both fail-closed/block-over-limit — a
   deliberate departure here, not an oversight), with a hard backstop reserved specifically for
   runaway/bug-driven spend (an accidental loop, a retry storm) that pure alert-only has no
-  protection against at all.
+  protection against at all. `agent_platform.resilience.RateCostLimiter` tracks token usage in a
+  sliding one-minute window; `before_call()` returns True (alert, still allowed through) once the
+  window crosses `alert_tokens_per_minute`, and raises `CostLimitExceededError` (not attempted at
+  all) once it would cross `hard_backstop_tokens_per_minute`. Both are grounded in M3's real
+  per-query measurement, not arbitrary round numbers ([`H36`](./decisions.md)).
 - **Circuit breaker** ([`decisions.md` H20](./decisions.md)) wraps the LLM API call specifically.
   This repo has one explicit precedent *against* circuit breakers generally
   (`HttpTriageClient.java`'s Javadoc: "changes latency, not this policy") — Phase 6 diverges from
   it deliberately, on the stated basis that the LLM API is a materially different risk profile
   (external, metered, cost-bearing SaaS) than the internal service-to-service calls that
-  precedent was written for.
+  precedent was written for. `agent_platform.resilience.CircuitBreaker` is a plain
+  consecutive-failure breaker (closed → open → half-open → closed), default 5 failures / 30s
+  reset ([`H35`](./decisions.md)), tripping on any `anthropic.APIError` — deliberately broad,
+  covering 4xx as well as 5xx/timeouts ([`H37`](./decisions.md)).
+- **Fail-closed integration**: `call_with_resilience()` wraps the one `client.messages.create()`
+  call site in `agent.py`. `CircuitOpenError`/`CostLimitExceededError` are caught there and mapped
+  straight onto M1's `AgentDecision.REVIEW` sink via a new `_fail_closed_unavailable()` helper —
+  an LLM call that couldn't even be attempted is exactly as safety-relevant as a risk check that
+  came back UNKNOWN ([`H34`](./decisions.md)). An *individual* call failure below the breaker's
+  threshold still propagates as an exception exactly as it did before M4 (existing test coverage
+  unchanged); `api.py` now maps that specific case to a clean `502`, a real gap found live-testing
+  with an intentionally invalid API key — without it, FastAPI's default 500 was the only outcome,
+  an ungraceful failure mode for a milestone about deploy resilience specifically.
+- **Concurrency limiter** ([`decisions.md` H38](./decisions.md)): `mcp-agent-api`'s
+  `query_session` route is guarded by a bounded `threading.Semaphore` (default 10 concurrent LLM
+  queries) with a deadline (default 5s) — a request that can't get a slot in time gets a `503`
+  rather than queueing indefinitely. This is M3's deferred "concurrent-session-count scaling":
+  what actually threatens the single Anthropic API key's rate limits and this process's thread
+  pool is LLM calls in flight at once, not how many Postgres-backed sessions exist.
+- **Metrics** ([`decisions.md` H39](./decisions.md)): four real Prometheus series exposed at
+  `mcp-agent-api`'s new `/metrics` route — `fhir_agent_llm_tokens_total{direction}`,
+  `fhir_agent_llm_calls_total{outcome}` (success/failure/circuit_open/cost_blocked),
+  `fhir_agent_llm_call_duration_seconds`, `fhir_agent_rate_limit_alerts_total`. Scraped by
+  Prometheus the same way the Java services' `/actuator/prometheus` already is (one scrape
+  convention repo-wide, not a parallel OTLP-metrics pipeline) — closes the gap M2 deliberately
+  deferred ([`decisions.md` H27](./decisions.md), `telemetry-schema.md` §7). A provisioned Grafana
+  dashboard (`observability/grafana/provisioning/dashboards/llm-cost-rate.json`) visualizes all
+  four alongside M2's existing trace/span panels.
+- **Live-validated, not just mocked**: with `ANTHROPIC_API_KEY` set to an intentionally invalid
+  value and the breaker threshold lowered to 2 for a fast repro, two real calls against the live
+  Anthropic API 502'd cleanly, the breaker opened, and the third call returned a real `200` with
+  a `REVIEW` decision and a trace ID — not a crash. Restoring a real key and recreating the
+  container recovered normal operation (a fresh process resets the breaker's process-local
+  state). Grafana's dashboard API confirmed the provisioned dashboard loads with all 4 panels;
+  Prometheus's own `/api/v1/targets` confirmed `mcp-agent-api` scraping as `up`.
 
 ### 4.5 Multi-provider (→ M5)
 

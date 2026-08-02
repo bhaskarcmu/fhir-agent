@@ -15,6 +15,7 @@ dependencies = [
     "fastapi>=0.111",        # M3 transport (docs/phase6/decisions.md H14)
     "uvicorn[standard]>=0.29",
     "opentelemetry-instrumentation-fastapi>=0.48b0",
+    "prometheus-client>=0.20",  # M4 /metrics (docs/phase6/decisions.md H27)
 ]
 
 [project.optional-dependencies]

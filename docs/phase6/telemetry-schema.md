@@ -155,7 +155,7 @@ same way (Micrometer Observation API also records exceptions by default) but has
 independently verified against the installed version the way the Python claim was — flagged as an
 open verification item, not asserted as fact.
 
-## 7. Resource usage — RED and USE, and what's deferred to M4
+## 7. Resource usage — RED and USE, and what M4 built
 
 Two established SRE vocabularies, used here so nothing bespoke gets invented:
 
@@ -167,10 +167,23 @@ Two established SRE vocabularies, used here so nothing bespoke gets invented:
   (true for all three Java services since M2) — worth confirming what's already on
   `/actuator/prometheus` before building anything new here.
 
-**LLM token/cost usage is the one resource genuinely worth new work**, and it's deliberately
-**not** built in this pass. M2 already puts `gen_ai.usage.input_tokens`/`output_tokens` on each
-chat span (per-request visibility), but a span attribute can't answer "how many tokens today" or
-feed a cost alert — that needs an actual Prometheus counter/histogram. That aggregation, and
-turning it into an alertable threshold, is **M4's job** (Deploy Resilience & Cost Control) — M4's
-rate/cost limiter is the actual consumer of this data, so building the metric without it having a
-consumer yet would be premature. See `milestone-plan.md` M4.
+**LLM token/cost usage was the one resource genuinely worth new work, and M4 built it**
+(docs/phase6/decisions.md H39). M2 already puts `gen_ai.usage.input_tokens`/`output_tokens` on
+each chat span (per-request visibility), but a span attribute can't answer "how many tokens
+today" or feed a cost alert — that needed an actual Prometheus counter/histogram, deliberately
+deferred until M4's rate/cost limiter existed as its consumer (building the metric before it had
+one would have been premature). `agent_platform.resilience` now exposes four series at
+`mcp-agent-api`'s `/metrics`, scraped by Prometheus the same way the Java services'
+`/actuator/prometheus` already is:
+
+- `fhir_agent_llm_tokens_total{direction="input"|"output"}` — cumulative token counter.
+- `fhir_agent_llm_calls_total{outcome="success"|"failure"|"circuit_open"|"cost_blocked"}` — a
+  nonzero `circuit_open`/`cost_blocked` rate means M4's fail-closed protections are actively
+  shedding load, not that the agent is silently broken.
+- `fhir_agent_llm_call_duration_seconds` — histogram, successful calls only.
+- `fhir_agent_rate_limit_alerts_total` — the hybrid posture's alert-only signal (H19): rising
+  without a corresponding `cost_blocked` rise means unusual-but-not-runaway volume.
+
+A provisioned Grafana dashboard (`observability/grafana/provisioning/dashboards/llm-cost-rate.json`)
+visualizes all four. See `milestone-plan.md` M4 for the live validation that confirmed this against
+a real (intentionally broken, then restored) Anthropic API key.

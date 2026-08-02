@@ -33,6 +33,11 @@ import sys
 import anthropic
 
 from agent_platform import (
+    AgentDecision,
+    CircuitOpenError,
+    CostLimitExceededError,
+    ESTIMATED_TOKENS_PER_CALL,
+    call_with_resilience,
     compact,
     create_session,
     current_trace_id,
@@ -40,6 +45,7 @@ from agent_platform import (
     is_unknown,
     layer_attrs,
     load_session,
+    record_usage,
     safe_set_attributes,
     save_session,
     setup_tracing,
@@ -157,20 +163,37 @@ def run_query(
                     **layer_attrs("agent.orchestration", "run_query"),
                 },
             ) as chat_span:
-                response = client.messages.create(
-                    model=MODEL,
-                    max_tokens=MAX_TOKENS,
-                    system=SYSTEM_PROMPT,
-                    tools=TOOL_DEFINITIONS,
-                    messages=messages,
-                )
+                # Circuit breaker + rate/cost limiter wrap this one paid,
+                # external call (docs/phase6/decisions.md H19, H20). token_count
+                # is the caller's last-known conversation size -- the same
+                # number compact() above already uses -- and is a good
+                # pre-call cost estimate since every call resends the full
+                # history; ESTIMATED_TOKENS_PER_CALL covers a session's first
+                # call, before any real measurement exists yet.
+                try:
+                    response = call_with_resilience(
+                        lambda: client.messages.create(
+                            model=MODEL,
+                            max_tokens=MAX_TOKENS,
+                            system=SYSTEM_PROMPT,
+                            tools=TOOL_DEFINITIONS,
+                            messages=messages,
+                        ),
+                        estimated_tokens=token_count or ESTIMATED_TOKENS_PER_CALL,
+                    )
+                except (CircuitOpenError, CostLimitExceededError) as exc:
+                    return _fail_closed_unavailable(str(exc), messages)
+
                 usage = getattr(response, "usage", None)
                 input_tokens = getattr(usage, "input_tokens", None)
+                output_tokens = getattr(usage, "output_tokens", None)
                 safe_set_attributes(chat_span, {
                     "gen_ai.response.finish_reasons": [response.stop_reason],
                     "gen_ai.usage.input_tokens": input_tokens,
-                    "gen_ai.usage.output_tokens": getattr(usage, "output_tokens", None),
+                    "gen_ai.usage.output_tokens": output_tokens,
                 })
+                if input_tokens is not None and output_tokens is not None:
+                    record_usage(input_tokens, output_tokens)
                 if stats is not None and input_tokens is not None:
                     # input_tokens already reflects the full history just sent --
                     # the simplest accurate "how big is this conversation now"
@@ -316,6 +339,34 @@ def run_query(
                 trace_id=current_trace_id(),
             )
             return final_text, messages
+
+
+def _fail_closed_unavailable(reason: str, messages: list[dict]) -> tuple[str, list[dict]]:
+    """
+    The LLM API call could not even be attempted -- the circuit breaker is
+    open, or the hard cost backstop was exceeded (docs/phase6/decisions.md
+    H19, H20). Fails closed to REVIEW exactly like an incomplete risk
+    check (H18): a query that couldn't be answered is never narrated as
+    safe. No assistant turn is appended to messages -- none was produced,
+    and fabricating one would mislead the next turn's history.
+    """
+    with start_span(
+        "agent.submit_decision", _tracer, layer_attrs("agent.orchestration", "submit_decision")
+    ) as decision_span:
+        safe_set_attributes(decision_span, {
+            "decision": AgentDecision.REVIEW.value,
+            "override_reason": reason,
+        })
+
+    final_text = decision_block(
+        decision=AgentDecision.REVIEW.value,
+        patient_id="",
+        risk_assessment_id=None,
+        rationale="The clinical assistant could not reach the LLM API for this request.",
+        override_reason=reason,
+        trace_id=current_trace_id(),
+    )
+    return final_text, messages
 
 
 def _print_tool_call(name: str, inputs: dict) -> None:
