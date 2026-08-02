@@ -1738,7 +1738,63 @@ Critique it all and dont take any actions yet.
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Going through each point.
+
+**1. PII/PHI-off-third-party as the real rationale (not just cost)**
+
+This is a stronger and more defensible rationale than cost-avoidance, and it actually resolves an ambiguity I raised — but it needs one sharpening: the boundary that matters isn't "which adapter" (Anthropic vs. OpenAI-compatible), it's "who hosts the inference." Right now `OpenAICompatibleProvider` treats Ollama (self-hosted) and DeepSeek API / OpenRouter / Groq (third-party-hosted, even though they speak the same wire protocol) identically. If the criterion is genuinely "no PII to anyone we don't fully host," then DeepSeek/OpenRouter/Groq must be excluded from "safe default" eligibility too, even though they're part of the same adapter class — that's a new axis of classification (self-hosted vs. not) that doesn't exist in the code today and would need to be added explicitly, not inferred from provider type.
+
+Also worth naming: this reframing means dev/CI's data is *currently* synthetic (Synthea-generated) per this repo's own conventions, so there's no real PHI at risk in dev today either way — the value of defaulting to self-hosted in dev isn't eliminating a live PHI leak, it's proving the sovereignty control actually works before a deployment ever needs it for real, and building the habit/discipline now. I'd document it that way rather than implying dev currently leaks real PHI, which it doesn't.
+
+One more consequence: H4's existing text ("PHI-off-third-party is a FUTURE rule... not a default switch") needs its scope narrowed to *production specifically* once dev/CI defaults flip — otherwise the doc and the code will directly contradict each other.
+
+**2. Human vs. automated — advice**
+
+There's no clean, foolproof way to detect "a human is here" in general, but there is one decent, industry-standard proxy for the CLI specifically: TTY detection (`sys.stdin.isatty()`). A real person at a terminal running the REPL is attached to a TTY; CI/automated harnesses almost never are. This maps cleanly onto the fact that this codebase already has two CLI modes for exactly this split (`interactive_mode` = human-shaped, `non_interactive_mode` = "demo/CI" per its own docstring).
+
+My advice: don't use that signal to *silently pick* a different model — use it only to decide whether to *show a disclosure/offer*. Trying to build an automatic "quality floor" classifier is a rabbit hole with no stable definition (parameter count? benchmark score? tool-calling reliability?) — and Ollama's own model list only gives you `parameter_size`, which is Ollama-specific and a weak proxy for actual capability anyway. Let the human decide "good enough for me" — code's job is to disclose honestly, not to grade the model for them.
+
+For the actual money-safety requirement, I'd solve it structurally rather than heuristically: dev/CI environments should simply never have a paid API key present at all. That's auditable and can't be silently bypassed by a stray default; a heuristic embedded in `build_llm_client()` can be. Treat "no paid keys in low environments" as environment hygiene, independent of whatever the in-code default logic does.
+
+The HTTP API has no TTY concept at all, so this heuristic only covers the CLI — worth flagging now so it doesn't get assumed to cover `api.py` too.
+
+**3. Reversing "Anthropic-only in production," deferred to M7 — advice**
+
+Deferring this is the right call, and it directly resolves my earlier safety concern — you're not proposing a weak model for real clinical use, you're proposing a strong model there, just not yet specifying the mechanism. My advice for when M7 happens: whatever marks an environment as "production" must be an explicit, auditable declaration that *fails loud* when absent or ambiguous — never an inference from "a key happens to be present" (that's exactly the fragile signal point 4 below argues against generally). The scary failure mode for a clinical system isn't a crash, it's a misconfigured deployment silently and invisibly downgrading to a 1B local model while still producing plausible-looking output. I'd want production-designation to be closer to a required, validated deploy-time setting than an optional env var with a fallback.
+
+Practically, until M7 lands: the moment any code changes the *dev/CI* default, H4 needs an immediate superseding entry (even a short one — "superseded for dev/CI; production policy deferred to M7, current production deployments continue to pin Anthropic explicitly") so the docs and the code never silently disagree in the interim.
+
+**4. What "no explicit LLM_PROVIDER" means, and why it happens**
+
+Direct answer: `LLM_PROVIDER` is an environment variable `build_llm_client()` reads with `os.environ.get("LLM_PROVIDER", "anthropic")`. "No explicit LLM_PROVIDER" means that variable is simply absent — nobody set it anywhere (shell, `.env`, docker-compose, CI config, a future k8s manifest).
+
+Why it happens: it's not an edge case, it's currently *the universal case*. `LLM_PROVIDER` didn't exist before M5 — nothing in this repo (docker-compose.yml, any developer's `.env`, CI) has ever set it, because there was nothing to set. Every existing setup only ever configured `ANTHROPIC_API_KEY`, since that was the only knob that existed at the time. So "unset" isn't a rare misconfiguration — it's the default state of essentially every current and near-future user who hasn't specifically read the M5 docs and opted in.
+
+Given that, and given point 1's reframing: I'd now advise Llama should win even with a key present, specifically *because* a key's mere presence is a weak, easily-accidental signal (leftover `.env`, a shared devcontainer image, a secret injected for an unrelated reason), whereas an explicit `LLM_PROVIDER=anthropic` is a deliberate one. That's consistent with the fail-closed pattern already everywhere else in this codebase — never assume the more exposure-prone path is fine just because it's *possible*.
+
+The real cost of this: every existing M1-M4 docker-compose/dev setup will silently change behavior the instant this ships, with zero config change on the user's end. That's not wrong given the reasoning, but it's a breaking behavioral change that needs to be loud (a printed disclosure on every Llama-by-default selection, and called out prominently wherever this ships) — and it's worth noting the dev-compose stack is arguably the *correct* first beneficiary of this, since M3/M4's own decisions already frame docker-compose as dev/demo infrastructure, not production.
+
+**5. Per-process/session — noted, and a concrete consequence**
+
+This resolves the ambiguity cleanly for the CLI (already matches how M5 resolves client/model once in `main()`). For the API it's a bigger structural change than it might sound: right now `_get_client()`/model resolution are process-level singletons shared across *every* session in that `mcp-agent-api` process. "Per-session" means the chosen model has to become part of the session's own persisted state — a new column in `agent_sessions` (a real schema migration), `create_session()` accepting/resolving a choice at creation time, and `load_session()`/`save_session()` carrying it through so every subsequent query on that session reuses the same pinned model rather than re-resolving from the environment. Worth flagging now since it's schema work, not just app-code plumbing.
+
+**6. Ollama as a hard CI dependency — does this disambiguate? Mostly, with one scope question**
+
+Yes, this clearly settles self-skip vs. hard-fail. But "all tests written for the agent should fail" taken completely literally would be a much bigger change than I think you actually want, and I'd like to flag the distinction before it's decided either way:
+
+Most of the existing mcp-agent tests (`test_output_contract.py`, `test_tracing.py`, `test_resilience_integration.py`, `test_context_budget_integration.py`, `test_session_persistence.py`, and the M5 unit tests) use a *fake* client, not a real model call — deliberately, so they're fast (~5s for the whole suite), deterministic, and test the agent *loop's logic* (tool ordering, fail-closed enforcement, span creation, compaction, breaker behavior) independent of which real model is behind it. Forcing all of those onto real Ollama calls would push suite runtime from seconds to many minutes (the two live tests I wrote just now took 41s combined) and would make assertions that currently check exact scripted sequences unreliable, since a real weak model doesn't reproduce a canned response deterministically.
+
+My advice: hard-fail (not self-skip) specifically for the tests whose entire purpose *is* proving real-model behavior — the existing live-Ollama test in `test_output_contract.py`, my new `test_provider_integration.py`, and any new test that specifically validates "when nothing is configured and Ollama is reachable, the default resolves correctly." Leave the large body of fake-client agent-loop tests as fake-client tests, unaffected by whether Ollama happens to be up — they're testing something orthogonal to which model backs it. If you do mean the fully literal reading (every test, including pure-dict-dispatch tests like `test_tools.py`'s `test_unknown_tool_name_is_unaffected`, must fail without Ollama), I'd push back on that specifically, since it buys nothing and costs suite speed and determinism.
+
+Separate practical note: this does mean CI infra itself needs Ollama with models pre-pulled (or pulled reliably in-workflow) — a real CI runner-sizing and image decision, not just a test-code change.
+
+**7. Discovery failure semantics**
+
+This is clean and I don't have a real objection — it's actually a better rule than what I proposed. I'd used "best-effort" loosely to mean "shouldn't become a hard blocking dependency for normal operation," but your version is sharper: discovery is opt-in (never runs unless explicitly invoked, so its reliability is irrelevant to normal operation), and once invoked it's all-or-nothing — succeed or stop, no partial-degradation logic to build or maintain. That's exactly the "don't over-engineer it" outcome I'd have advised toward. The only thing I'd flag for later: for CI specifically, tests should probably pin one canonical model (e.g., `llama3.2:1b`, matching what M1/M5 already default to) rather than trusting "whatever happens to be pulled," so discovery-dependent tests don't get flaky based on which models a given machine happens to have.
+
+**One more thing worth naming for completeness, not yet covered above:** what happens if Ollama is reachable but has zero models pulled (a fresh install)? That's a distinct first-run failure mode from "Ollama unreachable" and probably deserves its own clear message ("Ollama is running but no models are installed — run `ollama pull llama3.2:1b`") rather than being lumped into the same error path.
+
+That's the full critique. Waiting for your direction before touching anything.
 
 <details>
 <summary>Execution details — 879 tool events</summary>
@@ -3215,6 +3271,6 @@ echo "---ollama tags shape (a…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 15:02 UTC
+- **Last updated:** 2 August 2026, 15:05 UTC
 - **Turns:** 25
 - **Status:** Incomplete
