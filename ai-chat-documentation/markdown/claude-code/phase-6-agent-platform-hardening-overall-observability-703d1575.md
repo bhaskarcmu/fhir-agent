@@ -1987,8 +1987,10 @@ Both green. Now let's mark docs complete and commit everything.
 
 Everything staged matches intended changes. Committing.
 
+Committed as `7dc7a98`. Let's push and update the PR.
+
 <details>
-<summary>Execution details — 1066 tool events</summary>
+<summary>Execution details — 1068 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3699,6 +3701,12 @@ python -m pytest agent-platform/tests -q 2>&1 |…`
 - **TodoWrite** `{"todos": [{"content": "Rework agent_platform/providers.py: 3 provider identities (anthropic/ollama/openai_compatible), default=ollama, DEPLOYMENT_ENV production guardrail, discovery functions", "stat…`
 - **Bash** `cd /workspaces/fhir-agent && git status`
 - **Bash** `git add .env.example .github/workflows/tests.yml README.md agent-platform/schema.sql agent-platform/src/agent_platform/__init__.py agent-platform/src/agent_platform/providers.py agent-platform/src/age…`
+- **Bash** `git commit -m "$(cat <<'EOF'
+feat(phase6): M5 rework — self-hosted default, 3 provider identities, per-session model choice
+
+Substantial design-review-driven rework of M5's provider abstraction,
+per d…`
+- **Bash** `git push origin feature/phase6-m5-provider-abstraction`
 
 </details>
 
