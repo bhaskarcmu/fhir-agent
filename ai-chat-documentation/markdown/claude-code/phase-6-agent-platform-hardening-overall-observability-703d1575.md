@@ -1153,8 +1153,12 @@ Now `assess_refill_risk`:
 
 All 8 pass, including the verbosity-gated detailed spans working exactly as designed. Now let's add mcp-agent tests for the new layer/trace-ID additions, then move to Java.
 
+Now the Java side — `claims-service` layer/component tagging. First, a shared helper:
+
+Now updating `ClaimController`:
+
 <details>
-<summary>Execution details — 498 tool events</summary>
+<summary>Execution details — 506 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2001,6 +2005,18 @@ python -m pytest mcp-agent/tests -q 2>&1 | tail -20`
 - **Edit** `/workspaces/fhir-agent/mcp-agent/tests/test_tracing.py`
 - **Bash** `cd /workspaces/fhir-agent
 python -m pytest mcp-agent/tests/test_tracing.py -v 2>&1 | tail -30`
+- **Write** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/observability/SpanTags.java`
+- **Bash** `grep -n "^public class\|^@\|public.*(" /workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/api/ClaimController.java | head -20`
+- **Bash** `sed -n '1,70p' /workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/api/ClaimController.java`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/observability/SpanTags.java`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/api/ClaimController.java`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/api/ClaimController.java`
+- **Bash** `for f in pipeline/AdjudicationPipeline.java rules/RulesEngine.java acl/LegacyAdapter.java; do
+echo "=== $f ==="
+grep -n "^public class\|public $(basename $f .java)(" /workspaces/fhir-agent/claims-serv…`
+- **Bash** `sed -n '1,45p' /workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/rules/RulesEngine.java
+echo "=== LegacyAdapter ==="
+sed -n '1,45p' /workspaces/fhir-agent/claims-service/src/main/ja…`
 
 </details>
 
@@ -2011,6 +2027,6 @@ python -m pytest mcp-agent/tests/test_tracing.py -v 2>&1 | tail -30`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 12:42 UTC
+- **Last updated:** 2 August 2026, 12:43 UTC
 - **Turns:** 17
 - **Status:** Complete
