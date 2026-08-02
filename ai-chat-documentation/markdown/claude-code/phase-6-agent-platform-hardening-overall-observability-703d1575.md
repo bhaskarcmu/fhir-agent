@@ -1547,8 +1547,10 @@ Let me add a regression test locking in the live-discovered 502 fix.
 
 All pass. Now let's update the documentation: `decisions.md`, `design.md` §4.4, `milestone-plan.md` M4, and `telemetry-schema.md` §7.
 
+Now appending H34–H39 for M4.
+
 <details>
-<summary>Execution details — 761 tool events</summary>
+<summary>Execution details — 762 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2847,6 +2849,7 @@ SESSION_ID=$(curl -sS -X POST http://localhost:8010/sess…`
 - **Bash** `grep -n "^| \*\*H33\*\*\|^| \*\*H27\*\*" /workspaces/fhir-agent/docs/phase6/decisions.md`
 - **Read** `/workspaces/fhir-agent/docs/phase6/decisions.md`
 - **Read** `/workspaces/fhir-agent/docs/phase6/decisions.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase6/decisions.md`
 
 </details>
 
