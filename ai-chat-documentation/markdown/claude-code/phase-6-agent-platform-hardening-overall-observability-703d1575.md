@@ -1948,7 +1948,7 @@ Now the full test suite, including live Ollama tests and the DB-backed session t
 Found it — `agent-platform/tests` was never in the root `pytest.ini`'s combined `testpaths` specifically to avoid this `conftest.py` collision. I added it to the same invocation; let me fix that by running it as a separate step.
 
 <details>
-<summary>Execution details — 988 tool events</summary>
+<summary>Execution details — 989 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3553,6 +3553,7 @@ grep -A3 "\[tool.pytest.ini_options\]" /workspaces/fhir-agent/mcp-agent/pyprojec
 - **Bash** `python -m pytest client/clinical/tests triage-service/src/triage/tests mcp-agent/tests -q 2>&1 | tail -20
 echo "===separate agent-platform run==="
 python -m pytest agent-platform/tests -q 2>&1 | tail…`
+- **Bash** `python -m pytest mcp-agent/tests triage-service/src/triage/tests -q 2>&1 | tail -10`
 
 </details>
 
@@ -3563,6 +3564,6 @@ python -m pytest agent-platform/tests -q 2>&1 | tail…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 16:10 UTC
+- **Last updated:** 2 August 2026, 16:11 UTC
 - **Turns:** 27
 - **Status:** Incomplete
