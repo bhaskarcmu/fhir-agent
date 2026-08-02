@@ -488,7 +488,14 @@ For "5. mcp-agent fail-closed gap (bypasses HttpTriageClient's wrapper) — this
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Good — that resolves it cleanly, and it's already reflected in what I did: `phase6-agent-hardening.md`'s "Audit findings" section already captures the mcp-agent fail-closed gap (plus the other findings — `claims-agent`'s `--no-llm` pattern, the rate-limiter departure, timeout convention, error-shape divergence, PHI precedent) as input for whenever Phase 6 planning starts. **No change needed to either open PR** — that content was always meant to be memory-only, not a repo artifact, and this confirms that was the right call.
+
+Critique on the approach itself, since you asked:
+
+- **Sound for now.** Phase 6 has no repo home yet, and mcp-agent's docs are Phase 1's — tagged `phase1-v1`, effectively closed. Writing this finding into Phase 1's docs would repeat the same "editing a closed phase" pattern I avoided for the R15/Phase 2 fix; writing it into a Phase 6 doc that doesn't exist yet would be scope-setting you didn't ask for. Memory is the correct middle ground.
+- **One real tradeoff worth naming**: memory lives outside the repo (`/home/vscode/.claude/projects/...`), so it's invisible to anyone browsing GitHub, to a different machine/environment, or to the memory store ever being cleared. A future *Claude Code* session opened against this same working directory will see it; a human reviewer, or you on a different box, won't. Given you're the one who said "keep it in memory," I take that as an accepted tradeoff rather than an oversight — flagging it once so it's a conscious choice, not assuming.
+
+One optional offer, not a recommendation: if you'd like a single breadcrumb line in `docs/README.md`'s existing Phase 6 placeholder paragraph (something like *"known input already identified: mcp-agent currently bypasses the fail-closed enforcement claims-service uses"*), that would make it discoverable without memory access, at the cost of a one-line addition to a paragraph I described as "name only, nothing built." I'd only add it if you want it — otherwise I'll leave both PRs exactly as they are and they're ready for you to merge whenever.
 
 <details>
 <summary>Execution details — 81 tool events</summary>
@@ -617,6 +624,6 @@ git tag -a phase3-v1 8816983 -F /tmp/cl…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 04:35 UTC
+- **Last updated:** 2 August 2026, 04:36 UTC
 - **Turns:** 8
-- **Status:** Incomplete
+- **Status:** Complete
