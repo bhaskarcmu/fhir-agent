@@ -2104,8 +2104,10 @@ Now let's review the full diff and commit.
 
 Everything matches intended changes. Staging and committing.
 
+Committed as `2fd0816`. Pushing and opening the PR.
+
 <details>
-<summary>Execution details — 1208 tool events</summary>
+<summary>Execution details — 1212 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4024,6 +4026,16 @@ cd /workspaces/fhir-agent/mcp-agent/src && python3 -m agent.agent --provider ant
 - **TodoWrite** `{"todos": [{"content": "Build policy.py loader in agent_platform + mcp-agent/policy.md content, wire into SYSTEM_PROMPT", "status": "completed", "activeForm": "Building policy loader and policy.md"},…`
 - **Bash** `cd /workspaces/fhir-agent && git status`
 - **Bash** `git add agent-platform/src/agent_platform/__init__.py agent-platform/src/agent_platform/observability.py agent-platform/src/agent_platform/judge.py agent-platform/src/agent_platform/knowledge.py agent…`
+- **Bash** `git commit -m "$(cat <<'EOF'
+feat(phase6): M6 — policy, knowledge-base citations, LLM-as-judge
+
+Implements Phase 6 Milestone 6 — "Policy, Knowledge & Judge" per
+docs/phase6/milestone-plan.md, decision…`
+- **Bash** `git push -u origin feature/phase6-m6-policy-knowledge-judge`
+- **Bash** `gh pr create --title "Phase 6 M6: policy, knowledge-base citations, LLM-as-judge" --body "$(cat <<'EOF'
+## Summary
+Implements Phase 6 Milestone 6 — "Policy, Knowledge & Judge" (`docs/phase6/milestone-…`
+- **TodoWrite** `{"todos": [{"content": "Build policy.py loader in agent_platform + mcp-agent/policy.md content, wire into SYSTEM_PROMPT", "status": "completed", "activeForm": "Building policy loader and policy.md"},…`
 
 </details>
 
@@ -4034,6 +4046,6 @@ cd /workspaces/fhir-agent/mcp-agent/src && python3 -m agent.agent --provider ant
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 17:02 UTC
+- **Last updated:** 2 August 2026, 17:03 UTC
 - **Turns:** 28
 - **Status:** Incomplete
