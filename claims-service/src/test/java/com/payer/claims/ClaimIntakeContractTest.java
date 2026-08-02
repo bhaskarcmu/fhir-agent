@@ -7,6 +7,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -15,6 +16,7 @@ import com.payer.claims.api.ClaimValidationAdvice;
 import com.payer.claims.domain.AdjudicationDecision;
 import com.payer.claims.domain.CanonicalClaim;
 import com.payer.claims.domain.Outcome;
+import com.payer.claims.observability.SpanTags;
 import com.payer.claims.pipeline.AdjudicationService;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -44,6 +46,7 @@ class ClaimIntakeContractTest {
 
     @Autowired private MockMvc mvc;
     @MockBean private AdjudicationService service;
+    @MockBean private SpanTags spanTags;
 
     private static final String VALID = """
             {"claimId":"C1","memberId":"000000001","planId":"COM-SILVER","rxcui":"29046",
@@ -163,6 +166,19 @@ class ClaimIntakeContractTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.decisionId").value("DEC-C1"))
                 .andExpect(jsonPath("$.outcome").value("APPROVED"));
+    }
+
+    @Test
+    void response_carriesXTraceIdHeader_whenATraceIsActive() throws Exception {
+        // docs/phase6/telemetry-schema.md Section 5 -- surfaced to the caller, not just Jaeger.
+        given(service.adjudicateAndPersist(any())).willReturn(decision(Outcome.APPROVED));
+        given(spanTags.currentTraceId()).willReturn("abc123deadbeef");
+
+        mvc.perform(post("/claims/adjudicate").contentType(MediaType.APPLICATION_JSON).content(VALID))
+                .andExpect(status().isOk())
+                .andExpect(header().string("X-Trace-Id", "abc123deadbeef"));
+
+        verify(spanTags).tag("claims.api", "ClaimController");
     }
 
     @Test

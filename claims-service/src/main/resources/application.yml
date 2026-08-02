@@ -24,8 +24,24 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,prometheus
   endpoint:
     health:
       probes:
         enabled: true
+  # Observability (docs/phase6/decisions.md H16 -- closes Phase 2's R15):
+  # tracing + Prometheus metrics side by side, same split as fhir-service's
+  # existing Micrometer setup. Sample everything locally; a real sampling
+  # policy is cloud-deploy follow-up work, not this milestone's job.
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4317}
+
+# Custom span attribute depth (docs/phase6/telemetry-schema.md Section 4). "standard" (default)
+# tags the current request span with fhir_agent.layer/.component; "detailed" is not currently
+# used by this service (reserved for a future per-stage span tier, see the schema doc).
+telemetry:
+  verbosity: ${TELEMETRY_VERBOSITY:standard}

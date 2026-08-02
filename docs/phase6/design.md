@@ -139,6 +139,16 @@ its status updated to reflect closure, worded as "closed by a later platform-wid
 effort" with no citation of a specific Phase 6 milestone number — so it can't go stale if this
 phase's own numbering shifts before that update happens.
 
+**Custom span attributes, request-ID surfacing, and configurable depth**
+([`decisions.md` H24–H27](./decisions.md)): a full attribute dictionary —
+[`telemetry-schema.md`](./telemetry-schema.md) — defines `fhir_agent.layer`/`.component` (custom,
+grounded in each service's real package/module structure) alongside OTel's own standard
+`code.function.name`, a two-level `TELEMETRY_VERBOSITY` setting (`standard` enriches existing
+spans only; `detailed` adds sub-spans at the single highest-value boundary — per-rule spans in
+`triage-service/rules.py`, not instrumented everywhere by default), and `X-Trace-Id`
+response-header / CLI-output surfacing so a human or test program can identify and look up their
+own request without already having Jaeger open.
+
 ### 4.3 Memory & session (→ M3)
 
 Three axes, deliberately not conflated:

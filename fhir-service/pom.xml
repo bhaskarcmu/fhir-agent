@@ -18,6 +18,11 @@
         <spring.ai.version>1.1.2</spring.ai.version>
         <awaitility.version>4.3.0</awaitility.version>
         <micrometer.version>1.16.2</micrometer.version>
+        <!-- docs/phase6/decisions.md H16: verified-compatible versions resolved from
+             this repo's own Spring Boot 3.3.4 BOM (claims-service), pinned explicitly
+             since fhir-service has no BOM import to resolve them automatically. -->
+        <micrometer.tracing.version>1.3.4</micrometer.tracing.version>
+        <opentelemetry.version>1.37.0</opentelemetry.version>
         <commons.logging.version>1.3.5</commons.logging.version>
         <spring_boot_version>3.5.9</spring_boot_version>
         <postgresql.version>42.7.9</postgresql.version>
@@ -396,6 +401,22 @@
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-prometheus-simpleclient</artifactId>
             <version>${micrometer.version}</version>
+        </dependency>
+
+        <!-- Tracing (docs/phase6/decisions.md H16): fhir-service already had the Micrometer/
+             Prometheus metrics half; this adds the missing trace-propagation half so a trace
+             started in claims-service (via HapiFhirClient's traceparent injection) or
+             triage-service (via its own auto-instrumentation) continues here, and gets
+             exported to the same OTLP pipeline as every other service. -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing-bridge-otel</artifactId>
+            <version>${micrometer.tracing.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-otlp</artifactId>
+            <version>${opentelemetry.version}</version>
         </dependency>
 
 

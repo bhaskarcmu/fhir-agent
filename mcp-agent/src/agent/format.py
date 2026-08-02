@@ -87,6 +87,7 @@ def decision_block(
     risk_assessment_id: str | None,
     rationale: str,
     override_reason: str | None = None,
+    trace_id: str | None = None,
 ) -> str:
     """
     Format the agent's final, code-validated decision for terminal display
@@ -94,6 +95,10 @@ def decision_block(
     replaces, the decision line itself is always one of the enum values --
     never LLM-composed prose -- so a reader can trust it at a glance even
     without reading the rationale.
+
+    trace_id is surfaced here deliberately (docs/phase6/telemetry-schema.md
+    Section 5) -- a trace ID that only exists inside span context is useless
+    to a clinician or a test program that isn't already looking at Jaeger.
     """
     icon = DECISION_ICONS.get(decision, "❓")
     label = DECISION_LABELS.get(decision, decision)
@@ -119,13 +124,16 @@ def decision_block(
         "",
         f"Patient ID: {patient_id or '(none)'}",
         f"FHIR RiskAssessment ID: {risk_assessment_id or '(none)'}",
+        f"Trace ID: {trace_id or '(none)'}",
         DIVIDER,
         "",
     ]
     return "\n".join(lines)
 
 
-def error_block(message: str) -> str:
+def error_block(message: str, trace_id: str | None = None) -> str:
+    if trace_id:
+        return f"\n❌  {message}\n    Trace ID: {trace_id}\n"
     return f"\n❌  {message}\n"
 
 

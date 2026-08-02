@@ -19,8 +19,11 @@
 > - [`milestone-plan.md`](./milestone-plan.md) — M1–M6, short and long story for each, dependency
 >   order, status table. **Kept as its own document, not folded into `design.md`** — see
 >   [`decisions.md` H23](./decisions.md).
-> - [`decisions.md`](./decisions.md) — ADR-style index of every decision (H1–H23), same
+> - [`decisions.md`](./decisions.md) — ADR-style index of every decision (H1–H27), same
 >   status-and-supersession convention as Phase 2/3/4.
+> - [`telemetry-schema.md`](./telemetry-schema.md) — the custom span-attribute dictionary:
+>   `fhir_agent.layer`/`.component` grounded in each service's real package structure, the
+>   `TELEMETRY_VERBOSITY` depth model, and request-ID surfacing.
 
 ## What Phase 6 is
 

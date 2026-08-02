@@ -113,7 +113,9 @@ Phase 2's R15), memory/session management, deployment resilience, and a multi-pr
   cross-cutting principles, per-topic deep dives, testing strategy.
 - **[`milestone-plan.md`](./phase6/milestone-plan.md)** — M1–M6, short and long story for each,
   kept as its own document rather than folded into `design.md` (see `decisions.md` H23).
-- **[`decisions.md`](./phase6/decisions.md)** — the ADR-style index (H1–H23), same convention.
+- **[`telemetry-schema.md`](./phase6/telemetry-schema.md)** — the custom span-attribute
+  dictionary, by architectural tier, plus the configurable-depth (`TELEMETRY_VERBOSITY`) model.
+- **[`decisions.md`](./phase6/decisions.md)** — the ADR-style index (H1–H27), same convention.
 
 ## Conventions for this folder
 

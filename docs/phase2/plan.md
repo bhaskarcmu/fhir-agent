@@ -251,7 +251,11 @@ scalable BigQuery decision-warehouse + rule-fire dashboard is **deferred to Phas
   incl. the proxy. **PHI-safe logging** — scrub identifiers (fixes the Kong `file-log`
   URI leak). **AuthN** stays API-key for the prototype, OIDC/JWT the documented path.
 - **Tracing** → OpenTelemetry (`traceparent`) across the fan-out → Cloud Trace; **metrics**
-  → Managed Prometheus (per-stage latency + approvals/denials/pends/rule-fires).
+  → Managed Prometheus (per-stage latency + approvals/denials/pends/rule-fires). Now built (see
+  [C5](./decisions.md)); `claims-service`'s spans carry a custom attribute taxonomy
+  (`fhir_agent.layer`/`.component`, one value per real package — `api`, `pipeline`, `rules`,
+  `acl`, `fhir`, `kb`) defined by a later platform-wide observability effort's own schema
+  document, not restated here to avoid duplication or a citation that could go stale.
 - **IaC/CI-CD (R16)** → Terraform (Cloud Run, Cloud SQL/Neon, Secret Manager, Artifact
   Registry, networking) + GitHub Actions (build → scan → push → deploy).
 
@@ -275,8 +279,8 @@ column says so — see the cloud-delivery gap called out after the table.
 | **M0** | ✅ Done | Recon (read-only) | Run PRD §11.3 FHIR counts against live server; seed only the gap. Note compose/README HAPI drift (`v7.2.0` vs `8.8.0`) and `FHIR_GATEWAY_URL`/`FHIR_BASE_URL`. | Target topology diagram (GKE+Cloud Run hybrid); `infra/terraform/` skeleton. | — |
 | **M1** | ✅ Done | Payer knowledge base | Curated `data/payer-kb/` (formulary, PA rules, 4 plans, RxNorm/ICD subset). Sources confirmed in prework (see `data/reference/`). | C3 **repository interface** defined for formulary/PA (Postgres impl + a NoSQL-emulator impl behind the same seam). | M0 |
 | **M2** | ✅ Done | `rxclaim-emulator` | Spring Boot legacy core: DDS records, DB2/SQL400 tables, `ADJRXCLM`, legacy response. Parameterized queries (R14). | Terraform module + **Cloud Run service config** for the emulator (`ingress=internal`); cloud **smoke test in CI** (deploy to emulator/stub). | M1 |
-| **M3** | ✅ Done | `claims-service` core | Façade + ACL + layered rules engine; calls emulator + triage; **Decision Contract** (§10, R17). | ⚠️ OTel tracing (design commitment — not implemented, see gap below); health/readiness; Cloud Run config; **contract tests** (R19). | M1, M2 |
-| **M4** | ✅ Done | Pipeline & artefacts | Wire pipeline; accumulate→resolve; emit the linked artefact graph (§11, R18): `Claim`/`ClaimResponse`/`Task`/`Provenance`/`RiskAssessment`/`CoverageEligibilityResponse`. | ⚠️ Trace of one claim across services (design only, not implemented); **idempotency/replay tests** (R18.3); ⚠️ Managed-Prometheus metric names (design only, not implemented). | M3 |
+| **M3** | ✅ Done | `claims-service` core | Façade + ACL + layered rules engine; calls emulator + triage; **Decision Contract** (§10, R17). | OTel tracing wired (application-level, local — see [`decisions.md` C5](./decisions.md); not yet cloud-deployed, same as every other touchpoint here); health/readiness; Cloud Run config; **contract tests** (R19). | M1, M2 |
+| **M4** | ✅ Done | Pipeline & artefacts | Wire pipeline; accumulate→resolve; emit the linked artefact graph (§11, R18): `Claim`/`ClaimResponse`/`Task`/`Provenance`/`RiskAssessment`/`CoverageEligibilityResponse`. | Trace of one claim across services (application-level, local); **idempotency/replay tests** (R18.3); Managed-Prometheus metric names (`/actuator/prometheus` exposed, not yet cloud-scraped). | M3 |
 | **M5** | ✅ Done | `claims-agent` | Separate explanation agent over the façade; non-authoritative (R17.8); shares only non-clinical plumbing with `mcp-agent`. | Cloud Run config; PHI-safe log assertions in CI. | M4 |
 | **M6** | ✅ Done | Local wiring & demo | Compose `phase2` profile; DB-less Kong `gateway` profile (generated dev key); `seed_claims_demo.py`; 4–5 golden paths. | `kong.yml` == the cloud gateway config (C2); gateway-strangler runbook drafted (§3). | M4, M5 |
 | **M7** | ✅ Done | Tests & narrative | Full **test matrix** (§12, R19); Phase-1-only CI job; README/platform narrative. | End-to-end cloud **dry-run** (Terraform plan + CI deploy to stubs, no live spend); Phase-2b deploy runbook. | M6 |
@@ -303,20 +307,20 @@ stub-tested and Phase 2b would be `terraform apply`, not new construction.
 > - Any Cloud Run config for `claims-agent` (M5's touchpoint).
 > - Any executed cloud smoke test (M2's touchpoint says "cloud smoke test in CI"; CI has no
 >   such job — see [`testing-guide.md` §4](../testing-guide.md#4-what-is-not-tested--known-gaps)).
-> - Any OpenTelemetry or Micrometer/Prometheus instrumentation in `claims-service` or
->   `rxclaim-emulator` (M3/M4's "OTel tracing wired" / "Managed-Prometheus metric names"
->   touchpoints, above). No `opentelemetry`/`micrometer` dependency is declared in either
->   service's `pom.xml`, and no trace-ID/correlation-ID code exists anywhere in the Python or
->   Java services. **R15 (Observability) is undelivered at the application level** — this was
->   found during a post-Phase-2 documentation audit (2026-08), the same class of "table says done,
->   code says otherwise" gap D8/this callout already named for cloud delivery, just not caught in
->   the original review that produced this callout. See [`decisions.md` C5](./decisions.md).
+>
+> **R15 (Observability) update:** application-level OpenTelemetry tracing and Micrometer/
+> Prometheus metrics in `claims-service` and `rxclaim-emulator` were found undelivered by a
+> post-Phase-2 documentation audit (2026-08) — the same class of "table says done, code says
+> otherwise" gap D8/this callout already named for cloud delivery, just not caught in the
+> original review. **This has since been closed by a later platform-wide observability
+> effort** (see [`decisions.md` C5](./decisions.md) for status; that effort's own docs carry
+> the design, not restated here). What's still true: none of it is cloud-deployed yet — same
+> as everything else on this page — that remains M8/Phase 2b's job.
 >
 > **Consequence:** Phase 2b is **not** "`terraform apply`, not new construction". There is no
 > root module to apply — the per-service stubs are unreferenced fragments. Real authoring work
-> remains, tracked as §16 item 9a. Application-level tracing/metrics is equally unbuilt, not just
-> undeployed — that work has not started, cloud or otherwise. Treat each "Cloud touchpoint" entry
-> as a **design commitment**, and check the repo before citing one as an artifact.
+> remains, tracked as §16 item 9a. Treat each "Cloud touchpoint" entry as a **design
+> commitment**, and check the repo before citing one as an artifact.
 
 ## 7. Directory layout (additive)
 

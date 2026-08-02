@@ -18,8 +18,17 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,prometheus
   endpoint:
     health:
       probes:
         enabled: true   # liveness/readiness for Cloud Run / k8s
+  # Observability (docs/phase6/decisions.md H16 -- closes Phase 2's R15).
+  # See claims-service/src/main/resources/application.yml for the same
+  # setup and rationale.
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4317}

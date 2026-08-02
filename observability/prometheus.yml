@@ -1,0 +1,35 @@
+# Local Prometheus scrape config for the observability profile
+# (docker compose --profile observability up).
+#
+# Scrapes the three Java services' /actuator/prometheus endpoints
+# (docs/phase6/decisions.md H16/H22 -- claims-service and rxclaim-emulator
+# are newly instrumented for this; fhir-service already had the Micrometer
+# registry but wasn't actually web-exposing it until this same change).
+# Traces go to Jaeger via OTLP directly, not through Prometheus.
+
+global:
+  scrape_interval: 10s
+
+scrape_configs:
+  # Note: the "fhir" compose service pulls the stock hapiproject/hapi image
+  # (a known, separately-tracked version drift vs. this repo's own
+  # fhir-service/ module -- see plan.md M0 recon), not a local build, so
+  # this scrapes whatever that image already exposes at its actuator root
+  # (confirmed working, no fhir-service/ source changes needed for this
+  # target specifically). fhir-service/'s own application.yaml was still
+  # fixed to properly expose /actuator/prometheus for its standalone-run
+  # and cloud-deploy paths, which do build from local source.
+  - job_name: fhir-service
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["fhir:8080"]
+
+  - job_name: claims-service
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["claims-service:8090"]
+
+  - job_name: rxclaim-emulator
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["rxclaim-emulator:8091"]

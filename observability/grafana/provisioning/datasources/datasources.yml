@@ -1,0 +1,17 @@
+# Auto-provisioned Grafana datasources for the observability profile
+# (docker compose --profile observability up). No manual setup needed --
+# Grafana reads this on startup.
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+
+  - name: Jaeger
+    type: jaeger
+    access: proxy
+    url: http://jaeger:16686

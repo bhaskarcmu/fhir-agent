@@ -47,6 +47,23 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-actuator</artifactId>
     </dependency>
+    <!-- Observability (docs/phase6/decisions.md H16, closes Phase 2's R15).
+         Tracing: Micrometer's OTel bridge + OTLP exporter, versions managed by
+         Spring Boot's own BOM (spring-boot-starter-parent), same as every other
+         dependency here with no explicit version tag. Metrics: Prometheus
+         registry, same choice fhir-service already made. -->
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-tracing-bridge-otel</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.opentelemetry</groupId>
+      <artifactId>opentelemetry-exporter-otlp</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-registry-prometheus</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>

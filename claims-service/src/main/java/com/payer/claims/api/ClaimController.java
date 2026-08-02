@@ -2,6 +2,7 @@ package com.payer.claims.api;
 
 import com.payer.claims.domain.AdjudicationDecision;
 import com.payer.claims.domain.CanonicalClaim;
+import com.payer.claims.observability.SpanTags;
 import com.payer.claims.pipeline.AdjudicationService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -36,15 +37,23 @@ public class ClaimController {
     private static final Logger log = LoggerFactory.getLogger(ClaimController.class);
 
     private final AdjudicationService service;
+    private final SpanTags spanTags;
 
-    public ClaimController(AdjudicationService service) {
+    public ClaimController(AdjudicationService service, SpanTags spanTags) {
         this.service = service;
+        this.spanTags = spanTags;
     }
 
     @PostMapping("/adjudicate")
     public ResponseEntity<AdjudicationDecision> adjudicate(@Valid @RequestBody CanonicalClaim claim) {
+        spanTags.tag("claims.api", "ClaimController");
+        String traceId = spanTags.currentTraceId();
         try {
-            return ResponseEntity.ok(service.adjudicateAndPersist(claim));
+            ResponseEntity.BodyBuilder responseBuilder = ResponseEntity.ok();
+            if (traceId != null) {
+                responseBuilder = responseBuilder.header("X-Trace-Id", traceId);
+            }
+            return responseBuilder.body(service.adjudicateAndPersist(claim));
         } catch (RuntimeException e) {
             // System error (e.g., FHIR store unavailable). Writes are atomic, so nothing is
             // half-persisted and the client may safely retry (R17.6 / R18.4).
