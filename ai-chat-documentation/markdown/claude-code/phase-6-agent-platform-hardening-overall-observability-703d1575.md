@@ -1657,8 +1657,22 @@ Now staging and committing.
 
 Everything staged matches intended changes, nothing suspicious.
 
+Committed as `4334f1e`. Pushing and opening the PR.
+
+**PR #61** is open: https://github.com/bhaskarcmu/fhir-agent/pull/61
+
+**Files changed:** 14 files — new `agent-platform/providers.py` (the OpenAI-compatible adapter and real conversation-history translation layer), `resilience.py`/`session_store.py` updates for provider-agnostic breaker coverage and serialization, `agent.py`/`api.py`/`tools.py` updates in mcp-agent, plus 22 new tests.
+
+**Validation:** 196 fast tests passing + 2 **live** integration tests against a real local Ollama model running through the actual `run_query` loop (not mocked) — this is M1's own adversarial local-model test corpus finally exercised through the real agent loop, which is the milestone's own stated acceptance bar. Java suites green.
+
+**Real bug found and fixed**: a live end-to-end CLI run (real FHIR + triage + Ollama) surfaced an uncaught `KeyError` in `tools.py` when the weak model omitted a required tool argument — a gap that predates M5 but only a genuinely weak model ever triggered. Fixed and confirmed with a re-run.
+
+**Known limitation:** the OpenAI-compatible path wasn't validated running *inside* the docker-compose `mcp-agent-api` container against Ollama (would require host-network wiring) — validated instead via the real CLI directly on the host against the same real services, which exercises the identical code path.
+
+Waiting on your merge before I delete the branch and move to M6 — the final Phase 6 milestone.
+
 <details>
-<summary>Execution details — 875 tool events</summary>
+<summary>Execution details — 878 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3107,6 +3121,11 @@ feat(phase6): M5 — provider abstraction, real conversation-history translation
 
 Formalizes the two-adapter seam (Anthropic native + one OpenAI-compatible
 adapter covering…`
+- **Bash** `git push -u origin feature/phase6-m5-provider-abstraction`
+- **Bash** `gh pr create --title "Phase 6 M5: provider abstraction, real conversation-history translation" --body "$(cat <<'EOF'
+## Summary
+Implements Phase 6 Milestone 5 — "Provider Abstraction & Cross-Model Fol…`
+- **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase6-agent-hardening.md`
 
 </details>
 
