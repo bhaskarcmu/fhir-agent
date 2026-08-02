@@ -1038,8 +1038,10 @@ Root cause found — not a bug in my instrumentation at all. It was my own tool'
 
 Excellent — real HIGH-risk result with a real `risk_assessment_id`. Now let's confirm the trace actually landed in Jaeger with proper cross-service propagation.
 
+Confirmed clean on the Kong boundary. Now the final full test pass before committing:
+
 <details>
-<summary>Execution details — 414 tool events</summary>
+<summary>Execution details — 417 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1754,6 +1756,10 @@ curl -s http://localhost:3000/api/datasources 2>&1 -u admin:admin | python3 -c "
 - **Bash** `cd /workspaces/fhir-agent
 docker compose --profile phase2 --profile observability stop triage claims-service rxclaim-emulator jaeger prometheus grafana 2>&1 | tail -10
 docker compose --profile phase2…`
+- **Bash** `git status --short | grep -i "gateway\|kong" || echo "no gateway/kong files touched - confirmed"`
+- **TodoWrite** `{"todos": [{"content": "Explore current state: pom.xml, docker-compose.yml, client configs", "status": "completed", "activeForm": "Exploring current service configs for M2"}, {"content": "Add agent_pl…`
+- **Bash** `cd /workspaces/fhir-agent
+python -m pytest agent-platform/tests mcp-agent/tests triage-service/src/triage/tests -q 2>&1 | tail -15`
 
 </details>
 
@@ -1764,6 +1770,6 @@ docker compose --profile phase2…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 12:01 UTC
+- **Last updated:** 2 August 2026, 12:02 UTC
 - **Turns:** 15
 - **Status:** Complete
