@@ -882,8 +882,18 @@ Now the fail-closed rewrite of `assess_refill_risk`:
 
 Now updating `agent.py` — imports, `SYSTEM_PROMPT`, the loop logic, and the REPL turn cap.
 
+Now updating `interactive_mode` (turn cap + direct print) and `non_interactive_mode` (direct print):
+
+Now adding `decision_block()` to `format.py`:
+
+Now updating `mcp-agent`'s dependency list and the two editable-install references:
+
+No relevant content there — nothing to sync. Now the `.ona/automations.yaml` install line:
+
+All existing tests pass unmodified. Now writing the new M1 test coverage — the real HTTP-stub-server test and the `run_query`-level fail-closed/adversarial tests.
+
 <details>
-<summary>Execution details — 148 tool events</summary>
+<summary>Execution details — 166 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1086,6 +1096,24 @@ planning doc s…`
 - **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/tools.py`
 - **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/tools.py`
 - **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/format.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/format.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/pyproject.toml`
+- **Bash** `grep -n "pip install -e" /workspaces/fhir-agent/CLAUDE.md`
+- **Edit** `/workspaces/fhir-agent/CLAUDE.md`
+- **Bash** `grep -n "pip install -e" /workspaces/fhir-agent/.clinerules 2>/dev/null`
+- **Bash** `ls -la /workspaces/fhir-agent/.clinerules 2>&1; find /workspaces/fhir-agent -maxdepth 1 -iname ".clinerules*"`
+- **Bash** `grep -n "editable\|pip install\|agent-platform\|mcp-agent" /workspaces/fhir-agent/.clinerules`
+- **Read** `/workspaces/fhir-agent/.ona/automations.yaml`
+- **Edit** `/workspaces/fhir-agent/.ona/automations.yaml`
+- **TodoWrite** `{"todos": [{"content": "Write agent-platform/ package (fail_closed.py, output_gate.py) + pyproject.toml", "status": "completed", "activeForm": "Writing agent-platform package"}, {"content": "Write age…`
+- **Bash** `python -m pip install -e "mcp-agent[dev]" -q 2>&1 | tail -20`
+- **Bash** `python -m pytest mcp-agent/tests -v 2>&1 | tail -60`
+- **Bash** `cat /workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/HttpTriageClientTest.java 2>/dev/null | head -60`
 
 </details>
 
@@ -1096,6 +1124,6 @@ planning doc s…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 10:49 UTC
+- **Last updated:** 2 August 2026, 10:51 UTC
 - **Turns:** 13
 - **Status:** Complete
