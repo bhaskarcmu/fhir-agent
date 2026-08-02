@@ -2130,6 +2130,140 @@ Current worktree: `/workspaces/fhir-agent`, currently on `feature/phase6-m6-poli
 
 Confirmed merged. Deleting the branch, local and remote.
 
+# Phase 6 — Agent Platform Hardening: Comprehensive Report
+
+All six planned milestones (M1–M6) are merged. M7 ("Strong Model in Production") remains open and deliberately deferred. This report covers what was actually built, grounded in the real code and real live-validation results from this session — not the original forward-looking plan.
+
+---
+
+## Topic 1 — Memory
+
+Three deliberately separate axes, never conflated:
+
+**1. Per-conversation token budget** — `agent_platform/context_budget.py`
+```python
+TOKEN_BUDGET = ‹redacted:env-secret›  # grounded in real measured usage: 5,404 and 5,381 tokens
+                       # for two complete reference-workflow queries, read from
+                       # live gen_ai.usage.* span attributes via Jaeger
+```
+`compact(messages, token_count, budget=TOKEN_BUDGET) -> (messages, compacted: bool)` drops the single oldest complete turn when `token_count > budget`. Self-correcting by design: there's no precise per-turn accounting, so each call just re-checks the most recently *measured* real total (from the prior response's `usage.input_tokens`) and drops one turn if still over — not a one-shot precise trim. Never drops the only remaining turn. This fully replaced M1's `MAX_REPL_TURNS` stopgap.
+
+**2. Concurrent-LLM-calls-in-flight** — `mcp-agent/src/agent/api.py`
+```python
+_MAX_CONCURRENT_QUERIES = int(os.environ.get("MAX_CONCURRENT_LLM_QUERIES", "10"))
+_QUERY_QUEUE_DEADLINE_SECONDS = float(os.environ.get("LLM_QUERY_QUEUE_DEADLINE_SECONDS", "5"))
+```
+Resolved as *calls in flight*, not *session count* — a `threading.Semaphore` bounding how many `run_query` calls can execute simultaneously across all sessions on one process, since that's what actually threatens the single Anthropic API key's rate limits and this process's thread pool. Bounded wait, not an unbounded queue: past the deadline, a request gets `503`, not an indefinite hang.
+
+**3. Cross-session persistence** — `agent_platform/session_store.py`, Postgres `agent_sessions` table:
+```sql
+session_id uuid PK, messages text (JSON), token_count integer,
+provider text, model text, created_at/updated_at timestamptz
+```
+No cap on total session count — that axis is deliberately left unbounded; only the *live conversation size* (axis 1) and *concurrent execution* (axis 2) are bounded. `provider`/`model` columns (added in M5) pin each session's model choice for its whole lifetime, immutable after creation.
+
+Related, smaller numbers, all grounded in the same real M3 measurement:
+- `ESTIMATED_TOKENS_PER_CALL = 5_400` (`resilience.py`) — pre-call cost estimate before a real number exists for a session.
+- `DEFAULT_ALERT_TOKENS_PER_MINUTE = 54_000` (~10 queries/min) / `DEFAULT_HARD_BACKSTOP_TOKENS_PER_MINUTE = 540_000` (~100 queries/min) — the M4 rate/cost limiter's two thresholds, both derived as multiples of the same 5,400-token baseline.
+
+**What was *not* built, despite early forward-looking language**: a separate "tool-result-specific" compaction mechanism distinct from the general turn-based `compact()`. What shipped is one general mechanism that drops whole turns (tool results included) — simpler than originally sketched, and sufficient in practice. **Re-fetch-don't-recall** is a design discipline, not a function: every `tools.py` call (`get_patient_summary`, `assess_refill_risk`) makes a fresh HTTP call every time; the session store persists conversation *history* (what was asked/decided), never a cached clinical read. Enforced by code review and the module docstrings, not a runtime guard.
+
+---
+
+## Topic 4 — Session mechanics, transport, and multi-model (the code-level detail)
+
+**`run_query`'s actual signature** (`mcp-agent/src/agent/agent.py`), unchanged in return arity since M1:
+```python
+def run_query(
+    client, user_input, messages=None, verbose=True, token_count=0,
+    stats=None, model=MODEL, gen_ai_system="anthropic",
+) -> tuple[str, list[dict]]:
+```
+Every enhancement after M1 (`stats`, `model`, `gen_ai_system`) was added as a purely additive keyword parameter defaulting to prior behavior — the 2-tuple return and all positional args never changed, so no existing call site or test ever needed touching.
+
+**Mechanics, in order:**
+1. `messages, compacted = compact(messages, token_count)` — M3's budget check, first thing that happens.
+2. `messages = messages + [{"role": "user", "content": user_input}]`.
+3. `while True:` loop — one root span (`agent.run_query`) wraps the whole call; each iteration opens a `chat {model}` span, calls the LLM via `call_with_resilience(...)` (M4's breaker/limiter), then either executes tool calls and loops again, or resolves a decision and returns.
+4. Decision resolution always goes through `validate_decision()` (M1) before returning — never trusts the model's raw output.
+
+**REPL persistence**: `interactive_mode`'s `while True:` loop holds `messages`/`token_count` as local variables threaded back into `run_query` every turn — in-memory only, scoped to one process. M3 added real persistence on top: if `DATABASE_URL` is set, `create_session(provider, model)` pins a session at start, and `save_session(session_id, messages, token_count)` runs after every turn.
+
+**The single-shot `--query` gap (closed in M3)**: originally `non_interactive_mode` was fully stateless — messages were discarded after printing, so a test program issuing sequential `--query` calls couldn't hold a conversation. Fixed via `--session-id`: when given, `load_session()` restores prior `messages`/`token_count` before the call and `save_session()` persists the result after — separate process invocations against the same session ID now form one real multi-turn conversation.
+
+**Provider adapter's conversation-history translation** (M5, `agent_platform/providers.py`) — this is the literal mechanism that makes Llama/DeepSeek/Ollama work through the exact same `run_query` code:
+```python
+def _to_openai_messages(system, messages) -> list[dict]:
+    # plain-string user turn -> {"role": "user", "content": text}
+    # assistant turn (TextBlock/ToolUseBlock, SDK object OR our own
+    #   dataclass OR plain dict round-tripped through Postgres) ->
+    #   split into free text + a tool_calls[] array
+    # OUR tool_result dicts (bundled as one "user" turn in Anthropic's
+    #   shape) -> EACH becomes its own separate {"role": "tool", ...}
+    #   message -- OpenAI's format wants them un-bundled
+```
+Inbound, `_from_openai_response()` maps `finish_reason: "tool_calls"` → `stop_reason: "tool_use"`, each `tool_calls[i]` → a `ToolUseBlock`, with malformed JSON arguments (a real thing weak models produce) falling back to `{}` rather than raising. `OpenAICompatibleProvider` duck-types `client.messages.create(**kwargs)` exactly, so `run_query` itself never branches on which provider it's talking to — Anthropic needs no wrapper at all, since its native response shape already matches what `run_query` expects.
+
+---
+
+## Topics 2 & 3 — Observability: trace/span schema and Grafana
+
+**Two namespaces** (`docs/phase6/telemetry-schema.md`): `code.*` (real OTel semantic convention — source location) and `fhir_agent.*` (custom — architectural role: `.layer`, `.component`, `.verbosity`).
+
+**`fhir_agent.layer` taxonomy, grounded in real package structure, not invented:**
+
+| Tier | Layers |
+|---|---|
+| Agent (`mcp-agent`/`agent-platform`) | `agent.orchestration`, `agent.tools`, `agent.presentation`, `agent.judge` (M6), `agent.knowledge` (M6), `platform.output_gate`, `platform.fail_closed` |
+| Deterministic clinical (`triage-service`) | `triage.api`, `triage.rules` (the one boundary with real per-rule `detailed`-verbosity sub-spans) |
+| Claims (`claims-service`) | `claims.api`, `.pipeline`, `.rules`, `.acl`, `.fhir`, `.kb` — only `claims.api` actually tagged at `standard` verbosity (one span per request; tagging from multiple layers in sequence would just overwrite) |
+| Legacy (`rxclaim-emulator`) | `rxclaim.api`, `.core`, `.legacy` |
+| FHIR (`fhir-service`) | none — stock HAPI, no custom packages to describe |
+
+**`gen_ai.*`** (real OTel semconv): `.system`, `.request.model`, `.response.finish_reasons`, `.usage.input_tokens`/`.output_tokens`, `.tool.name` — populated on every chat/tool span regardless of provider.
+
+**M6 additions**: `judge.available`/`.groundedness_ok`/`.tone_ok`/`.phi_leak_detected`, `knowledge.found`/`.source` — small, purpose-specific namespaces, not folded into `fhir_agent.*`.
+
+**PHI safety is structural**: `ALLOWED_SPAN_ATTRIBUTE_KEYS` is an *allowlist*, not a denylist — `patient_id`/`medication_id`/`risk_level` etc. are IDs and codes, never a name/DOB/address; a key not on the list is silently dropped, never included. Live-confirmed with zero PHI leaked across a real end-to-end trace.
+
+**Trace propagation across services**: `HTTPXClientInstrumentor` auto-injects `traceparent` (mcp-agent → triage-service → fhir-service); the Java tier got `micrometer-tracing-bridge-otel` plus a custom `TracePropagation` helper for the two raw HTTP clients Spring doesn't auto-instrument (claims-service ↔ rxclaim-emulator). `TELEMETRY_VERBOSITY=standard|detailed` controls whether that one `triage.rules` sub-span tier is active. Trace ID surfaces to a human/test program directly — `X-Trace-Id` response header (API) and a `Trace ID:` line in every CLI decision block — since a trace ID only visible inside span context is useless otherwise.
+
+**Grafana** (`observability/grafana/provisioning/dashboards/llm-cost-rate.json`, 4 panels, auto-provisioned):
+1. LLM tokens/sec by direction — `rate(fhir_agent_llm_tokens_total[1m])`
+2. LLM call outcomes/sec — `rate(fhir_agent_llm_calls_total[1m])` by `success`/`failure`/`circuit_open`/`cost_blocked`
+3. Rate/cost alert crossings/sec — `rate(fhir_agent_rate_limit_alerts_total[1m])`
+4. LLM call duration p95 — `histogram_quantile(0.95, rate(fhir_agent_llm_call_duration_seconds_bucket[5m]))`
+
+Scraped the same way the Java services' `/actuator/prometheus` already is (Micrometer auto-registers JVM/GC/thread/CPU for free) — one scrape convention repo-wide, not a parallel OTLP-metrics pipeline.
+
+---
+
+## Topic 5 — Output safety (M1, extended in M6)
+
+`AgentDecision` enum (`DISPENSE`/`DO_NOT_DISPENSE`/`REVIEW`) + `validate_decision()` — never trusts free text or tool-schema adherence alone; forces `REVIEW` when no decision was submitted, the value doesn't parse, or any risk check that turn came back `UNKNOWN`, *regardless of tool-call order*. `safe_risk_level()`/`RISK_UNKNOWN` is the matching fail-closed sentinel on the data-fetch side, mirroring `claims-service`'s `HttpTriageClient.java` precedent.
+
+M6 extended this without weakening it: `policy.md` (scope/authority/safety-invariants-as-text/tone/data-handling) loads into the system prompt once at startup; the **judge** is structurally incapable of overriding a decision (called only after one is final, result never fed back); knowledge-base citations fire only *after* a decision exists, never as reasoning input.
+
+---
+
+## Real bugs found via live testing (not caught by any mocked test)
+
+- **M2**: mcp-agent's Dockerfile never installed `agent-platform` at all.
+- **M3**: `trace_id` always `null` in API responses (root span closed before read); no server span at all on `/health`/`/sessions` (FastAPI never instrumented).
+- **M4**: individual LLM failures below the breaker threshold fell through to a raw `500` instead of a clean `502`.
+- **M5**: `tools.py`'s `execute_tool` crashed with an uncaught `KeyError` when a real weak model omitted a required tool argument; a `conftest.py` naming collision between `agent-platform/tests` and `mcp-agent/tests` under `--import-mode=importlib`.
+- **M6**: the Dockerfile never copied `policy.md` into the image — caught before it shipped, not after.
+
+Every one of these was found by running the real stack (docker-compose, real APIs, real weak models), not by unit tests alone — the discipline held for all six milestones.
+
+---
+
+## Final state
+
+- **Test count**: 116 (`agent-platform`) + 150 (`mcp-agent`/`triage-service`) = 266 Python tests, plus `claims-service`/`rxclaim-emulator` (Java) green throughout.
+- **New packages**: `agent_platform.{context_budget, session_store, resilience, providers, policy, judge, knowledge}` — all shared, reusable by `claims-agent` per the original M2 decision (H2), none yet carried over.
+- **Deferred, by design, not oversight**: M7 (Strong Model in Production) — the fuller environment-tier guarantee that a real deployment can't accidentally misrepresent itself; a `mcp-agent-api` ↔ host-Ollama docker-compose networking gap; carrying the shared platform to `claims-agent`.
+
 <details>
 <summary>Execution details — 1215 tool events</summary>
 
@@ -4076,6 +4210,6 @@ Implements Phase 6 Milestone 6 — "Policy, Knowledge & Judge" (`docs/phase6/mil
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 17:08 UTC
+- **Last updated:** 2 August 2026, 17:09 UTC
 - **Turns:** 29
 - **Status:** Incomplete
