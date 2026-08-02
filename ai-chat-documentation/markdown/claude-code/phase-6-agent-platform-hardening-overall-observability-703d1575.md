@@ -1927,8 +1927,10 @@ All 9 pass. Now let's run the full mcp-agent suite to see what else needs updati
 
 Now let's rework `api.py`. Let me read the full current file.
 
+Now `test_api_resilience.py`:
+
 <details>
-<summary>Execution details — 952 tool events</summary>
+<summary>Execution details — 955 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3478,6 +3480,9 @@ python -m pytest mcp-agent/tests -q 2>&1 | tail -100`
 - **Bash** `python3 -c "import ast; ast.parse(open('/workspaces/fhir-agent/mcp-agent/src/agent/api.py').read())" && echo "syntax OK"`
 - **Bash** `python -m pytest mcp-agent/tests/test_session_api.py mcp-agent/tests/test_api_resilience.py -v 2>&1 | tail -100`
 - **Read** `/workspaces/fhir-agent/mcp-agent/tests/test_session_api.py`
+- **Write** `/workspaces/fhir-agent/mcp-agent/tests/test_session_api.py`
+- **Read** `/workspaces/fhir-agent/mcp-agent/tests/test_api_resilience.py`
+- **Write** `/workspaces/fhir-agent/mcp-agent/tests/test_api_resilience.py`
 
 </details>
 
@@ -3488,6 +3493,6 @@ python -m pytest mcp-agent/tests -q 2>&1 | tail -100`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 16:02 UTC
+- **Last updated:** 2 August 2026, 16:03 UTC
 - **Turns:** 27
 - **Status:** Incomplete
