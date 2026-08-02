@@ -2046,8 +2046,14 @@ Now let's wire policy loading into `agent.py`.
 
 Now let's add the `POLICY_PATH` constant and concatenate it into `SYSTEM_PROMPT`.
 
+Now let's add the `_fetch_citations` helper near `_fail_closed_unavailable`.
+
+Now the second call site (free-text fallback path):
+
+Now let's update `format.py`'s `decision_block()` to render citations and judge notes.
+
 <details>
-<summary>Execution details — 1126 tool events</summary>
+<summary>Execution details — 1138 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3876,6 +3882,18 @@ import json…`
 - **Bash** `grep -n "^def run_query\|saw_unknown_risk = False\|if block.name == \"assess_refill_risk\"\|decision_block_data is not None\|final_text = decision_block\|return final_text, messages\|# ── Final respon…`
 - **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
 - **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Bash** `grep -n "final_text = decision_block\|return final_text, messages\|^def _fail_closed" /workspaces/fhir-agent/mcp-agent/src/agent/agent.py | head -8`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Bash** `cat -n /workspaces/fhir-agent/mcp-agent/src/agent/format.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/format.py`
 
 </details>
 
@@ -3886,6 +3904,6 @@ import json…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 16:44 UTC
+- **Last updated:** 2 August 2026, 16:46 UTC
 - **Turns:** 28
 - **Status:** Incomplete
