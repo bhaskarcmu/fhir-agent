@@ -383,7 +383,39 @@ Now tell me if you are ready to do all 6 steps you identified above. Over-commun
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Confirmed: PR #54 is already open on this branch (`docs/phase5-readiness-assessment` → `main`), clean working tree, and `phase1-v1` is the only tag — so I have exact current state, not assumptions.
+
+Revised step list per your Phase 6 decision, and yes — **ready to execute**, pending one open question on step 5 below.
+
+## Revised steps
+
+**1. Phase 2 R15 status correction** — unchanged. Docs-only, fix the "OTel tracing wired" overstatement in `docs/phase2/plan.md` + add a decisions.md entry, same pattern as the cloud-delivery-gap callout.
+
+**2. Phase 5 reservation + roadmap update** — now the core deliverable, not a rename:
+- Add/expand `docs/phase5/README.md` as the canonical status doc (matching the phase2/3/4 pattern): Phase 5 = reserved for epic-emulator decomposition, blocked/informed by the open pagination bug, not started, no timeline, no code yet.
+- Update `docs/phase4/README.md`'s "a future Phase 5 would decompose..." line into a firm cross-reference to that new README.
+- Update `docs/README.md`'s top-level roadmap table: firm up Phase 5's entry, and add a Phase 6 row for agent-platform-hardening — **as a name/reservation only** ("Phase 6 (reserved): Agent Platform Hardening — brainstormed, not started, no scope doc yet"), not a scope dump, consistent with your "no coding for Phase 5" instruction extending to "no premature Phase 6 planning doc" either.
+
+**3. Relocate `docs/phase5/phase4-testing-and-analysis.md`** — **now moot.** Given Phase 5 is confirmed reserved for epic-emulator decomposition, that file is already in the right place. No move needed — this step collapses into step 2 (I'll fold its content in as the input document, referenced from the new `docs/phase5/README.md`, rather than treating it as misplaced).
+
+**4. Durable home for the pagination bug** — unchanged, and now has an obvious target: a `decisions.md`/known-issues entry under `docs/phase4/`, cross-linked from both `docs/phase4/README.md`'s existing warning banner and the new `docs/phase5/README.md` (since it's a stated precondition for Phase 5 starting).
+
+**5. mcp-agent fail-closed gap (bypasses `HttpTriageClient`'s wrapper)** — **this is the one open question.** This finding is agent-hardening input, i.e. Phase 6 territory, but per your "no premature Phase 6 doc" instruction there's no `docs/phase6/` to put it in yet, and your dedicated-session-per-phase model suggests Phase 6 planning belongs in its own future session, not this cleanup pass. Options:
+   - **(a)** Leave it out of the repo entirely for now — it stays in my memory (`phase5-agent-hardening.md`, which I'll rename to reflect Phase 6) and I resurface it when a Phase 6 session actually starts.
+   - **(b)** Add one line to the Phase 6 placeholder row in `docs/README.md` — "known input already identified: mcp-agent calls triage-service directly, bypassing the fail-closed wrapper claims-service uses" — enough of a breadcrumb that it's not repo-invisible, without writing a scope doc.
+   
+   I'd lean (a) — it's a real gap but it's about mcp-agent's *current* behavior, not a documented commitment, and stuffing it into a roadmap placeholder risks reading as Phase 6 scope-setting, which you didn't ask for here. Your call.
+
+**6. Git tagging** — unchanged, still lowest priority. Confirming: do you want retroactive `phase2-v1`/`phase3-v1` tags done in this pass at all, or fully deferred to a later cleanup? Either way, no Phase 4 tag until the pagination bug is fixed — that part isn't up for debate given the precedent you're trying to avoid repeating.
+
+## Branch/PR structure I'd use
+
+- **Steps 2, 3, 4** (all Phase 4/5-related) → continue on this branch, updates PR #54. Natural fit, no new branch needed.
+- **Step 1** (Phase 2 R15 fix) → separate branch + new PR — different area of the repo, unrelated concern, shouldn't ride along in a PR titled about the Phase 4 testing pass.
+- **Step 5** → no repo commit if we go with option (a); a small addition to the existing PR #54 if (b).
+- **Step 6** → separate action entirely (not a PR), and only after you confirm scope.
+
+Confirm the step 5 choice and step 6 scope and I'll start on step 1 + steps 2-4 (two branches/PRs) right away.
 
 <details>
 <summary>Execution details — 15 tool events</summary>
@@ -424,6 +456,6 @@ Now tell me if you are ready to do all 6 steps you identified above. Over-commun
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 04:16 UTC
+- **Last updated:** 2 August 2026, 04:17 UTC
 - **Turns:** 6
-- **Status:** Incomplete
+- **Status:** Complete
