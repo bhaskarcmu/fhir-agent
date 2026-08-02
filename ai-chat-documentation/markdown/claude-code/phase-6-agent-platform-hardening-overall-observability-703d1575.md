@@ -1639,8 +1639,10 @@ A real gap: `execute_tool` crashes with a raw `KeyError` when a weak model omits
 
 Now let's re-run the live CLI test to confirm the fix works, and add a regression test.
 
+All 3 pass. Now the full combined suite (from repo root, cwd was the issue).
+
 <details>
-<summary>Execution details — 851 tool events</summary>
+<summary>Execution details — 857 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3061,6 +3063,12 @@ cd /workspaces/f…`
 - **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/tools.py`
 - **Bash** `export LLM_PROVIDER=openai_compatible LLM_BASE_URL=http://localhost:11434/v1 LLM_MODEL=llama3.2:1b FHIR_GATEWAY_URL=http://localhost:8080/fhir TRIAGE_SERVICE_URL=http://localhost:8001
 cd /workspaces/f…`
+- **Bash** `ls /workspaces/fhir-agent/mcp-agent/tests/ | grep -i tool`
+- **Write** `/workspaces/fhir-agent/mcp-agent/tests/test_tools.py`
+- **Bash** `python -m pytest mcp-agent/tests/test_tools.py -v 2>&1 | tail -30`
+- **Bash** `pwd`
+- **Bash** `cd /workspaces/fhir-agent && python -m pytest mcp-agent/tests/test_tools.py -v 2>&1 | tail -30`
+- **Bash** `python -m pytest agent-platform/tests mcp-agent/tests triage-service/src/triage/tests -q 2>&1 | tail -40`
 
 </details>
 
@@ -3071,6 +3079,6 @@ cd /workspaces/f…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 14:31 UTC
+- **Last updated:** 2 August 2026, 14:32 UTC
 - **Turns:** 23
 - **Status:** Incomplete
