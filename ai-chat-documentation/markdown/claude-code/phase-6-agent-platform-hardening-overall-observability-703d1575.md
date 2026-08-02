@@ -2062,8 +2062,10 @@ Excellent — all 81 existing tests pass unmodified, confirming the judge/citati
 
 Let's run these two new agent-platform test files.
 
+All 4 pass. Now let's write `format.py`'s citation/judgment rendering tests.
+
 <details>
-<summary>Execution details — 1150 tool events</summary>
+<summary>Execution details — 1155 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3917,6 +3919,11 @@ python -m pytest mcp-agent/tests -q --deselect mcp-agent/tests/test_provider_int
 - **Bash** `python -m pytest agent-platform/tests/test_policy.py agent-platform/tests/test_knowledge.py agent-platform/tests/test_judge.py -v 2>&1 | tail -80`
 - **Bash** `ls /workspaces/fhir-agent/mcp-agent/tests/ | grep -i format`
 - **Bash** `cat -n /workspaces/fhir-agent/mcp-agent/tests/test_tools.py`
+- **Write** `/workspaces/fhir-agent/mcp-agent/tests/test_assess_refill_risk_citations.py`
+- **Bash** `python -m pytest mcp-agent/tests/test_assess_refill_risk_citations.py -v 2>&1 | tail -40`
+- **Write** `/workspaces/fhir-agent/mcp-agent/tests/test_format.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/tests/test_format.py`
+- **Bash** `python -m pytest mcp-agent/tests/test_format.py -v 2>&1 | tail -40`
 
 </details>
 
@@ -3927,6 +3934,6 @@ python -m pytest mcp-agent/tests -q --deselect mcp-agent/tests/test_provider_int
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 16:50 UTC
+- **Last updated:** 2 August 2026, 16:51 UTC
 - **Turns:** 28
 - **Status:** Incomplete
