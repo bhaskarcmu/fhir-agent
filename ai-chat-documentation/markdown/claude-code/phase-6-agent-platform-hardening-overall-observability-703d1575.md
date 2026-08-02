@@ -1967,8 +1967,14 @@ All validation passing. Let's tear down the docker stack now.
 
 Now let me update H4's status to Superseded and add H45-H51 (including the new M7 milestone entry).
 
+Confirmed — my new "4.7" landed before the existing "4.6". Let me renumber to keep the document in logical order: M7 becomes 4.8, after M6.
+
+Now let's update `milestone-plan.md`'s M5 section and add a new M7 entry.
+
+Now let's rewrite M5's long story section.
+
 <details>
-<summary>Execution details — 1012 tool events</summary>
+<summary>Execution details — 1024 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3621,6 +3627,18 @@ grep -rn -B1 "H46\b" /workspaces/fhir-agent/agent-platform/s…`
 - **Edit** `/workspaces/fhir-agent/docs/phase6/decisions.md`
 - **Bash** `grep -n "4.5 Multi-provider\|4.6 Policy" /workspaces/fhir-agent/docs/phase6/design.md`
 - **Read** `/workspaces/fhir-agent/docs/phase6/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase6/design.md`
+- **Bash** `grep -n "^### 4\." /workspaces/fhir-agent/docs/phase6/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase6/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase6/design.md`
+- **Bash** `grep -n "^### 4.6\|^## 5\." /workspaces/fhir-agent/docs/phase6/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase6/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase6/design.md`
+- **Bash** `grep -n "^### 4\.\|^## 5\." /workspaces/fhir-agent/docs/phase6/design.md`
+- **Bash** `grep -n "^## M5\|^## M6\|^| \*\*M5\*\*\|^| \*\*M6\*\*" /workspaces/fhir-agent/docs/phase6/milestone-plan.md`
+- **Read** `/workspaces/fhir-agent/docs/phase6/milestone-plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase6/milestone-plan.md`
+- **Read** `/workspaces/fhir-agent/docs/phase6/milestone-plan.md`
 
 </details>
 
@@ -3631,6 +3649,6 @@ grep -rn -B1 "H46\b" /workspaces/fhir-agent/agent-platform/s…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 16:19 UTC
+- **Last updated:** 2 August 2026, 16:21 UTC
 - **Turns:** 27
 - **Status:** Incomplete
