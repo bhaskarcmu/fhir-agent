@@ -893,7 +893,7 @@ No relevant content there — nothing to sync. Now the `.ona/automations.yaml` i
 All existing tests pass unmodified. Now writing the new M1 test coverage — the real HTTP-stub-server test and the `run_query`-level fail-closed/adversarial tests.
 
 <details>
-<summary>Execution details — 166 tool events</summary>
+<summary>Execution details — 168 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1114,6 +1114,8 @@ planning doc s…`
 - **Bash** `python -m pip install -e "mcp-agent[dev]" -q 2>&1 | tail -20`
 - **Bash** `python -m pytest mcp-agent/tests -v 2>&1 | tail -60`
 - **Bash** `cat /workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/HttpTriageClientTest.java 2>/dev/null | head -60`
+- **Bash** `which ollama 2>&1; curl -s -m 2 http://localhost:11434/api/tags 2>&1; echo "exit:$?"`
+- **Bash** `grep -n "skip\|TEST_DATABASE_URL\|pytest.mark" /workspaces/fhir-agent/provider-registry-service/src/provider_registry/tests/conftest.py 2>/dev/null | head -30`
 
 </details>
 
@@ -1124,6 +1126,6 @@ planning doc s…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 10:51 UTC
+- **Last updated:** 2 August 2026, 10:53 UTC
 - **Turns:** 13
 - **Status:** Complete
