@@ -1035,7 +1035,7 @@ Found it — a pre-existing `.env` file (gitignored, tuned for host-direct runs)
 Correct now. Let's re-run the smoke test:
 
 <details>
-<summary>Execution details — 397 tool events</summary>
+<summary>Execution details — 408 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1656,6 +1656,74 @@ import triage.main as m
 from triage.models import TriageRequest
 print('sleeping 5s to mimic a long-running process...', flush=True)
 time.sleep(5)…`
+- **Bash** `docker exec fhir-agent-triage sh -c "python3 -c \"import triage.main; print('IMPORTED')\" > /tmp/out.log 2>&1; echo DONE_EXIT:\$?"
+docker exec fhir-agent-triage cat /tmp/out.log`
+- **Bash** `docker exec fhir-agent-triage sh -c '
+python3 -c "
+import triage.main as m
+from triage.models import TriageRequest
+try:
+    resp = m.assess_refill_risk(TriageRequest(patient_id=\"1\"))
+    print(\"OK\…`
+- **Bash** `docker exec fhir-agent-triage sh -c '
+python3 -c "
+import os
+from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.r…`
+- **Bash** `docker exec fhir-agent-triage sh -c '
+python3 -c "
+from fastapi import FastAPI
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+
+app = FastAPI()
+FastAPIInstrumentor.instrument_app…`
+- **Bash** `docker exec fhir-agent-triage sh -c '
+python3 -c "
+from fastapi import FastAPI
+from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from o…`
+- **Bash** `docker exec fhir-agent-triage sh -c '
+python3 -c "
+from fastapi import FastAPI
+from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from o…`
+- **Bash** `docker exec fhir-agent-triage sh -c '
+python3 -c "
+import triage.main as m
+client = m._get_client()
+try:
+    print(client.get_medications(\"1\"))
+except Exception as e:
+    print(\"ERROR:\", type(e)._…`
+- **Bash** `docker exec fhir-agent-triage sh -c '
+python3 -c "
+from fastapi import FastAPI
+from triage.observability import setup_tracing
+
+app = FastAPI()
+setup_tracing(app, service_name=\"test\")
+
+from fhir_clin…`
+- **Bash** `docker exec fhir-agent-triage sh -c '
+python3 -c "
+import triage.main as m
+from fhir_clinical_client import FHIRClient
+client = FHIRClient(gateway_url=\"http://fhir:8080/fhir\")
+try:
+    print(client.…`
+- **Bash** `docker exec fhir-agent-triage sh -c '
+python3 -c "
+import os
+print(repr(os.environ.get(\"FHIR_GATEWAY_URL\", \"\")))
+print(repr(os.environ.get(\"FHIR_API_KEY\", \"\")))
+import triage.main as m
+client…`
+- **Bash** `docker exec fhir-agent-triage env | grep -i FHIR
+docker inspect fhir-agent-triage --format='{{.State.StartedAt}}'
+date -u`
 
 </details>
 
@@ -1666,6 +1734,6 @@ time.sleep(5)…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 11:57 UTC
+- **Last updated:** 2 August 2026, 12:00 UTC
 - **Turns:** 15
 - **Status:** Complete
