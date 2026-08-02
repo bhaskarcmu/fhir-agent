@@ -1212,8 +1212,10 @@ All 6 pass. Now let's run the full mcp-agent + agent-platform suite together and
 
 Now appending the new Phase 6 services at the end:
 
+All correct. Now the real end-to-end session test — create a session via the HTTP API, ask two questions, confirm persistence:
+
 <details>
-<summary>Execution details — 608 tool events</summary>
+<summary>Execution details — 616 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2265,6 +2267,22 @@ echo "manual test postgres removed"`
 export FHIR_GATEWAY_URL=http://fhir:8080/fhir
 docker compose up -d --build triage 2>&1 | tail -8
 docker compose --profile phase6 up -d --build agent-db mcp-agent-api 2>&1 | t…`
+- **Bash** `docker exec fhir-agent-triage env | grep -i FHIR
+docker exec fhir-agent-mcp-api env | grep -i "DATABASE_URL\|FHIR_GATEWAY"
+docker ps --filter "name=fhir-agent" --format "{{.Names}}: {{.Status}}"`
+- **Bash** `curl -s -X POST http://localhost:8010/sessions | tee /tmp/session_resp.json
+echo
+SESSION_ID=$(python3 -c "import json; print(json.load(open('/tmp/session_resp.json'))['session_id'])")
+echo "session_id…`
+- **Bash** `docker logs fhir-agent-mcp-api --tail 40 2>&1`
+- **Bash** `cd /workspaces/fhir-agent
+DATABASE_URL="postgresql://agent_platform:‹redacted:url-credentials›localhost:5433/agent_platform" python -m agent_platform.init_db`
+- **Bash** `grep -n "init_db\|CMD\|ENTRYPOINT" /workspaces/fhir-agent/provider-registry-service/Dockerfile`
+- **Edit** `/workspaces/fhir-agent/docker-compose.yml`
+- **Bash** `cd /workspaces/fhir-agent
+git diff docker-compose.yml | head -100`
+- **Bash** `cd /workspaces/fhir-agent
+docker compose --profile phase6 up -d --build mcp-agent-api 2>&1 | tail -15`
 
 </details>
 
@@ -2275,6 +2293,6 @@ docker compose --profile phase6 up -d --build agent-db mcp-agent-api 2>&1 | t…
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 13:13 UTC
+- **Last updated:** 2 August 2026, 13:15 UTC
 - **Turns:** 18
 - **Status:** Complete
