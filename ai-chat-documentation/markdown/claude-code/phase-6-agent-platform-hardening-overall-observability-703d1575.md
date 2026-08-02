@@ -1964,7 +1964,7 @@ Now let's resume it while the *current* environment has no explicit provider set
 Let me test this more directly via the live API, which makes the cross-provider proof cleaner.
 
 <details>
-<summary>Execution details — 1001 tool events</summary>
+<summary>Execution details — 1002 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3600,6 +3600,10 @@ p…`
 - **Bash** `export FHIR_GATEWAY_URL=http://fhir:8080/fhir ANTHROPIC_API_KEY CLAUDE_API_KEY
 unset LLM_PROVIDER DEPLOYMENT_ENV
 docker compose --profile phase6 up -d --build mcp-agent-api 2>&1 | tail -15`
+- **Bash** `sleep 5
+SESSION_JSON=$(curl -sS -X POST http://localhost:8010/sessions -H "Content-Type: application/json" -d '{"provider": "anthropic", "model": "claude-sonnet-4-5"}')
+echo "$SESSION_JSON"
+SESSION_ID…`
 
 </details>
 
@@ -3610,6 +3614,6 @@ docker compose --profile phase6 up -d --build mcp-agent-api 2>&1 | tail -15`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 16:16 UTC
+- **Last updated:** 2 August 2026, 16:17 UTC
 - **Turns:** 27
 - **Status:** Incomplete
