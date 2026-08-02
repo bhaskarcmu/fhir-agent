@@ -1561,8 +1561,20 @@ Both green. Now let's review the diff and commit.
 
 Everything listed matches what I intentionally changed. Staging and committing.
 
+Committed as `bb2a4ff`. Now pushing and opening the PR.
+
+**PR #60** is open: https://github.com/bhaskarcmu/fhir-agent/pull/60
+
+**Files changed:** 17 files — new `agent-platform/resilience.py` (circuit breaker + hybrid rate/cost limiter + Prometheus metrics), `mcp-agent/src/agent/api.py`/`agent.py` updates (concurrency limiter, `/metrics`, fail-closed REVIEW mapping, `502` handler), new Grafana dashboard, plus 24 new tests.
+
+**Validation:** 176 Python tests passing, Java suites green, and — the important part — live end-to-end testing against the real docker-compose stack with an intentionally invalid API key: real Anthropic calls failed, the breaker tripped after 2 failures, and the next request cleanly returned a `REVIEW` decision instead of crashing. A real bug (raw `500` on individual LLM failures) was found this way and fixed with a `502` handler plus a regression test.
+
+**Branch:** `feature/phase6-m4-deploy-resilience-cost`, commit `bb2a4ff`. **Known limitation:** the alert-only (non-blocking) side of the rate/cost limiter is unit-tested but wasn't separately live-validated against the real API, since the breaker-trip scenario already exercised the harder path.
+
+Waiting on your merge before I delete the branch and move to M5.
+
 <details>
-<summary>Execution details — 771 tool events</summary>
+<summary>Execution details — 774 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2877,6 +2889,11 @@ feat(phase6): M4 — deploy resilience, cost control, Grafana dashboards
 
 Protects the one paid, external, metered call every agent turn makes
 (the LLM API) with a circuit b…`
+- **Bash** `git push -u origin feature/phase6-m4-deploy-resilience-cost`
+- **Bash** `gh pr create --title "Phase 6 M4: deploy resilience, cost control, Grafana dashboards" --body "$(cat <<'EOF'
+## Summary
+Implements Phase 6 Milestone 4 — "Deploy Resilience & Cost Control" (`docs/phase…`
+- **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase6-agent-hardening.md`
 
 </details>
 
@@ -2887,6 +2904,6 @@ Protects the one paid, external, metered call every agent turn makes
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 14:10 UTC
+- **Last updated:** 2 August 2026, 14:11 UTC
 - **Turns:** 22
 - **Status:** Incomplete
