@@ -149,25 +149,48 @@ spans only; `detailed` adds sub-spans at the single highest-value boundary — p
 response-header / CLI-output surfacing so a human or test program can identify and look up their
 own request without already having Jaeger open.
 
-### 4.3 Memory & session (→ M3)
+### 4.3 Memory & session (→ M3) — implemented
 
 Three axes, deliberately not conflated:
 
-1. **Per-conversation token budget** — a real number, set from M2's actual telemetry once it
-   exists, not guessed. `MAX_TOKENS=1024` in `agent.py` today is the *output* cap; this is a
-   distinct, currently-nonexistent concept.
+1. **Per-conversation token budget** — `agent_platform.context_budget.TOKEN_BUDGET = 40_000`,
+   grounded in real, live-measured usage: two complete reference-workflow queries cost 5,404 and
+   5,381 tokens end to end, read from actual `gen_ai.usage.*` span attributes via Jaeger's API
+   after running them against the live stack — not guessed, not estimated
+   ([`decisions.md` H29](./decisions.md)). `MAX_TOKENS=1024` in `agent.py` remains the *output*
+   cap on a single model call, a distinct, unrelated concept. Compaction (`context_budget.compact()`)
+   drops the single oldest complete turn once the running total exceeds budget, self-correcting
+   on the next real measurement rather than computing a precise target in one shot
+   ([`decisions.md` H30](./decisions.md)).
 2. **Concurrent-session count** — a compute-scaling question, addressed in M4, not here.
-3. **Cross-session persistence** — a Postgres/Neon-backed store
-   ([`decisions.md` H12](./decisions.md)), reusing infrastructure this repo already runs (the
-   same class of instance backing FHIR cloud and Kong's rate-limit counters) rather than
-   introducing Redis. Swappable later via the same documented-scale-swap pattern Phase 2's `C3`
-   already established for its own rules-data store.
+3. **Cross-session persistence** — `agent_platform.session_store`, a dedicated Postgres instance
+   (`agent-db` in `docker-compose.yml`'s new `phase6` profile), following
+   `provider-registry-service`'s own `db.py`/`schema.sql`/`init_db.py` connection-pool convention
+   exactly for consistency with the one other Postgres-backed service in this repo. A dedicated
+   instance rather than sharing Phase 3's `postgres` container, to keep phase boundaries clean —
+   a bug in one schema can't touch the other's data. Messages are stored as JSON text with manual
+   (de)serialization, not native `jsonb`, because the Anthropic SDK's assistant-turn content
+   blocks are Pydantic models needing `model_dump(mode="json")` first, confirmed against the
+   installed SDK, not assumed ([`decisions.md` H28](./decisions.md)).
+
+**Transport** ([`decisions.md` H14](./decisions.md)): `mcp-agent/src/agent/api.py`, a thin FastAPI
+wrapper — `POST /sessions`, `POST /sessions/{id}/query`, `GET /health` — matching
+`triage-service`'s own convention, including `X-Trace-Id` response headers and
+`FastAPIInstrumentor` for a server span per request. `run_query`'s return arity is unchanged (still
+a 2-tuple); the new token count and trace ID are handed back through an optional `stats` dict so
+every pre-M3 call site stays valid unmodified ([`decisions.md` H31](./decisions.md)). The existing
+CLI's `interactive_mode`/`non_interactive_mode` gained an optional `session_id` and gracefully fall
+back to in-memory-only sessions when `DATABASE_URL` isn't set — mirroring `claims-agent`'s own
+no-API-key deterministic fallback, so the zero-setup CLI experience is unchanged by default
+([`decisions.md` H32](./decisions.md)). The HTTP transport has no such fallback: an HTTP "session"
+with no persistence isn't a session, so it 503s instead.
 
 **Re-fetch, never recall** is a hard rule, not a preference: every turn re-calls
 `get_patient_summary`/`assess_refill_risk` rather than trusting anything cached in prior message
 history, because FHIR data can change between turns — treating cached clinical state as current
 is the same class of hazard as the fail-open bug this repo's fail-closed conventions exist to
-prevent.
+prevent. The session store persists conversation *history* (what was asked, what was decided),
+never a cached clinical read.
 
 **Transport:** a thin FastAPI HTTP wrapper around the existing agent loop
 ([`decisions.md` H14](./decisions.md)), matching `triage-service`'s own convention — not a full

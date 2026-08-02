@@ -33,11 +33,15 @@ import sys
 import anthropic
 
 from agent_platform import (
+    compact,
+    create_session,
     current_trace_id,
     get_tracer,
     is_unknown,
     layer_attrs,
+    load_session,
     safe_set_attributes,
+    save_session,
     setup_tracing,
     start_span,
     validate_decision,
@@ -57,12 +61,6 @@ from .tools import TOOL_DEFINITIONS, execute_tool
 
 MODEL = "claude-sonnet-4-5"
 MAX_TOKENS = 1024
-
-# Crude stopgap against interactive_mode's message list growing unbounded.
-# Not the real memory/token-budget policy -- that's a real number set from
-# telemetry in Phase 6 M3. This just closes the current zero-bound risk
-# early (docs/phase6/decisions.md H13).
-MAX_REPL_TURNS = 40
 
 # Lazily bound to whatever TracerProvider setup_tracing() installs -- safe to
 # create before setup_tracing() runs (docs/phase6/design.md Section 4.2).
@@ -99,15 +97,33 @@ def run_query(
     user_input: str,
     messages: list[dict] | None = None,
     verbose: bool = True,
+    token_count: int = 0,
+    stats: dict | None = None,
 ) -> tuple[str, list[dict]]:
     """
     Run one query through the agent loop.
 
-    Returns (final_text_response, updated_messages).
-    The caller can pass messages back in for multi-turn conversation.
+    Returns (final_text_response, updated_messages). The caller can pass
+    messages back in for multi-turn conversation.
+
+    token_count is the caller's last known conversation size (docs/phase6/
+    decisions.md H13, design.md Section 4.3) -- typically the input_tokens
+    of the previous real API response, which already reflects the full
+    history being sent. If it exceeds TOKEN_BUDGET, the oldest turn is
+    dropped before this query runs. Deliberately doesn't change run_query's
+    return arity to also hand back the new token_count -- pass a `stats`
+    dict and read stats["token_count"] afterward, so every existing
+    2-tuple-unpacking call site (and test) stays valid unchanged.
     """
     if messages is None:
         messages = []
+
+    messages, compacted = compact(messages, token_count)
+    if compacted and verbose:
+        print(error_block(
+            "Conversation exceeded the token budget -- dropped the oldest turn "
+            "to keep going (docs/phase6/decisions.md H13)."
+        ))
 
     messages = messages + [{"role": "user", "content": user_input}]
 
@@ -124,6 +140,13 @@ def run_query(
     with start_span(
         "agent.run_query", _tracer, layer_attrs("agent.orchestration", "run_query")
     ):
+        if stats is not None:
+            # Captured now, while the span is still current -- current_trace_id()
+            # returns None once this `with` block exits, so a caller reading
+            # stats after run_query() returns (e.g. api.py, after the span has
+            # already closed) would otherwise always see None.
+            stats["trace_id"] = current_trace_id()
+
         while True:
             with start_span(
                 f"chat {MODEL}",
@@ -142,11 +165,17 @@ def run_query(
                     messages=messages,
                 )
                 usage = getattr(response, "usage", None)
+                input_tokens = getattr(usage, "input_tokens", None)
                 safe_set_attributes(chat_span, {
                     "gen_ai.response.finish_reasons": [response.stop_reason],
-                    "gen_ai.usage.input_tokens": getattr(usage, "input_tokens", None),
+                    "gen_ai.usage.input_tokens": input_tokens,
                     "gen_ai.usage.output_tokens": getattr(usage, "output_tokens", None),
                 })
+                if stats is not None and input_tokens is not None:
+                    # input_tokens already reflects the full history just sent --
+                    # the simplest accurate "how big is this conversation now"
+                    # measurement, no separate estimate needed.
+                    stats["token_count"] = input_tokens
 
             # ── Tool use ──────────────────────────────────────────────────────
             if response.stop_reason == "tool_use":
@@ -352,11 +381,41 @@ def _check_env() -> anthropic.Anthropic:
     return anthropic.Anthropic(api_key=api_key)
 
 
-def interactive_mode(client: anthropic.Anthropic) -> None:
-    """Run the agent in interactive REPL mode."""
+def interactive_mode(client: anthropic.Anthropic, session_id: str | None = None) -> None:
+    """
+    Run the agent in interactive REPL mode.
+
+    If session_id is given, resumes that session from the Postgres session
+    store (docs/phase6/design.md Section 4.3, decisions.md H12). If
+    DATABASE_URL is set but no session_id is given, starts a new persisted
+    session. If DATABASE_URL isn't set at all, falls back to a purely
+    in-memory session -- the same zero-setup behavior this REPL always had,
+    just without cross-process resume (mirrors claims-agent's own
+    no-API-key deterministic fallback: degrade gracefully, don't crash).
+    Context-budget compaction (H13) applies either way -- it only needs
+    token_count threaded through in-memory turn to turn, not the DB.
+    """
     print(welcome())
+
     messages: list[dict] = []
-    turn_count = 0
+    token_count = 0
+    persisted = False
+
+    if session_id:
+        try:
+            messages, token_count = load_session(session_id)
+            persisted = True
+            print(f"(resumed session {session_id}, {len(messages)} prior message(s))")
+        except Exception as exc:
+            print(error_block(f"Could not resume session {session_id}: {exc}"))
+            return
+    elif os.environ.get("DATABASE_URL"):
+        try:
+            session_id = create_session()
+            persisted = True
+            print(f"(session {session_id})")
+        except Exception as exc:
+            print(error_block(f"Session store unavailable, continuing in-memory only: {exc}"))
 
     while True:
         try:
@@ -372,8 +431,11 @@ def interactive_mode(client: anthropic.Anthropic) -> None:
             break
 
         print()
+        stats: dict = {}
         try:
-            final_text, messages = run_query(client, user_input, messages)
+            final_text, messages = run_query(
+                client, user_input, messages, token_count=token_count, stats=stats
+            )
             print(final_text)
         except anthropic.APIError as exc:
             print(error_block(f"Anthropic API error: {exc}"))
@@ -382,23 +444,47 @@ def interactive_mode(client: anthropic.Anthropic) -> None:
             print(error_block(f"Unexpected error: {exc}"))
             raise
 
-        turn_count += 1
-        if turn_count >= MAX_REPL_TURNS:
-            print(error_block(
-                f"This session has reached {MAX_REPL_TURNS} turns -- starting a fresh "
-                "conversation to keep context bounded (a crude stopgap; Phase 6 M3 replaces "
-                "this with a real, telemetry-derived budget)."
-            ))
-            messages = []
-            turn_count = 0
+        token_count = stats.get("token_count", token_count)
+        if persisted:
+            try:
+                save_session(session_id, messages, token_count)
+            except Exception as exc:
+                print(error_block(f"Failed to persist session: {exc}"))
 
 
-def non_interactive_mode(client: anthropic.Anthropic, query: str) -> int:
-    """Run a single query and exit. Returns exit code."""
+def non_interactive_mode(
+    client: anthropic.Anthropic, query: str, session_id: str | None = None
+) -> int:
+    """
+    Run a single query and exit. Returns exit code.
+
+    session_id is optional -- omit it for the original stateless, ephemeral
+    behavior; pass one to resume/continue a persisted session (docs/phase6/
+    design.md Section 4.3), making a single-shot invocation usable as a real
+    multi-turn conversation across separate process runs, e.g. from a test
+    program issuing one query per invocation against the same session.
+    """
+    messages: list[dict] = []
+    token_count = 0
+    persisted = False
+
+    if session_id:
+        try:
+            messages, token_count = load_session(session_id)
+            persisted = True
+        except Exception as exc:
+            print(error_block(f"Could not resume session {session_id}: {exc}"))
+            return 1
+
     print(f"\nQuery: {query}\n")
+    stats: dict = {}
     try:
-        final_text, _ = run_query(client, query)
+        final_text, messages = run_query(
+            client, query, messages, token_count=token_count, stats=stats
+        )
         print(final_text)
+        if persisted:
+            save_session(session_id, messages, stats.get("token_count", token_count))
         return 0
     except anthropic.APIError as exc:
         print(error_block(f"Anthropic API error: {exc}"))
@@ -417,15 +503,22 @@ def main() -> None:
         metavar="QUERY",
         help="Run a single query non-interactively and exit.",
     )
+    parser.add_argument(
+        "--session-id",
+        metavar="SESSION_ID",
+        help="Resume a persisted session (requires DATABASE_URL). "
+             "Interactive mode starts a new session automatically when omitted "
+             "and DATABASE_URL is set.",
+    )
     args = parser.parse_args()
 
     setup_tracing("mcp-agent")
     client = _check_env()
 
     if args.query:
-        sys.exit(non_interactive_mode(client, args.query))
+        sys.exit(non_interactive_mode(client, args.query, session_id=args.session_id))
     else:
-        interactive_mode(client)
+        interactive_mode(client, session_id=args.session_id)
 
 
 if __name__ == "__main__":

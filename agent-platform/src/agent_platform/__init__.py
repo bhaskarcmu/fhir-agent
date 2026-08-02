@@ -9,6 +9,7 @@ it never decides anything clinical or financial itself.
 
 from __future__ import annotations
 
+from .context_budget import TOKEN_BUDGET, compact
 from .fail_closed import RISK_UNKNOWN, is_unknown, safe_risk_level
 from .observability import (
     current_trace_id,
@@ -21,6 +22,7 @@ from .observability import (
     verbosity,
 )
 from .output_gate import AgentDecision, validate_decision
+from .session_store import create_session, load_session, save_session
 
 __all__ = [
     "RISK_UNKNOWN",
@@ -36,4 +38,9 @@ __all__ = [
     "is_detailed",
     "layer_attrs",
     "current_trace_id",
+    "TOKEN_BUDGET",
+    "compact",
+    "create_session",
+    "load_session",
+    "save_session",
 ]

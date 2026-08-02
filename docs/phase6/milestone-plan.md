@@ -104,24 +104,55 @@ architecture:
 **Short story:** Give the agent a real session concept — Postgres-backed, behind a thin HTTP API
 — plus a token-budget policy actually set from M2's real telemetry instead of guessed.
 
-**Long story:** (full design: [`design.md` §4.3](./design.md#43-memory--session--m3))
+**Long story:** (full design: [`design.md` §4.3](./design.md#43-memory--session--m3--implemented))
 
-- **Transport:** a thin FastAPI wrapper around the existing agent loop, matching
-  `triage-service`'s convention ([`decisions.md` H14](./decisions.md)) — turns `mcp-agent` from
-  a CLI process holding a Python list into an addressable service with sessions. Prerequisite for
-  testing concurrency at all (M4).
-- **Store:** Postgres/Neon ([`H12`](./decisions.md)) — reusing existing repo infrastructure
-  rather than introducing Redis. Schema: `session_id`, `messages`, timestamps, running token
-  count. Swappable later via the same documented-scale-swap pattern Phase 2's `C3` set.
-- **Memory policy, three axes kept separate:** (1) per-conversation token budget — the real
-  number, replacing M1's placeholder cap, set from M2's actual telemetry; (2) concurrent-session
-  count — deferred to M4; (3) cross-session persistence — the Postgres store itself.
-  Re-fetch-don't-recall enforced throughout.
-- **Package landing:** `agent-platform/` gains the session-store client and transport scaffolding,
-  reusable by `claims-agent` without a rebuild.
-- **Testing:** multi-session concurrency tests, possible for the first time now that transport
-  exists; a local-LLM run confirming compaction doesn't break a weaker model's grip on multi-turn
-  context.
+- **Transport:** `mcp-agent/src/agent/api.py`, a thin FastAPI wrapper around `run_query` —
+  `POST /sessions`, `POST /sessions/{id}/query`, `GET /health`, matching `triage-service`'s
+  convention including `X-Trace-Id` headers and a `FastAPIInstrumentor` server span
+  ([`decisions.md` H14](./decisions.md)). New opt-in `phase6` docker-compose profile; the
+  existing `mcp-agent` CLI service is untouched ([`H33`](./decisions.md)).
+- **Store:** a dedicated Postgres instance (`agent-db`), following
+  `provider-registry-service`'s connection-pool/`schema.sql`/`init_db.py` convention exactly.
+  `messages` stored as JSON text (Anthropic SDK content blocks are Pydantic models needing
+  `model_dump(mode="json")` first — confirmed live, not assumed) ([`H28`](./decisions.md)).
+- **Memory policy, three axes kept separate:** (1) per-conversation token budget —
+  `TOKEN_BUDGET = 40_000`, grounded in two real measured queries (5,404 / 5,381 tokens, read
+  from live Jaeger spans, not guessed) ([`H29`](./decisions.md)); compaction drops the single
+  oldest turn per call, self-correcting rather than precise-in-one-shot
+  ([`H30`](./decisions.md)) — this fully replaces M1's `MAX_REPL_TURNS` stopgap, which is now
+  removed from `agent.py`; (2) concurrent-session count — deferred to M4; (3) cross-session
+  persistence — the Postgres store itself. Re-fetch-don't-recall enforced throughout — the store
+  persists conversation *history*, never a cached clinical read.
+- **Backward compatibility:** `run_query`'s return arity is unchanged (still a 2-tuple) — the
+  new token count and trace ID are handed back via an optional `stats` dict, so every one of
+  M1/M2's existing call sites (across `agent.py` and every test file) stays valid unmodified
+  ([`H31`](./decisions.md)).
+- **Graceful degradation:** the CLI (`interactive_mode`/`non_interactive_mode`) falls back to
+  in-memory-only sessions when `DATABASE_URL` isn't set, mirroring `claims-agent`'s own
+  no-API-key fallback — the zero-setup CLI experience is unchanged by default
+  ([`H32`](./decisions.md)). The HTTP transport has no such fallback and 503s instead, since an
+  HTTP "session" with no persistence isn't a session.
+- **Package landing:** `agent-platform/` gains `session_store.py`, `context_budget.py`,
+  `init_db.py`, `schema.sql` — reusable by `claims-agent` without a rebuild.
+- **Testing:** `agent-platform` — 6 real DB-backed session-store tests (self-skip when Postgres
+  is unreachable, same convention as `provider-registry-service`) run against a live Postgres,
+  including the Anthropic-SDK-content-block round-trip; 6 pure-logic compaction tests.
+  `mcp-agent` — 6 API-layer tests (mocked store/client), 4 compaction-integration tests (a real
+  bug caught here: the initial test fixture only had one prior turn, and `compact()` correctly
+  refused to drop it — the test was wrong, not the implementation), 6 session-persistence/
+  fallback tests. **Live end-to-end smoke test**: created a real session over HTTP, asked two
+  real questions (HIGH-risk and LOW-risk), confirmed in Postgres that the session grew to 14
+  messages with a correctly-updated token count — not just asserted in mocked tests.
+- **A real bug found and fixed while smoke-testing, not left in**: `api.py`'s `trace_id` field
+  initially always returned `null` — `current_trace_id()` was being called *after* `run_query`'s
+  root span had already closed. Fixed by capturing the trace ID into the `stats` dict while the
+  span is still current, the same mechanism as the token count.
+- **Deferred, deliberately not built this milestone:** multi-session *concurrency* testing (the
+  API can now be called concurrently, but load/concurrency behavior itself is M4's job, tied to
+  its rate/cost limiter); a live-local-model run confirming compaction doesn't disorient a
+  weaker model's grip on multi-turn context — the mechanism is verified correct by the unit/
+  integration tests above, but a live Ollama-driven multi-turn conversation wasn't separately
+  run for this milestone.
 
 ## M4 — Deploy Resilience & Cost Control
 
