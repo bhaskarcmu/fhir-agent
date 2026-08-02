@@ -1929,8 +1929,10 @@ Now let's rework `api.py`. Let me read the full current file.
 
 Now `test_api_resilience.py`:
 
+All 19 pass. Now let's run the full mcp-agent + agent-platform suite (excluding slow live tests) to check nothing else broke.
+
 <details>
-<summary>Execution details — 955 tool events</summary>
+<summary>Execution details — 957 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3483,6 +3485,8 @@ python -m pytest mcp-agent/tests -q 2>&1 | tail -100`
 - **Write** `/workspaces/fhir-agent/mcp-agent/tests/test_session_api.py`
 - **Read** `/workspaces/fhir-agent/mcp-agent/tests/test_api_resilience.py`
 - **Write** `/workspaces/fhir-agent/mcp-agent/tests/test_api_resilience.py`
+- **Bash** `python -m pytest mcp-agent/tests/test_session_api.py mcp-agent/tests/test_api_resilience.py -v 2>&1 | tail -100`
+- **Bash** `python -m pytest agent-platform/tests mcp-agent/tests triage-service/src/triage/tests -q --deselect mcp-agent/tests/test_provider_integration.py::test_live_ollama_resolves_to_a_valid_gated_decision --…`
 
 </details>
 
