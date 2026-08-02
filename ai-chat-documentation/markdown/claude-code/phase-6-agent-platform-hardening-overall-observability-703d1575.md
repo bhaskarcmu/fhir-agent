@@ -2032,8 +2032,14 @@ Let me fix the span-attribute naming — reusing `"decision"` for the judge's ow
 
 Now let's fix `judge.py` to use these proper attribute names.
 
+Now let's build `knowledge.py`.
+
+Let's live-verify the `knowledge.py` functions against the real APIs before writing tests around them.
+
+Now let's extend `tools.py`'s `assess_refill_risk` to surface the flagged medication's RxNorm code for the knowledge lookup.
+
 <details>
-<summary>Execution details — 1102 tool events</summary>
+<summary>Execution details — 1111 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3811,6 +3817,22 @@ ls /workspaces/fhir-agent/mcp-agent/src/agent/`
 - **Read** `/workspaces/fhir-agent/agent-platform/src/agent_platform/observability.py`
 - **Edit** `/workspaces/fhir-agent/agent-platform/src/agent_platform/observability.py`
 - **Edit** `/workspaces/fhir-agent/agent-platform/src/agent_platform/judge.py`
+- **Write** `/workspaces/fhir-agent/agent-platform/src/agent_platform/knowledge.py`
+- **Edit** `/workspaces/fhir-agent/agent-platform/src/agent_platform/__init__.py`
+- **Edit** `/workspaces/fhir-agent/agent-platform/src/agent_platform/__init__.py`
+- **Edit** `/workspaces/fhir-agent/agent-platform/src/agent_platform/__init__.py`
+- **Bash** `python -m pip install -q -e "agent-platform[dev]" 2>&1 | tail -15
+python3 -c "
+from agent_platform import load_policy, judge_response, JudgeResult, fetch_drug_class, fetch_drug_label_citation, extract…`
+- **Bash** `python3 -c "
+from agent_platform import fetch_drug_class, fetch_drug_label_citation
+
+print('=== label citation for Amoxicillin ===')
+citation = fetch_drug_label_citation('Amoxicillin')
+print(citation[…`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/tools.py`
+- **Bash** `cat -n /workspaces/fhir-agent/mcp-agent/src/agent/tools.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/tools.py`
 
 </details>
 
@@ -3821,6 +3843,6 @@ ls /workspaces/fhir-agent/mcp-agent/src/agent/`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 16:40 UTC
+- **Last updated:** 2 August 2026, 16:42 UTC
 - **Turns:** 28
 - **Status:** Incomplete
