@@ -1022,8 +1022,10 @@ Good, all 9 updated cleanly. Now `HapiFhirClient.java`:
 
 Compiles clean. Now running the full test suite to verify:
 
+Now adding the actual dependency entries near the existing micrometer block:
+
 <details>
-<summary>Execution details — 327 tool events</summary>
+<summary>Execution details — 340 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1489,6 +1491,25 @@ cat /workspaces/fhir-agent/rxclaim-emulator/src/main/resources/application.yml`
 - **Write** `/workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/observability/TracePropagationTest.java`
 - **Bash** `timeout 180 mvn -o test 2>&1 | grep -E "Tests run|BUILD SUCCESS|BUILD FAILURE|ERROR|error:" | tail -50`
 - **Bash** `grep -n "dependencyManagement\|spring-boot-dependencies\|<scope>import</scope>" /workspaces/fhir-agent/fhir-service/pom.xml`
+- **Read** `/workspaces/fhir-agent/fhir-service/pom.xml`
+- **Bash** `mvn -q -o dependency:tree -Dincludes=io.opentelemetry,io.micrometer:micrometer-tracing-bridge-otel 2>&1 | tail -30`
+- **Bash** `find ~/.m2/repository/io/micrometer/micrometer-tracing-bridge-otel -maxdepth 1 -type d 2>&1
+echo "---"
+find ~/.m2/repository/io/opentelemetry/opentelemetry-exporter-otlp -maxdepth 1 -type d 2>&1
+echo…`
+- **Edit** `/workspaces/fhir-agent/fhir-service/pom.xml`
+- **Bash** `grep -n "micrometer-registry-prometheus-simpleclient\|</dependency>" /workspaces/fhir-agent/fhir-service/pom.xml | grep -A1 "simpleclient"`
+- **Read** `/workspaces/fhir-agent/fhir-service/pom.xml`
+- **Edit** `/workspaces/fhir-agent/fhir-service/pom.xml`
+- **Edit** `/workspaces/fhir-agent/fhir-service/src/main/resources/application.yaml`
+- **Bash** `grep -n "prometheus:\|metrics:\|export:" /workspaces/fhir-agent/fhir-service/src/main/resources/application-cds.yaml`
+- **Read** `/workspaces/fhir-agent/fhir-service/src/main/resources/application-cds.yaml`
+- **Edit** `/workspaces/fhir-agent/fhir-service/src/main/resources/application-cds.yaml`
+- **Bash** `env | grep -i "SPRING_DATASOURCE\|NEON_" 
+cd /workspaces/fhir-agent/fhir-service && unset SPRING_DATASOURCE_URL NEON_HOST NEON_DB NEON_USER NEON_PASSWORD
+timeout 180 ./mvnw -q -o -DskipTests compile 2…`
+- **Bash** `unset SPRING_DATASOURCE_URL SPRING_DATASOURCE_DRIVER_CLASS_NAME NEON_DB_URL
+timeout 300 ./mvnw -o -DskipTests=false -Dtest='!*Mdm*' test 2>&1 | tail -80; echo "EXIT:$?"`
 
 </details>
 
@@ -1499,6 +1520,6 @@ cat /workspaces/fhir-agent/rxclaim-emulator/src/main/resources/application.yml`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 11:37 UTC
+- **Last updated:** 2 August 2026, 11:39 UTC
 - **Turns:** 15
 - **Status:** Complete
