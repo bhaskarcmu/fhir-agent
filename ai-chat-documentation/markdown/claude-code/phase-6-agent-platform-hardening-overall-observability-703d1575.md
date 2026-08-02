@@ -1076,7 +1076,58 @@ Next, some purposeful expansion/clarification of scope:
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+## Terminology
+
+**Observability** is the property, not a specific technology — how well you can infer a system's internal state purely from what it emits externally (logs, metrics, traces). The term is borrowed from control theory (a system is "observable" if internal state is reconstructable from outputs). What's usually called the "three pillars" — metrics, logs, traces — are the *categories of telemetry* that make a system observable; OpenTelemetry (which M2 uses) is the vendor-neutral instrumentation standard for producing them.
+
+**The TraceID/SpanID combination isn't "dynamic trace capability"** — close intuition, wrong term. Precisely:
+
+- **Trace** — the complete record of one logical operation as it crosses process/service boundaries (in this repo: one `mcp-agent` query, end to end).
+- **Span** — one unit of work within a trace (one HTTP call, one model call, one tool call). Spans have parent-child relationships forming a tree, which is what gives you causality and timing, not just "these things happened."
+- **TraceID / SpanID** — the identifiers. Both are carried, on the wire, in a structure formally called **trace context** — specifically the **W3C Trace Context** standard (the `traceparent` header), which is what makes propagation interoperable across languages/frameworks rather than vendor-specific.
+- **Correlation ID** is the older, looser term — pre-dates OpenTracing/OpenTelemetry, and refers to *any* ID used to tie related log lines together. It's not a formal part of the OTel data model, but in practice the TraceID usually **serves** as the correlation ID once you inject it into your log lines — that specific practice is called **log-trace correlation**.
+
+So: the overall technique is **distributed tracing**; the propagated data structure is **trace context**; the result is a **trace** composed of **spans**. "Correlation ID" survives as an informal synonym, mostly in logging contexts that predate or sit outside a full tracing setup.
+
+**Your "traceability" instinct is a real and useful flag, not a false alarm.** In regulated/medical-device software (IEC 62304, FDA design controls, DO-178C's analogues), "traceability" means a **requirements traceability matrix (RTM)** — a *static*, design-time, bidirectional mapping: user need → requirement → design element → code module → test → validation evidence. It's an audit artifact proving nothing is orphaned (untested requirement, or code with no requirement behind it). That concept and distributed tracing share a word and roughly share a *goal* (know what produced what, and prove it), but one is compiled at design time from documents, the other is captured at runtime from execution. This repo doesn't currently maintain anything at RTM rigor — the closest analogues are the R-numbered requirements (`docs/*/requirements.md`, `prd.md`) and the decision indices (D/C/H-lettered `decisions.md` files) that link a requirement to its rationale and implementation, but that's an ADR-style decision log, not a formal bidirectional matrix, and isn't built for regulatory audit. Worth keeping the vocabulary separate in whatever we write next — I'd avoid the word "traceability" for the dynamic/runtime concept in this repo's docs specifically to not collide with what it'd mean if this project ever did need real design-control documentation.
+
+## Critique of the three scope items
+
+### 1. Unique ID per request, human or test-initiated, propagated everywhere, easy to identify
+
+**Mostly already built, with two real gaps.** The TraceID M2 already generates *is* this — every incoming HTTP request that doesn't already carry a `traceparent` gets a fresh TraceID automatically (FastAPI/Spring auto-instrumentation does this for free), and it propagates through every hop M2 wired. A test program hitting `triage-service` directly via `curl` or an integration test gets its own trace with no extra work. This matches industry standard exactly — it's what W3C Trace Context is *for*.
+
+Two things are genuinely missing, both real and both cheap:
+- **Not surfaced anywhere a human can use it.** The TraceID lives in span context but never reaches the CLI output, the decision block, or an error message. Standard practice (predates OTel — this is the old `X-Request-Id`/`X-Correlation-Id` header pattern, still common *alongside* trace IDs specifically for this reason) is to echo the ID back to whoever made the request, so "the agent said REVIEW, here's the trace ID, go look it up" is possible. Cheap to add: include it in `decision_block()`'s output and in error messages.
+- **No coverage for anything that isn't behind an instrumented HTTP boundary** — a direct function call in a test harness, or a currently-unwired service (`claims-agent`, the provider-search stack), gets no trace at all. Not a defect, just a boundary to be explicit about.
+
+### 2. Meaningful resource-usage tracking
+
+This maps cleanly onto two established SRE vocabularies worth naming so we don't invent our own: the **RED method** (Rate, Errors, Duration — for request-level services) and the **USE method** (Utilization, Saturation, Errors — for resources: CPU, memory, connection pools, threads). Precisely naming which one applies avoids building something ad hoc.
+
+Some of this is likely **already present and just not looked at yet** — Spring Boot Actuator + Micrometer, which the three Java services now have, auto-registers JVM memory/GC/thread/CPU metrics (USE-method data) with zero extra code; worth confirming what's already on `/actuator/prometheus` before building anything new.
+
+What's genuinely new and, I'd argue, the most *relevant* resource to track for this specific system: **LLM token/cost usage as a real metric, not just a span attribute.** M2 already puts `gen_ai.usage.input_tokens`/`output_tokens` on each chat span (the correct OTel gen_ai semantic-convention names — that part already matches, arguably exceeds, typical practice, since a lot of OTel+LLM tutorials stop at logging tokens to a span and never aggregate them). But a span attribute only tells you about one request; it can't answer "how many tokens today" or feed a cost alert. That requires an actual Prometheus counter/histogram. This is precisely what **M4 (Deploy Resilience & Cost Control)** already needs to do its job — the rate/cost limiter can't alert on a threshold it can't measure. I'd sequence this as part of M4, not bolt it onto M2, since M4 owns the "measure it, then act on it" pairing already.
+
+### 3. Custom module/design-element keywords in span metadata, organized documentation, deep code-module traceability, exceptions tied to all of it
+
+This is the substantial one, and it's where I'd push back a little on scope, not the idea.
+
+**Custom attribute namespacing is standard practice and a safe, natural extension of what M2 built.** OTel semantic conventions reserve namespaces like `http.*`, `db.*`, `gen_ai.*`; adding your own — say, `fhir_agent.module`, `fhir_agent.layer`, `fhir_agent.component` — under your own prefix is exactly how organizations avoid collisions while adding business/architectural context. The `ALLOWED_SPAN_ATTRIBUTE_KEYS` allowlist I built in M2 is precisely the mechanism to extend for this — it already enforces "only known-safe, known-meaningful keys reach a span."
+
+**A written schema document organized by architecture tier is a real, valuable step — and honestly exceeds what most teams do.** Mature orgs that take telemetry seriously maintain an internal "semantic conventions" or "attribute dictionary" doc (OTel itself publishes one for its own reserved namespaces); most small-to-mid teams add attributes ad hoc with no such document at all. Writing one, organized by tier (agent tier / Java claims tier / deterministic Python tier), naming each custom attribute, its meaning, and which layer populates it, is above-baseline rigor and would pair naturally with `docs/phase6/design.md`.
+
+**"Deep enough to track code modules through execution flow" is where I'd ask you to scope deliberately, not build reflexively.** M2's spans are drawn at meaningful boundaries (one per model call, one per tool call, one per HTTP hop) — getting to "which rule in `rules.py` fired" or "which layer of claims-service's ACL touched this" means adding spans *inside* services, not just at their edges. That's real, standard practice (sometimes called fine-grained or business-span instrumentation), but industry guidance (Google's SRE book, most OTel adoption guides) is consistently to instrument at architecturally meaningful boundaries, not every function — over-instrumenting adds real overhead and turns traces into noise that's harder to read, not easier. I'd want to agree on *which* boundaries matter before adding spans, rather than aiming for maximum depth by default.
+
+**Exceptions correlating to all of this is mostly free already, and I verified this rather than assumed it**: the OTel Python SDK's span context manager defaults to `record_exception=True, set_status_on_exception=True` — confirmed just now against the installed package. So once a span carries your custom module/layer attributes, any exception raised inside it is automatically attached to that same span, with those same attributes already on it, with no extra code. What I haven't verified is whether that's *also* true on the Java side (Micrometer's OTel bridge) — worth confirming before assuming parity there.
+
+## Where I'd push back or ask before building
+
+- **Item 3's documentation piece is genuinely new work**, not an extension of an existing doc section — I'd want to know if you want it inside `docs/phase6/design.md` or as its own document before I start writing it.
+- **Item 2 belongs in M4, not M2** — M2's PR (#58) is still open; I'd rather not keep expanding it and would sequence token/cost metrics into M4's own PR where the consumer (the rate/cost limiter) actually lives.
+- **Item 3's "depth"** needs a boundary decision from you (which specific modules/layers matter) before I pick where to add spans — building it to maximum depth by default is the one place I'd actively avoid over-delivering, per the guidance above.
+
+Want me to turn this into concrete decisions/milestone updates in `docs/phase6/` before touching any code, the same way we did for M1/M2?
 
 <details>
 <summary>Execution details — 427 tool events</summary>
@@ -1837,4 +1888,4 @@ print(sig)
 - **Created:** 2 August 2026, 03:48 UTC
 - **Last updated:** 2 August 2026, 12:15 UTC
 - **Turns:** 16
-- **Status:** Incomplete
+- **Status:** Complete
