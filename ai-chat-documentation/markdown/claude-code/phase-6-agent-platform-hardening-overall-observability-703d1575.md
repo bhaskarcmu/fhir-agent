@@ -1989,8 +1989,27 @@ Everything staged matches intended changes. Committing.
 
 Committed as `7dc7a98`. Let's push and update the PR.
 
+**PR #61** updated with the rework: https://github.com/bhaskarcmu/fhir-agent/pull/61
+
+**Summary of the rework:**
+- Default provider flipped from Anthropic to self-hosted Ollama — primary rationale is PHI/data-sovereignty, not cost. A present `ANTHROPIC_API_KEY` alone no longer selects Anthropic; only an explicit `LLM_PROVIDER` does.
+- Three provider identities (`anthropic`/`ollama`/`openai_compatible`), split on *who hosts the inference*, not wire protocol.
+- Disclosed via a TTY-gated CLI message, never silently substituted; documented as a limitation on the HTTP side.
+- `DEPLOYMENT_ENV=production` guardrail added now; the fuller design deferred to a new **M7 milestone**, documented but not built.
+- Discovery (`--list-models`, `GET /models`) is opt-in and all-or-nothing, deliberately not over-engineered.
+- Model choice is now genuinely per-session (API) / per-process (CLI), with a real schema migration and `build_client_for()` to rebuild the exact pinned client on every resume/query.
+- Ollama is now a hard test/CI dependency for the live-model tests specifically (not the whole suite); a new CI job hard-gates against `LLM_PROVIDER=anthropic` ever appearing in CI config.
+- A real conftest.py collision bug was hit and fixed while doing this work.
+- Documentation swept broadly, including two stale top-level status docs that had been out of date since M1.
+
+**Validation:** 30 new/updated unit tests, 129+94 passing across the full Python suite, Java green, and extensive live validation (real Ollama, real Claude opt-in, real cross-provider session pinning, real production-guardrail refusal) — all detailed in the commit and PR body.
+
+**Known limitation:** the containerized `mcp-agent-api` can't yet reach a host-run Ollama by default; validated via the host-direct CLI and the API's explicit-Anthropic path instead.
+
+Waiting on your review before this merges.
+
 <details>
-<summary>Execution details — 1070 tool events</summary>
+<summary>Execution details — 1071 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3711,6 +3730,7 @@ per d…`
 ## Summary
 Implements Phase 6 Milestone 5 — "Provider Abstraction & Cross…`
 - **TodoWrite** `{"todos": [{"content": "Rework agent_platform/providers.py: 3 provider identities (anthropic/ollama/openai_compatible), default=ollama, DEPLOYMENT_ENV production guardrail, discovery functions", "stat…`
+- **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase6-agent-hardening.md`
 
 </details>
 
