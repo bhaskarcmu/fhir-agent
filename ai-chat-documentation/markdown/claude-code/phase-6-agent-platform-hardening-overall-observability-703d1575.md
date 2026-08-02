@@ -1629,8 +1629,10 @@ That's fine as a type hint approximation; leaving it. Now let's install and run 
 
 All 128 tests pass, no regressions. Now let's write M5's own test suite: provider translation unit tests, and a live Ollama adversarial integration test through the real `run_query` loop (the milestone's actual acceptance criterion).
 
+All 17 pass. Now the live Ollama integration test through the real agent loop.
+
 <details>
-<summary>Execution details — 842 tool events</summary>
+<summary>Execution details — 844 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3036,6 +3038,8 @@ python -m pytest agent-platform/tests mcp-agent/tests -q 2>&1 | tail -60`
 - **Bash** `which ollama 2>&1; curl -s http://localhost:11434/api/tags 2>&1 | head -5; echo "exit:$?"`
 - **Write** `/workspaces/fhir-agent/agent-platform/tests/test_providers.py`
 - **Bash** `python -m pytest agent-platform/tests/test_providers.py -v 2>&1 | tail -60`
+- **Write** `/workspaces/fhir-agent/mcp-agent/tests/test_provider_integration.py`
+- **Bash** `python -m pytest mcp-agent/tests/test_provider_integration.py -v -s 2>&1 | tail -80`
 
 </details>
 
