@@ -1028,8 +1028,10 @@ All services started healthy. Let's confirm status and check claims-service actu
 
 All three targets are actually being scraped successfully — real, working metrics pipeline. Now the trace propagation smoke test through `mcp-agent`:
 
+Now let's run the real query through the instrumented stack:
+
 <details>
-<summary>Execution details — 363 tool events</summary>
+<summary>Execution details — 372 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1548,6 +1550,22 @@ docker compose run --rm -e OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317 mcp-ag
 docker logs fhir-agent-mcp-agent-run-98f74f93aa3e 2>&1 | tail -60`
 - **Bash** `cd /workspaces/fhir-agent
 docker compose build mcp-agent 2>&1 | tail -30`
+- **Bash** `curl -s "http://localhost:8080/fhir/Patient?family=Mraz" 2>&1 | python3 -c "import json,sys; d=json.load(sys.stdin); print('total:', d.get('total'))"`
+- **Bash** `FHIR_GATEWAY_URL=http://localhost:8080/fhir python3 data/scripts/seed_demo.py 2>&1 | tail -30`
+- **Bash** `cd /workspaces/fhir-agent
+docker compose run --rm -e OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317 mcp-agent python3 -m agent.agent --query "Check refill risk for Kristle Mraz"`
+- **Bash** `cd /workspaces/fhir-agent
+docker compose run --rm -T -e OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317 mcp-agent python3 -m agent.agent --query "Check refill risk for Kristle Mraz" 2>&1`
+- **Bash** `cd /workspaces/fhir-agent
+docker compose run --name mcp-agent-smoketest -e OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317 mcp-agent python3 -m agent.agent --query "Check refill risk for Kristle Mraz"…`
+- **Bash** `docker logs mcp-agent-smoketest 2>&1
+echo "--- inspect exit code ---"
+docker inspect mcp-agent-smoketest --format='{{.State.ExitCode}} {{.State.Error}}' 2>&1
+docker rm mcp-agent-smoketest >/dev/null 2…`
+- **Bash** `cat /workspaces/fhir-agent/mcp-agent/Dockerfile`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/Dockerfile`
+- **Bash** `cd /workspaces/fhir-agent
+docker compose build mcp-agent 2>&1 | tail -15`
 
 </details>
 
@@ -1558,6 +1576,6 @@ docker compose build mcp-agent 2>&1 | tail -30`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 11:50 UTC
+- **Last updated:** 2 August 2026, 11:51 UTC
 - **Turns:** 15
 - **Status:** Complete
