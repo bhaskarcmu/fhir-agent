@@ -12,6 +12,12 @@
 > [cloud-delivery gap](./plan.md#6-workstreams--milestones). Phase 2b is real authoring work,
 > not one command.
 >
+> **Observability (R15) is also less complete than the milestone table implies.** M3/M4's
+> touchpoints said "OTel tracing wired" / "Managed-Prometheus metric names" — no such
+> instrumentation exists in `claims-service` or `rxclaim-emulator` today (found post-hoc,
+> 2026-08; see [C5](./decisions.md)). This is not a cloud-deployment gap like M8 — it's unbuilt
+> at the application level, local or cloud.
+>
 > *This is the one canonical status statement. Other documents link here rather than restate it.*
 > Next steps: [`plan.md` §16](./plan.md#16-future-work).
 >
@@ -52,9 +58,11 @@ layer."*
 | C2 | Gateway | **DB-less Kong** as the canonical Phase 2 gateway (one declarative dialect — committed as `kong.tmpl.yml`, rendered to `kong.yml` at startup — for local + cloud); Phase 1 KIC Kong untouched, unified later via a **gateway-strangler** ([runbook](../gateway-runbook.md), plan §3). |
 | C3 | Rules data | **Postgres behind a repository interface** now; Bigtable/Firestore is the documented scale swap. |
 | C4 | Audit | **FHIR `Provenance`** now (with R18 invariants); BigQuery analytics plane deferred to Phase 2b. |
+| C5 | Observability | **OpenTelemetry tracing + Micrometer/Prometheus metrics** (R15) — designed, ⚠️ not implemented in code (no dependency, no trace/correlation-ID code in `claims-service`/`rxclaim-emulator`). See [`decisions.md` C5](./decisions.md). |
 
 **Cloud is a first-class concern from every milestone** (design + stub + test); only the
-live/paid GCP deploy is late (**Phase 2b**). Normative sections: **Decision Contract
+live/paid GCP deploy is late (**Phase 2b**). **Observability (R15) specifically is unbuilt at
+the application level, not just undeployed** — see C5. Normative sections: **Decision Contract
 (R17)**, **audit invariants + idempotency (R18)**, **test matrix (R19)**, plus security
 (R14), observability (R15), deployability (R16), a **stakeholder × milestone** matrix
 (plan §13), the **modernization/strangler snapshot** and **reliability patterns** (plan §5),
@@ -79,7 +87,7 @@ All Phase 2 work is *additive*. A known-good snapshot is tagged `phase1-v1`
   out-of-scope, and deviations from the PRD. **Normative** — what must be true.
 - **[`plan.md`](./plan.md)** — architecture, service topology, gateway/parity
   design, workstreams, sequencing, open questions, and **[§16 future work](./plan.md#16-future-work)**.
-- **[`decisions.md`](./decisions.md)** — ADR-style index of every decision (D1–D8, C1–C4, and
+- **[`decisions.md`](./decisions.md)** — ADR-style index of every decision (D1–D8, C1–C5, and
   later ones) with status and supersession markers.
 - **[`source-prd.md`](./source-prd.md)** — the archived source DRAFT PRD that
   seeded this work (the **input**, not the contract; deviations captured in
