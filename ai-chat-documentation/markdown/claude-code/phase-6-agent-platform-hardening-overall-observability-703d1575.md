@@ -1437,8 +1437,28 @@ Branch created on `/workspaces/fhir-agent` (main worktree), off `main`. Now runn
 
 This is running in the background (long-running Maven test suite). Let it finish; meanwhile let me check rxclaim-emulator separately isn't blocked by this foreground call — actually this Bash call is synchronous. Let it complete.
 
+Exit code 0, no BUILD FAILURE lines — claims-service passes (those ERROR log lines are expected simulated-failure test cases, not build errors). Now rxclaim-emulator.
+
+Both Java suites pass cleanly. Live end-to-end validation (real Postgres session growth, trace-ID header, both real bugs found and fixed) was already completed and documented earlier this session — no need to repeat. Proceeding to commit.
+
+All M3 files staged cleanly, nothing suspicious. Committing.
+
+Committed as `05fd609`. Now pushing and opening the PR.
+
+M3 is done: branch pushed, PR opened at **[#59](https://github.com/bhaskarcmu/fhir-agent/pull/59)**.
+
+**Files changed:** 19 files — new `agent-platform/{session_store,context_budget,init_db}.py` + `schema.sql`, new `mcp-agent/src/agent/api.py`, modified `agent.py`/`docker-compose.yml`/`docs/phase6/{decisions,design,milestone-plan}.md`, plus 6 new test files (28 new tests total).
+
+**Validation:** 152 Python tests passed (6 self-skip without local Postgres, as designed) across agent-platform + mcp-agent + triage-service; `claims-service` and `rxclaim-emulator` both green via `mvn -o clean verify`. Live smoke test against the real `phase6` docker-compose stack: created a session over HTTP, ran two real queries, confirmed via `psql` it grew to 14 messages with a correct token count.
+
+**Two real bugs found and fixed** during live testing (not caught by mocks): trace_id always null in API responses (span closed before it was read), and no server span at all on `/health`/`/sessions` (FastAPI app was never instrumented).
+
+**Branch:** `feature/phase6-m3-context-memory-session`, commit `05fd609`. **Known limitation:** concurrent-session-count scaling and a live local-LLM compaction run are deliberately deferred to M4, per the milestone plan.
+
+Waiting on your merge before I delete the branch and move to M4.
+
 <details>
-<summary>Execution details — 656 tool events</summary>
+<summary>Execution details — 666 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2574,6 +2594,22 @@ docker compose stop tri…`
 - **Bash** `unset SPRING_DATASOURCE_URL NEON_HOST NEON_USER NEON_PASSWORD NEON_DB 2>/dev/null; mvn -o -q clean verify 2>&1 | tail -80`
 - **Bash** `unset SPRING_DATASOURCE_URL NEON_HOST NEON_USER NEON_PASSWORD NEON_DB 2>/dev/null; mvn -o -q clean verify 2>&1 | tail -80; echo "CLAIMS_EXIT=$?"`
 - **Bash** `unset SPRING_DATASOURCE_URL NEON_HOST NEON_USER NEON_PASSWORD NEON_DB 2>/dev/null; mvn -o -q clean verify > /tmp/claude-1000/-workspaces-fhir-agent/703d1575-6579-4a4a-834d-bfd055f35840/scratchpad/clai…`
+- **Bash** `unset SPRING_DATASOURCE_URL NEON_HOST NEON_USER NEON_PASSWORD NEON_DB 2>/dev/null; cd /workspaces/fhir-agent/rxclaim-emulator && mvn -o -q clean verify > /tmp/claude-1000/-workspaces-fhir-agent/703d15…`
+- **Bash** `git add agent-platform/schema.sql agent-platform/src/agent_platform/context_budget.py agent-platform/src/agent_platform/init_db.py agent-platform/src/agent_platform/session_store.py agent-platform/src…`
+- **Bash** `cd /workspaces/fhir-agent && git add agent-platform/schema.sql agent-platform/src/agent_platform/context_budget.py agent-platform/src/agent_platform/init_db.py agent-platform/src/agent_platform/sessio…`
+- **Bash** `git commit -m "$(cat <<'EOF'
+feat(phase6): M3 — context budget, Postgres session store, HTTP transport
+
+Gives mcp-agent a real session concept and a token-budget policy set
+from M2's actual telemetry…`
+- **TodoWrite** `{"todos": [{"content": "Gather real token-usage data from live queries to ground the M3 budget number", "status": "completed", "activeForm": "Gathering real token-usage data"}, {"content": "Build agen…`
+- **Bash** `git push -u origin feature/phase6-m3-context-memory-session`
+- **Bash** `gh pr create --title "Phase 6 M3: context budget, Postgres session store, HTTP transport" --body "$(cat <<'EOF'
+## Summary
+Implements Phase 6 Milestone 3 — "Context, Memory & Session Transport" (`docs…`
+- **TodoWrite** `{"todos": [{"content": "Gather real token-usage data from live queries to ground the M3 budget number", "status": "completed", "activeForm": "Gathering real token-usage data"}, {"content": "Build agen…`
+- **Read** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase6-agent-hardening.md`
+- **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase6-agent-hardening.md`
 
 </details>
 
@@ -2584,6 +2620,6 @@ docker compose stop tri…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 13:28 UTC
+- **Last updated:** 2 August 2026, 13:30 UTC
 - **Turns:** 19
 - **Status:** Complete
