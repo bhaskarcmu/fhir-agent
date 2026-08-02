@@ -266,7 +266,58 @@ Now critique everything, analyze what has been implemented and documented in the
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+# Phase 5 Critique — findings from the actual codebase and docs
+
+Four parallel audits (mcp-agent code, claims-agent/Phase 2, Phase 4/Phase 5 docs + observability infra, deterministic-tier conventions). No planning below — just what's confirmed, what's wrong, and what needs a decision from you before any milestone doc gets written.
+
+## What's clear and holds up
+
+**The handoff doc's code claims about mcp-agent are all accurate.** `agent.py`'s hardcoded Anthropic client/model/token cap, `SYSTEM_PROMPT`, `run_query(messages)→messages` mechanics, REPL persistence vs. `--query` non-persistence, `tools.py`'s two tools — all verified line-for-line. Good foundation to build the report on later.
+
+**The cloud-delivery-gap claim is accurate and well-documented**, quotable directly from `docs/phase2/plan.md`'s "⚠️ Cloud-delivery gap" callout and `decisions.md` D8: no root Terraform module, no `deploy-phase2.sh`, only per-service Cloud Run stubs. The "Phase 2 isn't more cloud-ready" reasoning is sound.
+
+**The status-truthfulness incident is real**, commit `0fcc196` ("status truth, safety semantics, gateway runbook, ADR index") — a reviewer did catch Phase 2 asserting things the repo didn't support. That precedent is legitimate grounds for not casually reopening Phase 2.
+
+**A fail-closed convention already exists and is load-bearing** in `claims-service`: `Severity{DENY,PEND,REVIEW,INFO}` / `Outcome{APPROVED,DENIED,PENDED,ROUTED_FOR_REVIEW}`, plus the documented "unknown ≠ safe" lesson (`docs/testing-guide.md`: *"Make 'I don't know' a distinct value"*). `REVIEW` is already a specific, defined status in this codebase, not a blank slate — the plan's "fail-closed to REVIEW" choice happens to align with it.
+
+## Corrections needed
+
+- **Phase 2 was never "tagged."** Only `phase1-v1` exists as a git tag. Phase 2's "done" status lives in prose (`docs/phase2/README.md`'s canonical statement), not a tag. If this word carries into a milestone doc, it repeats an error.
+- **`HttpTriageClientTest`'s stub-server pattern lives in `claims-service` (Java), not `triage-service`.** Triage-service has no HTTP-client tests of its own (it's the server, not a client). Reusing that pattern for mcp-agent means porting a Java/JUnit idiom to Python — nothing equivalent exists in Python yet, and no stub-server library (`respx`, etc.) is a dependency anywhere.
+- **The R15 ("OTel tracing wired") claim in Phase 2's own milestone table is itself inflated.** No `opentelemetry` or `micrometer` dependency exists in `claims-service`/`rxclaim-emulator`, no `traceId`/correlation-ID code anywhere. This is a second, uncaught instance of the same documentation-vs-code gap the reviewer flagged once already — worth deciding whether to fix in Phase 2's docs opportunistically or just note it and move on.
+
+## The collision that needs your call first
+
+**`docs/phase5/` already has content, and it isn't this.** The only file there — `phase4-testing-and-analysis.md`, on this exact branch — is explicitly labeled *"DRAFT... not a Phase 5 PRD itself,"* and its entire content is a post-merge Phase 4 safety review, headlined by a **live, unfixed clinical-safety bug**: `epic-emulator`'s 20-record pagination cap silently drops allergy records, flipping a HIGH-risk (do-not-dispense) conflict to LOW-risk (safe to dispense) when a patient has >20 allergies. The doc says this should be fixed "**before Phase 5 starts**," and separately proposes Phase 5 scope around decomposing `epic-emulator`, not agent hardening.
+
+`docs/phase4/README.md` and `docs/README.md` both currently reserve "Phase 5" for that epic-emulator decomposition work — "no timeline set," but the slot isn't empty. Nothing in the roadmap reserves "Phase 6" either. So: is agent-platform-hardening now Phase 5 (superseding/absorbing the epic-emulator content) or a different phase number, and — separately from naming — does the open pagination bug need to be dealt with before or alongside this work, given it's a live false-negative on the exact drug-allergy-conflict check `mcp-agent` calls?
+
+## Things the plan should align to rather than invent
+
+- **The triage rule engine (`rules.py`) is not fail-closed** — an unrecognized drug silently falls through to the `LOW`/"safe to dispense" default. Fail-closed only exists one layer up, in `HttpTriageClient.java`'s wrapper (`UNKNOWN` never `LOW` on any failure/timeout/unrecognized response). **mcp-agent talks to triage-service directly, bypassing that Java wrapper entirely** — so today there is no fail-closed protection on that path at all; `tools.py` defaults to the string `"UNKNOWN"` only on parse failure, and nothing stops the LLM from recommending dispense anyway. This is a more concrete version of the "output safety" gap than the handoff doc's framing — worth having in view for M1.
+- **PHI redaction has a real precedent to copy**: `provider-registry-service`'s `sanitize_location()` + structural (not scrub-after-the-fact) logging middleware. There's also a documented near-miss (`docs/developer-guide.md`): a design doc claimed a PHI-safety mechanism existed for five milestones before anyone checked — it didn't. Direct caution against writing "PHI-redact span attributes" in a plan without verifying it's wired.
+- **A live, currently-open PHI exposure already exists**: Kong's `file-log` plugin logs raw request URIs (containing patient/member IDs) to stdout today, per `docs/gateway-runbook.md`'s own acknowledgment. Worth deciding whether Phase 5's observability/redaction work touches this opportunistically.
+- **Timeout convention across the deterministic tier is consistent**: explicit connect-timeout + overall-timeout pairs (5s/20s), and a timeout is folded into the *same* fail-closed branch as any other failure — never a special "assume okay" path. `HttpTriageClient.java` explicitly defers circuit breakers as future work ("changes latency, not policy"). mcp-agent today has one flat 30s timeout, no distinct connect timeout, no retry. If M4 wants a circuit breaker in front of the LLM API, that's a new pattern relative to repo precedent, not an extension of one.
+- **Every existing rate limiter in the repo (Kong's `fhir-rate-limit`, provider-registry-service's in-process limiter) is fail-closed/block-over-limit (429).** None "alert without shedding." The plan's M4 proposal to alert-not-shed on the LLM call is a genuine departure from every precedent here — and arguably in tension with its own "never silently drop a care request" framing, since alert-only means the request still goes through uncapped. That needs an explicit rationale, not an implicit one.
+- **No single error-shape convention exists to inherit** — FHIR `OperationOutcome` (claims-service, epic-emulator, fhir-service) vs. plain FastAPI `{"detail": ...}` (triage-service) vs. structured `{error_type, message}` (provider-registry-service) are three unreconciled shapes. M1's output contract needs to pick one deliberately and say why, not assume there's a repo standard.
+
+## Other facts worth having before any milestone doc
+
+- **claims-agent already has a `--no-llm` deterministic mode** (template-rendered explanation, no API key needed) that mcp-agent lacks — a real existing fallback pattern, potentially relevant to M1/M6's fail-closed design, that the handoff doc didn't mention.
+- **Neither agent has any provider abstraction, memory persistence, or observability today** — both are equivalently minimal Anthropic-only scripts. The "carry to Phase 2's claims stack" premise is architecturally sound (nearly identical skeletons), but there's no existing asymmetry to exploit — it's a clean build for both.
+- **Gateway-level observability is not a clean slate**: Kong's Prometheus plugin and a GKE-Managed-Prometheus `ServiceMonitor` are already declared (though not confirmed scraped) — but only on the Phase 1 KIC deployment, not the Phase 2 docker-compose Kong that fronts triage/claims locally, and not at the application/LLM level anywhere. M2 should probably feed that existing pipeline rather than stand up a parallel one.
+- **The `oneOf`-schema-fragility memory concern doesn't apply to any tool schema that exists today** — both current tools (`get_patient_summary`, `assess_refill_risk`) are flat single/dual-string-param schemas with zero nesting. It's a forward-looking concern for whatever M1's enum-output tool or M5's cross-provider schemas end up shaped like, not a current bug to fix.
+
+## What needs to be discussed (merging the handoff's §8 with what the audit surfaced)
+
+1. **Phase numbering and the epic-emulator collision** (new, and probably the highest-priority one — it affects the branch/doc structure of everything else).
+2. Relationship to the open pagination safety bug — block Phase 5 on it, run in parallel, or explicitly out of scope with a stated reason.
+3. Enum set for the pilot surface + REVIEW semantics — now informed by `claims-service`'s existing `Severity`/`Outcome` vocabulary; decide whether to reuse it or diverge deliberately.
+4. Whether the "alert not auto-shed" rate/cost control is intentional given it contradicts every existing rate-limiter's fail-closed posture.
+5. Error-shape choice for the agent's fail-closed output (FHIR `OperationOutcome` vs. `{error_type, message}` vs. something new).
+6. Whether M2 observability plugs into the existing (declared-but-unconfirmed) Kong/Managed-Prometheus pipeline or stands alone.
+7. Whether to touch the live Kong PHI-in-logs exposure while doing PHI-redaction work, or leave it out of scope.
+8. The rest of the original §8 list (session-store tech, "important" response definition, transport, RAG corpus, memory token-budget numbers) — unchanged, still open.
 
 <details>
 <summary>Execution details — 13 tool events</summary>
@@ -302,6 +353,6 @@ Now critique everything, analyze what has been implemented and documented in the
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 04:03 UTC
+- **Last updated:** 2 August 2026, 04:04 UTC
 - **Turns:** 4
-- **Status:** Incomplete
+- **Status:** Complete
