@@ -2106,8 +2106,18 @@ Everything matches intended changes. Staging and committing.
 
 Committed as `2fd0816`. Pushing and opening the PR.
 
+**PR #62** is open: https://github.com/bhaskarcmu/fhir-agent/pull/62
+
+**Files changed:** 22 files — new `agent-platform/{policy,judge,knowledge}.py`, `mcp-agent/policy.md`, plus wiring into `agent.py`/`tools.py`/`format.py`/`Dockerfile`, and 12 new test files (43 new tests total).
+
+**Validation:** 116 + 150 tests passing, all 81 pre-existing tests unaffected, Java green. Live end-to-end with real Claude produced a correct `DO_NOT_DISPENSE` decision with real openFDA/RxClass citations attached, and the judge caught a genuine (if debatable) issue in the rationale without touching the decision — a clean demonstration of the "advisory only, structurally can't override" guarantee this milestone is built around. Two further live runs against the real self-hosted default confirmed the fail-closed paths still hold with a genuinely weak model.
+
+**Real bug caught before shipping:** the Dockerfile never copied `policy.md` into the image — fixed.
+
+This is the last of the six originally-planned Phase 6 milestones (M7 "Strong Model in Production" remains open/deferred by design). Waiting on your review before this merges.
+
 <details>
-<summary>Execution details — 1212 tool events</summary>
+<summary>Execution details — 1213 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4036,6 +4046,7 @@ docs/phase6/milestone-plan.md, decision…`
 ## Summary
 Implements Phase 6 Milestone 6 — "Policy, Knowledge & Judge" (`docs/phase6/milestone-…`
 - **TodoWrite** `{"todos": [{"content": "Build policy.py loader in agent_platform + mcp-agent/policy.md content, wire into SYSTEM_PROMPT", "status": "completed", "activeForm": "Building policy loader and policy.md"},…`
+- **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase6-agent-hardening.md`
 
 </details>
 
