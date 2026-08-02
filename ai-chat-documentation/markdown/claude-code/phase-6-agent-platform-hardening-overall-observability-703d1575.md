@@ -2022,8 +2022,12 @@ Confirmed merged. Deleting the branch, local and remote.
 
 Now let's pull up M6's full scope before starting implementation.
 
+Now I have what I need — confirmed live that this repo's medications carry ingredient-level RxNorm codes (works with RxClass, not with openFDA's rxcui field, so citations need a name-based openFDA lookup). Let me create the M6 branch and start building.
+
+Let's build the policy loader first.
+
 <details>
-<summary>Execution details — 1091 tool events</summary>
+<summary>Execution details — 1095 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3788,6 +3792,12 @@ print('patient id:', pid)
 PID=$(curl -s "http://l…`
 - **Bash** `echo "=== RxClass byRxcui for RXCUI 723 (amoxicillin ingredient) ==="
 curl -sS "https://rxnav.nlm.nih.gov/REST/rxclass/class/byRxcui.json?rxcui=723" | python3 -m json.tool | head -40`
+- **Bash** `git status && git checkout -b feature/phase6-m6-policy-knowledge-judge`
+- **TodoWrite** `{"todos": [{"content": "Build policy.py loader in agent_platform + mcp-agent/policy.md content, wire into SYSTEM_PROMPT", "status": "in_progress", "activeForm": "Building policy loader and policy.md"}…`
+- **Bash** `ls /workspaces/fhir-agent/agent-platform/src/agent_platform/
+echo "---mcp-agent src listing---"
+ls /workspaces/fhir-agent/mcp-agent/src/agent/`
+- **Write** `/workspaces/fhir-agent/agent-platform/src/agent_platform/policy.py`
 
 </details>
 
@@ -3798,6 +3808,6 @@ curl -sS "https://rxnav.nlm.nih.gov/REST/rxclass/class/byRxcui.json?rxcui=723" |
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 16:37 UTC
+- **Last updated:** 2 August 2026, 16:38 UTC
 - **Turns:** 28
 - **Status:** Incomplete
