@@ -248,8 +248,18 @@ Your snippet is consistent with that: "Topic 4 down to code snippets" → follow
 
 I'll fold this report-obligation detail into the `phase5-agent-hardening.md` memory now so it's tied to the right topic numbers.
 
+Confirmed — I can derive the topics directly from the handoff doc's §3 list (no gap, you don't need to feed it separately):
+
+1. **Memory**
+2. **Deployment + observability tie-in**
+3. **Observability (full — OTel)**
+4. **Follow-ups + multi-model**
+5. **Output safety**
+
+Your snippet's references line up cleanly: "Topic 4" = follow-ups/multi-model code mechanics, "Topic 1" = memory limits/autoscale, "Topics 2 & 3" = Grafana panels + trace/span schema. I've updated the `phase5-agent-hardening.md` memory to carry this topic numbering plus the report obligations, so it's tied to the right numbers when you ask for the comprehensive report later.
+
 <details>
-<summary>Execution details — 4 tool events</summary>
+<summary>Execution details — 6 tool events</summary>
 
 ### Turn 1 activity
 
@@ -260,6 +270,8 @@ I'll fold this report-obligation detail into the `phase5-agent-hardening.md` mem
 ### Turn 3 activity
 
 - **Read** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase5-agent-hardening.md`
+- **Write** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase5-agent-hardening.md`
+- **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/MEMORY.md`
 
 </details>
 
