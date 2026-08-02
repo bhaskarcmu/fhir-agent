@@ -1949,8 +1949,12 @@ Found it — `agent-platform/tests` was never in the root `pytest.ini`'s combine
 
 All green. Now let's do live docker-compose validation of the whole rework — default resolution, CLI flags, disclosure, discovery, and the DEPLOYMENT_ENV guardrail — against real running services.
 
+Discovery works. Now the DEPLOYMENT_ENV production guardrail and explicit `--provider anthropic` opt-in.
+
+Confirmed exit code 1. Now explicit `--provider anthropic` opt-in with the real API key.
+
 <details>
-<summary>Execution details — 991 tool events</summary>
+<summary>Execution details — 995 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3561,6 +3565,17 @@ python -m pytest agent-platform/tests -q 2>&1 | tail…`
 export FHIR_GATEWAY_URL=http://localhost:8080/fhir TRIAGE_SERVICE_URL=http://localhost:8001
 unset LLM_PROVIDER LLM_MODEL LLM_BASE_URL DEPLOYMENT_ENV
 cd /workspaces/fhir-agent/mcp-agent/src &&…`
+- **Bash** `export FHIR_GATEWAY_URL=http://localhost:8080/fhir TRIAGE_SERVICE_URL=http://localhost:8001
+python3 -m agent.agent --list-models ollama 2>&1 | grep -v "Failed to export\|Transient error"`
+- **Bash** `export FHIR_GATEWAY_URL=http://localhost:8080/fhir TRIAGE_SERVICE_URL=http://localhost:8001 DEPLOYMENT_ENV=production
+unset LLM_PROVIDER
+python3 -m agent.agent --query "test" 2>&1 | grep -v "Failed to…`
+- **Bash** `export FHIR_GATEWAY_URL=http://localhost:8080/fhir TRIAGE_SERVICE_URL=http://localhost:8001 DEPLOYMENT_ENV=production
+unset LLM_PROVIDER
+python3 -m agent.agent --query "test" > /tmp/claude-1000/-works…`
+- **Bash** `export FHIR_GATEWAY_URL=http://localhost:8080/fhir TRIAGE_SERVICE_URL=http://localhost:8001
+unset DEPLOYMENT_ENV LLM_PROVIDER
+python3 -m agent.agent --provider anthropic --model claude-sonnet-4-5 --qu…`
 
 </details>
 
@@ -3571,6 +3586,6 @@ cd /workspaces/fhir-agent/mcp-agent/src &&…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 16:13 UTC
+- **Last updated:** 2 August 2026, 16:14 UTC
 - **Turns:** 27
 - **Status:** Incomplete
