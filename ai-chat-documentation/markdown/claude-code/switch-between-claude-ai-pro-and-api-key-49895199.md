@@ -1,4 +1,4 @@
-# Use Claude.ai PRO for VS Code extension
+# Switch between Claude.ai PRO and API key
 
 ## Turn 1
 

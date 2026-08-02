@@ -62,12 +62,12 @@
   "49895199-bfa2-470d-ba8d-4bd7737fd12b": {
     "archived_at": "2026-07-14T17:34:06.474356+00:00",
     "created_at": "2026-07-14T17:33:49.181000+00:00",
-    "md_filename": "use-claude-ai-pro-for-vs-code-extension-49895199.md",
+    "md_filename": "switch-between-claude-ai-pro-and-api-key-49895199.md",
     "present": true,
     "raw_filename": "49895199-bfa2-470d-ba8d-4bd7737fd12b.jsonl",
     "source_deleted_at": null,
     "status": "complete",
-    "title": "Use Claude.ai PRO for VS Code extension",
+    "title": "Switch between Claude.ai PRO and API key",
     "turns": 6,
     "updated_at": "2026-07-14T17:58:01.774000+00:00"
   },
