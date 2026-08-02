@@ -1002,8 +1002,10 @@ Now wiring it into `main.py`:
 
 Now building the local observability stack. First, config files:
 
+Now editing `docker-compose.yml` to add the observability profile and wire `OTEL_EXPORTER_OTLP_ENDPOINT` into the relevant services:
+
 <details>
-<summary>Execution details — 277 tool events</summary>
+<summary>Execution details — 281 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1415,6 +1417,10 @@ sed -n '1,60p' /workspaces/fhir-agent/triage-service/src/triage/main.py`
 curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/fhir/actuator/health 2>&1
 curl -s -o /dev/null -w "%{…`
 - **Bash** `curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/actuator/prometheus 2>&1`
+- **Edit** `/workspaces/fhir-agent/observability/prometheus.yml`
+- **Write** `/workspaces/fhir-agent/observability/grafana/provisioning/datasources/datasources.yml`
+- **Edit** `/workspaces/fhir-agent/docker-compose.yml`
+- **Edit** `/workspaces/fhir-agent/docker-compose.yml`
 
 </details>
 
@@ -1425,6 +1431,6 @@ curl -s -o /dev/null -w "%{…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 11:28 UTC
+- **Last updated:** 2 August 2026, 11:29 UTC
 - **Turns:** 15
 - **Status:** Complete
