@@ -5166,6 +5166,87 @@ Critique all of the above first before making a plan. Brainsorm with me for a bi
 
 Before I critique — let me ground two things I'd otherwise guess at: what observability already exists, and what phase we're actually on.
 
+Grounded now. Three facts that shape everything below:
+
+- **Observability today: zero.** No OTel, no metrics, no tracing anywhere. Clean slate — good, because you get to do it right rather than retrofit.
+- **The agent is hardcoded to Anthropic** (`import anthropic`, `client: anthropic.Anthropic`, `MODEL = "claude-sonnet-4-5"`). No provider seam. Multi-model (your topics 4/5) means building that abstraction from scratch.
+- **This is squarely Phase 5.** Phase 4 is done; `docs/phase5/` currently holds only a *readiness assessment*, and you're on `docs/phase5-readiness-assessment`. So this is the scoping moment — my job here is to help define Phase 5, not slot into an existing plan.
+
+And Meta's model is **Llama** (currently Llama 3.x / 4). DeepSeek is DeepSeek (V3 general, R1 reasoning). Both self-host on GPU via **vLLM** or **TGI**, exposing an **OpenAI-compatible** API.
+
+---
+
+## Critique first — where you're right, over-reaching, or slightly off
+
+**Topic 1 (memory).** One correction that matters: **`MAX_TOKENS = 1024` is the *output* cap, not memory.** There is no deliberate memory-sizing mechanism today at all — the transcript just grows until the context window bursts. And "autoscale memory" folds together **three different axes** that need separating:
+- **Per-conversation working memory** (the token budget of one transcript) — you don't *autoscale* this, you *cap and compact* it (summarize/evict when it nears a threshold).
+- **Concurrent-session count** (how many chats at once) — *this* is what actually autoscales, and it's compute, not memory.
+- **Cross-session long-term store** (persistence) — a third thing entirely (a DB/vector store).
+
+So the honest framing is "adaptive context management + session-count autoscaling + a persistence tier," not one knob. Good instinct to make limits *explicit and deliberate* — that's the real win.
+
+**Topic 2 (deploy + Grafana + queue + rate).** Strong and mature instincts, two sharpenings:
+- **Queue-first for uptime is right, but a queue without bounds + timeouts becomes the "queue of doom"** — everything waits, then everything times out anyway. For an interactive clinical agent, unbounded latency is its own outage. So: bounded queue + per-request deadline + fail-closed when the deadline blows.
+- **Your real bottleneck isn't local CPU/RAM — it's the Anthropic rate limit and token spend.** So the "queue" is really a **client-side concurrency limiter / token-bucket in front of a paid, rate-limited external dependency.** That reframes it: you're smoothing bursts against a metered API, not scheduling local compute. And Grafana needs a metrics pipeline *first* (instrument → Prometheus → dashboard); you can't dashboard what you don't emit. Your "alert + manual measures, don't auto-shed" stance is exactly right for clinical — never silently drop a care-related request.
+
+**Topic 3 (observability).** Your strongest and most natural ask — it maps cleanly and I'd build the whole phase around it. The insight to internalize: **in normal API work a trace spans *services*; in agent work a trace spans *reasoning steps*.** One agent run = one trace; each model call and each tool call = a child span; span attributes carry the agent-specific richness. The killer feature your API background unlocks: **propagate the traceID *through* the tool calls into claims-service / triage / fhir**, so a single trace runs from "clinician asked" all the way to "FHIR write." The trap: **span attributes are exactly where PHI leaks** — they're the natural dumping ground for context. Redaction discipline is non-negotiable (and there's an OTel `gen_ai.*` semantic-convention vocabulary worth adopting so Grafana/vendors understand your spans).
+
+**Topic 4 (follow-ups + self-hosted Llama/DeepSeek).** Follow-up mechanics are well understood (I covered them last turn; I'll capture the code-level detail for your future report). The multi-model part needs a reality check: **self-hosting Llama/DeepSeek inverts your cheap-CPU story into a GPU-cost story** — it's the opposite of topic 2's cost-containment goal. So don't justify it on cost. Justify it on the one argument that's actually compelling here: **PHI residency — keeping patient data off third-party APIs entirely.** That's a real clinical/compliance driver. The hard part isn't hosting; it's that **tool-calling fidelity and message formats differ across providers** (Anthropic tool-use vs OpenAI-style function calling that vLLM/DeepSeek expose). So the backbone both topics 4 and 5 need is a **model-agnostic provider layer that normalizes tool-calling and conversation-history translation** — not just "swap the API key."
+
+**Topic 5 (the whole shebang).** Most ambitious, needs the most pushback:
+- **RAG for the *rules* is over-engineering — don't.** RAG earns its keep when the corpus is large and you retrieve the *relevant* subset. Your behavioral rules **always apply** — you inject *all* of them every turn. That's not retrieval, that's "load `policy.md` into the system prompt." Adding a vector store buys nothing and adds failure modes. **RAG is right for a *knowledge base* the agent consults** (drug/formulary reference), which is a genuinely different thing from behavioral rules. Keep them separate: policy = prompt; knowledge = RAG.
+- **Multi-model review = LLM-as-judge** — legitimate defense-in-depth, but it doubles cost and latency, so (a) reserve it for "important" responses and *define* important (any HIGH/DENY, anything care-affecting), and (b) **never use an LLM to enforce what code can enforce.** Use the judge for *soft* qualities (groundedness, tone, did it leak PHI); use code for *hard* invariants.
+- **The 3-option limit — you're 100% right it's a MUST, and here's the sharp version: do NOT trust the LLM for it at all.** Structured output (a tool with an enum, or forced JSON schema) constrains the *shape*, and it's the more modern practice — but you **still validate in code**, because self-hosted models honor schemas weakly, and because defense-in-depth. Crucially: **if the answer isn't one of the three, fail closed to the safe option (REVIEW / defer to human) — never guess.** That's literally your fail-closed safety thesis applied to the agent's *output*. And it doubles as your "prevent answers it shouldn't give" control: **if the output surface is structurally three enums + a fixed explanation drawn from the deterministic decision, there's almost no room to go off-script.** A narrow output shape is a stronger jailbreak defense than any system-prompt sentence.
+
+---
+
+## Cross-cutting themes (the brainstorm)
+
+Four threads run through all five, and they're the real backbone:
+
+1. **This is your existing thesis, extended one tier down.** "Deterministic code decides; the LLM orchestrates and explains" — topic 5's enum gate *is* that thesis applied to the agent's output. The whole phase should read as "harden the agent tier to the same standard as the decision tier," not as new philosophy.
+2. **Fail-closed everywhere, consistently.** Memory (re-fetch, don't recall a stale HIGH), the enum gate (unknown → REVIEW), the queue (deadline → fail closed), the judge (disagreement → hold for human). Same instinct that already saved you twice.
+3. **PHI-safe is a *driver*, not just a constraint.** It shapes observability (redact spans), memory (don't persist raw PHI), and it's the *reason* self-hosting is interesting. Name it as a first-class force.
+4. **The provider abstraction is load-bearing.** Topics 4 and 5 both collapse without it. Build it once, early-ish, and both fall out.
+
+**One meta-critique you should hear:** the agent is *non-authoritative and deliberately thin*. Some of this — self-hosted multi-model judging especially — is heavy machinery for a component that, by design, decides nothing and today runs as a CLI. **This work is justified only if the agent becomes a first-class, clinician-facing conversational surface.** If it stays a demo CLI, you're gold-plating. So Phase 5's implicit assumption is "the agent is becoming a product surface" — worth stating out loud and gating the heavier milestones on it.
+
+---
+
+## Proposed Phase 5 milestones (sequenced by dependency, not by your 1–5 order)
+
+Your topics list them 1→5; the *build* order is different, because **you must instrument before you can tune, and the cheap safety win should come first.**
+
+| M | Milestone | Covers your topic | Why here | Weight |
+|---|---|---|---|---|
+| **M1** | **Output contract & enum gate.** Force the final answer to one of N dispositions via a tool-with-enum-output; validate in code; fail closed to REVIEW; narrow the output surface. | 5 (the MUST) | Cheap, independent, highest safety value, extends fail-closed. Do it first. | S |
+| **M2** | **Observability foundation.** OTel traces: run=trace, model/tool calls=spans, `gen_ai.*` attributes, traceID propagated into claims/triage/fhir, PHI-redaction discipline. | 3 | Underpins tuning M3, seeing M4, evaluating M6. Instrument before optimising. | M |
+| **M3** | **Context & memory management.** Explicit token budget (documented sizing + rationale), compaction/summarisation at threshold, externalised session store (stateless service), re-fetch-don't-recall for clinical facts. | 1, 4 (follow-up persistence) | Needs M2's token metrics to set limits honestly. | M |
+| **M4** | **Deployment resilience & cost control.** Bounded queue + per-request deadline, client-side concurrency/token-bucket limiter, rate/cost **alerts** (not auto-shed), Grafana dashboards on M2's metrics. | 2 | Needs M2 emitting metrics; needs M3's session model to scale statelessly. | M |
+| **M5** | **Provider abstraction + follow-ups across models.** Model-agnostic loop (normalise tool-calling + history translation); Claude + one OpenAI-compatible self-hosted path (vLLM → Llama or DeepSeek); PHI-residency framing. | 4 | The backbone M6 needs; follow-up mechanics captured here for your report. | L |
+| **M6** | **Policy + knowledge + judge.** `policy.md` loaded into the system prompt (NOT RAG); *optional* RAG over a real knowledge base (separate); multi-model LLM-as-judge on "important" responses; code enforces hard rules, judge checks soft ones. | 5 (rest) | Sits on M1's gate + M5's providers. Heaviest; gate on "agent is a product surface." | L |
+
+**Sequencing logic in one line:** M1 is the cheap safety win, M2 is the lens, M3–M4 tune what M2 reveals, M5 is the backbone, M6 is the ambitious top that only pays off if the agent goes clinician-facing.
+
+**Cheapest high-value cut**, if you want a minimal Phase 5: **M1 + M2 only.** The enum gate closes the biggest safety gap in the agent tier, and observability gives you eyes — everything else you can defer with confidence once you can *see*.
+
+---
+
+## For the future comprehensive report
+
+I've made a deliberate mental note of what you flagged. When you ask for the report after these land, I'll be ready to give:
+- **Topic 4 down to the code snippet** — the exact `run_query(messages) → messages` mechanics, the REPL's persistence, the single-shot gap, and how each "what-could-be-done" item (session store, compaction, tool-result compaction, re-fetch) changes specific lines — plus how the provider abstraction translates history for Llama/DeepSeek.
+- **Topic 1** — where each memory limit is set, the reasoning behind the number, and the autoscale path (per-conversation compaction vs session-count scaling vs store).
+- **Topics 2 & 3** — the actual Grafana panels and the trace/span/attribute schema, end to end.
+
+I've written a short **planning memory** capturing this Phase 5 scoping and the pending report, so it survives across sessions — that's the "internalize" mechanism, and it's not a repo write, so it respects the read-only-for-the-repo constraint.
+
+Two questions that would sharpen the plan before we commit it:
+1. **Is the agent actually becoming a clinician-facing conversational surface, or staying an orchestration/explanation layer?** That single answer decides whether M6 is essential or gold-plating.
+2. **Is PHI-off-third-party-APIs a hard requirement?** If yes, M5 (self-hosting) jumps up the priority order; if no, it's a "nice to have" and Claude-only is fine longer.
+
+Want me to save the plan as a proper `docs/phase5/` planning doc (when you lift the read-only hold), or keep iterating on the milestones here first?
+
 <details>
 <summary>Execution details — 657 tool events</summary>
 
@@ -6757,6 +6838,6 @@ find docs/phase5 -name '*.…`
 - **Source:** Claude Code
 - **Session ID:** `bebf7ac2-4f1b-4a70-8685-440da76db7e1`
 - **Created:** 13 July 2026, 22:16 UTC
-- **Last updated:** 2 August 2026, 00:56 UTC
+- **Last updated:** 2 August 2026, 00:58 UTC
 - **Turns:** 76
 - **Status:** Incomplete
