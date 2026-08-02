@@ -713,6 +713,117 @@ Now proceed to desctibe the plan with milestones. Give the short and long story 
 
 Now, the Phase 6 milestone plan.
 
+# Phase 6 — Agent Platform Hardening + Overall Observability: Milestone Plan
+
+Before the milestones, two cross-cutting pieces every one of them touches:
+
+- **`agent-platform/`** — new top-level package, built shared from M1 onward (not extracted later). Each milestone below adds to it; `mcp-agent` wires the pieces in, `claims-agent` reuses them when the carry-over happens.
+- **Local-LLM testing is now a standing rule, starting at M1** — not deferred to M5. You don't need the formal provider adapter to point a test at Ollama or a stub OpenAI-compatible server; M1 in particular exists specifically to survive the malformed output a weak model produces, so it needs that adversary from day one, not by M5.
+
+---
+
+## M1 — Output Contract & Fail-Closed Enforcement
+
+**Short story:** Every agent turn ends in one of a small set of enum outcomes, code-validated, with `REVIEW` as the fail-closed catch-all — and a data-layer guard makes sure a broken or unclear triage response can never quietly look like "safe" in the first place.
+
+**Long story:** Two paired deliverables, both "topic 5, output safety":
+
+- **Output side** — a tool-with-enum-output parameter on the agent's final answer, purpose-built for refill triage (not `claims-service`'s `Outcome` verbatim), reusing `REVIEW` as the shared platform term for the fail-closed/escalation case. Code-validates the model's answer against the enum — schema alone isn't trusted, given the known fragility of nested/constrained tool params with weaker models. Anything off-contract fails closed to `REVIEW`. The contract's shape is standalone — it doesn't mirror `OperationOutcome` or `{error_type, message}`, because this is a successful turn whose *content* happens to be a fail-closed decision, not an HTTP error.
+- **Input side** — a Python wrapper around the `triage-service` call, mirroring `HttpTriageClient.java`'s real precedent: any non-2xx, timeout, transport failure, or unrecognized risk code maps to an explicit `UNKNOWN` sentinel that the enum-gate is *required* to treat as `REVIEW`, never `LOW`/safe. This closes the concrete gap the audit found — `mcp-agent` currently bypasses the one real fail-closed precedent in this codebase.
+- **Bundled stopgap:** since this milestone already touches the agent loop, it also lands a conservative fixed cap on REPL message-list growth — cheap, not the real M3 policy, just closing the current zero-bound risk early.
+- **Testing:** adversarial tests against a genuinely weak/local model, not just Claude — this is the milestone the new local-LLM rule matters most for. Also real HTTP-stub-server tests for the triage-client wrapper (the Java precedent's stub-server rationale applies directly here, not object-mocked `httpx.post`).
+- **Dependency:** none — first milestone.
+
+---
+
+## M2 — Observability, Platform-Wide
+
+**Short story:** Build the OTel/OTLP tracing-and-metrics backbone for the agent tier, and use the same architecture to actually close Phase 2's long-open R15 gap in `claims-service`/`rxclaim-emulator` — designed once, instrumented everywhere it's missing.
+
+**Long story:** This is now the heaviest milestone in the build order — flagging that plainly, since what began as "instrument one Python CLI agent" now spans four to five services across two languages. Two coordinated tracks under one architecture:
+
+- **Agent tier:** `gen_ai.*` semantic-convention spans — one trace per agent run, spans per model call and per tool call — traceID propagated into the `triage`/`fhir` calls M1 already wraps.
+- **Java tier:** standard HTTP/DB spans + Micrometer metrics in `claims-service` and `rxclaim-emulator`, closing R15. `fhir-service` needs a look too — it already has Micrometer/Actuator metrics from Phase 1, but no trace propagation (`traceparent` handling), so it's only half-covered against R15's actual text ("tracing across the fan-out").
+- **One shared OTLP pipeline**, pointed at local Jaeger/Grafana via docker-compose for immediate dev-loop value; the same instrumentation repoints at Cloud Trace/Managed Prometheus later purely via config — feeding the pipeline Kong already declares but hasn't confirmed is being scraped.
+- **PHI redaction designed in, not bolted on:** span-attribute scrubbing mirroring `provider-registry-service`'s `sanitize_location()` precedent (structural, not scrub-after-the-fact), extended to fix Kong's `file-log` plugin's raw-URI PHI leak while this milestone is already doing PHI-safe-logging work platform-wide. That specific Kong config edit gets its own explicit go-ahead before deploying, separate from this milestone's general approval, since it's gateway/infra config.
+- **Phase 2 cross-reference:** `docs/phase2/decisions.md`'s C5 entry gets its status updated once this ships, worded as "closed by a later platform-wide observability effort" — no hardcoded Phase 6/milestone citation, so it can't go stale if numbering shifts.
+- **Testing:** trace/span assertions against the local Jaeger backend in CI; PHI-redaction unit tests asserting raw identifiers never appear in exported span attributes, same rigor as the `sanitize_location()` precedent.
+- **Dependency:** M1 (needs something worth tracing).
+
+---
+
+## M3 — Context, Memory & Session Transport
+
+**Short story:** Give the agent a real session concept — Postgres-backed, behind a thin HTTP API — plus a token-budget policy actually set from M2's real telemetry instead of guessed.
+
+**Long story:**
+
+- **Transport:** a thin FastAPI wrapper around the existing agent loop, matching `triage-service`'s convention — turns `mcp-agent` from "a CLI process holding a Python list" into an addressable service with sessions. This is the prerequisite for testing concurrency at all (M4).
+- **Store:** Postgres/Neon — reusing existing repo infrastructure rather than introducing Redis. Schema: `session_id`, `messages`, timestamps, running token count. Swappable to Redis later if volume ever demands it, same documented-scale-swap pattern Phase 2's C3 already set.
+- **Memory policy, three axes kept separate:** (1) per-conversation token budget — the real number, set from M2's actual token/turn telemetry, replacing M1's placeholder cap; (2) concurrent-session count — genuinely a compute-scaling question, deferred to M4; (3) cross-session persistence — the Postgres store itself. Re-fetch-don't-recall enforced throughout: every turn re-calls the FHIR/triage tools rather than trusting anything cached in history, since clinical data can change between turns.
+- **Shared layer:** session store + transport land in `agent-platform/`, reusable by `claims-agent` without a rebuild.
+- **Testing:** multi-session concurrency tests, possible for the first time now that transport exists; a local-LLM run to confirm compaction doesn't break a weaker model's grip on multi-turn context (weaker models are typically more sensitive to truncation artifacts than Claude).
+- **Dependency:** M2 (needs real token telemetry to set the budget honestly).
+
+---
+
+## M4 — Deploy Resilience & Cost Control
+
+**Short story:** Protect the paid LLM API call with a hybrid rate/cost limiter — alert-only for real clinical traffic, hard-block only on runaway/bug-driven spend — plus a circuit breaker sized specifically for that one external dependency, documented as a deliberate divergence from this repo's usual "no breaker" convention.
+
+**Long story:**
+
+- **Rate/cost posture:** hybrid, as decided — alert-only for legitimate traffic (never blocks a real clinical query on cost), a hard backstop specifically for runaway spend (an accidental loop, a retry storm) that pure alert-only has zero protection against.
+- **Circuit breaker:** wraps the Anthropic (and later OpenAI-compatible) call specifically, with the divergence from `HttpTriageClient.java`'s "no breaker, timeouts + fail-closed mapping only" precedent spelled out explicitly in the design doc — the LLM API is external, metered, cost-bearing SaaS, a materially different risk than any internal service-to-service call.
+- **Grafana dashboards** become genuinely buildable now that M2 exists — cost/rate panels alongside trace/span panels.
+- **Concurrent-session-count scaling** (the real "autoscale" axis deferred from M3) gets addressed here, tied to the concurrency-limiter design.
+- **Testing:** chaos-style tests — simulate LLM API timeouts/5xx/rate-limit responses, confirm the breaker trips and M1's `REVIEW` fail-closed path is hit correctly rather than a raw crash.
+- **Dependency:** M2 (metrics), M3 (session model — concurrency needs a session concept to mean anything).
+
+---
+
+## M5 — Provider Abstraction & Cross-Model Follow-ups
+
+**Short story:** Formalize the two-adapter seam (Anthropic native + OpenAI-compatible) so Llama/DeepSeek/local models become config, not code — making official what M1's local-LLM testing already forced into informal existence.
+
+**Long story:**
+
+- **Two adapters only:** Anthropic (native tool-use) + one OpenAI-compatible adapter covering Llama, DeepSeek, Ollama, vLLM, and hosted OpenAI-compatible endpoints (DeepSeek API, OpenRouter, Groq). Model choice becomes a config value (base URL + model name).
+- **The hard part is conversation-history translation** across providers — Anthropic's message/tool-use block shape isn't identical to OpenAI's; this milestone is where that actually gets written and tested, not assumed.
+- By this point there's already a real adversarial test corpus from M1's local-LLM testing to reuse as the adapter's acceptance suite — M5 formalizes a seam that was informally load-bearing since M1.
+- **Anthropic stays the only live backend in production** even after this ships — the seam proves PHI-off-third-party is achievable when that becomes a real business rule, not a default switch today.
+- **Testing:** stub OpenAI-compatible server ($0, CI-safe) as baseline, Ollama local ($0, deliberately weak — the harshest adversary for M1's enum gate), a hosted OpenAI-compatible endpoint (pennies) for a real-quality spot-check. Given the standing rule, this tier of testing should already feel familiar by M5, not new.
+- **Dependency:** M1 (the contract every adapter must satisfy), M3 (history format must round-trip through the session store regardless of provider).
+
+---
+
+## M6 — Policy, Knowledge & Judge
+
+**Short story:** `policy.md` goes straight into the system prompt (not RAG); a narrowly-scoped knowledge base lets the agent *cite* real regulatory drug-safety text instead of reasoning about it itself; every response now goes through an LLM-as-judge for soft-quality checks, with code still enforcing every hard invariant.
+
+**Long story:**
+
+- **Policy:** unchanged — `policy.md`'s rules always apply, so retrieval is the wrong mechanism for them.
+- **Judge:** runs on every response now, per your call — cost/latency accepted, and it removes the need for an "important" classifier entirely. Checks soft qualities only (groundedness, tone, PHI leak), never overrides a hard invariant M1's gate already enforced. Per the new testing rule, the judge itself needs evaluating against outputs a local/weak model actually produced (via M5's adapters), not only against Claude's own clean output — a judge only ever tested on tidy Claude responses hasn't been tested on the messier cases it exists to catch.
+- **Knowledge base — researched as requested**, staying on the "ground an explanation, never generate a new clinical judgment" side of the line:
+  - **openFDA Drug Label API** — free, no auth, actively maintained (27,000+ 2026 records confirmed live). Exposes `boxed_warning` and `contraindications` fields with the FDA's own verbatim regulatory text. Proposed use: once `triage-service`'s deterministic rule engine has already flagged a conflict, the agent retrieves and *quotes* the actual FDA label language for that drug pair — it cites, it doesn't conclude.
+  - **RxClass API** (NLM/RxNav) — confirmed still active. Exposes drug-class relationships (e.g., "both beta-lactams"), letting the agent retrieve *why* two drugs relate by class, again as grounding for an already-made determination. Note: NLM's separate Drug-Drug *Interaction* API was discontinued January 2024 — explicitly not a candidate, and this repo shouldn't build toward it.
+  - Both are genuinely new to this repo — distinct from `data/payer-kb/` (Phase 2's claims/coverage/formulary data, a different domain than `mcp-agent`'s drug-safety pilot).
+  - **The adaptation/negation you flagged, addressed structurally:** retrieval only ever fires *after* `triage-service` has already returned a determination, to fetch citation text for a decision already made — never *before*, as an input the agent reasons over. That ordering is what keeps the agentic layer from making clinical judgments rather than just being told not to.
+  - Still provisional — M6 is last in line, plenty of runway to revisit which agent (`mcp-agent` vs. a carried-over `claims-agent`) actually ends up consuming this once M1–M5 land.
+- **Dependency:** M1 (enum-gate + `REVIEW` vocabulary the judge checks against), M5 (judge needs to be provider-testable and needs M5's local-LLM output corpus to evaluate against).
+
+---
+
+One structural note before this goes further: M2's growth (per your #8/#13 calls) means the original "M1+M2 = minimal viable cut" framing needs re-examining once M2 is actually sized — worth deciding explicitly when this becomes a real milestone doc, rather than letting it drift.
+
+**Next step, your call:** write this into `docs/phase6/plan.md` + `docs/phase6/README.md` on a new branch now, or keep iterating in conversation first?
+
+Sources:
+- [Explore the API with an interactive chart](https://open.fda.gov/apis/drug/label/explore-the-api-with-an-interactive-chart/)
+- [NIH Discontinues their Drug Interaction API](https://blog.drugbank.com/nih-discontinues-their-drug-interaction-api/)
+- [RxClass API - APIs](https://lhncbc.nlm.nih.gov/RxNav/APIs/RxClassAPIs.html)
+
 <details>
 <summary>Execution details — 95 tool events</summary>
 
@@ -862,6 +973,6 @@ gh pr view 55 --json state,mergedAt,mergeCommit 2>&1`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 05:18 UTC
+- **Last updated:** 2 August 2026, 05:19 UTC
 - **Turns:** 11
 - **Status:** Complete
