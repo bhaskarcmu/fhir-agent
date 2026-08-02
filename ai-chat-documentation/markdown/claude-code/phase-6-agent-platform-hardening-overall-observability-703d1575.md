@@ -1983,8 +1983,12 @@ Found more stale text here too. Let me fix it.
 
 Clean. Now let's do a final full test suite run to confirm the doc-only changes didn't break anything (they shouldn't, but let's be thorough), then commit.
 
+Both green. Now let's mark docs complete and commit everything.
+
+Everything staged matches intended changes. Committing.
+
 <details>
-<summary>Execution details — 1062 tool events</summary>
+<summary>Execution details — 1066 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3691,6 +3695,10 @@ grep -n "Phase 6\|mcp-agent" /workspaces/fhir-agent/docs/README.md 2>/dev/null`
 echo "=== agent-platform separate ==="
 python -m pytest agent-platform/tests -q 2>&1 |…`
 - **Bash** `cd /workspaces/fhir-agent/claims-service && unset SPRING_DATASOURCE_URL NEON_HOST NEON_USER NEON_PASSWORD NEON_DB 2>/dev/null; mvn -o -q clean verify > /tmp/claude-1000/-workspaces-fhir-agent/703d1575…`
+- **Bash** `cd /workspaces/fhir-agent/rxclaim-emulator && unset SPRING_DATASOURCE_URL NEON_HOST NEON_USER NEON_PASSWORD NEON_DB 2>/dev/null; mvn -o -q clean verify > /tmp/claude-1000/-workspaces-fhir-agent/703d15…`
+- **TodoWrite** `{"todos": [{"content": "Rework agent_platform/providers.py: 3 provider identities (anthropic/ollama/openai_compatible), default=ollama, DEPLOYMENT_ENV production guardrail, discovery functions", "stat…`
+- **Bash** `cd /workspaces/fhir-agent && git status`
+- **Bash** `git add .env.example .github/workflows/tests.yml README.md agent-platform/schema.sql agent-platform/src/agent_platform/__init__.py agent-platform/src/agent_platform/providers.py agent-platform/src/age…`
 
 </details>
 
@@ -3701,6 +3709,6 @@ python -m pytest agent-platform/tests -q 2>&1 |…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 16:28 UTC
+- **Last updated:** 2 August 2026, 16:29 UTC
 - **Turns:** 27
 - **Status:** Incomplete
