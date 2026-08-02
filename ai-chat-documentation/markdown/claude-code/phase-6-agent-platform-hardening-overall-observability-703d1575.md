@@ -1942,7 +1942,7 @@ Let me verify the hard-fail path actually triggers correctly when Ollama is unre
 Confirmed: exit code 1, a real CI-failing outcome, not a silent skip. All good. Let's mark item 7 complete and move to CI.
 
 <details>
-<summary>Execution details — 972 tool events</summary>
+<summary>Execution details — 976 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3517,6 +3517,15 @@ print(OLLAMA_MODEL in _pulled_model_names())
 - **Bash** `OLLAMA_HOST=http://localhost:19999 python -m pytest mcp-agent/tests/test_provider_integration.py::test_live_ollama_resolves_to_a_valid_gated_decision -q 2>&1 | tail -5; echo "exit code: $?"`
 - **Bash** `OLLAMA_HOST=http://localhost:19999 python -m pytest mcp-agent/tests/test_provider_integration.py::test_live_ollama_resolves_to_a_valid_gated_decision -q > /tmp/claude-1000/-workspaces-fhir-agent/703d1…`
 - **TodoWrite** `{"todos": [{"content": "Rework agent_platform/providers.py: 3 provider identities (anthropic/ollama/openai_compatible), default=ollama, DEPLOYMENT_ENV production guardrail, discovery functions", "stat…`
+- **Read** `/workspaces/fhir-agent/.github/workflows/tests.yml`
+- **Edit** `/workspaces/fhir-agent/.github/workflows/tests.yml`
+- **Bash** `python3 -c "
+import yaml
+with open('/workspaces/fhir-agent/.github/workflows/tests.yml') as f:
+    d = yaml.safe_load(f)
+print('YAML valid. Jobs:', list(d['jobs'].keys()))
+"`
+- **Bash** `grep -rEn "LLM_PROVIDER[=:] *[\"']?(anthropic|openai_compatible)" .github/workflows .ona 2>/dev/null && echo "FOUND (bad)" || echo "clean (good)"`
 
 </details>
 
@@ -3527,6 +3536,6 @@ print(OLLAMA_MODEL in _pulled_model_names())
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 16:07 UTC
+- **Last updated:** 2 August 2026, 16:08 UTC
 - **Turns:** 27
 - **Status:** Incomplete
