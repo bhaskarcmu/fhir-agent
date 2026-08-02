@@ -434,8 +434,22 @@ Now adding the C5 decision entry to `docs/phase2/decisions.md`:
 
 Now committing and opening PR #1 for the Phase 2 observability status correction.
 
+Now updating `docs/phase4/README.md`'s cross-references:
+
+The `e2e/test_epic_emulator_acceptance.py` link text differs from what I guessed (it's a markdown link, not literal backtick text). Fixing:
+
+Now updating the doc-links list and the "What's next" section:
+
+That line is still accurate and doesn't need a change. Now adding the E16 decision entry to `docs/phase4/decisions.md`:
+
+Now adding the E16 table row after E15:
+
+Now updating the top-level `docs/README.md` roadmap:
+
+Adding an "Audit Phase 5 status" row and fixing the "know what to build next" row:
+
 <details>
-<summary>Execution details — 51 tool events</summary>
+<summary>Execution details — 65 tool events</summary>
 
 ### Turn 1 activity
 
@@ -508,6 +522,20 @@ Prometheus metric names,"…`
 - **Bash** `git checkout docs/phase5-readiness-assessment && git status`
 - **Bash** `git status && echo --- && git diff --stat`
 - **Write** `/workspaces/fhir-agent/docs/phase5/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/README.md`
+- **Read** `/workspaces/fhir-agent/docs/phase4/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/README.md`
+- **Read** `/workspaces/fhir-agent/docs/phase4/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/decisions.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/decisions.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase4/decisions.md`
+- **Edit** `/workspaces/fhir-agent/docs/README.md`
+- **Read** `/workspaces/fhir-agent/docs/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/README.md`
+- **Read** `/workspaces/fhir-agent/docs/README.md`
 
 </details>
 
@@ -518,6 +546,6 @@ Prometheus metric names,"…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 04:28 UTC
+- **Last updated:** 2 August 2026, 04:30 UTC
 - **Turns:** 7
 - **Status:** Complete
