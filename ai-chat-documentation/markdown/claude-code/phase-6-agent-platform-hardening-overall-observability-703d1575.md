@@ -1904,7 +1904,7 @@ Now rewriting `providers.py` with the three-identity model, default-to-ollama, t
 All 8 pass, including the new provider-persistence and dataclass round-trip tests against a real Postgres. Now let's update `agent.py` for the new resolution shape, TTY disclosure, and discovery flags.
 
 <details>
-<summary>Execution details — 909 tool events</summary>
+<summary>Execution details — 911 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3406,6 +3406,8 @@ docker exec fhir-agent-agent-db psql -U agent_platform -d agent_platform -c "CRE
 - **Bash** `python -m pytest agent-platform/tests/test_session_store.py -v 2>&1 | tail -40`
 - **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
 - **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Read** `/workspaces/fhir-agent/agent-platform/src/agent_platform/providers.py`
+- **Read** `/workspaces/fhir-agent/agent-platform/src/agent_platform/providers.py`
 
 </details>
 
@@ -3416,6 +3418,6 @@ docker exec fhir-agent-agent-db psql -U agent_platform -d agent_platform -c "CRE
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 15:50 UTC
+- **Last updated:** 2 August 2026, 15:52 UTC
 - **Turns:** 27
 - **Status:** Incomplete
