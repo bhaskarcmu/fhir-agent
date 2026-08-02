@@ -1033,7 +1033,7 @@ Now let's run the real query through the instrumented stack:
 Found it — a pre-existing `.env` file (gitignored, tuned for host-direct runs) leaks `localhost` URLs into `docker compose run`, unrelated to my changes. Overriding explicitly for the smoke test:
 
 <details>
-<summary>Execution details — 381 tool events</summary>
+<summary>Execution details — 382 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1589,6 +1589,11 @@ docker compose run --name mcp-agent-smoketest -T \
 export TRIAGE_SERVICE_URL=http://triage:8001
 cd /workspaces/fhir-agent
 docker compose up -d --force-recreate triage 2>&1 | tail -20`
+- **Bash** `sleep 3
+docker compose run --name mcp-agent-smoketest -T \
+  -e OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317 \
+  -e FHIR_GATEWAY_URL=http://fhir:8080/fhir \
+  -e TRIAGE_SERVICE_URL=http://triage:800…`
 
 </details>
 
