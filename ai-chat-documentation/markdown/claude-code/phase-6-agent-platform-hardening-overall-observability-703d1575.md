@@ -2284,7 +2284,196 @@ Now, After Phase 6 M6, I want to be able to say to her that I rewrote the agent 
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Here's the follow-up message, structured as you asked: a short, punchy version first, then the technical deep-dive with code.
+
+---
+
+## The short version (send this first)
+
+After that session, we went back and rebuilt the agent tier from the ground up to close exactly the four gaps she raised — not as a response to criticism, but by shipping real, tested, live-validated code held to the same bar our API tier already was. Everything below is merged, tested against real weak models (not just Claude), and live-validated against real running services — not a design doc.
+
+- **Memory, correctly scoped.** We stopped conflating "context window" with "memory." Short-term memory is the bounded, token-budgeted conversation window; long-term is durable, Postgres-backed session persistence — and we're honest that it's *session* persistence, not cross-session semantic recall. The more important call: we never cache clinical data across turns. Every tool call re-fetches from the source of truth, every time.
+- **Follow-ups, and provider-agnostic ones.** Multi-turn works the way every major model API actually works — the full history is resent on every call, because these APIs are stateless. Then we went further: we built and tested a real translation layer so the *same* conversation works unmodified against Anthropic's message shape and the OpenAI-compatible shape (Llama, DeepSeek, Ollama) — the two dominant formats in the industry, not just the one we started with.
+- **Rules via the system channel, not folklore.** Policy text loads once into the `system` channel every provider exposes and gets resent on every call — there's no "pre-training," just a parameter these are stateless APIs already give you. We split *policy* (business rules, in its own file) from *tool-use mechanics* (in code), so they're maintained independently.
+- **Observability, unified with the API tier, not bolted alongside it.** The LLM call and every tool call behind it are spans in the *same* OpenTelemetry trace as the SpringBoot services — same Jaeger backend, same Prometheus scrape convention, same RED/USE vocabulary. A circuit breaker and a token-bucket limiter are this tier's literal USE/RED signals, not new terminology invented for AI.
+
+Happy to walk through the trace in Jaeger live if useful — a single request now shows one unbroken trace from the agent's tool-use loop, through triage-service, through to the FHIR layer.
+
+---
+
+## The long version, with code
+
+### 1. Short-term vs. long-term memory — what they are, and where we drew the line
+
+**Short-term memory** is the working context a conversation carries turn to turn — in LLM terms, the message list actually sent with each API call. It's bounded by the model's context window, and practically, by cost and latency long before you hit that hard limit.
+
+**Long-term memory**, in the fuller agent-design sense, usually means something that persists and generalizes *across* conversations — a fact recalled from a conversation last week without being told which one. We built the honest, narrower version of that: **durable session persistence**, not cross-session recall. A session is retrievable by ID and survives a process restart; it does not surface facts from a *different* session unless you explicitly resume that one.
+
+```python
+# agent_platform/context_budget.py — short-term memory
+TOKEN_BUDGET = ‹redacted:env-secret›  # grounded in real measured usage: 5,404 and 5,381
+                        # tokens for two live reference queries, not guessed
+
+def compact(messages, token_count, budget=TOKEN_BUDGET):
+    if token_count <= budget:
+        return messages, False
+    boundaries = _turn_boundaries(messages)   # user-turn start indices
+    if len(boundaries) <= 1:
+        return messages, False                # never drop the only turn
+    return messages[boundaries[1]:], True      # drop exactly the oldest turn
+```
+
+```sql
+-- agent_platform/schema.sql — long-term (session) memory
+CREATE TABLE agent_sessions (
+    session_id  uuid PRIMARY KEY,
+    messages    text NOT NULL,      -- full turn history, JSON
+    token_count integer NOT NULL,   -- last real measured size
+    provider    text NOT NULL,      -- pinned at creation, immutable
+    model       text NOT NULL
+);
+```
+
+The design decision we're proudest of here isn't the budget number — it's what we refused to cache. Every tool call re-fetches from FHIR/triage on every turn:
+
+```python
+# tools.py — re-fetch, never recall
+def assess_refill_risk(patient_id, medication_id=None):
+    # Always a fresh HTTP call to triage-service. Never served from the
+    # session's own prior turns, even if the same patient was checked
+    # three messages ago — an allergy list that changed since then would
+    # otherwise be silently served stale.
+    response = httpx.post(f"{triage_url}/triage/refill-risk", json=payload)
+```
+
+If we'd cached clinical reads for "efficiency," a patient's allergy update mid-conversation could silently not apply. That's a memory-architecture decision with real clinical consequences, not just a performance one.
+
+### 2. Follow-ups — full-history resend, and what changes across models
+
+Neither the Anthropic Messages API nor the OpenAI-compatible Chat Completions API (which Llama, DeepSeek, and most open models speak) keep server-side conversation state in the base API. Every single call carries the *entire* history. Multi-turn "memory" is really just: keep appending, resend everything.
+
+```python
+final_text, messages = run_query(client, "check refill risk for Jane Doe", model=model)
+# ...clinician follows up...
+final_text, messages = run_query(client, "what about her penicillin allergy specifically?",
+                                  messages=messages, model=model)  # full history resent
+```
+
+**Where this varies across the industry:** frameworks like LangChain or LlamaIndex mostly wrap this same resend pattern in a memory object; some add *summarization* memory (compress old turns into a synopsis instead of dropping them — we chose drop-oldest over summarize, since a summary can silently reinterpret a prior clinical statement, and drop is easier to reason about for audit). Vector-store-backed memory is a different mechanism entirely — it retrieves the *most semantically relevant* past turns for a new query rather than keeping the *most recent* ones, which is a real option for open-ended assistants but wrong for an audit-sensitive clinical tool where "what actually happened in order" matters. OpenAI's newer Assistants/Responses API also breaks the pattern — it introduces real server-side thread state (you pass a `thread_id`, not full history) — a genuinely different architecture from the stateless Chat Completions API.
+
+**Where this varies across *models* — the part we actually had to solve in code**, because Anthropic's message shape and the OpenAI-compatible shape are not the same:
+
+```python
+# Anthropic's shape: tool results bundle into ONE "user" turn
+{"role": "assistant", "content": [{"type": "tool_use", "id": "t1",
+                                    "name": "assess_refill_risk", "input": {...}}]}
+{"role": "user", "content": [{"type": "tool_result", "tool_use_id": "t1", "content": "..."}]}
+
+# OpenAI-compatible shape (Llama/DeepSeek/Ollama): each result is its OWN message
+{"role": "assistant", "content": None,
+ "tool_calls": [{"id": "t1", "type": "function",
+                 "function": {"name": "assess_refill_risk", "arguments": "{...}"}}]}
+{"role": "tool", "tool_call_id": "t1", "content": "..."}
+```
+
+We built a real translator, not a shim, and it's exercised by our own test suite against a genuinely weak local model, not just Claude:
+
+```python
+# agent_platform/providers.py
+def _to_openai_messages(system, messages):
+    openai_messages = [{"role": "system", "content": system}]
+    for msg in messages:
+        if msg["role"] == "assistant":
+            text, tool_calls = [], []
+            for block in msg["content"]:
+                if block["type"] == "tool_use":
+                    tool_calls.append({"id": block["id"], "type": "function",
+                        "function": {"name": block["name"],
+                                     "arguments": json.dumps(block["input"])}})
+            openai_messages.append({"role": "assistant", "content": "\n".join(text) or None,
+                                     **({"tool_calls": tool_calls} if tool_calls else {})})
+        elif isinstance(msg["content"], list):  # our tool_result turn
+            for block in msg["content"]:
+                openai_messages.append({"role": "tool",
+                    "tool_call_id": block["tool_use_id"], "content": block["content"]})
+    return openai_messages
+```
+
+Because of this, `OpenAICompatibleProvider` duck-types the exact same `client.messages.create(**kwargs)` surface Anthropic's SDK already has — the agent loop itself never branches on which model is behind it.
+
+### 3. Natural-language rules, seeded before the first user turn
+
+Both APIs give you a distinguished "system" channel that's conceptually prepended to the conversation and — because these are stateless APIs — is literally resent with *every single call*, not trained in once. It's a request parameter, not magic.
+
+```python
+# mcp-agent/src/agent/agent.py
+POLICY_PATH = Path(__file__).resolve().parents[2] / "policy.md"
+SYSTEM_PROMPT = _TOOL_USE_INSTRUCTIONS + "\n\n" + load_policy(POLICY_PATH)
+
+response = client.messages.create(
+    model=model, system=SYSTEM_PROMPT,     # Anthropic: top-level parameter
+    tools=TOOL_DEFINITIONS, messages=messages,
+)
+```
+
+For the OpenAI-compatible path, there's no separate `system` parameter at all — it's just the first message in the array, which is exactly what `_to_openai_messages` does above (`[{"role": "system", "content": system}, ...]`). Same content, different transport shape — another place the provider split earns its keep.
+
+We deliberately separated *policy* (a versioned file, fails the whole process loudly at startup if missing) from *tool-use mechanics* (a Python constant):
+
+```markdown
+<!-- mcp-agent/policy.md -->
+## Authority
+This agent's output is decision support, not a decision. DISPENSE, DO_NOT_DISPENSE,
+and REVIEW are recommendations for a licensed clinician — never an autonomous
+dispensing action.
+
+## Safety invariants
+An incomplete or failed safety check is never described as safe.
+```
+
+### 4. Observability — the agent tier speaks the same language as SpringBoot
+
+This is the part we're most confident closes the gap: the LLM call and every tool call behind it are spans in the *same* trace, the *same* Jaeger backend, and the *same* Prometheus scrape convention as the Java services — not a separate AI-specific observability stack.
+
+```python
+# One root span per agent turn; a child span per model call; a child
+# span per tool call — nested exactly like you'd span a service calling
+# two downstream APIs, because that's what this actually is.
+with start_span("agent.run_query", tracer, layer_attrs("agent.orchestration", "run_query")):
+    with start_span(f"chat {model}", tracer, {"gen_ai.system": gen_ai_system,
+                                               "gen_ai.request.model": model}) as chat_span:
+        response = call_with_resilience(lambda: client.messages.create(...))
+        safe_set_attributes(chat_span, {
+            "gen_ai.usage.input_tokens": usage.input_tokens,
+            "gen_ai.usage.output_tokens": usage.output_tokens,
+        })
+    with start_span(f"execute_tool {tool_name}", tracer, {"gen_ai.tool.name": tool_name}):
+        result = execute_tool(tool_name, tool_input)   # this HTTP call to
+                                                          # triage-service is
+                                                          # ITSELF auto-instrumented
+```
+
+Because `HTTPXClientInstrumentor` wraps every outbound call, that `execute_tool` span's HTTP request carries a real `traceparent` header into `triage-service` (FastAPI), which continues the *same* trace. On the Java side, `claims-service`/`rxclaim-emulator` got `micrometer-tracing-bridge-otel` plus a small custom `TracePropagation` helper for the two raw HTTP clients Spring doesn't auto-instrument — same OTLP wire protocol, same collector, one trace spanning Python and Java.
+
+**Mapped onto the RED/USE vocabulary your SpringBoot engineers already use**, deliberately, instead of inventing AI-specific terms:
+
+| | SpringBoot API | Agent tier |
+|---|---|---|
+| **Rate** | requests/sec | `fhir_agent_llm_calls_total` |
+| **Errors** | 5xx rate | same counter, `outcome=failure\|circuit_open\|cost_blocked` |
+| **Duration** | request latency histogram | `fhir_agent_llm_call_duration_seconds` |
+| **Utilization** | thread pool / connection pool | token-bucket rate limiter against a real measured budget |
+| **Saturation** | circuit breaker trip | same circuit breaker, wrapping the one paid external call |
+
+```python
+# agent_platform/resilience.py — the USE signals, not new vocabulary
+@dataclass
+class CircuitBreaker:
+    failure_threshold: int = 5       # consecutive failures before open
+    reset_timeout_seconds: float = 30.0
+```
+
+All four metrics feed a real Grafana dashboard, scraped the same way the Java `/actuator/prometheus` endpoints already are — one observability pipeline, not two.
 
 <details>
 <summary>Execution details — 1215 tool events</summary>
@@ -4232,6 +4421,6 @@ Implements Phase 6 Milestone 6 — "Policy, Knowledge & Judge" (`docs/phase6/mil
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 17:11 UTC
+- **Last updated:** 2 August 2026, 17:13 UTC
 - **Turns:** 30
 - **Status:** Incomplete
