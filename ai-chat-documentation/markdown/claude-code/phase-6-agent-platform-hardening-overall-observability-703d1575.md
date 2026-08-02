@@ -1539,8 +1539,12 @@ Good, env vars applied correctly. Now let's fire real queries and watch the brea
 
 A real gap: individual LLM API failures below the breaker threshold return a raw 500 instead of a clean error. Fixing this now since it's squarely in M4's resilience scope.
 
+Just needed more startup time. Retrying.
+
+Confirmed live end-to-end: individual failures now return a clean `502` with a real error detail, and once the breaker trips after 2 consecutive failures, the third request cleanly returns `200` with a `REVIEW` fail-closed decision instead of a raw crash. Now restoring the real API key and confirming recovery.
+
 <details>
-<summary>Execution details — 750 tool events</summary>
+<summary>Execution details — 753 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2821,6 +2825,16 @@ for i in 1 2 3; do
 - **Bash** `docker compose --profile phase6 up -d --build mcp-agent-api 2>&1 | tail -20`
 - **Bash** `docker exec fhir-agent-mcp-api env | grep -E "ANTHROPIC_API_KEY|LLM_CIRCUIT"`
 - **Bash** `export ANTHROPIC_API_KEY=‹redacted:anthropic-key› LLM_CIRCUIT_FAILURE_THRESHOLD=2 LLM_CIRCUIT_RESET_SECONDS=15 FHIR_GATEWAY_URL=http://fhir:8080/fhir && docker compose --profile phase6 up -…`
+- **Bash** `docker ps --format "table {{.Names}}\t{{.Status}}" | grep fhir-agent
+echo "---logs---"
+docker logs fhir-agent-mcp-api --tail 40`
+- **Bash** `SESSION_ID=$(curl -sS -X POST http://localhost:8010/sessions | python3 -c "import json,sys; print(json.load(sys.stdin)['session_id'])")
+echo "session: $SESSION_ID"
+for i in 1 2 3; do
+  echo "=== attem…`
+- **Bash** `export ANTHROPIC_API_KEY FHIR_GATEWAY_URL=http://fhir:8080/fhir && docker compose --profile phase6 up -d --force-recreate mcp-agent-api
+sleep 6
+SESSION_ID=$(curl -sS -X POST http://localhost:8010/sess…`
 
 </details>
 
@@ -2831,6 +2845,6 @@ for i in 1 2 3; do
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 14:04 UTC
+- **Last updated:** 2 August 2026, 14:05 UTC
 - **Turns:** 22
 - **Status:** Incomplete
