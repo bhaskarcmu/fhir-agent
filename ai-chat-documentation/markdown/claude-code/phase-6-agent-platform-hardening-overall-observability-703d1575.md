@@ -1523,8 +1523,10 @@ All 8 chaos-style tests pass. Now let's add API-layer tests for the concurrency 
 
 All pass. Now the full combined suite to confirm no regressions.
 
+Now let's add the Prometheus scrape target for `mcp-agent-api`.
+
 <details>
-<summary>Execution details — 723 tool events</summary>
+<summary>Execution details — 732 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2752,6 +2754,15 @@ print(inspect.signature(anthropic.APIConnectionError.__init__))
 - **Bash** `python -m pytest agent-platform/tests mcp-agent/tests triage-service/src/triage/tests -q 2>&1 | tail -20`
 - **Read** `/workspaces/fhir-agent/docker-compose.yml`
 - **Edit** `/workspaces/fhir-agent/docker-compose.yml`
+- **Edit** `/workspaces/fhir-agent/docker-compose.yml`
+- **Read** `/workspaces/fhir-agent/docker-compose.yml`
+- **Edit** `/workspaces/fhir-agent/observability/prometheus.yml`
+- **Read** `/workspaces/fhir-agent/observability/grafana/provisioning/datasources/datasources.yml`
+- **Write** `/workspaces/fhir-agent/observability/grafana/provisioning/dashboards/dashboards.yml`
+- **Write** `/workspaces/fhir-agent/observability/grafana/provisioning/dashboards/llm-cost-rate.json`
+- **Bash** `docker compose version 2>&1 | head -3; echo "---"; env | grep -i "ANTHROPIC\|CLAUDE_API" | sed 's/=.*/=<redacted>/'`
+- **Bash** `grep -n "^  [a-z-]*:$" docker-compose.yml | head -40`
+- **Bash** `docker compose --profile phase6 --profile observability up -d --build 2>&1 | tail -80`
 
 </details>
 
@@ -2762,6 +2773,6 @@ print(inspect.signature(anthropic.APIConnectionError.__init__))
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 13:57 UTC
+- **Last updated:** 2 August 2026, 13:59 UTC
 - **Turns:** 22
 - **Status:** Incomplete
