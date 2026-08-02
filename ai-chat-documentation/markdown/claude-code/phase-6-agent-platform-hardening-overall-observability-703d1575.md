@@ -1001,7 +1001,7 @@ All 5 pass — real end-to-end trace validation, including confirming the clinic
 Now wiring it into `main.py`:
 
 <details>
-<summary>Execution details — 262 tool events</summary>
+<summary>Execution details — 265 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1396,6 +1396,9 @@ sed -n '1,60p' /workspaces/fhir-agent/triage-service/src/triage/main.py`
 - **Bash** `python -m pip install -e "triage-service[dev]" -q 2>&1 | tail -40`
 - **Bash** `python -m pytest triage-service/src/triage/tests -v 2>&1 | tail -60`
 - **Bash** `sed -n '1,30p' /workspaces/fhir-agent/triage-service/src/triage/tests/test_api.py`
+- **Write** `/workspaces/fhir-agent/triage-service/src/triage/tests/test_tracing.py`
+- **Bash** `python -m pytest triage-service/src/triage/tests -v 2>&1 | tail -50`
+- **Bash** `python -m pytest agent-platform/tests mcp-agent/tests triage-service/src/triage/tests -q 2>&1 | tail -20`
 
 </details>
 
@@ -1406,6 +1409,6 @@ sed -n '1,60p' /workspaces/fhir-agent/triage-service/src/triage/main.py`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 11:25 UTC
+- **Last updated:** 2 August 2026, 11:26 UTC
 - **Turns:** 15
 - **Status:** Complete
