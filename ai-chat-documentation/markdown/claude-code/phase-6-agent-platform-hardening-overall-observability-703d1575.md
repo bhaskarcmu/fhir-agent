@@ -996,8 +996,12 @@ Now let's reinstall mcp-agent and verify everything still imports and passes cor
 
 Found it — not an OTel/instrumentation issue at all: the test's default `OLLAMA_MODEL` ("llama3.2") was never pulled, only the `:1b` tag was. Fixing the default to match the actual setup instructions:
 
+All 5 pass — real end-to-end trace validation, including confirming the clinician's typed patient name never leaks onto a span. Now let's run the full suite once more, then move to `triage-service`.
+
+Now wiring it into `main.py`:
+
 <details>
-<summary>Execution details — 247 tool events</summary>
+<summary>Execution details — 262 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1375,6 +1379,23 @@ def test_ollama_direct():
 - **Bash** `curl -s http://localhost:11434/v1/chat/completions -H "Content-Type: application/json" -d '{"model":"llama3.2","messages":[{"role":"user","content":"hi"}]}' -w "\nHTTP:%{http_code}\n"`
 - **Edit** `/workspaces/fhir-agent/mcp-agent/tests/test_output_contract.py`
 - **Bash** `python -m pytest agent-platform/tests mcp-agent/tests -q 2>&1 | tail -15`
+- **Write** `/workspaces/fhir-agent/mcp-agent/tests/test_tracing.py`
+- **Bash** `python -m pytest mcp-agent/tests/test_tracing.py -v 2>&1 | tail -40`
+- **Bash** `python -m pytest agent-platform/tests mcp-agent/tests -q 2>&1 | tail -10`
+- **TodoWrite** `{"todos": [{"content": "Explore current state: pom.xml, docker-compose.yml, client configs", "status": "completed", "activeForm": "Exploring current service configs for M2"}, {"content": "Add agent_pl…`
+- **Bash** `cat /workspaces/fhir-agent/triage-service/pyproject.toml
+echo "=== main.py top ==="
+sed -n '1,60p' /workspaces/fhir-agent/triage-service/src/triage/main.py`
+- **Bash** `grep -n "^app\.\|@app\.\|if __name__\|uvicorn.run" /workspaces/fhir-agent/triage-service/src/triage/main.py`
+- **Write** `/workspaces/fhir-agent/triage-service/src/triage/observability.py`
+- **Edit** `/workspaces/fhir-agent/triage-service/src/triage/main.py`
+- **Read** `/workspaces/fhir-agent/triage-service/src/triage/main.py`
+- **Read** `/workspaces/fhir-agent/triage-service/src/triage/main.py`
+- **Edit** `/workspaces/fhir-agent/triage-service/src/triage/main.py`
+- **Edit** `/workspaces/fhir-agent/triage-service/pyproject.toml`
+- **Bash** `python -m pip install -e "triage-service[dev]" -q 2>&1 | tail -40`
+- **Bash** `python -m pytest triage-service/src/triage/tests -v 2>&1 | tail -60`
+- **Bash** `sed -n '1,30p' /workspaces/fhir-agent/triage-service/src/triage/tests/test_api.py`
 
 </details>
 
@@ -1385,6 +1406,6 @@ def test_ollama_direct():
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 11:22 UTC
+- **Last updated:** 2 August 2026, 11:25 UTC
 - **Turns:** 15
 - **Status:** Complete
