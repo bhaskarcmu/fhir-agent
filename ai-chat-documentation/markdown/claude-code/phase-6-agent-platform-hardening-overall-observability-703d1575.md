@@ -2052,8 +2052,10 @@ Now the second call site (free-text fallback path):
 
 Now let's update `format.py`'s `decision_block()` to render citations and judge notes.
 
+Let's check for breakage against the existing test suite before writing new M6 tests.
+
 <details>
-<summary>Execution details — 1138 tool events</summary>
+<summary>Execution details — 1140 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3894,6 +3896,9 @@ import json…`
 - **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
 - **Bash** `cat -n /workspaces/fhir-agent/mcp-agent/src/agent/format.py`
 - **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/format.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/format.py`
+- **Bash** `python -m pip install -q -e "agent-platform[dev]" -e "mcp-agent[dev]" 2>&1 | tail -15
+python -m pytest mcp-agent/tests -q --deselect mcp-agent/tests/test_provider_integration.py::test_live_ollama_reso…`
 
 </details>
 
@@ -3904,6 +3909,6 @@ import json…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 16:46 UTC
+- **Last updated:** 2 August 2026, 16:47 UTC
 - **Turns:** 28
 - **Status:** Incomplete
