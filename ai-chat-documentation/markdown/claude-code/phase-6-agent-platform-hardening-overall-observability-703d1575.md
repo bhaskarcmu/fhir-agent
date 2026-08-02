@@ -1933,8 +1933,12 @@ All 19 pass. Now let's run the full mcp-agent + agent-platform suite (excluding 
 
 Good, model already pulled. Now let's update `test_provider_integration.py` to hard-fail via this fixture.
 
+Now let's update `test_output_contract.py`'s live Ollama test class similarly.
+
+Good, all still used (`os` for env vars, `pytest` used elsewhere in the file for other tests). Let's run both files now.
+
 <details>
-<summary>Execution details — 963 tool events</summary>
+<summary>Execution details — 968 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3500,6 +3504,11 @@ print(OLLAMA_MODEL in _pulled_model_names())
 "`
 - **Read** `/workspaces/fhir-agent/mcp-agent/tests/test_provider_integration.py`
 - **Write** `/workspaces/fhir-agent/mcp-agent/tests/test_provider_integration.py`
+- **Bash** `grep -n "OLLAMA\|skipif\|_ollama_reachable\|class TestLiveLocalModelAdversarial" /workspaces/fhir-agent/mcp-agent/tests/test_output_contract.py`
+- **Read** `/workspaces/fhir-agent/mcp-agent/tests/test_output_contract.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/tests/test_output_contract.py`
+- **Bash** `grep -n "^import\|^from" /workspaces/fhir-agent/mcp-agent/tests/test_output_contract.py`
+- **Bash** `python -m pytest mcp-agent/tests/test_provider_integration.py mcp-agent/tests/test_output_contract.py -v 2>&1 | tail -60`
 
 </details>
 
