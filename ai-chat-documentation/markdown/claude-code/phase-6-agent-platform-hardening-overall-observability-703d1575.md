@@ -892,8 +892,25 @@ No relevant content there — nothing to sync. Now the `.ona/automations.yaml` i
 
 All existing tests pass unmodified. Now writing the new M1 test coverage — the real HTTP-stub-server test and the `run_query`-level fail-closed/adversarial tests.
 
+Now the real HTTP-stub-server test:
+
+Good, unique. Now running the full mcp-agent + agent-platform test suite together.
+
+**PR #57 is open**: [`feat(phase6 M1): output contract & fail-closed enforcement`](https://github.com/bhaskarcmu/fhir-agent/pull/57), branch `feature/phase6-m1-output-gate` → `main`, commit `b7ddcad`.
+
+**What it does:**
+- New `agent-platform/` package: `fail_closed.safe_risk_level()` (fail-closed risk-code coercion, mirroring `HttpTriageClient.java`) and `output_gate.validate_decision()` + `AgentDecision` enum (code-validated, fails closed to `REVIEW`).
+- `mcp-agent` wired end-to-end: `assess_refill_risk` now always returns a `risk_level` including on error paths; a new `submit_decision` tool is the model's required terminal action; the loop overrides the decision to `REVIEW` whenever a risk check came back `UNKNOWN` — regardless of tool-call order in the batch — and a free-text-only reply (no `submit_decision` call) also fails closed, with the model's narrative preserved as context.
+- A crude stopgap turn-cap on the REPL's previously-unbounded message list (not the real M3 budget — just closes the current zero-bound risk).
+
+**Validation:** 58 tests pass, 1 self-skips (no Ollama in this sandbox — confirmed by direct check, so the live-local-model test is real but untriggered here; the malformed/off-contract adversarial cases are still covered via simulated weak-model shapes). Existing `test_e2e_demo_flow.py` suite passes unmodified — no regressions. `CLAUDE.md` and `.ona/automations.yaml`'s install lists updated.
+
+**Known limitation, stated plainly:** the `UNKNOWN`-forces-`REVIEW` enforcement is scoped to tool calls made *within* a single `run_query` call — it doesn't inspect prior conversation history for an `UNKNOWN` seen in an earlier turn. That's a deliberate M1 boundary (full cross-turn provenance is an M3/session-design concern), documented in the code, not an oversight.
+
+Let me know when you've merged, and I'll move on to M2.
+
 <details>
-<summary>Execution details — 168 tool events</summary>
+<summary>Execution details — 184 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1116,6 +1133,35 @@ planning doc s…`
 - **Bash** `cat /workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/HttpTriageClientTest.java 2>/dev/null | head -60`
 - **Bash** `which ollama 2>&1; curl -s -m 2 http://localhost:11434/api/tags 2>&1; echo "exit:$?"`
 - **Bash** `grep -n "skip\|TEST_DATABASE_URL\|pytest.mark" /workspaces/fhir-agent/provider-registry-service/src/provider_registry/tests/conftest.py 2>/dev/null | head -30`
+- **Write** `/workspaces/fhir-agent/mcp-agent/tests/test_output_contract.py`
+- **Write** `/workspaces/fhir-agent/mcp-agent/tests/test_triage_fail_closed_stub_server.py`
+- **Bash** `find /workspaces/fhir-agent -name "test_output_contract.py" -o -name "test_triage_fail_closed_stub_server.py" | sort`
+- **TodoWrite** `{"todos": [{"content": "Write agent-platform/ package (fail_closed.py, output_gate.py) + pyproject.toml", "status": "completed", "activeForm": "Writing agent-platform package"}, {"content": "Write age…`
+- **Bash** `python -m pytest agent-platform/tests mcp-agent/tests -v 2>&1 | tail -100`
+- **Bash** `python -c "
+import sys
+sys.path.insert(0, 'mcp-agent/src')
+from agent import agent, tools, format
+print('agent.py, tools.py, format.py import cleanly')
+print('MAX_REPL_TURNS =', agent.MAX_REPL_TURNS)…`
+- **Bash** `git status && echo --- && git diff --stat`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Bash** `python -m pytest agent-platform/tests mcp-agent/tests -q 2>&1 | tail -15`
+- **Bash** `git add agent-platform/ mcp-agent/ CLAUDE.md .ona/automations.yaml && git status`
+- **Bash** `git commit -m "$(cat <<'EOF'
+feat(phase6 M1): output contract & fail-closed enforcement
+
+Implements Phase 6 M1 per docs/phase6/milestone-plan.md and
+decisions.md H5/H10/H13/H18/H21.
+
+New agent-platfor…`
+- **Bash** `git push -u origin feature/phase6-m1-output-gate`
+- **Bash** `gh pr create --base main --head feature/phase6-m1-output-gate --title "feat(phase6 M1): output contract & fail-closed enforcement" --body "$(cat <<'EOF'
+## Summary
+Implements Phase 6 M1 (Output Contra…`
+- **TodoWrite** `{"todos": [{"content": "Write agent-platform/ package (fail_closed.py, output_gate.py) + pyproject.toml", "status": "completed", "activeForm": "Writing agent-platform package"}, {"content": "Write age…`
+- **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase6-agent-hardening.md`
 
 </details>
 
@@ -1126,6 +1172,6 @@ planning doc s…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 10:53 UTC
+- **Last updated:** 2 August 2026, 10:56 UTC
 - **Turns:** 13
 - **Status:** Complete
