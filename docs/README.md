@@ -12,12 +12,14 @@ Start with what you're trying to do.
 | **Know why Phase 3 (Provider Search) is built this way** | [`phase3/design.md`](./phase3/design.md) | 30 min |
 | **Know why Phase 4 (Epic Emulator) is built this way** | [`phase4/design.md`](./phase4/design.md) | 15 min |
 | **⚠️ Check the open Phase 4 safety finding before demoing it** | [`phase5/phase4-testing-and-analysis.md`](./phase5/phase4-testing-and-analysis.md) §0 | 5 min |
+| **Know why Phase 6 (Agent Hardening + Observability) is planned this way** | [`phase6/design.md`](./phase6/design.md) | 20 min |
 | **Audit Phase 2 decisions** (status + supersession) | [`phase2/decisions.md`](./phase2/decisions.md) | 5 min |
 | **Audit Phase 3 decisions** (status + supersession) | [`phase3/decisions.md`](./phase3/decisions.md) | 5 min |
 | **Audit Phase 4 decisions** (status + supersession) | [`phase4/decisions.md`](./phase4/decisions.md) | 5 min |
+| **Audit Phase 6 decisions** (status + supersession) | [`phase6/decisions.md`](./phase6/decisions.md) | 5 min |
 | **Check what Phase 5 and Phase 6 are actually reserved for** | [`phase5/README.md`](./phase5/README.md) | 5 min |
 | **Know exactly what was agreed** (normative) | [`phase2/requirements.md`](./phase2/requirements.md) | reference |
-| **Know what to build next** | [`phase2/plan.md` §16](./phase2/plan.md#16-future-work) (Phase 2) / [`phase3/README.md`](./phase3/README.md) (Phase 3b) / [`phase5/README.md`](./phase5/README.md) (Phase 5) | 5 min |
+| **Know what to build next** | [`phase2/plan.md` §16](./phase2/plan.md#16-future-work) (Phase 2) / [`phase3/README.md`](./phase3/README.md) (Phase 3b) / [`phase5/README.md`](./phase5/README.md) (Phase 5) / [`phase6/milestone-plan.md`](./phase6/milestone-plan.md) (Phase 6, M1 next) | 5 min |
 
 ## The guides
 
@@ -99,11 +101,19 @@ timeline exists yet. See [`phase5/README.md`](./phase5/README.md) for the canoni
   **Leads with a live, unresolved safety bug** (§0) found by testing with a realistic
   multi-record patient rather than the existing small demo fixture.
 
-**Phase 6 — reserved name only, nothing built: "Agent Platform Hardening + Overall
-Observability."** Hardening the LLM-agent tier (`mcp-agent`, later `claims-agent`):
-memory/session management, distributed tracing & metrics, multi-provider LLM support, and
-fail-closed output-safety controls. Brainstormed only — no PRD, design doc, milestone plan, or
-code exists in this repo yet. Planning starts in a dedicated Phase 6 session, not here.
+**[`phase6/`](./phase6/README.md)** — Agent Platform Hardening + Overall Observability.
+**Planning complete, build not started, M1 is next.** Hardening the LLM-agent tier
+(`mcp-agent`, later `claims-agent`): output-safety enforcement, observability (also closing
+Phase 2's R15), memory/session management, deployment resilience, and a multi-provider seam.
+
+- **[`README.md`](./phase6/README.md)** — the canonical status statement for Phase 6.
+- **[`prd.md`](./phase6/prd.md)** — problem, goals/non-goals, functional requirements (R1–R19),
+  success metrics.
+- **[`design.md`](./phase6/design.md)** — architecture (`agent-platform/`), the five topics,
+  cross-cutting principles, per-topic deep dives, testing strategy.
+- **[`milestone-plan.md`](./phase6/milestone-plan.md)** — M1–M6, short and long story for each,
+  kept as its own document rather than folded into `design.md` (see `decisions.md` H23).
+- **[`decisions.md`](./phase6/decisions.md)** — the ADR-style index (H1–H23), same convention.
 
 ## Conventions for this folder
 
