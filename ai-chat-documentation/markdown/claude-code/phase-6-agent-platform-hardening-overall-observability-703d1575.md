@@ -449,7 +449,7 @@ Now updating the top-level `docs/README.md` roadmap:
 Adding an "Audit Phase 5 status" row and fixing the "know what to build next" row:
 
 <details>
-<summary>Execution details — 72 tool events</summary>
+<summary>Execution details — 75 tool events</summary>
 
 ### Turn 1 activity
 
@@ -547,6 +547,9 @@ reserved for decomp…`
 - **TodoWrite** `{"todos": [{"content": "Confirm both modifications make sense (naming + tagging exceptions)", "status": "completed", "activeForm": "Confirming modifications make sense"}, {"content": "Find exact histo…`
 - **Bash** `git -C /workspaces/fhir-agent status >/dev/null; mv /home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase5-agent-hardening.md /home/vscode/.claude/projects/-workspaces-fhir-agent/memory/ph…`
 - **Read** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase6-agent-hardening.md`
+- **Write** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase6-agent-hardening.md`
+- **Read** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/MEMORY.md`
+- **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/MEMORY.md`
 
 </details>
 
@@ -557,6 +560,6 @@ reserved for decomp…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 04:30 UTC
+- **Last updated:** 2 August 2026, 04:31 UTC
 - **Turns:** 7
 - **Status:** Complete
