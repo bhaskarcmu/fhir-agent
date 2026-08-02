@@ -917,10 +917,38 @@ How do I get the lightest weight Llama (via Ollame) and DeepSeek into this envir
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Good news — this environment can handle it easily (44GB free disk, ~9GB available RAM, 4 cores, outbound network to ollama.com confirmed).
+
+## Is this a future milestone?
+
+Split answer:
+- **Getting Ollama running for local-LLM *testing* — not deferred, useful right now.** The standing rule (`decisions.md` H11) says adversarial testing against a weak/local model applies from M1 onward. M1's PR #57 already includes a self-skipping test (`TestLiveLocalModelAdversarial` in `test_output_contract.py`) that's currently skipping because no Ollama is reachable — installing it now would immediately turn that skip into a real pass.
+- **DeepSeek/Llama as a formally *supported provider*** (config-driven switching, conversation-history translation) **is M5's job** — that adapter doesn't exist yet. Running the models locally today is purely for testing the enum gate's robustness, not for routing real agent traffic through them.
+
+## Getting the lightest Llama via Ollama
+
+```bash
+curl -fsSL https://ollama.com/install.sh | sh
+ollama serve &                      # or it may already run as a service after install
+ollama pull llama3.2:1b             # ~1.3GB — the lightest official Llama chat model
+```
+Then point the test at it:
+```bash
+export OLLAMA_HOST=http://localhost:11434
+export OLLAMA_MODEL=llama3.2:1b
+python -m pytest mcp-agent/tests/test_output_contract.py -v -k LiveLocalModel
+```
+
+## Getting DeepSeek
+
+Two real options, different tradeoffs:
+- **Local, via Ollama** — `ollama pull deepseek-r1:1.5b` (~1.1GB, the smallest R1 distill). Free, no credentials, same pattern as Llama above.
+- **Hosted API** — an account at platform.deepseek.com, an API key, base URL `https://api.deepseek.com` (OpenAI-compatible). Pennies per call, zero disk/RAM cost on this sandbox — this is the "hosted OpenAI-compatible" tier already named in `design.md`'s testing table.
+
+Local is the lower-friction choice for right now since it needs no external account.
 
 <details>
-<summary>Execution details — 186 tool events</summary>
+<summary>Execution details — 187 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1177,6 +1205,7 @@ Implements Phase 6 M1 (Output Contra…`
 
 - **Bash** `which ollama curl 2>&1; echo ---; df -h / 2>&1 | tail -3; echo ---; free -h 2>&1; echo ---; nproc 2>&1`
 - **Bash** `curl -sI -m 5 https://ollama.com 2>&1 | head -5; echo "exit:$?"`
+- **AskUserQuestion** `{"questions": [{"question": "Want me to install Ollama and pull the lightest models now?", "header": "Install now?", "multiSelect": false, "options": [{"label": "Yes, Llama only (Recommended)", "descr…`
 
 </details>
 
@@ -1187,6 +1216,6 @@ Implements Phase 6 M1 (Output Contra…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 10:59 UTC
+- **Last updated:** 2 August 2026, 11:00 UTC
 - **Turns:** 14
-- **Status:** Incomplete
+- **Status:** Complete
