@@ -1587,8 +1587,14 @@ PR #60 confirmed merged. Deleting the branch, local and remote.
 
 Branch deleted. Now let's pull up M5's scope in detail.
 
+Now that M5 makes `anthropic` a real `agent-platform` dependency, let me clean this up and add `httpx.HTTPError` to the breaker's tripping exceptions (needed for the new OpenAI-compatible provider path).
+
+Now add the top-level imports and the `anthropic`/`httpx` dependency.
+
+Now `agent-platform/pyproject.toml`:
+
 <details>
-<summary>Execution details — 783 tool events</summary>
+<summary>Execution details — 789 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2928,6 +2934,12 @@ print(httpx.ConnectError.__mro__)
 print(httpx.TimeoutException.__mro__)
 "`
 - **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/tools.py`
+- **Bash** `grep -n "anthropic" /workspaces/fhir-agent/claims-agent/pyproject.toml 2>/dev/null; echo "---"; find /workspaces/fhir-agent -maxdepth 1 -name "*.toml" -o -maxdepth 2 -name "pyproject.toml" | xargs gre…`
+- **Read** `/workspaces/fhir-agent/agent-platform/src/agent_platform/resilience.py`
+- **Edit** `/workspaces/fhir-agent/agent-platform/src/agent_platform/resilience.py`
+- **Read** `/workspaces/fhir-agent/agent-platform/src/agent_platform/resilience.py`
+- **Edit** `/workspaces/fhir-agent/agent-platform/src/agent_platform/resilience.py`
+- **Edit** `/workspaces/fhir-agent/agent-platform/pyproject.toml`
 
 </details>
 
@@ -2938,6 +2950,6 @@ print(httpx.TimeoutException.__mro__)
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 14:17 UTC
+- **Last updated:** 2 August 2026, 14:18 UTC
 - **Turns:** 23
 - **Status:** Incomplete
