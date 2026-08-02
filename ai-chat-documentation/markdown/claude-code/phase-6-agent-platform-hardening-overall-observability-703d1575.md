@@ -1535,8 +1535,12 @@ Now let's run a real query with a real patient and confirm token metrics accumul
 
 Grafana dashboard auto-provisioned correctly with 4 panels. Now let's test the concurrency limiter live and the circuit breaker with real failures (invalid API key), since these are the harder-to-mock behaviors worth validating for real.
 
+Good, env vars applied correctly. Now let's fire real queries and watch the breaker trip.
+
+A real gap: individual LLM API failures below the breaker threshold return a raw 500 instead of a clean error. Fixing this now since it's squarely in M4's resilience scope.
+
 <details>
-<summary>Execution details — 742 tool events</summary>
+<summary>Execution details — 748 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2806,6 +2810,15 @@ curl -s http://localhost:3000/api/dashboards/uid/phase6-m4-llm-cost-rate | pytho
 import json,sys
 d = json.load(…`
 - **Bash** `export ANTHROPIC_API_KEY=‹redacted:anthropic-key› MAX_CONCURRENT_LLM_QUERIES=10 LLM_QUERY_QUEUE_DEADLINE_SECONDS=5 LLM_CIRCUIT_FAILURE_THRESHOLD=2 LLM_CIRCUIT_RESET_SECONDS=15 FHIR_GATEWAY_…`
+- **Bash** `docker exec fhir-agent-mcp-api env | grep -E "ANTHROPIC_API_KEY|LLM_CIRCUIT|MAX_CONCURRENT"`
+- **Bash** `SESSION_ID=$(curl -sS -X POST http://localhost:8010/sessions | python3 -c "import json,sys; print(json.load(sys.stdin)['session_id'])")
+echo "session: $SESSION_ID"
+for i in 1 2 3; do
+  echo "=== attem…`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/api.py`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/api.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/api.py`
+- **Bash** `docker compose --profile phase6 up -d --build mcp-agent-api 2>&1 | tail -20`
 
 </details>
 
@@ -2816,6 +2829,6 @@ d = json.load(…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 14:02 UTC
+- **Last updated:** 2 August 2026, 14:03 UTC
 - **Turns:** 22
 - **Status:** Incomplete
