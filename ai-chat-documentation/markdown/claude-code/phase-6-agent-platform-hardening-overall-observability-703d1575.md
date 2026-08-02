@@ -1713,6 +1713,33 @@ If I had to name the smallest version of this that gets you most of what you're 
 
 I'll wait for your next prompt before touching anything.
 
+## Turn 25
+
+### Prompt
+
+1. we should accept that the "zero-config default" doesn't actually work in the containerized dev/CI environment without a manual override. That's a real tension with "cost-free by default.". This is also a "no PII exposed to LLMs we dont fully host" criteria. (critique this)
+
+2. We can specify that the default model has to be of a certain quality if a human tester is involved. I don't know how to do this. My concern is automated tests and non-human involved test, especially in lower environments used for development (not actual clincal) purposes, I dont want to waste money. Critique this and provide advice.
+
+
+3. This decision should be reversed and appropriately documented as such everywhere: "Anthropic remains the only live backend in production". What I sould like is that a strong model is used in production. I don't exactly know how to do this, we can add it for a future, yet unimplemented Phase 6b or M7. Advise, please.
+
+4. Llama wins even when someone already has a valid ANTHROPIC_API_KEY sitting in their environment with no explicit LLM_PROVIDER. By the way, what does it mean to have no explicit LLM_PROVIDER? Why would that ever happen? Need more explanation from you befiore I can decide.
+
+5. Model choice shall be a per-process/session decision.
+
+6. I like that Ollama becomes a hard CI dependency. Without Ollama, all tests written for the agent should fail. Tell me if this answers your question and disambiguates enough. Also, critique and advise.
+
+7. I don't want to over engineer "discovery failing". If discovery fails, the test fails. If discovery is not initiated, the default wins. And, discovery failing shall just mean "can't list options," and hence can't proceed.
+
+By the way, I love that  the cost-free option should be easy and clearly disclosed rather than silently substituted.
+
+Critique it all and dont take any actions yet.
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 879 tool events</summary>
 
@@ -3188,6 +3215,6 @@ echo "---ollama tags shape (a…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 14:45 UTC
-- **Turns:** 24
+- **Last updated:** 2 August 2026, 15:02 UTC
+- **Turns:** 25
 - **Status:** Incomplete
