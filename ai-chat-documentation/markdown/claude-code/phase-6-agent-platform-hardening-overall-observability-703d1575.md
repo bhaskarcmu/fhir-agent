@@ -1211,7 +1211,7 @@ Also need to update the module docstring's run instructions. Let's run it:
 All 6 pass. Now let's run the full mcp-agent + agent-platform suite together and update the todo list.
 
 <details>
-<summary>Execution details — 601 tool events</summary>
+<summary>Execution details — 602 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2246,6 +2246,8 @@ python -m pytest mcp-agent/tests/test_session_persistence.py -v 2>&1 | tail -50`
 - **TodoWrite** `{"todos": [{"content": "Gather real token-usage data from live queries to ground the M3 budget number", "status": "completed", "activeForm": "Gathering real token-usage data"}, {"content": "Build agen…`
 - **Bash** `cd /workspaces/fhir-agent
 python -m pytest agent-platform/tests mcp-agent/tests -q 2>&1 | tail -20`
+- **Bash** `cd /workspaces/fhir-agent
+python -m pytest agent-platform/tests mcp-agent/tests -q -rs 2>&1 | grep -E "passed|skipped|SKIPPED"`
 
 </details>
 
