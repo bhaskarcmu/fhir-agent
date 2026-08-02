@@ -1505,8 +1505,12 @@ Now integrate into `agent.py`'s chat loop.
 
 Now add the `_fail_closed_unavailable` helper function after `run_query`.
 
+Now wrap `query_session` with the concurrency limiter.
+
+Now let's install the updated packages and run the existing test suite to catch regressions before adding new tests.
+
 <details>
-<summary>Execution details — 702 tool events</summary>
+<summary>Execution details — 708 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2710,6 +2714,12 @@ print(inspect.signature(anthropic.RateLi…`
 - **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
 - **Read** `/workspaces/fhir-agent/mcp-agent/pyproject.toml`
 - **Edit** `/workspaces/fhir-agent/mcp-agent/pyproject.toml`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/api.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/api.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/api.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/api.py`
+- **Bash** `python -m pip install -q -e "agent-platform[dev]" -e "mcp-agent[dev]" 2>&1 | tail -30`
+- **Bash** `python -m pytest agent-platform/tests mcp-agent/tests -q 2>&1 | tail -40`
 
 </details>
 
@@ -2720,6 +2730,6 @@ print(inspect.signature(anthropic.RateLi…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 13:53 UTC
+- **Last updated:** 2 August 2026, 13:54 UTC
 - **Turns:** 22
 - **Status:** Incomplete
