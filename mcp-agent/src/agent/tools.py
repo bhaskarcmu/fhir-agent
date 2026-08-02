@@ -19,6 +19,7 @@ import os
 
 import httpx
 
+from agent_platform import RISK_UNKNOWN, safe_risk_level
 from fhir_clinical_client import FHIRClient, FHIRClientError, NotFoundError
 
 
@@ -76,6 +77,49 @@ TOOL_DEFINITIONS = [
                 },
             },
             "required": ["patient_id"],
+        },
+    },
+    {
+        "name": "submit_decision",
+        "description": (
+            "Submit your final recommendation for this refill-risk query. This MUST be your "
+            "last action once you have the information you need — do not write a free-text "
+            "final answer instead; call this tool. "
+            "Map assess_refill_risk's risk level to a decision: LOW risk → DISPENSE, "
+            "HIGH risk → DO_NOT_DISPENSE, MODERATE risk or anything you are not confident "
+            "about → REVIEW. If assess_refill_risk returned risk_level UNKNOWN or an error "
+            "(the safety check could not be completed), you must submit REVIEW — never "
+            "DISPENSE or DO_NOT_DISPENSE on an incomplete check, even if other context makes "
+            "you want to guess."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "decision": {
+                    "type": "string",
+                    "enum": ["DISPENSE", "DO_NOT_DISPENSE", "REVIEW"],
+                    "description": "Your final recommendation.",
+                },
+                "patient_id": {
+                    "type": "string",
+                    "description": "The FHIR Patient ID this decision is about.",
+                },
+                "risk_assessment_id": {
+                    "type": "string",
+                    "description": (
+                        "The FHIR RiskAssessment ID returned by assess_refill_risk, for audit "
+                        "purposes. Omit only if a risk assessment could not be obtained."
+                    ),
+                },
+                "rationale": {
+                    "type": "string",
+                    "description": (
+                        "A brief, factual clinical rationale for this decision, grounded in "
+                        "what assess_refill_risk actually returned. Do not fabricate."
+                    ),
+                },
+            },
+            "required": ["decision", "patient_id", "rationale"],
         },
     },
 ]
@@ -167,6 +211,15 @@ def assess_refill_risk(
     Call the triage service to evaluate refill risk for a patient.
     Returns the full RiskAssessment response plus a simplified summary
     the agent can use to compose its narrative.
+
+    Fail-closed data-layer guard (docs/phase6/decisions.md H18, mirroring
+    claims-service's HttpTriageClient.java): every path that does not
+    produce a risk level this function understands -- triage down,
+    erroring, or an unrecognized response -- returns risk_level
+    RISK_UNKNOWN, never a value that could be read as safe. "risk_level"
+    is always present in the returned dict, including on error paths, so
+    a caller can detect an incomplete check by that key alone without
+    also checking for "error".
     """
     triage_url = _triage_url()
     payload: dict = {"patient_id": patient_id}
@@ -186,25 +239,32 @@ def assess_refill_risk(
             detail = exc.response.json().get("detail", str(exc))
         except Exception:
             detail = str(exc)
-        return {"error": f"Triage service error ({exc.response.status_code}): {detail}"}
+        return {
+            "error": f"Triage service error ({exc.response.status_code}): {detail}",
+            "risk_level": RISK_UNKNOWN,
+        }
     except httpx.RequestError as exc:
         return {
             "error": f"Cannot reach triage service at {triage_url}: {exc}. "
-                     "Is the triage service running?"
+                     "Is the triage service running?",
+            "risk_level": RISK_UNKNOWN,
         }
 
-    # Extract the key fields for the agent to reason about
-    risk_code = (
+    # Extract the key fields for the agent to reason about. A missing or
+    # unrecognized code fails closed to RISK_UNKNOWN -- it is never passed
+    # through raw and never assumed to mean "safe".
+    raw_code = (
         assessment.get("prediction", [{}])[0]
         .get("outcome", {})
         .get("coding", [{}])[0]
-        .get("code", "UNKNOWN")
+        .get("code")
     )
+    risk_code = safe_risk_level(raw_code)
     note = assessment.get("note", [{}])[0].get("text", "")
     basis = assessment.get("basis", [])
     assessment_id = assessment.get("id", "")
 
-    return {
+    result = {
         "risk_level": risk_code,
         "assessment_id": assessment_id,
         "note": note,
@@ -212,6 +272,11 @@ def assess_refill_risk(
         "basis_references": [b["reference"] for b in basis],
         "full_assessment": assessment,
     }
+    if risk_code == RISK_UNKNOWN and raw_code:
+        # The response parsed fine but the code itself wasn't recognized --
+        # distinct from a missing code, worth surfacing to the agent as text.
+        result["error"] = f"Triage returned an unrecognized risk code: {raw_code!r}"
+    return result
 
 
 # ─────────────────────────────────────────────────────────────────────────────
