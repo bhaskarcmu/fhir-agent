@@ -1225,7 +1225,7 @@ Found another real gap — `api.py` never instruments the FastAPI app itself, so
 Full end-to-end persistence confirmed working correctly. Let's clean up and finalize docs.
 
 <details>
-<summary>Execution details — 635 tool events</summary>
+<summary>Execution details — 636 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2337,6 +2337,7 @@ curl -s -X POST "http://localhost:8010/sessions/$SESSION_ID/query" -H "Content-T
 docker compose --profile phase6 stop agent-db mcp-agent-api 2>&1 | tail -5
 docker compose --profile phase6 rm -f agent-db mcp-agent-api 2>&1 | tail -5
 docker compose stop tri…`
+- **Bash** `grep -n "^| \*\*H2[0-9]\*\*" /workspaces/fhir-agent/docs/phase6/decisions.md | tail -5`
 
 </details>
 
