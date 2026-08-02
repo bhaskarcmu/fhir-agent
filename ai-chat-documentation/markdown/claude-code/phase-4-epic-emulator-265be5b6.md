@@ -834,7 +834,7 @@ Check if there are any unmerged PRs and merged branches lying around
 *[Claude has not completed this turn yet.]*
 
 <details>
-<summary>Execution details — 433 tool events</summary>
+<summary>Execution details — 434 tool events</summary>
 
 ### Turn 2 activity
 
@@ -1522,6 +1522,11 @@ git branch -v
 echo
 echo "=== Remote branches ==="
 git branch -r`
+- **Bash** `echo "=== PR #56 detail ==="
+gh pr view 56 --json title,state,createdAt,updatedAt,mergeable,headRefName,baseRefName,url 2>&1
+echo
+echo "=== Is origin/feature/walking-skeleton merged into main? ==="
+gi…`
 
 </details>
 
