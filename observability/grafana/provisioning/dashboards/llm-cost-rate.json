@@ -1,0 +1,71 @@
+{
+  "title": "MCP Agent -- LLM Cost & Rate (Phase 6 M4)",
+  "uid": "phase6-m4-llm-cost-rate",
+  "description": "Real Prometheus counters/histograms from mcp-agent-api's /metrics (docs/phase6/decisions.md H27) -- the aggregable resource-usage view M2's per-span gen_ai.usage.* attributes couldn't provide on their own.",
+  "editable": true,
+  "schemaVersion": 39,
+  "timezone": "browser",
+  "time": { "from": "now-1h", "to": "now" },
+  "refresh": "10s",
+  "tags": ["phase6", "m4", "cost", "resilience"],
+  "panels": [
+    {
+      "id": 1,
+      "title": "LLM tokens/sec, by direction",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        {
+          "expr": "rate(fhir_agent_llm_tokens_total[1m])",
+          "legendFormat": "{{direction}}",
+          "datasource": { "type": "prometheus", "uid": "Prometheus" }
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "LLM call outcomes/sec",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "description": "success | failure | circuit_open | cost_blocked -- a nonzero circuit_open or cost_blocked rate means M4's fail-closed protections are actively shedding load, not that the agent is silently broken.",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        {
+          "expr": "rate(fhir_agent_llm_calls_total[1m])",
+          "legendFormat": "{{outcome}}",
+          "datasource": { "type": "prometheus", "uid": "Prometheus" }
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Rate/cost alert-threshold crossings/sec",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "description": "Hybrid posture (decisions.md H19): this rising is the alert-only signal for unusual (but not runaway) volume -- traffic is still allowed through when this fires.",
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        {
+          "expr": "rate(fhir_agent_rate_limit_alerts_total[1m])",
+          "legendFormat": "alert crossings",
+          "datasource": { "type": "prometheus", "uid": "Prometheus" }
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "LLM call duration (p95, successful calls)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(fhir_agent_llm_call_duration_seconds_bucket[5m]))",
+          "legendFormat": "p95",
+          "datasource": { "type": "prometheus", "uid": "Prometheus" }
+        }
+      ]
+    }
+  ]
+}

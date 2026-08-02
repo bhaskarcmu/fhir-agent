@@ -1,0 +1,17 @@
+# Auto-provisioned Grafana dashboards for the observability profile
+# (docker compose --profile observability up). No manual import needed --
+# Grafana reads this file, then every *.json in this same directory, on
+# startup (docs/phase6/decisions.md H27, milestone-plan.md M4).
+
+apiVersion: 1
+
+providers:
+  - name: "phase6"
+    orgId: 1
+    folder: ""
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards

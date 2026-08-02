@@ -22,6 +22,16 @@ from .observability import (
     verbosity,
 )
 from .output_gate import AgentDecision, validate_decision
+from .resilience import (
+    ESTIMATED_TOKENS_PER_CALL,
+    CircuitOpenError,
+    CostLimitExceededError,
+    call_with_resilience,
+    get_circuit_breaker,
+    get_rate_limiter,
+    record_usage,
+    reset_resilience_state,
+)
 from .session_store import create_session, load_session, save_session
 
 __all__ = [
@@ -43,4 +53,12 @@ __all__ = [
     "create_session",
     "load_session",
     "save_session",
+    "ESTIMATED_TOKENS_PER_CALL",
+    "CircuitOpenError",
+    "CostLimitExceededError",
+    "call_with_resilience",
+    "get_circuit_breaker",
+    "get_rate_limiter",
+    "record_usage",
+    "reset_resilience_state",
 ]

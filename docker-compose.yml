@@ -350,13 +350,24 @@ services:
     ports:
       - "8010:8010"
     environment:
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      CLAUDE_API_KEY: ${CLAUDE_API_KEY:-}
-      FHIR_GATEWAY_URL: ${FHIR_GATEWAY_URL:-http://fhir:8080/fhir}
-      FHIR_API_KEY: ${FHIR_API_KEY:-}
-      TRIAGE_SERVICE_URL: http://triage:8001
-      DATABASE_URL: postgresql://agent_platform:agent_platform@agent-db:5432/agent_platform
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4317}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - CLAUDE_API_KEY=${CLAUDE_API_KEY:-}
+      - FHIR_GATEWAY_URL=${FHIR_GATEWAY_URL:-http://fhir:8080/fhir}
+      - FHIR_API_KEY=${FHIR_API_KEY:-}
+      - TRIAGE_SERVICE_URL=http://triage:8001
+      - DATABASE_URL=postgresql://agent_platform:agent_platform@agent-db:5432/agent_platform
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4317}
+      # M4 resilience knobs (docs/phase6/decisions.md H19, H20) -- deliberately
+      # bare (no "=value"): passed through only when actually set in the host
+      # shell, so an unset knob is genuinely absent in the container and
+      # agent_platform.resilience's own int()-parsed defaults apply, rather
+      # than crashing on int("") the way a "KEY=${KEY:-}" interpolation would.
+      - MAX_CONCURRENT_LLM_QUERIES
+      - LLM_QUERY_QUEUE_DEADLINE_SECONDS
+      - LLM_CIRCUIT_FAILURE_THRESHOLD
+      - LLM_CIRCUIT_RESET_SECONDS
+      - LLM_ALERT_TOKENS_PER_MINUTE
+      - LLM_HARD_BACKSTOP_TOKENS_PER_MINUTE
     depends_on:
       triage:
         condition: service_healthy
