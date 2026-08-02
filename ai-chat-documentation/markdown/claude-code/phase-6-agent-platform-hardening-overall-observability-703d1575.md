@@ -1525,8 +1525,12 @@ All pass. Now the full combined suite to confirm no regressions.
 
 Now let's add the Prometheus scrape target for `mcp-agent-api`.
 
+All services started. Let's wait a moment then verify health/metrics.
+
+Metrics and Prometheus scrape target are working. Now a live end-to-end query to confirm real token metrics accumulate.
+
 <details>
-<summary>Execution details — 732 tool events</summary>
+<summary>Execution details — 737 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2763,6 +2767,23 @@ print(inspect.signature(anthropic.APIConnectionError.__init__))
 - **Bash** `docker compose version 2>&1 | head -3; echo "---"; env | grep -i "ANTHROPIC\|CLAUDE_API" | sed 's/=.*/=<redacted>/'`
 - **Bash** `grep -n "^  [a-z-]*:$" docker-compose.yml | head -40`
 - **Bash** `docker compose --profile phase6 --profile observability up -d --build 2>&1 | tail -80`
+- **Bash** `sleep 3; docker ps --format "table {{.Names}}\t{{.Status}}" | grep fhir-agent
+echo "--- health ---"
+curl -sS http://localhost:8010/health
+echo
+echo "--- metrics (first 30 lines) ---"
+curl -sS http://l…`
+- **Bash** `curl -sS http://localhost:8010/metrics | head -60`
+- **Bash** `curl -sS -i http://localhost:8010/metrics
+echo "---logs---"
+docker logs fhir-agent-mcp-api --tail 50`
+- **Bash** `curl -sSL http://localhost:8010/metrics | grep -E "^# HELP fhir_agent|^fhir_agent" 
+echo "--- prometheus target status ---"
+curl -s http://localhost:9090/api/v1/targets | python3 -c "
+import json,sys…`
+- **Bash** `SESSION_ID=$(curl -sS -X POST http://localhost:8010/sessions | python3 -c "import json,sys; print(json.load(sys.stdin)['session_id'])")
+echo "session: $SESSION_ID"
+curl -sS -X POST "http://localhost:8…`
 
 </details>
 
@@ -2773,6 +2794,6 @@ print(inspect.signature(anthropic.APIConnectionError.__init__))
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 13:59 UTC
+- **Last updated:** 2 August 2026, 14:01 UTC
 - **Turns:** 22
 - **Status:** Incomplete
