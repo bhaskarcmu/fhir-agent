@@ -1024,8 +1024,12 @@ Compiles clean. Now running the full test suite to verify:
 
 Now adding the actual dependency entries near the existing micrometer block:
 
+All services started healthy. Let's confirm status and check claims-service actually came up correctly.
+
+All three targets are actually being scraped successfully — real, working metrics pipeline. Now the trace propagation smoke test through `mcp-agent`:
+
 <details>
-<summary>Execution details — 357 tool events</summary>
+<summary>Execution details — 363 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1528,6 +1532,22 @@ timeout 300 ./mvnw -o -DskipTests=false -Dtest='!*Mdm*' test 2>&1 | tail -80; ec
 - **Bash** `env | grep -qi "ANTHROPIC_API_KEY\|CLAUDE_API_KEY" && echo "key present" || echo "no key set"`
 - **Bash** `cd /workspaces/fhir-agent
 docker compose --profile phase2 --profile observability up -d --build triage claims-service rxclaim-emulator jaeger prometheus grafana 2>&1 | tail -80`
+- **Bash** `sleep 8 && docker compose ps 2>&1
+echo "--- claims-service logs (tail) ---"
+docker logs fhir-agent-claims --tail 30 2>&1`
+- **Bash** `curl -s -o /dev/null -w "claims-service prometheus: %{http_code}\n" http://localhost:8090/actuator/prometheus
+curl -s -o /dev/null -w "fhir prometheus: %{http_code}\n" http://localhost:8080/actuator/p…`
+- **Bash** `curl -s http://localhost:9090/api/v1/targets 2>&1 | python3 -c "
+import json,sys
+d = json.load(sys.stdin)
+for t in d['data']['activeTargets']:
+    print(t['labels']['job'], '->', t['health'], t.get('l…`
+- **Bash** `cd /workspaces/fhir-agent
+docker compose run --rm -e OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317 mcp-agent python3 -m agent.agent --query "Check refill risk for Kristle Mraz" 2>&1 | tail -40`
+- **Bash** `docker ps -a --filter "name=mcp-agent-run" 2>&1
+docker logs fhir-agent-mcp-agent-run-98f74f93aa3e 2>&1 | tail -60`
+- **Bash** `cd /workspaces/fhir-agent
+docker compose build mcp-agent 2>&1 | tail -30`
 
 </details>
 
@@ -1538,6 +1558,6 @@ docker compose --profile phase2 --profile observability up -d --build triage cla
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 11:47 UTC
+- **Last updated:** 2 August 2026, 11:50 UTC
 - **Turns:** 15
 - **Status:** Complete
