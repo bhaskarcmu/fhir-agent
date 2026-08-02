@@ -1004,8 +1004,18 @@ Now building the local observability stack. First, config files:
 
 Now editing `docker-compose.yml` to add the observability profile and wire `OTEL_EXPORTER_OTLP_ENDPOINT` into the relevant services:
 
+Now `rxclaim-emulator`'s pom.xml:
+
+No error this time. Now let's verify compilation for both services with the new dependencies (needs network for first resolution).
+
+Compiles clean. Now `rxclaim-emulator`:
+
+All 52 tests pass, including `HttpTriageClientTest` (9 tests) — no regression. Now `rxclaim-emulator`:
+
+All 8 pass. Now the manual trace-context injection in `HttpTriageClient.java` and `HapiFhirClient.java` (the two raw clients not auto-instrumented).
+
 <details>
-<summary>Execution details — 281 tool events</summary>
+<summary>Execution details — 306 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1421,6 +1431,35 @@ curl -s -o /dev/null -w "%{…`
 - **Write** `/workspaces/fhir-agent/observability/grafana/provisioning/datasources/datasources.yml`
 - **Edit** `/workspaces/fhir-agent/docker-compose.yml`
 - **Edit** `/workspaces/fhir-agent/docker-compose.yml`
+- **Edit** `/workspaces/fhir-agent/docker-compose.yml`
+- **Bash** `grep -n "rxclaim-emulator:\|claims-service:\|command:" /workspaces/fhir-agent/docker-compose.yml | head -20`
+- **Read** `/workspaces/fhir-agent/docker-compose.yml`
+- **Edit** `/workspaces/fhir-agent/docker-compose.yml`
+- **Edit** `/workspaces/fhir-agent/docker-compose.yml`
+- **Bash** `find /workspaces/fhir-agent/claims-service/src/main/resources -type f
+echo "---"
+find /workspaces/fhir-agent/rxclaim-emulator/src/main/resources -type f`
+- **Bash** `cat /workspaces/fhir-agent/claims-service/src/main/resources/application.yml
+echo "=== rxclaim-emulator ==="
+cat /workspaces/fhir-agent/rxclaim-emulator/src/main/resources/application.yml`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/main/resources/application.yml`
+- **Edit** `/workspaces/fhir-agent/rxclaim-emulator/src/main/resources/application.yml`
+- **Bash** `grep -n "<dependencies>\|</dependencies>\|<dependency>\|</dependency>\|artifactId" /workspaces/fhir-agent/claims-service/pom.xml`
+- **Read** `/workspaces/fhir-agent/claims-service/pom.xml`
+- **Edit** `/workspaces/fhir-agent/claims-service/pom.xml`
+- **Bash** `grep -n "<!--.*--[^>]" /workspaces/fhir-agent/claims-service/pom.xml`
+- **Edit** `/workspaces/fhir-agent/claims-service/pom.xml`
+- **Bash** `cd /workspaces/fhir-agent/claims-service && python3 -c "import xml.dom.minidom; xml.dom.minidom.parse('pom.xml'); print('XML valid')"`
+- **Bash** `grep -n "<dependency>\|</dependency>\|artifactId\|</dependencies>" /workspaces/fhir-agent/rxclaim-emulator/pom.xml`
+- **Read** `/workspaces/fhir-agent/rxclaim-emulator/pom.xml`
+- **Edit** `/workspaces/fhir-agent/rxclaim-emulator/pom.xml`
+- **Bash** `timeout 120 mvn -q -DskipTests compile 2>&1 | tail -60; echo "EXIT:$?"`
+- **Bash** `cd /workspaces/fhir-agent/rxclaim-emulator && timeout 120 mvn -q -DskipTests compile 2>&1 | tail -60; echo "EXIT:$?"`
+- **Bash** `cd /workspaces/fhir-agent/claims-service && timeout 180 mvn -q -o test 2>&1 | tail -100; echo "EXIT:$?"`
+- **Bash** `timeout 180 mvn -o test 2>&1 | grep -E "Tests run|BUILD SUCCESS|BUILD FAILURE|ERROR" | tail -40`
+- **Bash** `cd /workspaces/fhir-agent/rxclaim-emulator && timeout 180 mvn -o test 2>&1 | grep -E "Tests run|BUILD SUCCESS|BUILD FAILURE|ERROR" | tail -40`
+- **TodoWrite** `{"todos": [{"content": "Explore current state: pom.xml, docker-compose.yml, client configs", "status": "completed", "activeForm": "Exploring current service configs for M2"}, {"content": "Add agent_pl…`
+- **Bash** `grep -n "new HttpTriageClient\|new HapiFhirClient" /workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/*.java`
 
 </details>
 
@@ -1431,6 +1470,6 @@ curl -s -o /dev/null -w "%{…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 11:29 UTC
+- **Last updated:** 2 August 2026, 11:33 UTC
 - **Turns:** 15
 - **Status:** Complete
