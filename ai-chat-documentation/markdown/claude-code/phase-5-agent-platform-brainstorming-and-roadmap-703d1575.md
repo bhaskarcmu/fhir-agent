@@ -431,7 +431,7 @@ Proceed with all steps above, with the following modifications. Don;t star if th
 *[Claude has not completed this turn yet.]*
 
 <details>
-<summary>Execution details — 21 tool events</summary>
+<summary>Execution details — 23 tool events</summary>
 
 ### Turn 1 activity
 
@@ -468,6 +468,8 @@ Proceed with all steps above, with the following modifications. Don;t star if th
 - **TodoWrite** `{"todos": [{"content": "Confirm both modifications make sense (naming + tagging exceptions)", "status": "completed", "activeForm": "Confirming modifications make sense"}, {"content": "Find exact histo…`
 - **Read** `/workspaces/fhir-agent/docs/phase2/plan.md`
 - **Bash** `grep -n "^### D\|^## D\|^### E\|D8" /workspaces/fhir-agent/docs/phase2/decisions.md | head -40`
+- **Read** `/workspaces/fhir-agent/docs/phase2/decisions.md`
+- **Read** `/workspaces/fhir-agent/docs/phase2/decisions.md`
 
 </details>
 
