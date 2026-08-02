@@ -313,3 +313,52 @@ services:
         condition: service_healthy
     stdin_open: true
     tty: true
+
+  # ══ Phase 6 (opt-in: `docker compose --profile phase6 up`) ═════════════════
+  # Additive only -- none of the below start on a plain `docker compose up`.
+  # The mcp-agent CLI service above is unchanged and still works exactly as
+  # before with no DATABASE_URL set (in-memory sessions only) -- this profile
+  # adds the HTTP transport (docs/phase6/decisions.md H14), which genuinely
+  # needs persistence to be useful (an HTTP "session" with no store isn't one).
+
+  # ── Agent session store (M3) ────────────────────────────────────────────────
+  agent-db:
+    image: postgres:16-alpine
+    container_name: fhir-agent-agent-db
+    profiles: ["phase6"]
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: agent_platform
+      POSTGRES_PASSWORD: agent_platform
+      POSTGRES_DB: agent_platform
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agent_platform"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  # ── MCP agent HTTP transport (M3) ───────────────────────────────────────────
+  mcp-agent-api:
+    build:
+      context: .
+      dockerfile: mcp-agent/Dockerfile
+    container_name: fhir-agent-mcp-api
+    profiles: ["phase6"]
+    entrypoint: ["sh", "-c", "python -m agent_platform.init_db && uvicorn agent.api:app --host 0.0.0.0 --port 8010"]
+    ports:
+      - "8010:8010"
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      CLAUDE_API_KEY: ${CLAUDE_API_KEY:-}
+      FHIR_GATEWAY_URL: ${FHIR_GATEWAY_URL:-http://fhir:8080/fhir}
+      FHIR_API_KEY: ${FHIR_API_KEY:-}
+      TRIAGE_SERVICE_URL: http://triage:8001
+      DATABASE_URL: postgresql://agent_platform:agent_platform@agent-db:5432/agent_platform
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4317}
+    depends_on:
+      triage:
+        condition: service_healthy
+      agent-db:
+        condition: service_healthy
