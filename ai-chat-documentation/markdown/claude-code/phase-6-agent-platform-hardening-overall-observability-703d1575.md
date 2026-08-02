@@ -1947,8 +1947,10 @@ Now the full test suite, including live Ollama tests and the DB-backed session t
 
 Found it — `agent-platform/tests` was never in the root `pytest.ini`'s combined `testpaths` specifically to avoid this `conftest.py` collision. I added it to the same invocation; let me fix that by running it as a separate step.
 
+All green. Now let's do live docker-compose validation of the whole rework — default resolution, CLI flags, disclosure, discovery, and the DEPLOYMENT_ENV guardrail — against real running services.
+
 <details>
-<summary>Execution details — 989 tool events</summary>
+<summary>Execution details — 990 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3554,6 +3556,7 @@ grep -A3 "\[tool.pytest.ini_options\]" /workspaces/fhir-agent/mcp-agent/pyprojec
 echo "===separate agent-platform run==="
 python -m pytest agent-platform/tests -q 2>&1 | tail…`
 - **Bash** `python -m pytest mcp-agent/tests triage-service/src/triage/tests -q 2>&1 | tail -10`
+- **Bash** `docker compose up -d fhir triage 2>&1 | tail -10`
 
 </details>
 
@@ -3564,6 +3567,6 @@ python -m pytest agent-platform/tests -q 2>&1 | tail…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 16:11 UTC
+- **Last updated:** 2 August 2026, 16:12 UTC
 - **Turns:** 27
 - **Status:** Incomplete
