@@ -21,6 +21,18 @@ RISK_LABELS = {
 
 DIVIDER = "─" * 58
 
+DECISION_ICONS = {
+    "DISPENSE":         "✅",
+    "DO_NOT_DISPENSE":  "🚨",
+    "REVIEW":           "⚠️ ",
+}
+
+DECISION_LABELS = {
+    "DISPENSE":         "DISPENSE",
+    "DO_NOT_DISPENSE":  "DO NOT DISPENSE",
+    "REVIEW":           "REVIEW — human decision required",
+}
+
 
 def tool_call_line(tool_name: str, summary: str) -> str:
     return f"  [tool] {tool_name} → {summary}"
@@ -63,6 +75,50 @@ def risk_assessment_block(
         note,
         "",
         f"FHIR RiskAssessment ID: {assessment_id}",
+        DIVIDER,
+        "",
+    ]
+    return "\n".join(lines)
+
+
+def decision_block(
+    decision: str,
+    patient_id: str,
+    risk_assessment_id: str | None,
+    rationale: str,
+    override_reason: str | None = None,
+) -> str:
+    """
+    Format the agent's final, code-validated decision for terminal display
+    (docs/phase6/design.md Section 4.1). Unlike the free-text narrative this
+    replaces, the decision line itself is always one of the enum values --
+    never LLM-composed prose -- so a reader can trust it at a glance even
+    without reading the rationale.
+    """
+    icon = DECISION_ICONS.get(decision, "❓")
+    label = DECISION_LABELS.get(decision, decision)
+
+    lines = [
+        "",
+        DIVIDER,
+        "AGENT DECISION",
+        DIVIDER,
+        "",
+        f"{icon}  {label}",
+        "",
+        rationale.strip(),
+    ]
+
+    if override_reason:
+        lines += [
+            "",
+            f"⚠️  Fail-closed override: {override_reason}",
+        ]
+
+    lines += [
+        "",
+        f"Patient ID: {patient_id or '(none)'}",
+        f"FHIR RiskAssessment ID: {risk_assessment_id or '(none)'}",
         DIVIDER,
         "",
     ]

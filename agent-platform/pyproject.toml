@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent-platform"
+version = "0.1.0"
+description = "Shared hardening layer for this repo's LLM agents (mcp-agent, later claims-agent): fail-closed output contracts and safety guards. See docs/phase6/."
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+# Test tooling — install with: pip install -e "agent-platform[dev]"
+dev = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

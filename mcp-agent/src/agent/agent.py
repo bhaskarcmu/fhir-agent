@@ -32,8 +32,10 @@ import sys
 
 import anthropic
 
+from agent_platform import is_unknown, validate_decision
+
 from .format import (
-    agent_response,
+    decision_block,
     error_block,
     tool_call_line,
     welcome,
@@ -47,6 +49,12 @@ from .tools import TOOL_DEFINITIONS, execute_tool
 MODEL = "claude-sonnet-4-5"
 MAX_TOKENS = 1024
 
+# Crude stopgap against interactive_mode's message list growing unbounded.
+# Not the real memory/token-budget policy -- that's a real number set from
+# telemetry in Phase 6 M3. This just closes the current zero-bound risk
+# early (docs/phase6/decisions.md H13).
+MAX_REPL_TURNS = 40
+
 SYSTEM_PROMPT = """You are a clinical decision support assistant for healthcare professionals.
 You help clinicians evaluate medication refill safety by checking for drug-allergy conflicts
 and other clinical risks.
@@ -54,14 +62,18 @@ and other clinical risks.
 When asked about a patient by name, always call get_patient_summary first to resolve the
 name to a patient ID. Then call assess_refill_risk with that ID.
 
-Present your findings clearly and concisely. Always include:
-- The patient's name and the risk level (HIGH/MODERATE/LOW)
-- The specific clinical reason for the risk level
-- The FHIR RiskAssessment ID for audit purposes
-- A clear recommendation (dispense / review / do not dispense)
+Once you have the information you need, you MUST call submit_decision as your final action --
+do not write a free-text final answer instead. Map the risk level to a decision:
+- LOW risk → DISPENSE
+- HIGH risk → DO_NOT_DISPENSE
+- MODERATE risk, or anything you are not confident about → REVIEW
+- If assess_refill_risk returned risk_level UNKNOWN or an error (the safety check could not
+  be completed), you must submit REVIEW -- never guess DISPENSE or DO_NOT_DISPENSE on an
+  incomplete check.
 
-If risk is HIGH, be direct and emphatic. Patient safety is the priority.
-If you cannot find a patient, say so clearly and suggest alternatives.
+If risk is HIGH, be direct and emphatic in your rationale. Patient safety is the priority.
+If you cannot find a patient, say so clearly in your rationale and suggest alternatives, then
+submit_decision with REVIEW.
 Never fabricate patient data or clinical information."""
 
 
@@ -86,6 +98,13 @@ def run_query(
 
     messages = messages + [{"role": "user", "content": user_input}]
 
+    # Fail-closed enforcement state for this query (docs/phase6/decisions.md
+    # H18): tracks whether any risk check during this run_query call came
+    # back UNKNOWN, so a subsequent submit_decision can be overridden
+    # regardless of which order the model called tools in. Scoped to this
+    # single query, not the whole session -- see the docstring note below.
+    saw_unknown_risk = False
+
     while True:
         response = client.messages.create(
             model=MODEL,
@@ -102,40 +121,103 @@ def run_query(
                 {"role": "assistant", "content": response.content}
             ]
 
-            # Execute each tool call and collect results
+            # Execute every non-decision tool call first, updating
+            # saw_unknown_risk as we go, so a submit_decision call anywhere
+            # in this same batch -- before or after the risk check -- is
+            # validated against the fully up-to-date state.
             tool_results = []
+            decision_block_data = None
             for block in response.content:
-                if block.type == "tool_use":
-                    if verbose:
-                        _print_tool_call(block.name, block.input)
+                if block.type != "tool_use":
+                    continue
 
-                    result_str = execute_tool(block.name, block.input)
+                if block.name == "submit_decision":
+                    decision_block_data = block
+                    continue
 
-                    if verbose:
-                        _print_tool_result(block.name, result_str)
+                if verbose:
+                    _print_tool_call(block.name, block.input)
 
-                    tool_results.append({
-                        "type": "tool_result",
-                        "tool_use_id": block.id,
-                        "content": result_str,
-                    })
+                result_str = execute_tool(block.name, block.input)
 
-            # Feed results back to Claude
+                if verbose:
+                    _print_tool_result(block.name, result_str)
+
+                if block.name == "assess_refill_risk":
+                    try:
+                        parsed = json.loads(result_str)
+                    except json.JSONDecodeError:
+                        parsed = {}
+                    if is_unknown(parsed.get("risk_level")):
+                        saw_unknown_risk = True
+
+                tool_results.append({
+                    "type": "tool_result",
+                    "tool_use_id": block.id,
+                    "content": result_str,
+                })
+
+            # ── submit_decision: terminal action, validated and enforced ──────
+            if decision_block_data is not None:
+                inputs = decision_block_data.input
+                decision, override_reason = validate_decision(
+                    inputs.get("decision"),
+                    saw_unknown_risk=saw_unknown_risk,
+                )
+
+                if verbose:
+                    _print_tool_call("submit_decision", inputs)
+
+                ack = {
+                    "recorded_decision": decision.value,
+                    "override_reason": override_reason,
+                }
+                tool_results.append({
+                    "type": "tool_result",
+                    "tool_use_id": decision_block_data.id,
+                    "content": json.dumps(ack, indent=2),
+                })
+                messages = messages + [
+                    {"role": "user", "content": tool_results}
+                ]
+
+                final_text = decision_block(
+                    decision=decision.value,
+                    patient_id=str(inputs.get("patient_id", "")),
+                    risk_assessment_id=inputs.get("risk_assessment_id"),
+                    rationale=str(inputs.get("rationale", "")),
+                    override_reason=override_reason,
+                )
+                return final_text, messages
+
+            # No decision this round -- feed results back to Claude and keep going.
             messages = messages + [
                 {"role": "user", "content": tool_results}
             ]
             continue
 
-        # ── Final response ────────────────────────────────────────────────────
-        final_text = ""
+        # ── Final response without submit_decision ──────────────────────────
+        # The model answered in free text instead of calling submit_decision.
+        # That's an off-contract turn (docs/phase6/decisions.md H5, H21) --
+        # fail closed to REVIEW, but keep the model's own narrative visible
+        # as supporting context rather than discarding it.
+        narrative = ""
         for block in response.content:
             if hasattr(block, "text"):
-                final_text += block.text
+                narrative += block.text
 
         messages = messages + [
             {"role": "assistant", "content": response.content}
         ]
 
+        decision, override_reason = validate_decision(None, saw_unknown_risk=saw_unknown_risk)
+        final_text = decision_block(
+            decision=decision.value,
+            patient_id="",
+            risk_assessment_id=None,
+            rationale=narrative.strip() or "(no rationale provided)",
+            override_reason=override_reason,
+        )
         return final_text, messages
 
 
@@ -206,6 +288,7 @@ def interactive_mode(client: anthropic.Anthropic) -> None:
     """Run the agent in interactive REPL mode."""
     print(welcome())
     messages: list[dict] = []
+    turn_count = 0
 
     while True:
         try:
@@ -223,12 +306,23 @@ def interactive_mode(client: anthropic.Anthropic) -> None:
         print()
         try:
             final_text, messages = run_query(client, user_input, messages)
-            print(agent_response(final_text))
+            print(final_text)
         except anthropic.APIError as exc:
             print(error_block(f"Anthropic API error: {exc}"))
+            continue
         except Exception as exc:
             print(error_block(f"Unexpected error: {exc}"))
             raise
+
+        turn_count += 1
+        if turn_count >= MAX_REPL_TURNS:
+            print(error_block(
+                f"This session has reached {MAX_REPL_TURNS} turns -- starting a fresh "
+                "conversation to keep context bounded (a crude stopgap; Phase 6 M3 replaces "
+                "this with a real, telemetry-derived budget)."
+            ))
+            messages = []
+            turn_count = 0
 
 
 def non_interactive_mode(client: anthropic.Anthropic, query: str) -> int:
@@ -236,7 +330,7 @@ def non_interactive_mode(client: anthropic.Anthropic, query: str) -> int:
     print(f"\nQuery: {query}\n")
     try:
         final_text, _ = run_query(client, query)
-        print(agent_response(final_text))
+        print(final_text)
         return 0
     except anthropic.APIError as exc:
         print(error_block(f"Anthropic API error: {exc}"))
