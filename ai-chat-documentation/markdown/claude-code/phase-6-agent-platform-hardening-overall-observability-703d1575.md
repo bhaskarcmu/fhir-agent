@@ -1950,7 +1950,7 @@ Found it — `agent-platform/tests` was never in the root `pytest.ini`'s combine
 All green. Now let's do live docker-compose validation of the whole rework — default resolution, CLI flags, disclosure, discovery, and the DEPLOYMENT_ENV guardrail — against real running services.
 
 <details>
-<summary>Execution details — 990 tool events</summary>
+<summary>Execution details — 991 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3557,6 +3557,10 @@ echo "===separate agent-platform run==="
 python -m pytest agent-platform/tests -q 2>&1 | tail…`
 - **Bash** `python -m pytest mcp-agent/tests triage-service/src/triage/tests -q 2>&1 | tail -10`
 - **Bash** `docker compose up -d fhir triage 2>&1 | tail -10`
+- **Bash** `sleep 5
+export FHIR_GATEWAY_URL=http://localhost:8080/fhir TRIAGE_SERVICE_URL=http://localhost:8001
+unset LLM_PROVIDER LLM_MODEL LLM_BASE_URL DEPLOYMENT_ENV
+cd /workspaces/fhir-agent/mcp-agent/src &&…`
 
 </details>
 
@@ -3567,6 +3571,6 @@ python -m pytest agent-platform/tests -q 2>&1 | tail…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 16:12 UTC
+- **Last updated:** 2 August 2026, 16:13 UTC
 - **Turns:** 27
 - **Status:** Incomplete
