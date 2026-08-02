@@ -1043,7 +1043,7 @@ Confirmed clean on the Kong boundary. Now the final full test pass before commit
 112 pass. Now the Java side one more time:
 
 <details>
-<summary>Execution details — 421 tool events</summary>
+<summary>Execution details — 423 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1768,6 +1768,13 @@ python -m pytest agent-platform/tests mcp-agent/tests triage-service/src/triage/
 - **Bash** `cd /workspaces/fhir-agent
 git add agent-platform/ claims-service/ rxclaim-emulator/ fhir-service/ mcp-agent/ triage-service/ docker-compose.yml docs/phase2/ observability/
 git status --short | head -4…`
+- **Bash** `cd /workspaces/fhir-agent
+git commit -m "$(cat <<'EOF'
+feat(phase6 M2): observability, platform-wide — closes Phase 2 R15
+
+Implements Phase 6 M2 per docs/phase6/milestone-plan.md and
+decisions.md H16/…`
+- **Bash** `git push -u origin feature/phase6-m2-observability`
 
 </details>
 
@@ -1778,6 +1785,6 @@ git status --short | head -4…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 12:03 UTC
+- **Last updated:** 2 August 2026, 12:04 UTC
 - **Turns:** 15
 - **Status:** Complete
