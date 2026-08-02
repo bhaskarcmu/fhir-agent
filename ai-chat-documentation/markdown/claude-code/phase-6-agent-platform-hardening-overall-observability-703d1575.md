@@ -1946,7 +1946,7 @@ Clean now. Let's also test that the gate actually catches a real violation.
 Now the full test suite, including live Ollama tests and the DB-backed session tests.
 
 <details>
-<summary>Execution details — 982 tool events</summary>
+<summary>Execution details — 984 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3541,6 +3541,10 @@ var_name="LLM""_PROVIDER"
 pattern="$…`
 - **TodoWrite** `{"todos": [{"content": "Rework agent_platform/providers.py: 3 provider identities (anthropic/ollama/openai_compatible), default=ollama, DEPLOYMENT_ENV production guardrail, discovery functions", "stat…`
 - **Bash** `python -m pytest agent-platform/tests mcp-agent/tests triage-service/src/triage/tests -q 2>&1 | tail -30`
+- **Bash** `find /workspaces/fhir-agent -maxdepth 3 -name "conftest.py" 2>/dev/null
+echo "---pytest ini config---"
+grep -A3 "\[tool.pytest.ini_options\]" /workspaces/fhir-agent/mcp-agent/pyproject.toml /workspace…`
+- **Bash** `cat /workspaces/fhir-agent/pytest.ini`
 
 </details>
 
