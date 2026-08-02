@@ -1210,8 +1210,10 @@ Also need to update the module docstring's run instructions. Let's run it:
 
 All 6 pass. Now let's run the full mcp-agent + agent-platform suite together and update the todo list.
 
+Now appending the new Phase 6 services at the end:
+
 <details>
-<summary>Execution details — 602 tool events</summary>
+<summary>Execution details — 608 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2248,6 +2250,21 @@ python -m pytest mcp-agent/tests/test_session_persistence.py -v 2>&1 | tail -50`
 python -m pytest agent-platform/tests mcp-agent/tests -q 2>&1 | tail -20`
 - **Bash** `cd /workspaces/fhir-agent
 python -m pytest agent-platform/tests mcp-agent/tests -q -rs 2>&1 | grep -E "passed|skipped|SKIPPED"`
+- **Bash** `grep -n "^  # ══ Provider search agent" /workspaces/fhir-agent/docker-compose.yml`
+- **Bash** `tail -25 /workspaces/fhir-agent/docker-compose.yml`
+- **Bash** `cat >> /workspaces/fhir-agent/docker-compose.yml << 'EOF'
+
+  # ══ Phase 6 (opt-in: `docker compose --profile phase6 up`) ═════════════════
+  # Additive only -- none of the below start on a plain `dock…`
+- **Bash** `docker compose config --profiles 2>&1 | tail -20
+docker compose --profile phase6 config -q 2>&1 && echo "compose config valid"`
+- **Bash** `docker stop agent-platform-test-pg >/dev/null 2>&1
+docker rm agent-platform-test-pg >/dev/null 2>&1
+echo "manual test postgres removed"`
+- **Bash** `cd /workspaces/fhir-agent
+export FHIR_GATEWAY_URL=http://fhir:8080/fhir
+docker compose up -d --build triage 2>&1 | tail -8
+docker compose --profile phase6 up -d --build agent-db mcp-agent-api 2>&1 | t…`
 
 </details>
 
@@ -2258,6 +2275,6 @@ python -m pytest agent-platform/tests mcp-agent/tests -q -rs 2>&1 | grep -E "pas
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 13:12 UTC
+- **Last updated:** 2 August 2026, 13:13 UTC
 - **Turns:** 18
 - **Status:** Complete
