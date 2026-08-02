@@ -1635,8 +1635,12 @@ Let's also validate the full CLI end-to-end (real FHIR + triage, real Ollama) �
 
 Both reachable from the host. Now running the CLI directly against real FHIR/triage and the real Ollama model.
 
+A real gap: `execute_tool` crashes with a raw `KeyError` when a weak model omits a required tool argument — exactly the scenario H11's standing rule exists to catch. Fixing it, consistent with the existing fail-closed pattern already used elsewhere in this file.
+
+Now let's re-run the live CLI test to confirm the fix works, and add a regression test.
+
 <details>
-<summary>Execution details — 849 tool events</summary>
+<summary>Execution details — 851 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3054,6 +3058,9 @@ python3 mcp-agen…`
 - **Bash** `grep -n "agent.agent\|WORKDIR\|CMD\|ENTRYPOINT" /workspaces/fhir-agent/mcp-agent/Dockerfile`
 - **Bash** `export LLM_PROVIDER=openai_compatible LLM_BASE_URL=http://localhost:11434/v1 LLM_MODEL=llama3.2:1b FHIR_GATEWAY_URL=http://localhost:8080/fhir TRIAGE_SERVICE_URL=http://localhost:8001
 cd /workspaces/f…`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/tools.py`
+- **Bash** `export LLM_PROVIDER=openai_compatible LLM_BASE_URL=http://localhost:11434/v1 LLM_MODEL=llama3.2:1b FHIR_GATEWAY_URL=http://localhost:8080/fhir TRIAGE_SERVICE_URL=http://localhost:8001
+cd /workspaces/f…`
 
 </details>
 
@@ -3064,6 +3071,6 @@ cd /workspaces/f…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 14:30 UTC
+- **Last updated:** 2 August 2026, 14:31 UTC
 - **Turns:** 23
 - **Status:** Incomplete
