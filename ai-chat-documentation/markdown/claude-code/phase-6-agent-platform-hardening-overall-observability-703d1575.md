@@ -1953,8 +1953,12 @@ Discovery works. Now the DEPLOYMENT_ENV production guardrail and explicit `--pro
 
 Confirmed exit code 1. Now explicit `--provider anthropic` opt-in with the real API key.
 
+Now let's live-validate per-session provider persistence end-to-end with a real Postgres.
+
+Migration applied correctly to the existing table. Now let's create a session with the default (Ollama), then verify resume behavior.
+
 <details>
-<summary>Execution details — 995 tool events</summary>
+<summary>Execution details — 998 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3576,6 +3580,13 @@ python3 -m agent.agent --query "test" > /tmp/claude-1000/-works…`
 - **Bash** `export FHIR_GATEWAY_URL=http://localhost:8080/fhir TRIAGE_SERVICE_URL=http://localhost:8001
 unset DEPLOYMENT_ENV LLM_PROVIDER
 python3 -m agent.agent --provider anthropic --model claude-sonnet-4-5 --qu…`
+- **Bash** `docker ps --format "{{.Names}}" | grep agent-db || docker compose --profile phase6 up -d agent-db
+sleep 3
+export DATABASE_URL=postgresql://agent_platform:‹redacted:url-credentials›localhost:5433/agent_platform
+p…`
+- **Bash** `psql postgresql://agent_platform:‹redacted:url-credentials›localhost:5433/agent_platform -c "\d agent_sessions" 2>&1 | head -15`
+- **Bash** `export FHIR_GATEWAY_URL=http://localhost:8080/fhir TRIAGE_SERVICE_URL=http://localhost:8001 DATABASE_URL=postgresql://agent_platform:‹redacted:url-credentials›localhost:5433/agent_platform
+unset LLM_PROVIDER DEP…`
 
 </details>
 
@@ -3586,6 +3597,6 @@ python3 -m agent.agent --provider anthropic --model claude-sonnet-4-5 --qu…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 16:14 UTC
+- **Last updated:** 2 August 2026, 16:15 UTC
 - **Turns:** 27
 - **Status:** Incomplete
