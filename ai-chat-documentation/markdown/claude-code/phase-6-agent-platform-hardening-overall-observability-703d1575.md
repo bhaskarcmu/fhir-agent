@@ -1214,8 +1214,14 @@ Now appending the new Phase 6 services at the end:
 
 All correct. Now the real end-to-end session test — create a session via the HTTP API, ask two questions, confirm persistence:
 
+Session created. Now the real multi-turn test — two queries in the same session:
+
+Confirmed — same `.env` leak affecting `mcp-agent-api`. Also found a real bug: the API's `trace_id` field returns `null` because the span has already closed by the time we read it after `run_query` returns. Let me fix both.
+
+Now updating `api.py` to use `stats["trace_id"]`:
+
 <details>
-<summary>Execution details — 618 tool events</summary>
+<summary>Execution details — 625 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2292,6 +2298,16 @@ docker compose up -d --force-recreate triage 2>&1 | tail -8
 sleep 3
 docker exec fhir-agent-triage env | grep FHIR_GATEWAY_URL
 ec…`
+- **Bash** `SESSION_ID="453ef8ae-d934-4bac-af39-afc2ddb40f46"
+echo "--- query 1 ---"
+curl -s -X POST "http://localhost:8010/sessions/$SESSION_ID/query" -H "Content-Type: application/json" \
+  -d '{"query": "Check…`
+- **Bash** `docker exec fhir-agent-mcp-api env | grep FHIR_GATEWAY_URL`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/api.py`
+- **Bash** `grep -n "with start_span(\s*$\|\"agent.run_query\", _tracer" /workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/api.py`
 
 </details>
 
@@ -2302,6 +2318,6 @@ ec…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 13:16 UTC
+- **Last updated:** 2 August 2026, 13:17 UTC
 - **Turns:** 18
 - **Status:** Complete
