@@ -1646,7 +1646,7 @@ Now the Java suites for final confirmation (M5 didn't touch Java, but per protoc
 Both green. Now updating the docs: `decisions.md`, `design.md` §4.5, `milestone-plan.md` M5.
 
 <details>
-<summary>Execution details — 861 tool events</summary>
+<summary>Execution details — 862 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3077,6 +3077,7 @@ cd /workspaces/f…`
 - **Bash** `cd /workspaces/fhir-agent/claims-service && unset SPRING_DATASOURCE_URL NEON_HOST NEON_USER NEON_PASSWORD NEON_DB 2>/dev/null; mvn -o -q clean verify > /tmp/claude-1000/-workspaces-fhir-agent/703d1575…`
 - **Bash** `cd /workspaces/fhir-agent/rxclaim-emulator && unset SPRING_DATASOURCE_URL NEON_HOST NEON_USER NEON_PASSWORD NEON_DB 2>/dev/null; mvn -o -q clean verify > /tmp/claude-1000/-workspaces-fhir-agent/703d15…`
 - **Bash** `grep -n "^| \*\*H39\*\*" /workspaces/fhir-agent/docs/phase6/decisions.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase6/decisions.md`
 
 </details>
 
