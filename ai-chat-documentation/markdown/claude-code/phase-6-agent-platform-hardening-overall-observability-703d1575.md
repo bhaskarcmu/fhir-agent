@@ -988,8 +988,14 @@ Confirmed working. Now writing the `agent-platform` observability tests, then wi
 
 All 36 pass. Now wiring OTel into `mcp-agent`.
 
+Now the main `run_query` body rewrite:
+
+Now wiring `setup_tracing()` into `main()`:
+
+Now let's reinstall mcp-agent and verify everything still imports and passes correctly.
+
 <details>
-<summary>Execution details — 233 tool events</summary>
+<summary>Execution details — 241 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1331,6 +1337,21 @@ from opentelemetry.sdk.trace.export.in_mem…`
 - **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
 - **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
 - **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Bash** `python -m pip install -e "mcp-agent[dev]" -q 2>&1 | tail -30`
+- **Bash** `python -m pytest agent-platform/tests mcp-agent/tests -q 2>&1 | tail -60`
+- **Bash** `pgrep -fa "ollama serve" 2>&1; echo "---"; curl -s -m 3 http://localhost:11434/api/tags 2>&1; echo "exit:$?"`
+- **Bash** `python3 -c "
+import httpx
+resp = httpx.post('http://localhost:11434/v1/chat/completions', json={
+    'model': 'llama3.2:1b',
+    'messages': [{'role':'user','content':'hi'}],
+    'max_tokens': 10,
+},…`
+- **Bash** `grep -rn "setup_tracing\|HTTPXClientInstrumentor\|\.instrument(" /workspaces/fhir-agent/mcp-agent/tests/ /workspaces/fhir-agent/agent-platform/tests/`
+- **Bash** `cd /workspaces/fhir-agent
+python -m pytest mcp-agent/tests/test_output_contract.py -v -k LiveLocalModel 2>&1 | tail -40`
 
 </details>
 
@@ -1341,6 +1362,6 @@ from opentelemetry.sdk.trace.export.in_mem…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 11:19 UTC
+- **Last updated:** 2 August 2026, 11:21 UTC
 - **Turns:** 15
 - **Status:** Complete
