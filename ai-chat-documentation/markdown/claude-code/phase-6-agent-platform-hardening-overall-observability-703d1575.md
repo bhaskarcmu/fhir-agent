@@ -920,7 +920,7 @@ How do I get the lightest weight Llama (via Ollame) and DeepSeek into this envir
 *[Claude has not completed this turn yet.]*
 
 <details>
-<summary>Execution details — 184 tool events</summary>
+<summary>Execution details — 186 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1172,6 +1172,11 @@ New agent-platfor…`
 Implements Phase 6 M1 (Output Contra…`
 - **TodoWrite** `{"todos": [{"content": "Write agent-platform/ package (fail_closed.py, output_gate.py) + pyproject.toml", "status": "completed", "activeForm": "Writing agent-platform package"}, {"content": "Write age…`
 - **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase6-agent-hardening.md`
+
+### Turn 14 activity
+
+- **Bash** `which ollama curl 2>&1; echo ---; df -h / 2>&1 | tail -3; echo ---; free -h 2>&1; echo ---; nproc 2>&1`
+- **Bash** `curl -sI -m 5 https://ollama.com 2>&1 | head -5; echo "exit:$?"`
 
 </details>
 
