@@ -428,10 +428,14 @@ Proceed with all steps above, with the following modifications. Don;t star if th
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Now correcting the Phase 2 observability status claim.
+
+Now adding the C5 decision entry to `docs/phase2/decisions.md`:
+
+Now committing and opening PR #1 for the Phase 2 observability status correction.
 
 <details>
-<summary>Execution details — 31 tool events</summary>
+<summary>Execution details — 51 tool events</summary>
 
 ### Turn 1 activity
 
@@ -478,6 +482,32 @@ Proceed with all steps above, with the following modifications. Don;t star if th
 - **Bash** `grep -n "E1[0-5]\|^## \|^| \*\*E" /workspaces/fhir-agent/docs/phase4/decisions.md | tail -25`
 - **Read** `/workspaces/fhir-agent/docs/README.md`
 - **Read** `/workspaces/fhir-agent/docs/phase4/decisions.md`
+- **Bash** `git checkout main && git pull --ff-only && git checkout -b docs/phase2-observability-status-correction`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/decisions.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/decisions.md`
+- **Bash** `grep -n "^| \*\*C[0-9]\|C1–C4\|C1-C4\|Cloud, security" /workspaces/fhir-agent/docs/phase2/README.md`
+- **Read** `/workspaces/fhir-agent/docs/phase2/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/README.md`
+- **Read** `/workspaces/fhir-agent/docs/phase2/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/README.md`
+- **Bash** `git add docs/phase2/plan.md docs/phase2/decisions.md docs/phase2/README.md && git status`
+- **Bash** `git commit -m "$(cat <<'EOF'
+docs(phase2): correct R15 observability status — designed, not implemented
+
+The M3/M4 milestone touchpoints said "OTel tracing wired" / "Managed-
+Prometheus metric names,"…`
+- **Bash** `git push -u origin docs/phase2-observability-status-correction`
+- **Bash** `gh pr create --base main --head docs/phase2-observability-status-correction --title "docs(phase2): correct R15 observability status" --body "$(cat <<'EOF'
+## Summary
+- The Phase 2 milestone table (M3/…`
+- **TodoWrite** `{"todos": [{"content": "Confirm both modifications make sense (naming + tagging exceptions)", "status": "completed", "activeForm": "Confirming modifications make sense"}, {"content": "Find exact histo…`
+- **Bash** `git checkout docs/phase5-readiness-assessment && git status`
+- **Bash** `git status && echo --- && git diff --stat`
+- **Write** `/workspaces/fhir-agent/docs/phase5/README.md`
 
 </details>
 
@@ -488,6 +518,6 @@ Proceed with all steps above, with the following modifications. Don;t star if th
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 04:26 UTC
+- **Last updated:** 2 August 2026, 04:28 UTC
 - **Turns:** 7
-- **Status:** Incomplete
+- **Status:** Complete
