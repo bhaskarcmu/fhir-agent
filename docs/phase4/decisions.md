@@ -10,7 +10,9 @@ that drift. Follow the link for the *why*. Read this page for *what was decided,
 still holds*.
 
 Status values: **Accepted** (in force) · **Superseded** (replaced — successor named) ·
-**Partially delivered** (accepted, but the repo does not yet match — the gap is named).
+**Partially delivered** (accepted, but the repo does not yet match — the gap is named) ·
+**Open** (a live, unresolved gap or bug found post-merge — not a decision awaiting review, a
+fix awaiting a decision).
 
 **Phase 4 is complete — M1 through M5 are all built** (see [`README.md`](./README.md)'s canonical
 status). E1–E9 and E11–E15 are now verified against real, tested code, and E15 specifically
@@ -26,8 +28,12 @@ scoping choice found while building M2; E12 records that M3's concrete resource-
 `MedicationRequest`, not the PRD's more generic "Medication"; E13/E14 record M4's pagination-token
 and error-shape-scoping choices; E15 (new) records the `apikey`-header auth fallback found while
 building M5's acceptance case — the one real, unforeseen gap between M2's auth gate and the PRD's
-"zero code changes to triage-service" non-goal, resolved without touching triage-service. The
-coupling note (PRD G6) is [`coupling-note.md`](./coupling-note.md), not restated here.
+"zero code changes to triage-service" non-goal, resolved without touching triage-service. **E16
+(new) is not a design decision — it's a live, unresolved safety bug** found by a post-merge
+testing pass, not by M1–M5's own test suite; see [`README.md`](./README.md)'s canonical status
+and [`../phase5/phase4-testing-and-analysis.md`](../phase5/phase4-testing-and-analysis.md) for
+full detail. The coupling note (PRD G6) is [`coupling-note.md`](./coupling-note.md), not restated
+here.
 
 ---
 
@@ -50,6 +56,7 @@ coupling note (PRD G6) is [`coupling-note.md`](./coupling-note.md), not restated
 | **E13** | Pagination continuation (quirk A) uses an **opaque, in-memory server-side token** (`Map<token, realUrl>`), not a self-describing one (e.g. base64 or signed) | ✅ Accepted | Simpler, and there was never a reason for the caller to be able to inspect or reconstruct the real URL — an opaque lookup is the more faithful emulation of "you must follow the link verbatim" anyway. Pagination cap default (20, `epic.quirks.pagination.max-count`) is a demonstrably-below-typical-defaults value, not derived from any real Epic-documented number — still unverified per E10. Rationale: [`design.md` §6/§14](./design.md#14-decisions-resolving-open-questions-using-best-judgement). |
 | **E14** | Quirk C's `OperationOutcome` shape is applied only to rejections on the **FHIR API surface** (quirk B, the M2 auth gate) — deliberately **not** to `TokenController`'s own OAuth2 token-endpoint errors | ✅ Accepted | Wrapping an OAuth2 error in a FHIR resource would be a category mismatch; real Epic's token endpoint returns standard OAuth2 errors too, not FHIR resources. `TokenController`'s `error`/`error_description` shape is intentionally unchanged. Rationale: [`design.md` §6](./design.md#6-quirks--concrete-pinned-choices-built-in-m4-values-still-pending-validation), [`quirks/EpicOperationOutcome`](../../epic-emulator/src/main/java/com/healthcare/epic/quirks/EpicOperationOutcome.java). |
 | **E15** | `BearerAuthFilter` accepts a valid token via an **`apikey` header**, as a fallback to `Authorization: Bearer` | ✅ Accepted | Found for real while building M5: `triage-service`'s FHIR client (`client/clinical`) can only ever send an `apikey` header — it has no extensibility point for an arbitrary `Authorization` header, and editing it would violate the "zero code changes to triage-service" non-goal. `apikey` is this repo's own pre-existing Kong-gateway convention (already read/forwarded by `triage-service`), not something invented for this — the token is still obtained through the real SMART Backend Services flow, only how it's carried differs. This is what made the M5 acceptance case achievable at all. Rationale: [`design.md` §8](./design.md#8-integration-with-the-existing-platform). |
+| **E16** | Realistic multi-page allergy/medication data is **silently truncated** through `epic-emulator`: `client/clinical`'s FHIR client never follows `Bundle.link[relation=next]`, and quirk A's pagination cap (20, `epic.quirks.pagination.max-count`, E13) surfaces that pre-existing gap — a patient with >20 active `AllergyIntolerance` records can get a false-negative "safe to dispense" result, with no error, no warning, a plain `200 OK`. Found post-merge by a testing pass, not by M1–M5's own test suite (§4.1 of the analysis doc). | 🔴 **Open — live safety bug, unresolved** | Not a Phase 4 build defect in the traditional sense — Phase 4 surfaced a **pre-existing latent gap in Phase 1's `client/clinical`**, it didn't create it. Full detail, live verification (a 22-allergy test patient, HIGH→LOW flip), and two non-mutually-exclusive fix options (fix `client/clinical`'s pagination handling, or raise/make-configurable the emulator's cap) are in [`../phase5/phase4-testing-and-analysis.md`](../phase5/phase4-testing-and-analysis.md) §0/§1.1/§4.0. **Must be explicitly decided on — fixed or deliberately mitigated — before Phase 4 is treated as demo-ready, and before Phase 5 (`epic-emulator` decomposition) starts** (§4.0). Not fixed as part of that analysis; this row is the durable, decisions-index record of it. |
 
 ## Conventions
 
