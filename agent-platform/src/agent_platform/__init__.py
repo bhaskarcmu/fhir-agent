@@ -11,6 +11,8 @@ from __future__ import annotations
 
 from .context_budget import TOKEN_BUDGET, compact
 from .fail_closed import RISK_UNKNOWN, is_unknown, safe_risk_level
+from .judge import JudgeResult, judge_response
+from .knowledge import extract_generic_name, fetch_drug_class, fetch_drug_label_citation
 from .observability import (
     current_trace_id,
     get_tracer,
@@ -22,6 +24,7 @@ from .observability import (
     verbosity,
 )
 from .output_gate import AgentDecision, validate_decision
+from .policy import load_policy
 from .providers import (
     OpenAICompatibleProvider,
     ResolvedProvider,
@@ -77,4 +80,10 @@ __all__ = [
     "list_anthropic_models",
     "list_ollama_models",
     "list_openai_compatible_models",
+    "load_policy",
+    "JudgeResult",
+    "judge_response",
+    "extract_generic_name",
+    "fetch_drug_class",
+    "fetch_drug_label_citation",
 ]

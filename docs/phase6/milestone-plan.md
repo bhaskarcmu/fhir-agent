@@ -300,23 +300,56 @@ knowledge base lets the agent cite real regulatory drug-safety text instead of r
 itself; every response now goes through an LLM-as-judge for soft-quality checks, with code still
 enforcing every hard invariant.
 
-**Long story:** (full design: [`design.md` §4.6](./design.md#46-policy-knowledge-judge--m6))
+**Long story:** (full design: [`design.md` §4.6](./design.md#46-policy-knowledge-judge--m6--implemented))
 
-- **Policy:** `policy.md`'s rules load into the system prompt — unchanged, always-apply, no
-  retrieval ([`decisions.md` H6](./decisions.md)).
+- **Policy:** `agent_platform/policy.py`'s `load_policy()` reads `mcp-agent/policy.md` once at
+  import time, concatenated onto the existing tool-orchestration system prompt — unchanged,
+  always-apply, no retrieval ([`decisions.md` H6](./decisions.md), [`H52`](./decisions.md)). A
+  missing policy file fails the whole process at startup, not silently at first query.
+  `policy.md` covers scope, authority, the same safety invariants M1's gate enforces in code
+  (restated as policy text, not duplicated logic), tone, and data handling.
 - **Judge:** runs on every response, not a filtered "important" subset
-  ([`H11`](./decisions.md), superseding [`H7`](./decisions.md)). Checks soft qualities only;
-  never overrides a hard M1 invariant. Evaluated against local/weak-model output from M5, not
-  only Claude's.
+  ([`H11`](./decisions.md), superseding [`H7`](./decisions.md)). Checks soft qualities only via a
+  forced `submit_judgment` tool call (groundedness, tone, PHI leak); **structurally incapable of
+  overriding a decision** ([`H54`](./decisions.md)) — called strictly after the decision is
+  final, result never fed back into any decision path. Deliberately bypasses the shared circuit
+  breaker/rate limiter from M4 ([`H53`](./decisions.md)) so a run of judge failures can never trip
+  the breaker protecting the real clinical call; fails closed to "inconclusive" on anything going
+  wrong, never raises. Evaluated against local/weak-model output from M5 (a live test against
+  real Ollama), not only Claude's.
 - **Knowledge base** ([`H15`](./decisions.md)): **openFDA Drug Label API**
   (`boxed_warning`/`contraindications`, verified live and actively maintained) and **RxClass
   API** (NLM/RxNav drug-class relationships, verified active) — both new to this repo, distinct
   in domain from `data/payer-kb/`. NLM's Drug-Drug Interaction API is explicitly excluded
   (discontinued January 2024). Retrieval fires only after `triage-service`'s decision exists —
-  never before, as an input the agent reasons over. Provisional corpus choice; revisit once
-  M1–M5 clarify which agent actually consumes it.
-- **Testing:** acceptance criteria include verifying every citation traces back to a
-  pre-existing deterministic decision, not a retrieval-then-reason sequence.
+  never before, as an input the agent reasons over: `tools.py`'s `assess_refill_risk` surfaces
+  which medication(s) the already-computed risk result flagged, and `agent.py` reacts to that
+  code-observable field alone, never re-deriving risk severity itself
+  ([`H55`](./decisions.md)). **openFDA is queried by generic name, RxClass by RxNorm code**
+  ([`H56`](./decisions.md)) — live-verified during design: this repo's medications carry
+  ingredient-level RxNorm codes that 404 against openFDA's product-level `rxcui` field but work
+  directly with RxClass. As shipped, wired into `mcp-agent` only (the pilot target) — the
+  provisional "which agent consumes it" question is resolved that way for now.
+- **Testing:** `agent-platform` — unit tests for the policy loader, the judge (clean/flagged/
+  inconclusive/malformed/model-unreachable cases), and both knowledge fetchers (parsing +
+  network-failure/not-found cases, mocked). `mcp-agent` — `assess_refill_risk`'s new
+  `flagged_medications` field (including that a medication-fetch failure never affects the
+  already-computed risk result), `decision_block`'s citation/judgment rendering (including that a
+  maximally-negative judgment still renders the *unchanged* original decision label — the direct
+  test of H54's structural guarantee), and `run_query` integration tests confirming citations and
+  judge results are actually threaded through end to end. Two live tests: the judge against a real
+  Ollama model (self-hosted, hard-fail per H50's convention), and the two knowledge-base functions
+  against the real openFDA/RxClass APIs (self-skip on connectivity failure — these are third-party
+  services this repo doesn't operate, unlike Ollama).
+- **Live end-to-end validated**: the HIGH-risk amoxicillin/penicillin-allergy reference case,
+  run against real Claude + real FHIR/triage, correctly produced `DO_NOT_DISPENSE` with real
+  openFDA contraindication text and real RxClass drug classes as citations. The judge, in that
+  same run, flagged a genuine (if debatable) issue — the model's own rationale repeated the
+  patient's name unnecessarily — and it rendered as a clearly-advisory note without touching the
+  decision above it, exactly the H54 guarantee this milestone is built around. Separately, two
+  runs against the real self-hosted default (`llama3.2:1b`) confirmed the fail-closed paths
+  (H5, H18, H21) still resolve correctly end to end with a genuinely weak model driving the whole
+  loop, policy text included.
 
 Sources verified for the knowledge-base decision: [openFDA — explore the API](https://open.fda.gov/apis/drug/label/explore-the-api-with-an-interactive-chart/) · [NIH Discontinues their Drug Interaction API](https://blog.drugbank.com/nih-discontinues-their-drug-interaction-api/) · [RxClass API](https://lhncbc.nlm.nih.gov/RxNav/APIs/RxClassAPIs.html)
 

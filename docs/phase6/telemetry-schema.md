@@ -41,6 +41,18 @@ Both `fhir_agent.layer` and `fhir_agent.component` are added to spans OpenTeleme
 auto-instrumentation) already creates — they enrich, they don't multiply span count on their own.
 New spans are a `verbosity=detailed`-only concern (§4).
 
+### 2.1 M6 additions: `judge.*` and `knowledge.*`
+
+Two more small, purpose-specific namespaces (not folded into `fhir_agent.*`, since they're
+result data for one specific feature each, not general architectural metadata):
+
+| Attribute | Type | Meaning |
+|---|---|---|
+| `judge.available` | bool | Whether `judge_response()` produced a real result this call, or failed closed to inconclusive (decisions.md H53). |
+| `judge.groundedness_ok` / `.tone_ok` / `.phi_leak_detected` | bool | The judge's own verdict fields — present only when `judge.available=true`. Never drives any decision logic; observability only (H54). |
+| `knowledge.found` | bool | Whether `_fetch_citations()` found any real citation data for the flagged medication(s). |
+| `knowledge.source` | string | Which knowledge APIs contributed (currently always `"openFDA + RxClass"` when `knowledge.found=true`). |
+
 ## 3. Layer taxonomy, by tier — grounded in the actual package/module structure
 
 Not invented generically — each layer below is a real, already-existing code boundary (Java
@@ -53,6 +65,8 @@ package or Python module), found by reading the tree, not guessed.
 | `agent.orchestration` | `mcp-agent/src/agent/agent.py` | The tool-use loop itself: `run_query`, decision validation, turn management. No clinical logic — orchestrates only (CLAUDE.md's own framing). |
 | `agent.tools` | `mcp-agent/src/agent/tools.py` | FHIR/triage integration: `get_patient_summary`, `assess_refill_risk`. |
 | `agent.presentation` | `mcp-agent/src/agent/format.py` | Terminal output formatting — not usually spanned (no I/O of interest), listed for completeness. |
+| `agent.judge` | `agent_platform/judge.py` | M6's LLM-as-judge (`judge_response`) — advisory-only, structurally incapable of overriding a decision (decisions.md H54). |
+| `agent.knowledge` | `agent_platform/knowledge.py`, `mcp-agent/src/agent/agent.py`'s `_fetch_citations` | M6's post-decision citation lookup (openFDA + RxClass, decisions.md H15) — fires only after a decision is already final. |
 | `platform.output_gate` | `agent_platform/output_gate.py` | The fail-closed enum contract (M1). |
 | `platform.fail_closed` | `agent_platform/fail_closed.py` | The risk-code sentinel guard (M1). |
 
