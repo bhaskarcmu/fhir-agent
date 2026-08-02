@@ -1685,7 +1685,33 @@ Thoughts?
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Grounded a couple of technical facts first: Anthropic's SDK does expose `client.models.list()`, and Ollama's `/api/tags` (already used for the reachability check) gives a real model list. So dynamic discovery is technically straightforward on both sides. Here's my honest take on the proposal itself.
+
+**What I like**
+
+- Treating "unset model choice → free option" the same way the codebase already treats "unset risk level → REVIEW" is a nice bit of conceptual consistency — fail closed on cost the way it fails closed on clinical risk.
+- Real model discovery is a legitimate gap today. Right now an operator has to already know the exact string `llama3.2:1b` to set `LLM_MODEL`. Building `list_models()` for both adapters is a clear, moderate-scope win independent of what the default ends up being.
+- Keeping the default itself as an overridable config (not hardcoded forever) is the right instinct.
+
+**Where I'd push back or want it made explicit**
+
+1. **"Cost-free" isn't infra-free.** Ollama has to actually be running somewhere. Today it isn't part of `docker-compose.yml` at all — it runs on your host, outside the stack. If Llama becomes the silent default, `docker compose up` for `mcp-agent`/`mcp-agent-api` breaks out of the box unless either (a) an Ollama service gets added to the compose stack (new image, new disk footprint, new pull step), or (b) we accept that the "zero-config default" doesn't actually work in the containerized dev/CI environment without a manual override. That's a real tension with "cost-free by default."
+
+2. **This is a clinical-quality decision wearing an engineering-config costume.** `llama3.2:1b` is a 1B-parameter model. We *just* watched it live — it's the one that omitted a required tool argument and needed a new fail-closed fix. The existing gates (M1's enum gate, H18) exist precisely so a weak model's mistakes don't become unsafe *output*, but they don't make a weak model's reasoning *good*. Defaulting a clinical decision-support tool to the weakest model by default is a bigger call than "which adapter to construct" — CLAUDE.md itself says to reserve deeper scrutiny for anything touching healthcare compliance/data integrity, and this qualifies. I'm not saying don't do it — I'm saying it deserves being decided on those terms explicitly, not arrived at as a side effect of a "default" flag.
+
+3. **It inverts a decision that's currently written down as settled, four times.** "Anthropic remains the only live backend in production" appears in `prd.md`, `design.md` (twice — M5's original text and the section I just rewrote to "implemented"), and `decisions.md` H4. Reversing it is entirely your call to make, but per this repo's own convention (H7 → superseded by H11 is the precedent), it should land as an explicit superseding decision with a new H-number, not a quiet default-value edit that leaves four documents asserting the opposite of what the code now does.
+
+4. **A real ambiguity in "the default should be Llama":** does that mean Llama wins *only* in the true vacuum (nothing configured at all), or does it win even when someone already has a valid `ANTHROPIC_API_KEY` sitting in their environment with no explicit `LLM_PROVIDER`? Those are very different behaviors — the second one silently downgrades anyone who configured Anthropic the "old" way (just setting the key, the way M1-M4 always worked) without setting a new variable they don't know exists yet. I'd want to know which one you mean before touching code.
+
+5. **Scope depends entirely on one thing you haven't specified: is model choice a per-process/session decision, or per-request?** "A human or a test script should be able to query and choose" could mean a `--list-models` flag plus an interactive prompt at CLI startup (small, contained), or it could mean every `POST /sessions/{id}/query` can carry its own model choice (touches the session schema, the API request/response contracts, and probably per-call cost/telemetry attribution). Those are wildly different sizes of work.
+
+6. **Testing gets more complex in a specific way worth naming**: the live Ollama tests I just wrote are self-skipping *on purpose*, because they were testing an opt-in adversarial path, not the default one. If Llama becomes the default, the most-exercised code path in the whole system becomes something CI is allowed to silently skip whenever Ollama isn't installed. That seems backwards — either Ollama becomes a hard CI dependency (bigger CI footprint), or "default" and "tested by default" quietly stop meaning the same thing. Also need real test coverage for the fallback matrix: nothing configured / only Ollama up / only an Anthropic key present / both / neither — that last one especially, since "cost-free default, but the cost-free thing also isn't reachable" needs a defined, tested error path, not an assumption that Llama is always there.
+
+7. **Discovery itself needs to be best-effort, not load-bearing** — querying "what models are available" is a nice-to-have UX/test affordance, and shouldn't become a new way for the whole system to fail if that query times out. Worth deciding up front that discovery failing just means "can't list options," not "can't run a query."
+
+If I had to name the smallest version of this that gets you most of what you're describing without the biggest risks: build real discovery (genuinely good, low-controversy), keep it advisory/best-effort, and make the *cost-free* option easy and clearly disclosed rather than silently substituted — with the vacuum-only default question (point 4) explicitly settled either way. But that's a recommendation, not me assuming it's what you want.
+
+I'll wait for your next prompt before touching anything.
 
 <details>
 <summary>Execution details — 879 tool events</summary>
@@ -3162,6 +3188,6 @@ echo "---ollama tags shape (a…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 14:44 UTC
+- **Last updated:** 2 August 2026, 14:45 UTC
 - **Turns:** 24
 - **Status:** Incomplete
