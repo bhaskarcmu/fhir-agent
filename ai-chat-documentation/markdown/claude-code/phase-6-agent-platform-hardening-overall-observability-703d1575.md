@@ -838,10 +838,24 @@ Create a Phase 6 PR with thorough documentation, including a PRD, design documen
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Now updating `docs/phase5/README.md`'s Phase 6 pointer to link directly to the new doc set:
+
+**[PR #56](https://github.com/bhaskarcmu/fhir-agent/pull/56)** is open — branch `docs/phase6-planning` → `main`, commit `3daf00c`, docs-only.
+
+Delivered, matching/exceeding the Phase 3/4 doc set:
+- **`docs/phase6/prd.md`** — problem statement, non-goals, R1–R19, success metrics per milestone.
+- **`docs/phase6/design.md`** — `agent-platform/` architecture, the five topics, cross-cutting principles, per-topic deep dives, testing strategy.
+- **`docs/phase6/milestone-plan.md`** — M1–M6 with short + long story each, dependency order, status table. Kept as its own file rather than folded into `design.md` (documented departure, `decisions.md` H23) — the "M1+M2 minimal cut" question is explicitly deferred to the end of M2, per your note.
+- **`docs/phase6/decisions.md`** — H1–H23, every decision from this whole scoping conversation, ADR-indexed with status/supersession (H7 is marked Superseded by H11, the judge-scope reversal).
+- **`docs/phase6/README.md`** — canonical status: planning complete, build not started, M1 next.
+- Cross-links updated in `docs/README.md` and `docs/phase5/README.md`.
+
+**Known limitation:** the M6 knowledge-base sources (openFDA Drug Label API, RxClass API) are verified live as of today via web search, but not yet fetched/schema-inspected — that's real M6 work, not a planning-stage task.
+
+Once you merge, the next prompt can go straight to **M1 — Output Contract & Fail-Closed Enforcement**.
 
 <details>
-<summary>Execution details — 101 tool events</summary>
+<summary>Execution details — 116 tool events</summary>
 
 ### Turn 1 activity
 
@@ -988,6 +1002,27 @@ gh pr view 55 --json state,mergedAt,mergeCommit 2>&1`
 - **Write** `/workspaces/fhir-agent/docs/phase6/design.md`
 - **Write** `/workspaces/fhir-agent/docs/phase6/milestone-plan.md`
 - **Write** `/workspaces/fhir-agent/docs/phase6/decisions.md`
+- **Write** `/workspaces/fhir-agent/docs/phase6/README.md`
+- **Read** `/workspaces/fhir-agent/docs/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/README.md`
+- **Read** `/workspaces/fhir-agent/docs/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase5/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase5/README.md`
+- **Bash** `ls docs/phase6/ && echo --- && wc -l docs/phase6/*.md`
+- **Bash** `grep -rn "Phase 6" /workspaces/fhir-agent/docs/*.md /workspaces/fhir-agent/docs/phase4/*.md /workspaces/fhir-agent/docs/phase5/*.md 2>/dev/null | grep -v "docs/phase6/"`
+- **Bash** `git add docs/phase6/ docs/README.md docs/phase5/README.md && git status`
+- **Bash** `git commit -m "$(cat <<'EOF'
+docs(phase6): PRD, design, milestone plan, and decisions index — planning complete
+
+Adds the full Phase 6 (Agent Platform Hardening + Overall Observability)
+planning doc s…`
+- **Bash** `git push -u origin docs/phase6-planning`
+- **Bash** `gh pr create --base main --head docs/phase6-planning --title "docs(phase6): PRD, design, milestone plan, decisions index — planning complete" --body "$(cat <<'EOF'
+## Summary
+- Full Phase 6 (Agent Pla…`
+- **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase6-agent-hardening.md`
+- **TodoWrite** `{"todos": [{"content": "Research public knowledge-base candidates for M6 RAG (item #6)", "status": "completed", "activeForm": "Researching M6 RAG candidates"}, {"content": "Save feedback memory: local…`
 
 </details>
 
@@ -998,6 +1033,6 @@ gh pr view 55 --json state,mergedAt,mergeCommit 2>&1`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 05:29 UTC
+- **Last updated:** 2 August 2026, 05:31 UTC
 - **Turns:** 12
-- **Status:** Incomplete
+- **Status:** Complete
