@@ -1139,10 +1139,14 @@ All things considered, use your judgement, and only give me decision options if 
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Docs are done. Now implementing — starting with `agent_platform.observability`.
+
+Now adding the verbosity, layer-attrs, and trace-ID helpers:
+
+All 46 pass. Now wiring `mcp-agent`: layer/component tags on existing spans, and trace-ID surfacing in `format.py`.
 
 <details>
-<summary>Execution details — 438 tool events</summary>
+<summary>Execution details — 475 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1921,6 +1925,45 @@ print('CODE_LINE_NUMBE…`
 - **Write** `/workspaces/fhir-agent/docs/phase6/telemetry-schema.md`
 - **TodoWrite** `{"todos": [{"content": "Deep code analysis of layer/component boundaries across all services (done)", "status": "completed", "activeForm": "Analyzing code structure for layer taxonomy"}, {"content": "…`
 - **Edit** `/workspaces/fhir-agent/docs/phase6/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase6/decisions.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase6/README.md`
+- **Bash** `grep -rn "H1–H23\|H1-H23" /workspaces/fhir-agent/docs/`
+- **Read** `/workspaces/fhir-agent/docs/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase6/milestone-plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase6/milestone-plan.md`
+- **Read** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase2/plan.md`
+- **TodoWrite** `{"todos": [{"content": "Deep code analysis of layer/component boundaries across all services (done)", "status": "completed", "activeForm": "Analyzing code structure for layer taxonomy"}, {"content": "…`
+- **Edit** `/workspaces/fhir-agent/agent-platform/src/agent_platform/observability.py`
+- **Edit** `/workspaces/fhir-agent/agent-platform/src/agent_platform/observability.py`
+- **Edit** `/workspaces/fhir-agent/agent-platform/src/agent_platform/__init__.py`
+- **Read** `/workspaces/fhir-agent/agent-platform/tests/test_observability.py`
+- **Edit** `/workspaces/fhir-agent/agent-platform/tests/test_observability.py`
+- **Edit** `/workspaces/fhir-agent/agent-platform/tests/test_observability.py`
+- **Bash** `cd /workspaces/fhir-agent
+python -m pip install -e "agent-platform[dev]" -q 2>&1 | tail -10
+python -m pytest agent-platform/tests -v 2>&1 | tail -60`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Bash** `grep -n "agent.submit_decision" /workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Bash** `grep -n "decision_block(" /workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/format.py`
+- **Bash** `grep -n "^def decision_block\|^def error_block" -A2 /workspaces/fhir-agent/mcp-agent/src/agent/format.py`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/format.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/format.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/format.py`
+- **Bash** `grep -n "error_block(" /workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
 
 </details>
 
@@ -1931,6 +1974,6 @@ print('CODE_LINE_NUMBE…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 12:33 UTC
+- **Last updated:** 2 August 2026, 12:37 UTC
 - **Turns:** 17
-- **Status:** Incomplete
+- **Status:** Complete
