@@ -1796,6 +1796,37 @@ This is clean and I don't have a real objection — it's actually a better rule 
 
 That's the full critique. Waiting for your direction before touching anything.
 
+## Turn 26
+
+### Prompt
+
+Responses:
+
+1. (a) boundary should be "who hosts the inference" make substantive code and design changes if needed to make this happen. (b) Yes, document the real value of defaulting to self-hosted. In fact, update all documents for all the changes being made here for all items being discussed.
+
+2. (a) USe TTY detection. And don't use that signal to silently pick a different model — use it only to decide whether to show a disclosure/offer. Let the human decide "good enough for me" — code's job is to disclose honestly, not to grade the model for them. (b) It is okay not to have an API key for CI. But we cannot exclude paid testing in the entire dev environment. That would make environments deviate too much. Critique this. (c) About the http API not having the TTY concept - just document this and we will live with the limitation (critique please).
+
+3. Accepting your advice fully here - just add the planned milestone to the plan and document all the decitions appropriately. Also make any code or design changes that are needed now for this advice.
+
+4. Okay, Llama should win even with a key present. Call out that "real cost" in the documentation best you can. And update that document when future milestones are actually implemented.
+
+5. Looks like this is resolved, let me know if not.
+
+6. (a) Will follow your advice that we should leave the large body of fake-client agent-loop tests as fake-client tests. (b) I am okay that CI infra itself needs Ollama with models pre-pulled (or pulled reliably in-workflow) - and I prefer pulled reliably in workflow (if it is not pre-pulled) option.
+
+
+7. I like that CI tests pin one canonical model
+
+8 (new).  if Ollama is reachable but has zero models pulled, the test should pull the model. If the model cant be pulled, fail and retirn a descriptive error. The tests and CI become more complex, and I am okay with that complexity. Critique this and advise.
+
+____________________
+
+Overall, tell me what is not resolved and preferable give me options to choose from.
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 879 tool events</summary>
 
@@ -3271,6 +3302,6 @@ echo "---ollama tags shape (a…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 15:05 UTC
-- **Turns:** 25
+- **Last updated:** 2 August 2026, 15:29 UTC
+- **Turns:** 26
 - **Status:** Incomplete
