@@ -269,7 +269,7 @@ Now critique everything, analyze what has been implemented and documented in the
 *[Claude has not completed this turn yet.]*
 
 <details>
-<summary>Execution details — 10 tool events</summary>
+<summary>Execution details — 12 tool events</summary>
 
 ### Turn 1 activity
 
@@ -289,6 +289,8 @@ Now critique everything, analyze what has been implemented and documented in the
 - **TodoWrite** `{"todos": [{"content": "Explore mcp-agent code (agent.py, tools.py, tests) to verify handoff doc's code claims", "status": "in_progress", "activeForm": "Exploring mcp-agent code"}, {"content": "Explor…`
 - **Agent** `Audit mcp-agent code reality`
 - **Agent** `Audit claims-agent and Phase 2 status`
+- **Agent** `Audit phase4/phase5 docs and observability infra`
+- **Agent** `Audit deterministic tier and gateway patterns`
 
 </details>
 
