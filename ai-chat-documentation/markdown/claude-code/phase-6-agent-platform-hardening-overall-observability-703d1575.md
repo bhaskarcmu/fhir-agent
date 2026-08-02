@@ -1169,8 +1169,21 @@ Let's do one more live smoke test to confirm the trace ID actually shows up in r
 
 Everything validated live. Now committing to the same M2 branch/PR:
 
+**PR #58 updated** with the expanded scope (commit `c26a843`), same branch/PR — no new PR needed since M2 was still open.
+
+**What got built, using my judgment on boundaries as asked:**
+
+- **`docs/phase6/telemetry-schema.md`** — the comprehensive attribute dictionary you asked for, organized by tier, grounded in a real read of every service's package structure (not invented generically): two namespaces (real OTel `code.function.name` for source location, custom `fhir_agent.layer`/`.component` for architectural meaning).
+- **`TELEMETRY_VERBOSITY`** — `standard` (default, enriches existing spans, zero new volume) vs `detailed` (opt-in). I scoped "detailed" to exactly **one** boundary — per-rule spans in `triage-service`'s clinical rule engine, the highest-value place to go deeper — rather than instrumenting everywhere, per your "don't excessively overdo it" steer.
+- **Trace ID surfacing** — real, live-tested: a `Trace ID: <hex>` line now appears in `mcp-agent`'s actual CLI output, and `X-Trace-Id` is a real header on `triage-service`/`claims-service` responses. Confirmed against the running stack, not just asserted in tests.
+- **`docs/phase2/plan.md`** updated, since claims-service's spans now carry this taxonomy — same no-duplication, no-hardcoded-milestone-number discipline as the R15 fix.
+
+**One judgment call worth knowing about**: while implementing claims-service's tagging, I caught a real design flaw before it shipped — my own schema doc had proposed tagging six different layers (api/pipeline/rules/acl/fhir/kb), but at `standard` verbosity there's only *one* span per request, so tagging it from multiple layers in sequence would just have each overwrite the last. I corrected the doc and the implementation before writing the misleading version — only `claims.api` is tagged; the rest is documented as reserved vocabulary for if `claims-service` ever gets its own detailed sub-span tier.
+
+**Tests**: 130 Python (was 112), 58 claims-service (was 53), 8 rxclaim-emulator unchanged — all passing, no regressions.
+
 <details>
-<summary>Execution details — 530 tool events</summary>
+<summary>Execution details — 533 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2070,6 +2083,12 @@ feat(phase6 M2): custom telemetry schema, verbosity, and trace-ID surfacing
 Expands M2 per the user's explicit scope-expansion request: a full
 a…`
 - **Bash** `git push origin feature/phase6-m2-observability`
+- **Bash** `cd /workspaces/fhir-agent
+gh pr edit 58 --body "$(cat <<'EOF'
+## Summary
+Implements Phase 6 M2 (Observability, Platform-Wide) per [`docs/phase6/milestone-plan.md`](docs/phase6/milestone-plan.md) and `…`
+- **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase6-agent-hardening.md`
+- **TodoWrite** `{"todos": [{"content": "Deep code analysis of layer/component boundaries across all services (done)", "status": "completed", "activeForm": "Analyzing code structure for layer taxonomy"}, {"content": "…`
 
 </details>
 
