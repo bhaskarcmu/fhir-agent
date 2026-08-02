@@ -2040,8 +2040,10 @@ Now let's extend `tools.py`'s `assess_refill_risk` to surface the flagged medica
 
 Known `.env`-shadowing issue again. Fixing it the established way.
 
+Found a real gap before it could bite: the Dockerfile never copies `policy.md` into the image. Fixing it now.
+
 <details>
-<summary>Execution details — 1116 tool events</summary>
+<summary>Execution details — 1121 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3856,6 +3858,15 @@ docker logs fhir-agent-triage --tail 20`
 - **Bash** `export FHIR_GATEWAY_URL=http://fhir:8080/fhir && docker compose up -d --force-recreate triage
 sleep 3
 docker exec fhir-agent-triage env | grep FHIR_GATEWAY_URL`
+- **Bash** `FHIR_GATEWAY_URL=http://localhost:8080/fhir TRIAGE_SERVICE_URL=http://localhost:8001 python3 -c "
+import sys
+sys.path.insert(0, 'mcp-agent/src')
+from agent.tools import assess_refill_risk
+import json…`
+- **Bash** `cat -n /workspaces/fhir-agent/mcp-agent/src/agent/agent.py | sed -n '1,120p'`
+- **Bash** `sed -n '120,135p' /workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Bash** `cat /workspaces/fhir-agent/mcp-agent/Dockerfile`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/Dockerfile`
 
 </details>
 
