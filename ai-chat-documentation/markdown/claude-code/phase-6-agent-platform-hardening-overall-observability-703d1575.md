@@ -1593,8 +1593,28 @@ Now add the top-level imports and the `anthropic`/`httpx` dependency.
 
 Now `agent-platform/pyproject.toml`:
 
+That IDE hint is about the editor's selected interpreter, not the actual environment we've been testing in — safe to ignore. Continuing with the provider module.
+
+Now updating `session_store.py`'s `_to_jsonable` to handle our new dataclasses, and `__init__.py` exports.
+
+Now updating `agent_platform/__init__.py` exports.
+
+Let me sanity-check the translation logic with a quick manual smoke test before wiring it into `agent.py`.
+
+All translation shapes look correct. Now wiring `build_llm_client()` and the `model` parameter into `agent.py` and `api.py`.
+
+Now let's find and update the two `MODEL` references inside the chat-loop body.
+
+Good, all resolved. Now updating `_check_env`, `interactive_mode`, `non_interactive_mode`, and `main()` to thread through the resolved provider + model.
+
+Now `interactive_mode` and `non_interactive_mode`:
+
+Now `non_interactive_mode`:
+
+Now `main()`:
+
 <details>
-<summary>Execution details — 789 tool events</summary>
+<summary>Execution details — 816 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2940,6 +2960,39 @@ print(httpx.TimeoutException.__mro__)
 - **Read** `/workspaces/fhir-agent/agent-platform/src/agent_platform/resilience.py`
 - **Edit** `/workspaces/fhir-agent/agent-platform/src/agent_platform/resilience.py`
 - **Edit** `/workspaces/fhir-agent/agent-platform/pyproject.toml`
+- **Write** `/workspaces/fhir-agent/agent-platform/src/agent_platform/providers.py`
+- **Edit** `/workspaces/fhir-agent/agent-platform/src/agent_platform/session_store.py`
+- **Edit** `/workspaces/fhir-agent/agent-platform/src/agent_platform/session_store.py`
+- **Read** `/workspaces/fhir-agent/agent-platform/src/agent_platform/__init__.py`
+- **Edit** `/workspaces/fhir-agent/agent-platform/src/agent_platform/__init__.py`
+- **Edit** `/workspaces/fhir-agent/agent-platform/src/agent_platform/__init__.py`
+- **Bash** `python -m pip install -q -e "agent-platform[dev]" 2>&1 | tail -10
+python3 -c "
+from agent_platform import build_llm_client, OpenAICompatibleProvider
+from agent_platform.providers import _to_openai_mes…`
+- **Bash** `python3 -c "
+from agent_platform.providers import _to_openai_messages, _to_openai_tools, _from_openai_response, TextBlock, ToolUseBlock
+
+# Simulate a realistic mid-conversation history: user turn, ass…`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Bash** `grep -n "\bMODEL\b" /workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Bash** `python -m pytest agent-platform/tests mcp-agent/tests -q 2>&1 | tail -40`
 
 </details>
 
@@ -2950,6 +3003,6 @@ print(httpx.TimeoutException.__mro__)
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 14:18 UTC
+- **Last updated:** 2 August 2026, 14:22 UTC
 - **Turns:** 23
 - **Status:** Incomplete
