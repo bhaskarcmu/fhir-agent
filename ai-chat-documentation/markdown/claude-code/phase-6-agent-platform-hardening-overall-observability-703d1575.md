@@ -1627,8 +1627,10 @@ Now update `query_session` to use the resolved model/system.
 
 That's fine as a type hint approximation; leaving it. Now let's install and run the tests.
 
+All 128 tests pass, no regressions. Now let's write M5's own test suite: provider translation unit tests, and a live Ollama adversarial integration test through the real `run_query` loop (the milestone's actual acceptance criterion).
+
 <details>
-<summary>Execution details — 839 tool events</summary>
+<summary>Execution details — 840 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3031,6 +3033,7 @@ from agent_platform.providers import _to_openai_messages, _to_openai_tools, _fro
 - **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/api.py`
 - **Bash** `python -m pip install -q -e "agent-platform[dev]" -e "mcp-agent[dev]" 2>&1 | tail -10
 python -m pytest agent-platform/tests mcp-agent/tests -q 2>&1 | tail -60`
+- **Bash** `which ollama 2>&1; curl -s http://localhost:11434/api/tags 2>&1 | head -5; echo "exit:$?"`
 
 </details>
 
@@ -3041,6 +3044,6 @@ python -m pytest agent-platform/tests mcp-agent/tests -q 2>&1 | tail -60`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 14:25 UTC
+- **Last updated:** 2 August 2026, 14:26 UTC
 - **Turns:** 23
 - **Status:** Incomplete
