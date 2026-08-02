@@ -1000,8 +1000,10 @@ All 5 pass — real end-to-end trace validation, including confirming the clinic
 
 Now wiring it into `main.py`:
 
+Now building the local observability stack. First, config files:
+
 <details>
-<summary>Execution details — 265 tool events</summary>
+<summary>Execution details — 277 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1399,6 +1401,20 @@ sed -n '1,60p' /workspaces/fhir-agent/triage-service/src/triage/main.py`
 - **Write** `/workspaces/fhir-agent/triage-service/src/triage/tests/test_tracing.py`
 - **Bash** `python -m pytest triage-service/src/triage/tests -v 2>&1 | tail -50`
 - **Bash** `python -m pytest agent-platform/tests mcp-agent/tests triage-service/src/triage/tests -q 2>&1 | tail -20`
+- **Bash** `which docker 2>&1; docker ps 2>&1 | head -5`
+- **Bash** `grep -n "management:\|endpoint\|prometheus" /workspaces/fhir-agent/fhir-service/src/main/resources/application.yaml 2>/dev/null | head -20`
+- **Read** `/workspaces/fhir-agent/fhir-service/src/main/resources/application.yaml`
+- **Edit** `/workspaces/fhir-agent/fhir-service/src/main/resources/application.yaml`
+- **Bash** `grep -rn "include:.*health\|exposure" /workspaces/fhir-agent/fhir-service/src/main/resources/*.yaml`
+- **Read** `/workspaces/fhir-agent/fhir-service/src/main/resources/application-cds.yaml`
+- **Edit** `/workspaces/fhir-agent/fhir-service/src/main/resources/application-cds.yaml`
+- **Bash** `grep -n "prometheus" /workspaces/fhir-agent/fhir-service/src/main/resources/application-cds.yaml`
+- **Bash** `mkdir -p /workspaces/fhir-agent/observability/grafana/provisioning/datasources`
+- **Write** `/workspaces/fhir-agent/observability/prometheus.yml`
+- **Bash** `curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/actuator/health 2>&1
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/fhir/actuator/health 2>&1
+curl -s -o /dev/null -w "%{…`
+- **Bash** `curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/actuator/prometheus 2>&1`
 
 </details>
 
@@ -1409,6 +1425,6 @@ sed -n '1,60p' /workspaces/fhir-agent/triage-service/src/triage/main.py`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 11:26 UTC
+- **Last updated:** 2 August 2026, 11:28 UTC
 - **Turns:** 15
 - **Status:** Complete
