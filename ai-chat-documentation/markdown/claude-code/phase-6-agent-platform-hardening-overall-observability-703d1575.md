@@ -1509,8 +1509,16 @@ Now wrap `query_session` with the concurrency limiter.
 
 Now let's install the updated packages and run the existing test suite to catch regressions before adding new tests.
 
+No regressions. Now writing the new unit and chaos-style tests.
+
+Good, easy to construct. Fixing the test to use a real anthropic exception type.
+
+Now let's run these tests.
+
+All 12 pass. Now the mcp-agent chaos-style integration tests exercising `run_query`.
+
 <details>
-<summary>Execution details — 708 tool events</summary>
+<summary>Execution details — 714 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2720,6 +2728,15 @@ print(inspect.signature(anthropic.RateLi…`
 - **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/api.py`
 - **Bash** `python -m pip install -q -e "agent-platform[dev]" -e "mcp-agent[dev]" 2>&1 | tail -30`
 - **Bash** `python -m pytest agent-platform/tests mcp-agent/tests -q 2>&1 | tail -40`
+- **Write** `/workspaces/fhir-agent/agent-platform/tests/test_resilience.py`
+- **Bash** `python3 -c "
+import anthropic, inspect
+print(inspect.signature(anthropic.APIConnectionError.__init__))
+"`
+- **Edit** `/workspaces/fhir-agent/agent-platform/tests/test_resilience.py`
+- **Edit** `/workspaces/fhir-agent/agent-platform/tests/test_resilience.py`
+- **Bash** `python -m pytest agent-platform/tests/test_resilience.py -v 2>&1 | tail -50`
+- **Read** `/workspaces/fhir-agent/mcp-agent/tests/test_context_budget_integration.py`
 
 </details>
 
@@ -2730,6 +2747,6 @@ print(inspect.signature(anthropic.RateLi…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 13:54 UTC
+- **Last updated:** 2 August 2026, 13:55 UTC
 - **Turns:** 22
 - **Status:** Incomplete
