@@ -1544,7 +1544,7 @@ Just needed more startup time. Retrying.
 Confirmed live end-to-end: individual failures now return a clean `502` with a real error detail, and once the breaker trips after 2 consecutive failures, the third request cleanly returns `200` with a `REVIEW` fail-closed decision instead of a raw crash. Now restoring the real API key and confirming recovery.
 
 <details>
-<summary>Execution details — 754 tool events</summary>
+<summary>Execution details — 755 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2836,6 +2836,7 @@ for i in 1 2 3; do
 sleep 6
 SESSION_ID=$(curl -sS -X POST http://localhost:8010/sess…`
 - **Bash** `docker compose --profile phase6 --profile observability down 2>&1 | tail -20`
+- **Bash** `python -m pytest agent-platform/tests mcp-agent/tests triage-service/src/triage/tests -q 2>&1 | tail -20`
 
 </details>
 
