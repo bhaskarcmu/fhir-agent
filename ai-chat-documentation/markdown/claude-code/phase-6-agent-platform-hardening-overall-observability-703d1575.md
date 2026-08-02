@@ -1647,8 +1647,10 @@ Both green. Now updating the docs: `decisions.md`, `design.md` §4.5, `milestone
 
 Now updating `design.md` §4.5 to "implemented".
 
+Now updating `milestone-plan.md`'s M5 section.
+
 <details>
-<summary>Execution details — 866 tool events</summary>
+<summary>Execution details — 871 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3084,6 +3086,11 @@ cd /workspaces/f…`
 - **Bash** `grep -n "4.5 Multi-provider" /workspaces/fhir-agent/docs/phase6/design.md`
 - **Read** `/workspaces/fhir-agent/docs/phase6/design.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase6/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase6/milestone-plan.md`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/api.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/api.py`
+- **Bash** `python -m pytest agent-platform/tests mcp-agent/tests triage-service/src/triage/tests -q --deselect mcp-agent/tests/test_provider_integration.py::test_live_ollama_resolves_to_a_valid_gated_decision --…`
+- **Bash** `cd /workspaces/fhir-agent && python -m pytest agent-platform/tests mcp-agent/tests triage-service/src/triage/tests -q --deselect mcp-agent/tests/test_provider_integration.py::test_live_ollama_resolves…`
 
 </details>
 
@@ -3094,6 +3101,6 @@ cd /workspaces/f…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 14:35 UTC
+- **Last updated:** 2 August 2026, 14:36 UTC
 - **Turns:** 23
 - **Status:** Incomplete
