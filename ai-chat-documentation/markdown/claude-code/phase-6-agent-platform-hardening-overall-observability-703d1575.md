@@ -1157,8 +1157,12 @@ Now the Java side — `claims-service` layer/component tagging. First, a shared 
 
 Now updating `ClaimController`:
 
+Correcting a design flaw before it becomes misleading — since there's only one span per request at `standard` verbosity, tagging multiple internal layers would just have each overwrite the last. Fixing the schema doc to be honest about this:
+
+Compiles clean. Now running the full test suite:
+
 <details>
-<summary>Execution details — 506 tool events</summary>
+<summary>Execution details — 513 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2017,6 +2021,13 @@ grep -n "^public class\|public $(basename $f .java)(" /workspaces/fhir-agent/cla
 - **Bash** `sed -n '1,45p' /workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/rules/RulesEngine.java
 echo "=== LegacyAdapter ==="
 sed -n '1,45p' /workspaces/fhir-agent/claims-service/src/main/ja…`
+- **Edit** `/workspaces/fhir-agent/docs/phase6/telemetry-schema.md`
+- **Bash** `grep -n "@WebMvcTest\|@Import\|@MockBean\|class ClaimIntakeContractTest" /workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/ClaimIntakeContractTest.java`
+- **Bash** `sed -n '1,50p' /workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/ClaimIntakeContractTest.java`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/ClaimIntakeContractTest.java`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/ClaimIntakeContractTest.java`
+- **Bash** `cd /workspaces/fhir-agent/claims-service && timeout 90 mvn -q -o -DskipTests compile test-compile 2>&1 | tail -80; echo "EXIT:$?"`
+- **Bash** `timeout 180 mvn -o test 2>&1 | grep -E "Tests run:|BUILD SUCCESS|BUILD FAILURE|ERROR" | tail -20`
 
 </details>
 
@@ -2027,6 +2038,6 @@ sed -n '1,45p' /workspaces/fhir-agent/claims-service/src/main/ja…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 12:43 UTC
+- **Last updated:** 2 August 2026, 12:45 UTC
 - **Turns:** 17
 - **Status:** Complete
