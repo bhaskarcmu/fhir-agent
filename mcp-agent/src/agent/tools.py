@@ -286,16 +286,27 @@ def assess_refill_risk(
 def execute_tool(name: str, inputs: dict) -> str:
     """
     Dispatch a tool call by name and return the result as a JSON string.
-    The agent passes this string back to Claude as the tool result.
+    The agent passes this string back to the model as the tool result.
     """
-    if name == "get_patient_summary":
-        result = get_patient_summary(inputs["name"])
-    elif name == "assess_refill_risk":
-        result = assess_refill_risk(
-            patient_id=inputs["patient_id"],
-            medication_id=inputs.get("medication_id"),
-        )
-    else:
-        result = {"error": f"Unknown tool: {name}"}
+    try:
+        if name == "get_patient_summary":
+            result = get_patient_summary(inputs["name"])
+        elif name == "assess_refill_risk":
+            result = assess_refill_risk(
+                patient_id=inputs["patient_id"],
+                medication_id=inputs.get("medication_id"),
+            )
+        else:
+            result = {"error": f"Unknown tool: {name}"}
+    except KeyError as exc:
+        # A weak/local model can omit a required argument entirely, or
+        # send one a JSON-parse fallback turned into {} (docs/phase6/
+        # decisions.md H11 -- confirmed live against a real Ollama model,
+        # not hypothetical). Fail closed with a structured error the
+        # agent loop can reason about, never a raw crash that aborts the
+        # whole query.
+        result = {"error": f"Missing required argument {exc} for tool {name!r}."}
+        if name == "assess_refill_risk":
+            result["risk_level"] = RISK_UNKNOWN
 
     return json.dumps(result, indent=2)

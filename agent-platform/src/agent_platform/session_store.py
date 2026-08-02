@@ -19,6 +19,7 @@ tuned to that conversion.
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import os
 import uuid
@@ -51,9 +52,16 @@ def reset_pool() -> None:
 
 
 def _to_jsonable(obj):
-    """Recursively convert Anthropic SDK objects (Pydantic models) to plain JSON-safe values."""
+    """
+    Recursively convert Anthropic SDK objects (Pydantic models) and M5's
+    provider-abstraction content blocks (plain dataclasses --
+    providers.py's TextBlock/ToolUseBlock, produced by the
+    OpenAICompatibleProvider) to plain JSON-safe values.
+    """
     if hasattr(obj, "model_dump"):
         return obj.model_dump(mode="json")
+    if dataclasses.is_dataclass(obj) and not isinstance(obj, type):
+        return _to_jsonable(dataclasses.asdict(obj))
     if isinstance(obj, list):
         return [_to_jsonable(x) for x in obj]
     if isinstance(obj, dict):

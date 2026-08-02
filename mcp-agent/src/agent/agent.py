@@ -17,10 +17,19 @@ Usage:
   python3 mcp-agent/src/agent/agent.py --query "Check refill risk for Kristle Mraz"
 
 Environment variables:
-  ANTHROPIC_API_KEY    Anthropic API key (required)
+  ANTHROPIC_API_KEY    Anthropic API key (required unless LLM_PROVIDER=openai_compatible)
   FHIR_GATEWAY_URL     FHIR server base URL (required)
   FHIR_API_KEY         Kong API key (omit for local dev)
   TRIAGE_SERVICE_URL   Triage service base URL (default: http://localhost:8001)
+
+  M5 provider seam (docs/phase6/decisions.md H4) -- Anthropic remains the
+  default and only production backend; these only matter if you explicitly
+  opt into the OpenAI-compatible adapter (Ollama, DeepSeek, vLLM, ...):
+  LLM_PROVIDER   "anthropic" (default) or "openai_compatible"
+  LLM_MODEL      Model name. Required when LLM_PROVIDER=openai_compatible
+                 (e.g. "llama3.2:1b"); optional override otherwise.
+  LLM_BASE_URL   OpenAI-compatible base URL, e.g. http://localhost:11434/v1
+  LLM_API_KEY    Optional -- Ollama needs none, DeepSeek/OpenRouter do.
 """
 
 from __future__ import annotations
@@ -31,12 +40,14 @@ import os
 import sys
 
 import anthropic
+import httpx
 
 from agent_platform import (
     AgentDecision,
     CircuitOpenError,
     CostLimitExceededError,
     ESTIMATED_TOKENS_PER_CALL,
+    build_llm_client,
     call_with_resilience,
     compact,
     create_session,
@@ -105,6 +116,8 @@ def run_query(
     verbose: bool = True,
     token_count: int = 0,
     stats: dict | None = None,
+    model: str = MODEL,
+    gen_ai_system: str = "anthropic",
 ) -> tuple[str, list[dict]]:
     """
     Run one query through the agent loop.
@@ -120,6 +133,15 @@ def run_query(
     return arity to also hand back the new token_count -- pass a `stats`
     dict and read stats["token_count"] afterward, so every existing
     2-tuple-unpacking call site (and test) stays valid unchanged.
+
+    client may be anthropic.Anthropic or agent_platform's
+    OpenAICompatibleProvider (docs/phase6/decisions.md H4, M5) -- both
+    duck-type the same client.messages.create(**kwargs) surface, so
+    nothing else in this function branches on which one it is. model and
+    gen_ai_system are new, purely additive parameters defaulting to the
+    module constant MODEL and "anthropic" respectively -- every pre-M5
+    call site (and test) that doesn't pass them keeps working unchanged
+    (the same discipline as H31's `stats` parameter).
     """
     if messages is None:
         messages = []
@@ -155,25 +177,27 @@ def run_query(
 
         while True:
             with start_span(
-                f"chat {MODEL}",
+                f"chat {model}",
                 _tracer,
                 {
-                    "gen_ai.system": "anthropic",
-                    "gen_ai.request.model": MODEL,
+                    "gen_ai.system": gen_ai_system,
+                    "gen_ai.request.model": model,
                     **layer_attrs("agent.orchestration", "run_query"),
                 },
             ) as chat_span:
                 # Circuit breaker + rate/cost limiter wrap this one paid,
-                # external call (docs/phase6/decisions.md H19, H20). token_count
-                # is the caller's last-known conversation size -- the same
-                # number compact() above already uses -- and is a good
-                # pre-call cost estimate since every call resends the full
-                # history; ESTIMATED_TOKENS_PER_CALL covers a session's first
-                # call, before any real measurement exists yet.
+                # external call (docs/phase6/decisions.md H19, H20) regardless
+                # of provider (H4) -- resilience.py's breaker treats both
+                # anthropic.APIError and httpx.HTTPError as tripping failures.
+                # token_count is the caller's last-known conversation size --
+                # the same number compact() above already uses -- and is a
+                # good pre-call cost estimate since every call resends the
+                # full history; ESTIMATED_TOKENS_PER_CALL covers a session's
+                # first call, before any real measurement exists yet.
                 try:
                     response = call_with_resilience(
                         lambda: client.messages.create(
-                            model=MODEL,
+                            model=model,
                             max_tokens=MAX_TOKENS,
                             system=SYSTEM_PROMPT,
                             tools=TOOL_DEFINITIONS,
@@ -409,18 +433,15 @@ def _print_tool_result(name: str, result_str: str) -> None:
 # Entry points
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _check_env() -> anthropic.Anthropic:
-    """Validate required environment variables and return an Anthropic client."""
-    # Accept CLAUDE_API_KEY as a fallback — that is the name the Ona/devcontainer
-    # secret is stored under, while the Anthropic SDK expects ANTHROPIC_API_KEY.
-    api_key = os.environ.get("ANTHROPIC_API_KEY", "") or os.environ.get("CLAUDE_API_KEY", "")
-    if not api_key:
-        print(error_block(
-            "ANTHROPIC_API_KEY is not set (CLAUDE_API_KEY is also accepted).\n"
-            "  export ANTHROPIC_API_KEY=<your-key>"
-        ))
-        sys.exit(1)
-
+def _check_env() -> tuple[anthropic.Anthropic | object, str, str]:
+    """
+    Validate required environment variables and return
+    (client, model, gen_ai_system).
+    Anthropic is the default provider (docs/phase6/decisions.md H4); set
+    LLM_PROVIDER=openai_compatible to use the M5 seam instead (Ollama,
+    DeepSeek, vLLM, ...) -- see agent_platform.providers.build_llm_client
+    for the full env var contract.
+    """
     fhir_url = os.environ.get("FHIR_GATEWAY_URL", "")
     if not fhir_url:
         print(error_block(
@@ -429,10 +450,19 @@ def _check_env() -> anthropic.Anthropic:
         ))
         sys.exit(1)
 
-    return anthropic.Anthropic(api_key=api_key)
+    try:
+        return build_llm_client()
+    except RuntimeError as exc:
+        print(error_block(str(exc)))
+        sys.exit(1)
 
 
-def interactive_mode(client: anthropic.Anthropic, session_id: str | None = None) -> None:
+def interactive_mode(
+    client: anthropic.Anthropic,
+    session_id: str | None = None,
+    model: str = MODEL,
+    gen_ai_system: str = "anthropic",
+) -> None:
     """
     Run the agent in interactive REPL mode.
 
@@ -445,6 +475,10 @@ def interactive_mode(client: anthropic.Anthropic, session_id: str | None = None)
     no-API-key deterministic fallback: degrade gracefully, don't crash).
     Context-budget compaction (H13) applies either way -- it only needs
     token_count threaded through in-memory turn to turn, not the DB.
+
+    model is whichever model build_llm_client() resolved -- Anthropic's by
+    default, or the operator-supplied LLM_MODEL when running against the
+    M5 OpenAI-compatible seam (docs/phase6/decisions.md H4).
     """
     print(welcome())
 
@@ -485,11 +519,15 @@ def interactive_mode(client: anthropic.Anthropic, session_id: str | None = None)
         stats: dict = {}
         try:
             final_text, messages = run_query(
-                client, user_input, messages, token_count=token_count, stats=stats
+                client, user_input, messages, token_count=token_count, stats=stats,
+                model=model, gen_ai_system=gen_ai_system,
             )
             print(final_text)
-        except anthropic.APIError as exc:
-            print(error_block(f"Anthropic API error: {exc}"))
+        except (anthropic.APIError, httpx.HTTPError) as exc:
+            # A single call failure below M4's circuit breaker threshold --
+            # print and continue the REPL rather than crashing it, for
+            # either provider (docs/phase6/decisions.md H4, H20).
+            print(error_block(f"LLM API error: {exc}"))
             continue
         except Exception as exc:
             print(error_block(f"Unexpected error: {exc}"))
@@ -504,7 +542,11 @@ def interactive_mode(client: anthropic.Anthropic, session_id: str | None = None)
 
 
 def non_interactive_mode(
-    client: anthropic.Anthropic, query: str, session_id: str | None = None
+    client: anthropic.Anthropic,
+    query: str,
+    session_id: str | None = None,
+    model: str = MODEL,
+    gen_ai_system: str = "anthropic",
 ) -> int:
     """
     Run a single query and exit. Returns exit code.
@@ -514,6 +556,9 @@ def non_interactive_mode(
     design.md Section 4.3), making a single-shot invocation usable as a real
     multi-turn conversation across separate process runs, e.g. from a test
     program issuing one query per invocation against the same session.
+
+    model is whichever model build_llm_client() resolved (docs/phase6/
+    decisions.md H4, M5).
     """
     messages: list[dict] = []
     token_count = 0
@@ -531,14 +576,15 @@ def non_interactive_mode(
     stats: dict = {}
     try:
         final_text, messages = run_query(
-            client, query, messages, token_count=token_count, stats=stats
+            client, query, messages, token_count=token_count, stats=stats,
+            model=model, gen_ai_system=gen_ai_system,
         )
         print(final_text)
         if persisted:
             save_session(session_id, messages, stats.get("token_count", token_count))
         return 0
-    except anthropic.APIError as exc:
-        print(error_block(f"Anthropic API error: {exc}"))
+    except (anthropic.APIError, httpx.HTTPError) as exc:
+        print(error_block(f"LLM API error: {exc}"))
         return 1
     except Exception as exc:
         print(error_block(f"Unexpected error: {exc}"))
@@ -564,12 +610,14 @@ def main() -> None:
     args = parser.parse_args()
 
     setup_tracing("mcp-agent")
-    client = _check_env()
+    client, model, gen_ai_system = _check_env()
 
     if args.query:
-        sys.exit(non_interactive_mode(client, args.query, session_id=args.session_id))
+        sys.exit(non_interactive_mode(
+            client, args.query, session_id=args.session_id, model=model, gen_ai_system=gen_ai_system,
+        ))
     else:
-        interactive_mode(client, session_id=args.session_id)
+        interactive_mode(client, session_id=args.session_id, model=model, gen_ai_system=gen_ai_system)
 
 
 if __name__ == "__main__":

@@ -22,6 +22,7 @@ from .observability import (
     verbosity,
 )
 from .output_gate import AgentDecision, validate_decision
+from .providers import OpenAICompatibleProvider, build_llm_client
 from .resilience import (
     ESTIMATED_TOKENS_PER_CALL,
     CircuitOpenError,
@@ -61,4 +62,6 @@ __all__ = [
     "get_rate_limiter",
     "record_usage",
     "reset_resilience_state",
+    "OpenAICompatibleProvider",
+    "build_llm_client",
 ]

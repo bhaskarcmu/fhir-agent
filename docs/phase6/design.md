@@ -250,21 +250,54 @@ both untestable against a single-process REPL holding a Python list.
   state). Grafana's dashboard API confirmed the provisioned dashboard loads with all 4 panels;
   Prometheus's own `/api/v1/targets` confirmed `mcp-agent-api` scraping as `up`.
 
-### 4.5 Multi-provider (→ M5)
+### 4.5 Multi-provider (→ M5) — implemented
 
 Exactly two adapters ([`decisions.md` H4](./decisions.md)): Anthropic (native tool-use) and one
 OpenAI-compatible adapter covering Llama, DeepSeek, Ollama, vLLM, and hosted OpenAI-compatible
-endpoints (DeepSeek API, OpenRouter, Groq). Model selection becomes a config value (base URL +
-model name); Llama-vs-DeepSeek is never a code branch.
+endpoints (DeepSeek API, OpenRouter, Groq). Model selection is a config value
+(`LLM_PROVIDER`/`LLM_MODEL`/`LLM_BASE_URL`/`LLM_API_KEY`, resolved once by
+`agent_platform.providers.build_llm_client()`); Llama-vs-DeepSeek is never a code branch.
 
-The hard engineering problem here is conversation-history translation — Anthropic's
-message/tool-use block shape isn't identical to OpenAI's, and this is where that gets solved for
-real. By the time M5 starts, M1's adversarial local-model test corpus (built under the standing
-testing rule, H11) already exists and becomes the adapter's acceptance suite — M5 formalizes a
-seam that was informally load-bearing since M1, rather than starting from zero.
-
-Anthropic remains the only *live* backend after M5 ships. The seam exists to prove PHI-off-
-third-party is achievable when that becomes an active business rule — it is not a default switch.
+- **No wrapper needed for Anthropic** ([`decisions.md` H40](./decisions.md)): `anthropic.Anthropic`
+  already returns exactly the shape `run_query` expects, so it's used completely unwrapped.
+  `OpenAICompatibleProvider` duck-types the same `client.messages.create(**kwargs)` surface, so
+  `run_query`, `agent.py`, and every one of M1-M4's existing fake-client test fixtures need zero
+  changes to use either provider interchangeably.
+- **Conversation-history translation** — the actual hard engineering problem — lives in
+  `agent_platform/providers.py`: `_to_openai_messages()`/`_to_openai_tools()` outbound (our
+  Anthropic-shaped messages/tool definitions → OpenAI chat-completions shape, including turning
+  each of our own `tool_result` entries into its own separate `"tool"`-role message), and
+  `_from_openai_response()` inbound (OpenAI's `finish_reason`/`tool_calls`/`usage` → the same
+  `NormalizedResponse`/`TextBlock`/`ToolUseBlock`/`Usage` dataclasses `run_query` already knows
+  how to read). Malformed tool-call-argument JSON from a weak model falls back to an empty input
+  rather than raising ([`H43`](./decisions.md)) — the standing local-LLM testing rule (H11)
+  applied to the translation layer itself.
+- **Resilience is provider-agnostic** ([`decisions.md` H42](./decisions.md)): M4's circuit breaker
+  now treats both `anthropic.APIError` and `httpx.HTTPError` as tripping failures, since
+  `OpenAICompatibleProvider` raises the latter, not the former. `anthropic` and `httpx` became
+  real (non-optional) `agent-platform` dependencies as a direct result.
+- **`gen_ai_system` is explicit, not inferred** ([`decisions.md` H41](./decisions.md)):
+  `build_llm_client()` returns `(client, model, gen_ai_system)`, threaded through
+  `run_query`'s new `model`/`gen_ai_system` parameters (both purely additive, defaulting to the
+  pre-M5 constants — the same discipline as H31's `stats`). Caught during implementation: a
+  type-based `isinstance(client, anthropic.Anthropic)` check mislabeled every existing
+  fake-client test as `"openai_compatible"`, since none of them are real SDK instances.
+- **Anthropic remains the only *live* production backend** — `LLM_PROVIDER` defaults to
+  `"anthropic"`; the OpenAI-compatible seam only activates when explicitly requested. The seam
+  exists to prove PHI-off-third-party is achievable when that becomes an active business rule —
+  it is not a default switch.
+- **M1's adversarial local-model test corpus becomes the real acceptance suite, not a stand-in**:
+  M1's own live Ollama test talked to Ollama directly, bypassing the agent loop entirely, because
+  this translation layer didn't exist yet. `mcp-agent/tests/test_provider_integration.py` now
+  exercises the exact same weak model (`llama3.2:1b`) through the *real* `run_query` loop and the
+  *real* translation layer — live-confirmed passing, plus a full CLI run against real FHIR/triage
+  services and the real Ollama model end to end (not simulated).
+- **A real bug found only by this live weak-model run, not any prior mocked test**
+  ([`decisions.md` H44](./decisions.md)): `tools.py`'s `execute_tool` raised an uncaught `KeyError`
+  when `llama3.2:1b` omitted a required tool argument — aborting the whole query instead of the
+  intended `RISK_UNKNOWN`/`REVIEW` fail-closed path. This gap predates M5 (it existed since M1)
+  but only a genuinely weak model ever exercised it. Fixed with the same structured-error
+  convention `assess_refill_risk` already uses elsewhere in that file.
 
 ### 4.6 Policy, knowledge, judge (→ M6)
 

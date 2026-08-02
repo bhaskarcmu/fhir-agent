@@ -34,6 +34,8 @@ from dataclasses import dataclass, field
 from threading import Lock
 from typing import Callable, TypeVar
 
+import anthropic
+import httpx
 from prometheus_client import Counter, Histogram
 
 T = TypeVar("T")
@@ -75,20 +77,22 @@ RATE_LIMIT_ALERTS_TOTAL = Counter(
     "Times the alert-only rate/cost threshold was crossed (traffic still allowed through).",
 )
 
-# Exceptions the breaker treats as an LLM-API-availability failure. All of
-# the SDK's actual API-side errors (timeout, connection, rate-limit, 5xx,
-# 4xx) share this one base class -- deliberately broad: the breaker's job
-# is "this dependency isn't answering usably right now", and a sustained
-# run of 4xx (e.g. an auth/config break) is just as much an outage from the
-# caller's perspective as a 5xx is. A bug in *our own* code (a plain
-# TypeError, say) is not caught here and propagates as before -- the
-# breaker protects against the external dependency, not against ourselves.
-try:
-    import anthropic
-
-    BREAKER_TRIPPING_EXCEPTIONS: tuple[type[BaseException], ...] = (anthropic.APIError,)
-except ImportError:  # pragma: no cover -- anthropic is a hard dependency of every caller
-    BREAKER_TRIPPING_EXCEPTIONS = (Exception,)
+# Exceptions the breaker treats as an LLM-API-availability failure.
+# anthropic.APIError covers the native provider (timeout, connection,
+# rate-limit, 5xx, 4xx all share this one base class); httpx.HTTPError
+# covers the M5 OpenAI-compatible provider (Ollama/DeepSeek/vLLM/etc, which
+# raises plain httpx errors, not anthropic's) -- the breaker protects the
+# same one external-LLM-call seam regardless of which provider is behind
+# it (docs/phase6/decisions.md H4). Deliberately broad within each: a
+# sustained run of 4xx (e.g. an auth/config break) is just as much an
+# outage from the caller's perspective as a 5xx is. A bug in *our own*
+# code (a plain TypeError, say) is not caught here and propagates as
+# before -- the breaker protects against the external dependency, not
+# against ourselves.
+BREAKER_TRIPPING_EXCEPTIONS: tuple[type[BaseException], ...] = (
+    anthropic.APIError,
+    httpx.HTTPError,
+)
 
 # Grounded in the real per-query measurement this repo already has
 # (docs/phase6/decisions.md H29: 5,404 / 5,381 input tokens for two live

@@ -15,15 +15,17 @@ Usage:
   uvicorn agent.api:app --host 0.0.0.0 --port 8010
 
 Environment variables: same as agent.agent (ANTHROPIC_API_KEY/CLAUDE_API_KEY,
-FHIR_GATEWAY_URL, FHIR_API_KEY, TRIAGE_SERVICE_URL) plus DATABASE_URL
-(required -- unlike the CLI, this transport has no in-memory fallback,
-since an HTTP session with no persistence isn't a session), plus M4's
-resilience knobs (MAX_CONCURRENT_LLM_QUERIES, LLM_QUERY_QUEUE_DEADLINE_SECONDS,
-LLM_CIRCUIT_FAILURE_THRESHOLD, LLM_CIRCUIT_RESET_SECONDS,
-LLM_ALERT_TOKENS_PER_MINUTE, LLM_HARD_BACKSTOP_TOKENS_PER_MINUTE -- all
-optional, defaults in agent_platform.resilience). /metrics exposes
-Prometheus counters/histograms for LLM token usage, call outcomes, and
-rate-limit alerts (docs/phase6/decisions.md H27).
+FHIR_GATEWAY_URL, FHIR_API_KEY, TRIAGE_SERVICE_URL, and M5's provider seam
+LLM_PROVIDER/LLM_MODEL/LLM_BASE_URL/LLM_API_KEY -- docs/phase6/decisions.md
+H4) plus DATABASE_URL (required -- unlike the CLI, this transport has no
+in-memory fallback, since an HTTP session with no persistence isn't a
+session), plus M4's resilience knobs (MAX_CONCURRENT_LLM_QUERIES,
+LLM_QUERY_QUEUE_DEADLINE_SECONDS, LLM_CIRCUIT_FAILURE_THRESHOLD,
+LLM_CIRCUIT_RESET_SECONDS, LLM_ALERT_TOKENS_PER_MINUTE,
+LLM_HARD_BACKSTOP_TOKENS_PER_MINUTE -- all optional, defaults in
+agent_platform.resilience). /metrics exposes Prometheus counters/
+histograms for LLM token usage, call outcomes, and rate-limit alerts
+(docs/phase6/decisions.md H27).
 """
 
 from __future__ import annotations
@@ -32,13 +34,22 @@ import os
 import threading
 
 import anthropic
+import httpx
 from fastapi import FastAPI, HTTPException, Response
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from prometheus_client import make_asgi_app
 from pydantic import BaseModel
 
-from agent_platform import create_session, current_trace_id, load_session, save_session, setup_tracing
+from agent_platform import (
+    build_llm_client,
+    create_session,
+    current_trace_id,
+    load_session,
+    save_session,
+    setup_tracing,
+)
 
+from .agent import MODEL as MODEL_DEFAULT
 from .agent import run_query
 
 # Concurrency limiter for query_session specifically -- not session count
@@ -74,19 +85,33 @@ FastAPIInstrumentor.instrument_app(app)
 # already is (docs/phase6/decisions.md H27, observability/prometheus.yml).
 app.mount("/metrics", make_asgi_app())
 
-_client: anthropic.Anthropic | None = None
+_client: anthropic.Anthropic | object | None = None
+_model = MODEL_DEFAULT
+_gen_ai_system = "anthropic"
 
 
 def _get_client() -> anthropic.Anthropic:
-    global _client
+    """
+    Returns the cached LLM client, building it on first call via
+    agent_platform.build_llm_client() (docs/phase6/decisions.md H4, M5) --
+    Anthropic by default, or the OpenAI-compatible seam when
+    LLM_PROVIDER=openai_compatible. Also caches the resolved model/
+    gen_ai_system for _get_model_and_system() to read -- kept as a
+    separate function (not folded into this one's return value) so this
+    function's own contract -- and every existing test mocking it with
+    `return_value=object()` -- stays unchanged.
+    """
+    global _client, _model, _gen_ai_system
     if _client is None:
-        api_key = os.environ.get("ANTHROPIC_API_KEY", "") or os.environ.get("CLAUDE_API_KEY", "")
-        if not api_key:
-            raise RuntimeError("ANTHROPIC_API_KEY is not set (CLAUDE_API_KEY is also accepted).")
         if not os.environ.get("FHIR_GATEWAY_URL"):
             raise RuntimeError("FHIR_GATEWAY_URL is not set.")
-        _client = anthropic.Anthropic(api_key=api_key)
+        _client, _model, _gen_ai_system = build_llm_client()
     return _client
+
+
+def _get_model_and_system() -> tuple[str, str]:
+    _get_client()  # ensures _model/_gen_ai_system are resolved
+    return _model, _gen_ai_system
 
 
 class SessionCreated(BaseModel):
@@ -137,6 +162,7 @@ def query_session(session_id: str, body: QueryRequest, response: Response) -> Qu
     """
     try:
         client = _get_client()
+        model, gen_ai_system = _get_model_and_system()
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc))
 
@@ -158,9 +184,10 @@ def query_session(session_id: str, body: QueryRequest, response: Response) -> Qu
     try:
         stats: dict = {}
         final_text, messages = run_query(
-            client, body.query, messages, verbose=False, token_count=token_count, stats=stats
+            client, body.query, messages, verbose=False, token_count=token_count, stats=stats,
+            model=model, gen_ai_system=gen_ai_system,
         )
-    except anthropic.APIError as exc:
+    except (anthropic.APIError, httpx.HTTPError) as exc:
         # A single call failure below the circuit breaker's threshold --
         # run_query doesn't turn this into a REVIEW decision (only a
         # tripped breaker or exceeded cost backstop does, docs/phase6/
@@ -168,7 +195,8 @@ def query_session(session_id: str, body: QueryRequest, response: Response) -> Qu
         # to FastAPI's default 500, an ungraceful failure mode for a
         # milestone specifically about deploy resilience. 502, not 500:
         # the failure is in the upstream LLM API, not this service's own
-        # code.
+        # code. httpx.HTTPError covers the M5 OpenAI-compatible provider,
+        # which raises plain httpx errors rather than anthropic's.
         raise HTTPException(status_code=502, detail=f"LLM API error: {exc}")
     finally:
         _query_slots.release()

@@ -212,18 +212,40 @@ repo's usual "no breaker" convention.
 Llama/DeepSeek/local models become config, not code — making official what M1's local-LLM testing
 already forced into informal existence.
 
-**Long story:** (full design: [`design.md` §4.5](./design.md#45-multi-provider--m5))
+**Long story:** (full design: [`design.md` §4.5](./design.md#45-multi-provider--m5--implemented))
 
-- **Two adapters only** ([`decisions.md` H4](./decisions.md)): Anthropic native + one
-  OpenAI-compatible adapter covering Llama, DeepSeek, Ollama, vLLM, hosted OpenAI-compatible
-  endpoints. Model choice becomes config (base URL + model name), never a code branch.
-- **Conversation-history translation** across providers is the real engineering work here —
-  written and tested for the first time, not assumed.
-- M1's local-LLM adversarial test corpus becomes this milestone's acceptance suite — M5
-  formalizes a seam that was informally load-bearing since M1.
-- **Anthropic stays the only live backend in production** even after this ships.
-- **Testing:** the full three-tier harness from [`design.md` §5](./design.md#5-testing-strategy)
-  — stub server, Ollama local, hosted OpenAI-compatible spot-check.
+- **Two adapters only** ([`decisions.md` H4](./decisions.md)): Anthropic native (used completely
+  unwrapped — its response shape already matches what `run_query` expects, [`H40`](./decisions.md))
+  + one OpenAI-compatible adapter (`agent_platform.providers.OpenAICompatibleProvider`) covering
+  Llama, DeepSeek, Ollama, vLLM, hosted OpenAI-compatible endpoints. Model choice is config
+  (`LLM_PROVIDER`/`LLM_MODEL`/`LLM_BASE_URL`/`LLM_API_KEY`), never a code branch.
+- **Conversation-history translation** — written and tested for real, not assumed:
+  `_to_openai_messages()`/`_to_openai_tools()` outbound, `_from_openai_response()` inbound,
+  including turning our own `tool_result` entries into separate OpenAI `"tool"`-role messages
+  and falling back to an empty tool-call input on malformed JSON from a weak model
+  ([`H43`](./decisions.md)) rather than raising.
+- **Resilience made provider-agnostic** ([`H42`](./decisions.md)): M4's circuit breaker now trips
+  on `httpx.HTTPError` too, not just `anthropic.APIError` — otherwise M4's protections would
+  silently not cover this new provider path at all.
+- **`gen_ai_system` is explicit** ([`H41`](./decisions.md)), not inferred by `isinstance` — caught
+  during implementation when a type-based check mislabeled every existing fake-client test.
+- **Anthropic stays the only live backend in production** even after this ships — `LLM_PROVIDER`
+  defaults to `"anthropic"`.
+- **Testing:** `agent-platform` — 17 unit tests for the translation layer and the
+  `build_llm_client()` env var contract, no network. `mcp-agent` — 2 **live** integration tests
+  against a real local Ollama (`llama3.2:1b`), self-skipping when unreachable, running the actual
+  `run_query` loop through the real translation layer (not simulated) — this is M1's own
+  adversarial local-model corpus finally exercised through the real agent loop instead of talking
+  to Ollama directly, which is all it could do before this milestone built the seam. Plus 3
+  regression tests for a real bug (below).
+- **A real bug found live, not by any mocked test**: running the full CLI end to end against
+  real FHIR/triage services and the real Ollama model, `llama3.2:1b` omitted a required tool
+  argument entirely; `tools.py`'s `execute_tool` raised an uncaught `KeyError`, aborting the query
+  instead of reaching the intended `RISK_UNKNOWN`/`REVIEW` fail-closed path. This gap predates M5
+  (present since M1) but no test — mocked or live — had exercised a model weak enough to trigger
+  it until now. Fixed with the same structured-error convention `assess_refill_risk` already uses
+  elsewhere in that file ([`H44`](./decisions.md)); re-ran the same live CLI query afterward and
+  confirmed a clean `REVIEW` decision instead of a crash.
 
 ## M6 — Policy, Knowledge & Judge
 
