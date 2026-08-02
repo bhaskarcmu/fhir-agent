@@ -1909,3 +1909,5 @@
 {"type":"ai-title","aiTitle":"Critique Phase 4 epic-emulator problem statement","sessionId":"265be5b6-c550-4af6-bed7-7be2bca6b9c4"}
 {"type":"mode","mode":"normal","sessionId":"265be5b6-c550-4af6-bed7-7be2bca6b9c4"}
 {"type":"pr-link","sessionId":"265be5b6-c550-4af6-bed7-7be2bca6b9c4","prNumber":54,"prUrl":"https://github.com/bhaskarcmu/fhir-agent/pull/54","prRepository":"bhaskarcmu/fhir-agent","timestamp":"2026-08-02T10:41:04.066Z"}
+{"type":"custom-title","sessionId":"265be5b6-c550-4af6-bed7-7be2bca6b9c4","customTitle":"Phase 4 epic-emulator"}
+{"type":"custom-title","sessionId":"265be5b6-c550-4af6-bed7-7be2bca6b9c4","customTitle":"Phase 4 - epic-emulator"}
