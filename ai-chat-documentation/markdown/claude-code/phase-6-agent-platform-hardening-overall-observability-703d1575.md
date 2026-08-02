@@ -1529,8 +1529,10 @@ All services started. Let's wait a moment then verify health/metrics.
 
 Metrics and Prometheus scrape target are working. Now a live end-to-end query to confirm real token metrics accumulate.
 
+That's the known `.env`-shadowing gotcha from earlier milestones — not an M4 bug. Fixing it for a cleaner live validation.
+
 <details>
-<summary>Execution details — 737 tool events</summary>
+<summary>Execution details — 739 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2784,6 +2786,13 @@ import json,sys…`
 - **Bash** `SESSION_ID=$(curl -sS -X POST http://localhost:8010/sessions | python3 -c "import json,sys; print(json.load(sys.stdin)['session_id'])")
 echo "session: $SESSION_ID"
 curl -sS -X POST "http://localhost:8…`
+- **Bash** `docker logs fhir-agent-mcp-api --tail 30 2>&1 | grep -iv "GET /health\|GET /metrics"
+echo "--- check FHIR_GATEWAY_URL used ---"
+docker exec fhir-agent-mcp-api env | grep FHIR_GATEWAY_URL
+echo "--- try…`
+- **Bash** `export FHIR_GATEWAY_URL=http://fhir:8080/fhir && docker compose --profile phase6 up -d --force-recreate mcp-agent-api
+sleep 3
+docker exec fhir-agent-mcp-api env | grep FHIR_GATEWAY_URL`
 
 </details>
 
