@@ -1145,8 +1145,10 @@ Now adding the verbosity, layer-attrs, and trace-ID helpers:
 
 All 46 pass. Now wiring `mcp-agent`: layer/component tags on existing spans, and trace-ID surfacing in `format.py`.
 
+Now `triage-service`. Let's view its current observability module and main.py before extending them:
+
 <details>
-<summary>Execution details — 475 tool events</summary>
+<summary>Execution details — 476 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1964,6 +1966,7 @@ python -m pytest agent-platform/tests -v 2>&1 | tail -60`
 - **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/format.py`
 - **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/format.py`
 - **Bash** `grep -n "error_block(" /workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Read** `/workspaces/fhir-agent/triage-service/src/triage/observability.py`
 
 </details>
 
@@ -1974,6 +1977,6 @@ python -m pytest agent-platform/tests -v 2>&1 | tail -60`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 12:37 UTC
+- **Last updated:** 2 August 2026, 12:38 UTC
 - **Turns:** 17
 - **Status:** Complete
