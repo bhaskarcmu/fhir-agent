@@ -23,9 +23,10 @@
 > **What Phase 5 is not:** it is not "Agent Platform Hardening." That work — hardening the
 > LLM-agent tier (`mcp-agent`, later `claims-agent`): memory/session management, distributed
 > tracing & metrics, multi-provider LLM support, fail-closed output-safety — is a separate,
-> later effort, reserved as **Phase 6** ("Agent Platform Hardening + Overall Observability").
-> See [`docs/README.md`](../README.md) for the top-level roadmap. The two were briefly conflated
-> during brainstorming before this document existed; this page is the correction.
+> later effort, reserved as **Phase 6** ("Agent Platform Hardening + Overall Observability"),
+> now with its own canonical status doc: [`../phase6/README.md`](../phase6/README.md). The two
+> were briefly conflated during brainstorming before either document existed; this page is the
+> correction.
 >
 > *This is the one canonical status statement for Phase 5. Other documents link here rather than
 > restate it.*
@@ -56,8 +57,10 @@ before Phase 5 starts" (§4.0).
 
 ## Relationship to Phase 6
 
-Phase 6 ("Agent Platform Hardening + Overall Observability") is unrelated in subject matter —
-it hardens the conversational LLM-agent tier, not `epic-emulator` — and does not depend on
-Phase 5 completing first. The two are sequential in number only because Phase 5's reservation
-predates Phase 6 being scoped; nothing prevents either from starting independently once each has
-an owner and a decision to begin.
+Phase 6 ("Agent Platform Hardening + Overall Observability", planning complete as of 2026-08-02
+— see [`../phase6/README.md`](../phase6/README.md)) is unrelated in subject matter — it hardens
+the conversational LLM-agent tier, not `epic-emulator` — and does not depend on Phase 5
+completing first. The two are sequential in number only because Phase 5's reservation predates
+Phase 6 being scoped; nothing prevents either from starting independently once each has an owner
+and a decision to begin. Phase 6 is now ahead of Phase 5 in actual planning progress — worth
+noting so the number ordering isn't mistaken for priority ordering.
