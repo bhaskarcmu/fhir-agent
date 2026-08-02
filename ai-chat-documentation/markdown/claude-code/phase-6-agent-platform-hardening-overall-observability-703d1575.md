@@ -1543,8 +1543,12 @@ Just needed more startup time. Retrying.
 
 Confirmed live end-to-end: individual failures now return a clean `502` with a real error detail, and once the breaker trips after 2 consecutive failures, the third request cleanly returns `200` with a `REVIEW` fail-closed decision instead of a raw crash. Now restoring the real API key and confirming recovery.
 
+Let me add a regression test locking in the live-discovered 502 fix.
+
+All pass. Now let's update the documentation: `decisions.md`, `design.md` §4.4, `milestone-plan.md` M4, and `telemetry-schema.md` §7.
+
 <details>
-<summary>Execution details — 755 tool events</summary>
+<summary>Execution details — 761 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2837,6 +2841,12 @@ sleep 6
 SESSION_ID=$(curl -sS -X POST http://localhost:8010/sess…`
 - **Bash** `docker compose --profile phase6 --profile observability down 2>&1 | tail -20`
 - **Bash** `python -m pytest agent-platform/tests mcp-agent/tests triage-service/src/triage/tests -q 2>&1 | tail -20`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/tests/test_api_resilience.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/tests/test_api_resilience.py`
+- **Bash** `python -m pytest mcp-agent/tests/test_api_resilience.py -v 2>&1 | tail -30`
+- **Bash** `grep -n "^| \*\*H33\*\*\|^| \*\*H27\*\*" /workspaces/fhir-agent/docs/phase6/decisions.md`
+- **Read** `/workspaces/fhir-agent/docs/phase6/decisions.md`
+- **Read** `/workspaces/fhir-agent/docs/phase6/decisions.md`
 
 </details>
 
@@ -2847,6 +2857,6 @@ SESSION_ID=$(curl -sS -X POST http://localhost:8010/sess…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 14:06 UTC
+- **Last updated:** 2 August 2026, 14:08 UTC
 - **Turns:** 22
 - **Status:** Incomplete
