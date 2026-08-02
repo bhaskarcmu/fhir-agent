@@ -327,7 +327,47 @@ Tell me a list of cleanup steps to take, such as document correction to reflect 
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Here's the cleanup list, ordered by dependency (later steps assume earlier ones are resolved). Nothing executed — outline + critique only.
+
+## 1. Correct the Phase 2 observability status (R15)
+
+Fix `docs/phase2/plan.md`'s milestone table (M3/M4 currently say "OTel tracing wired") and add a `decisions.md` entry acknowledging no `opentelemetry`/`micrometer` dependency or trace/correlation-ID code actually exists in `claims-service`/`rxclaim-emulator`. Model it on the existing "⚠️ Cloud-delivery gap" callout in the same file — same pattern, same doc, different gap.
+
+**Critique:** This is the same status-truthfulness failure mode the reviewer already caught once (commit `0fcc196`), just in a spot that review pass missed. Doing it now is cheap (docs-only PR) and closes the loop honestly. Risk is low, but it does mean re-touching a "closed" phase's docs — which is exactly the thing you decided Phase 5 should *not* do for substantive work. I'd distinguish: **correcting a false status claim is not "reopening Phase 2's work"** — it's fixing a factual error, same class of edit as the original truthfulness commit. Worth stating that distinction explicitly in the PR description so it doesn't read as scope creep.
+
+## 2. Resolve the Phase 5 naming collision
+
+Decide: does agent-platform-hardening become **Phase 5** (superseding the epic-emulator-decomposition content already sitting there) or **Phase 6**? Then update `docs/README.md`'s roadmap table and `docs/phase4/README.md`'s "a future Phase 5 would decompose along whatever the coupling note shows" line to match.
+
+**Critique:** This is a decision, not just a doc edit — I flagged it as open in the last message and it's still open. It blocks steps 3 and 4 below, so it has to happen first. My read: the epic-emulator-decomposition content is thin (one draft doc, no timeline, explicitly not a PRD) versus agent-hardening being a fully-scoped multi-milestone effort — so renumbering epic-emulator work to Phase 6 (or folding it into a Phase 4b/4c alongside the safety-bug fix) and giving agent-hardening the Phase 5 slot is probably the lower-friction path. But that's my recommendation, not a settled fact — flagging it for your call, not deciding it here.
+
+## 3. Relocate the existing `docs/phase5/phase4-testing-and-analysis.md`
+
+Once step 2 is decided, move that file to live under `docs/phase4/` (it's substantively a Phase 4 follow-up analysis, not Phase 5 content) or renumber it to match wherever epic-emulator-decomposition work lands.
+
+**Critique:** Pure `git mv` + internal-link fixes, low risk, but it's meaningless to do before step 2 — moving it and then reversing the decision is wasted churn. Also worth checking whether the current branch name (`docs/phase5-readiness-assessment`) itself should be renamed/reused or abandoned in favor of a fresh branch for the real Phase 5 kickoff docs — the branch name currently promises something that isn't what you're about to build there.
+
+## 4. Give the pagination safety bug a durable, phase-independent home
+
+Right now the bug lives only in that one draft doc. Add it as a numbered entry in `docs/phase4/decisions.md` (or a new `docs/phase4/known-issues.md` if the repo doesn't already have a lighter-weight "open bug" doc type) and keep the warning banner already in `docs/phase4/README.md` pointing at it.
+
+**Critique:** This is the most important step for "future Claude Code sessions" discoverability — a session picking up `epic-emulator` work later has no reason to know a not-yet-a-PRD file on a docs branch exists, but it *would* read `docs/phase4/README.md` and `decisions.md` for that area. The repo already has a `decisions.md` convention (lettered/numbered entries like D8, E10) — reuse that shape rather than inventing a new doc type; that matches existing convention more cleanly than a new `known-issues.md`. Low risk, high value, should happen regardless of how step 2 resolves.
+
+## 5. Document the mcp-agent fail-closed gap we found this session
+
+The finding that mcp-agent calls `triage-service` directly, bypassing `HttpTriageClient`'s fail-closed wrapper, with nothing in code stopping the LLM from recommending dispense on an `UNKNOWN` risk code — currently exists only in this conversation. Write it up as a decision/known-gap entry, most naturally as an input to Phase 5 M1 rather than retroactively into Phase 1 docs (Phase 1 is tagged `phase1-v1` as "done" — same tension as step 1, but here the gap is genuinely new work, not a false status claim, so it belongs in the *next* phase's docs, not a correction to the last one).
+
+**Critique:** I'd deliberately keep this out of Phase 1's docs even though the bug lives in Phase-1-owned code — editing a tagged "done" phase to add a newly-discovered gap is a different (and messier) thing than fixing a factual status error, and it's exactly the kind of scope-widening CLAUDE.md tells me to avoid without being asked. Better home: a "known gaps this milestone must address" section in whatever `docs/phase5/plan.md` M1 ends up being — it's real input, not phase-2-style status cleanup.
+
+## 6. Git tagging
+
+Convention observed: `phase1-v1` marks a snapshot taken *at a phase boundary*, not "phase complete" in the abstract. To match that pattern, `phase2-v1` and `phase3-v1` would need to be tagged retroactively at the actual merge commits where each phase's last milestone landed (found via `git log`, not just tagged at current HEAD) — before Phase 5 starts would be the natural boundary for a `phase4-v1`-or-whatever-it's-called tag, **except Phase 4 is explicitly not fully closed** (open safety bug), so tagging it as a clean boundary right now would recreate the exact status-truthfulness problem in a git tag instead of a doc.
+
+**Critique:** This is the step I'd push back on hardest as "not yet." Retroactively tagging Phase 2/3 has real value (consistent, navigable history) but is pure completeness/hygiene, not blocking anything — I'd rank it lowest priority of the six. Tagging Phase 4 right now is actively inadvisable given the open bug; if you want a Phase-4 boundary tag at all, it should wait until step 4's bug is fixed (or the tag name should honestly encode "milestones merged, safety finding open," which is awkward enough that it argues for just waiting). Also note: tags that get pushed to `origin` are a shared-state action — per your own git rules I'd confirm before pushing any of them, even though creating a local tag alone is cheap/reversible.
+
+## Sequencing summary
+
+Steps 1 and 4 are independent and safe to do now. Step 2 is a decision that gates 3. Step 5 can happen alongside 2/3 since it doesn't depend on the naming outcome. Step 6 is optional hygiene, lowest priority, and should explicitly exclude Phase 4 until the bug's fixed.
 
 <details>
 <summary>Execution details — 13 tool events</summary>
@@ -363,6 +403,6 @@ Tell me a list of cleanup steps to take, such as document correction to reflect 
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 04:08 UTC
+- **Last updated:** 2 August 2026, 04:09 UTC
 - **Turns:** 5
-- **Status:** Incomplete
+- **Status:** Complete
