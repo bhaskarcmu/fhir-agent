@@ -476,6 +476,20 @@ Renamed `phase5-agent-hardening.md` → `phase6-agent-hardening.md`, updated thr
 - Both PRs are independent and can merge in either order.
 - I stayed on `docs/phase5-readiness-assessment` as the current branch — let me know if you want me to switch back to `main`.
 
+## Turn 8
+
+### Prompt
+
+Before I merge the PRs, one opportunity for potential corrections based on the below, also subject to your critique:
+
+________
+
+For "5. mcp-agent fail-closed gap (bypasses HttpTriageClient's wrapper) — this is the one open question." - It is okay to fold in some work into Phase 6 if it makes sense and keep that in your memory for upcoming Phase 6 planning in future prompts.
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 81 tool events</summary>
 
@@ -603,6 +617,6 @@ git tag -a phase3-v1 8816983 -F /tmp/cl…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 04:33 UTC
-- **Turns:** 7
-- **Status:** Complete
+- **Last updated:** 2 August 2026, 04:35 UTC
+- **Turns:** 8
+- **Status:** Incomplete

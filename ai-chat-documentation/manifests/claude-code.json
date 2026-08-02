@@ -78,10 +78,10 @@
     "present": true,
     "raw_filename": "703d1575-6579-4a4a-834d-bfd055f35840.jsonl",
     "source_deleted_at": null,
-    "status": "complete",
+    "status": "incomplete",
     "title": "Phase 6 -\u00a0Agent Platform Hardening + Overall Observability",
-    "turns": 7,
-    "updated_at": "2026-08-02T04:33:03.516000+00:00"
+    "turns": 8,
+    "updated_at": "2026-08-02T04:35:49.873000+00:00"
   },
   "b19190df-fadc-43a7-a3b8-8ef78a5d944c": {
     "archived_at": "2026-07-13T15:07:16.770377+00:00",
