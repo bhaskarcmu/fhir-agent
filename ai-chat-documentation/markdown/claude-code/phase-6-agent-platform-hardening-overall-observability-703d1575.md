@@ -1524,7 +1524,7 @@ All 8 chaos-style tests pass. Now let's add API-layer tests for the concurrency 
 All pass. Now the full combined suite to confirm no regressions.
 
 <details>
-<summary>Execution details — 721 tool events</summary>
+<summary>Execution details — 723 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2750,6 +2750,8 @@ print(inspect.signature(anthropic.APIConnectionError.__init__))
 - **Write** `/workspaces/fhir-agent/mcp-agent/tests/test_api_resilience.py`
 - **Bash** `python -m pytest mcp-agent/tests/test_api_resilience.py -v 2>&1 | tail -50`
 - **Bash** `python -m pytest agent-platform/tests mcp-agent/tests triage-service/src/triage/tests -q 2>&1 | tail -20`
+- **Read** `/workspaces/fhir-agent/docker-compose.yml`
+- **Edit** `/workspaces/fhir-agent/docker-compose.yml`
 
 </details>
 
