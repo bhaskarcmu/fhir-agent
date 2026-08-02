@@ -1202,8 +1202,12 @@ Now updating `agent.py`. First the imports and constants:
 
 Now `run_query`'s signature and compaction wiring:
 
+Now replacing all three:
+
+Now the FastAPI transport layer. First check `mcp-agent`'s pyproject.toml:
+
 <details>
-<summary>Execution details — 574 tool events</summary>
+<summary>Execution details — 577 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2195,6 +2199,9 @@ python -m pytest agent-platform/tests/test_session_store.py -v 2>&1 | tail -30`
 - **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
 - **Bash** `grep -n "^def interactive_mode\|^def non_interactive_mode\|^def main\|^if __name__" /workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
 - **Bash** `sed -n '377,453p' /workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Bash** `cat /workspaces/fhir-agent/mcp-agent/pyproject.toml`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/pyproject.toml`
 
 </details>
 
