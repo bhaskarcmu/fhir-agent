@@ -2058,8 +2058,12 @@ While that test run continues in the background, let me write the M6 test files.
 
 The background test run completed successfully. Let's check the results.
 
+Excellent — all 81 existing tests pass unmodified, confirming the judge/citation wiring degrades gracefully against fake clients. Now let's write the judge unit tests.
+
+Let's run these two new agent-platform test files.
+
 <details>
-<summary>Execution details — 1146 tool events</summary>
+<summary>Execution details — 1150 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3909,6 +3913,10 @@ python -m pytest mcp-agent/tests -q --deselect mcp-agent/tests/test_provider_int
 - **Write** `/workspaces/fhir-agent/agent-platform/tests/test_policy.py`
 - **Write** `/workspaces/fhir-agent/agent-platform/tests/test_knowledge.py`
 - **Read** `/tmp/claude-1000/-workspaces-fhir-agent/703d1575-6579-4a4a-834d-bfd055f35840/tasks/bxw6r7up2.output`
+- **Write** `/workspaces/fhir-agent/agent-platform/tests/test_judge.py`
+- **Bash** `python -m pytest agent-platform/tests/test_policy.py agent-platform/tests/test_knowledge.py agent-platform/tests/test_judge.py -v 2>&1 | tail -80`
+- **Bash** `ls /workspaces/fhir-agent/mcp-agent/tests/ | grep -i format`
+- **Bash** `cat -n /workspaces/fhir-agent/mcp-agent/tests/test_tools.py`
 
 </details>
 
