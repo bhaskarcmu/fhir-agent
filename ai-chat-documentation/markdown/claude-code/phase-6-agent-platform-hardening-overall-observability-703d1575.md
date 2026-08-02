@@ -2096,8 +2096,10 @@ The retry query completed. Let's check the output.
 
 Two real Ollama runs already prove the policy/fail-closed integration holds with a genuinely weak model. Let's now do one clean run with Claude to demonstrate citations and judge output populating for the reference HIGH-risk case.
 
+A rich, complete live result — real HIGH-risk decision, real openFDA/RxClass citations, and the judge caught a genuine (if debatable) PHI-redundancy issue in the rationale without affecting the decision. Let me tighten the docs with this real transcript detail.
+
 <details>
-<summary>Execution details — 1197 tool events</summary>
+<summary>Execution details — 1198 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4005,6 +4007,7 @@ tail -3 /tmp/claude-1000/-workspaces-fhir-agent/703d1575-6579-4a4a-83…`
 - **Read** `/tmp/claude-1000/-workspaces-fhir-agent/703d1575-6579-4a4a-834d-bfd055f35840/tasks/bwb2zvhvh.output`
 - **Bash** `export FHIR_GATEWAY_URL=http://localhost:8080/fhir TRIAGE_SERVICE_URL=http://localhost:8001
 cd /workspaces/fhir-agent/mcp-agent/src && python3 -m agent.agent --provider anthropic --model claude-sonnet…`
+- **Bash** `grep -n "Live-validated.*a real end-to-end query" /workspaces/fhir-agent/docs/phase6/design.md`
 
 </details>
 
@@ -4015,6 +4018,6 @@ cd /workspaces/fhir-agent/mcp-agent/src && python3 -m agent.agent --provider ant
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 16:59 UTC
+- **Last updated:** 2 August 2026, 17:00 UTC
 - **Turns:** 28
 - **Status:** Incomplete
