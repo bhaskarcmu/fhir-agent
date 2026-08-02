@@ -1058,6 +1058,26 @@ Confirmed clean on the Kong boundary. Now the final full test pass before commit
 
 Test totals: 112 Python tests, 53 claims-service, 8 rxclaim-emulator — all passing, no regressions anywhere.
 
+## Turn 16
+
+### Prompt
+
+First, a bit of terminology clarification:
+
+What is observability, and what is the combination of TraceID, SpanID, and CorrelationID called (I think "dynamic trace capability", but correct me). The reason I ask is that in the medical device industry, "traceability" has a specific meaning and is done as a static concept in design and code documentation, also as a matrix.
+
+Next, some purposeful expansion/clarification of scope:
+
+1. I want every request, either initiated by a human user or a test program, to have a uniwue ID and be passed though the stack everywhere and be easy to identify.
+
+2. If there is a way to track resource usage meaningfully, I want that integrated.
+
+3. I want, throughout the call stack or execution flow, to add custom keywords or phrases that should be shown in span metadata. Thiese keywords or phrases should clearly identify code modules and design elements. I want comprehensive design documentation that organizes this custom information, grouped well by layers or ters in the architecture. This should go deep enough so that code modules should me trackable throughout the execution flow. Also, exeptions and errors should be relatable to all this info (critique all this based on what matches industry standard, what exceeds it, and what a reasonably knowledgable developer can understand the benefits of and utilize).
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 426 tool events</summary>
 
@@ -1806,6 +1826,6 @@ gh pr create --base main --head feature/phase6-m2-observability --title "feat(ph
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 12:05 UTC
-- **Turns:** 15
-- **Status:** Complete
+- **Last updated:** 2 August 2026, 12:13 UTC
+- **Turns:** 16
+- **Status:** Incomplete
