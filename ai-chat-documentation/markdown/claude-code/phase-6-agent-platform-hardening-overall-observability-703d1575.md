@@ -1941,8 +1941,12 @@ Let me verify the hard-fail path actually triggers correctly when Ollama is unre
 
 Confirmed: exit code 1, a real CI-failing outcome, not a silent skip. All good. Let's mark item 7 complete and move to CI.
 
+Clean now. Let's also test that the gate actually catches a real violation.
+
+Now the full test suite, including live Ollama tests and the DB-backed session tests.
+
 <details>
-<summary>Execution details — 976 tool events</summary>
+<summary>Execution details — 982 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3526,6 +3530,17 @@ with open('/workspaces/fhir-agent/.github/workflows/tests.yml') as f:
 print('YAML valid. Jobs:', list(d['jobs'].keys()))
 "`
 - **Bash** `grep -rEn "LLM_PROVIDER[=:] *[\"']?(anthropic|openai_compatible)" .github/workflows .ona 2>/dev/null && echo "FOUND (bad)" || echo "clean (good)"`
+- **Edit** `/workspaces/fhir-agent/.github/workflows/tests.yml`
+- **Edit** `/workspaces/fhir-agent/.github/workflows/tests.yml`
+- **Bash** `grep -rEn "LLM_PROVIDER[=:] *[\"']?(anthropic|openai_compatible)" .github/workflows .ona 2>/dev/null && echo "FOUND (bad)" || echo "clean (good)"`
+- **Bash** `cd /tmp && mkdir -p gate_test/.github/workflows && echo 'env:
+  LLM_PROVIDER: anthropic' > gate_test/.github/workflows/bad.yml
+mkdir -p gate_test/.ona
+cd gate_test
+var_name="LLM""_PROVIDER"
+pattern="$…`
+- **TodoWrite** `{"todos": [{"content": "Rework agent_platform/providers.py: 3 provider identities (anthropic/ollama/openai_compatible), default=ollama, DEPLOYMENT_ENV production guardrail, discovery functions", "stat…`
+- **Bash** `python -m pytest agent-platform/tests mcp-agent/tests triage-service/src/triage/tests -q 2>&1 | tail -30`
 
 </details>
 
@@ -3536,6 +3551,6 @@ print('YAML valid. Jobs:', list(d['jobs'].keys()))
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 16:08 UTC
+- **Last updated:** 2 August 2026, 16:09 UTC
 - **Turns:** 27
 - **Status:** Incomplete
