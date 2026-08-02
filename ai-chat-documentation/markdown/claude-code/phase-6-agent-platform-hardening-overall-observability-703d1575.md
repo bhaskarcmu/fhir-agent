@@ -1631,8 +1631,10 @@ All 128 tests pass, no regressions. Now let's write M5's own test suite: provide
 
 All 17 pass. Now the live Ollama integration test through the real agent loop.
 
+Let's also validate the full CLI end-to-end (real FHIR + triage, real Ollama) — not just `run_query` in isolation.
+
 <details>
-<summary>Execution details — 844 tool events</summary>
+<summary>Execution details — 845 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3040,6 +3042,7 @@ python -m pytest agent-platform/tests mcp-agent/tests -q 2>&1 | tail -60`
 - **Bash** `python -m pytest agent-platform/tests/test_providers.py -v 2>&1 | tail -60`
 - **Write** `/workspaces/fhir-agent/mcp-agent/tests/test_provider_integration.py`
 - **Bash** `python -m pytest mcp-agent/tests/test_provider_integration.py -v -s 2>&1 | tail -80`
+- **Bash** `docker compose up -d fhir triage 2>&1 | tail -15`
 
 </details>
 
@@ -3050,6 +3053,6 @@ python -m pytest agent-platform/tests mcp-agent/tests -q 2>&1 | tail -60`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 14:27 UTC
+- **Last updated:** 2 August 2026, 14:28 UTC
 - **Turns:** 23
 - **Status:** Incomplete
