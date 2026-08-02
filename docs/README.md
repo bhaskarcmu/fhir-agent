@@ -11,11 +11,13 @@ Start with what you're trying to do.
 | **Know why Phase 2 is built this way** | [`phase2/plan.md`](./phase2/plan.md) | 30 min |
 | **Know why Phase 3 (Provider Search) is built this way** | [`phase3/design.md`](./phase3/design.md) | 30 min |
 | **Know why Phase 4 (Epic Emulator) is built this way** | [`phase4/design.md`](./phase4/design.md) | 15 min |
+| **⚠️ Check the open Phase 4 safety finding before demoing it** | [`phase5/phase4-testing-and-analysis.md`](./phase5/phase4-testing-and-analysis.md) §0 | 5 min |
 | **Audit Phase 2 decisions** (status + supersession) | [`phase2/decisions.md`](./phase2/decisions.md) | 5 min |
 | **Audit Phase 3 decisions** (status + supersession) | [`phase3/decisions.md`](./phase3/decisions.md) | 5 min |
 | **Audit Phase 4 decisions** (status + supersession) | [`phase4/decisions.md`](./phase4/decisions.md) | 5 min |
+| **Check what Phase 5 and Phase 6 are actually reserved for** | [`phase5/README.md`](./phase5/README.md) | 5 min |
 | **Know exactly what was agreed** (normative) | [`phase2/requirements.md`](./phase2/requirements.md) | reference |
-| **Know what to build next** | [`phase2/plan.md` §16](./phase2/plan.md#16-future-work) (Phase 2) / [`phase3/README.md`](./phase3/README.md) (Phase 3b) / [`phase4/README.md`](./phase4/README.md) (Phase 4 complete — see coupling note for Phase 5) | 5 min |
+| **Know what to build next** | [`phase2/plan.md` §16](./phase2/plan.md#16-future-work) (Phase 2) / [`phase3/README.md`](./phase3/README.md) (Phase 3b) / [`phase5/README.md`](./phase5/README.md) (Phase 5) | 5 min |
 
 ## The guides
 
@@ -43,7 +45,7 @@ cloud position, the migration and its rollback, and troubleshooting.
 **[`phase2/`](./phase2/README.md)** — the claims-adjudication modernisation slice.
 
 - **[`decisions.md`](./phase2/decisions.md)** — the ADR-style index of every architectural
-  decision (D1–D8, C1–C4, plus later ones) with **status and supersession markers**, linking to
+  decision (D1–D8, C1–C5, plus later ones) with **status and supersession markers**, linking to
   where each rationale lives. Start here to audit *what was decided and whether it still holds*.
 
 - **[`requirements.md`](./phase2/requirements.md)** — normative. Requirements R1–R19, including
@@ -67,19 +69,41 @@ cloud position, the migration and its rollback, and troubleshooting.
 - **[`decisions.md`](./phase3/decisions.md)** — the ADR-style index (P1–P21 and counting),
   same status-and-supersession convention as Phase 2's `decisions.md`.
 
-**[`phase4/`](./phase4/README.md)** — Epic Emulator. **Complete** — M1 (pass-through proxy), M2
-(auth emulation), M3 (extension handling), M4 (the three quirks), and M5 (the acceptance case,
-verified live) all built. Builds out a module (`epic-emulator/`) that was actually reserved as an
-empty placeholder back in Phase 2 (`phase2/plan.md` §16, deviation D2), alongside a sibling
-`athena-emulator/` placeholder that remains untouched.
+**[`phase4/`](./phase4/README.md)** — Epic Emulator. **Milestones complete, one safety finding
+open** — M1 (pass-through proxy), M2 (auth emulation), M3 (extension handling), M4 (the three
+quirks), and M5 (the acceptance case, verified live) all built, but a post-merge testing pass found
+a live pagination-related safety bug not yet fixed — see `phase5/` below before demoing this.
+Builds out a module (`epic-emulator/`) that was actually reserved as an empty placeholder back in
+Phase 2 (`phase2/plan.md` §16, deviation D2), alongside a sibling `athena-emulator/` placeholder
+that remains untouched.
 
 - **[`README.md`](./phase4/README.md)** — the canonical status statement for Phase 4.
 - **[`prd.md`](./phase4/prd.md)** — problem, goals/non-goals, requirements, success metrics.
 - **[`design.md`](./phase4/design.md)** — architecture (proxy in front of `fhir-service`),
   per-capability-area deep dives, the three quirks' concrete choices, and the milestone plan (§12).
-- **[`decisions.md`](./phase4/decisions.md)** — the ADR-style index (E1–E15), same convention.
+- **[`decisions.md`](./phase4/decisions.md)** — the ADR-style index (E1–E16), same convention.
+  E16 is not a design decision — it's the durable record of the open safety bug below.
 - **[`coupling-note.md`](./phase4/coupling-note.md)** — PRD G6: which capability areas shared
-  state/logic in practice — the evidence a future Phase 5 decomposition would use.
+  state/logic in practice — the evidence Phase 5's decomposition will use.
+
+**[`phase5/`](./phase5/README.md)** — **reserved, not started.** `epic-emulator` decomposition,
+along whatever `coupling-note.md` actually shows — no PRD, design doc, milestone plan, code, or
+timeline exists yet. See [`phase5/README.md`](./phase5/README.md) for the canonical status.
+
+- **[`README.md`](./phase5/README.md)** — the canonical status statement for Phase 5: what it's
+  reserved for, why, and what it explicitly is **not** (it is not "Agent Platform Hardening" —
+  that's Phase 6, below).
+- **[`phase4-testing-and-analysis.md`](./phase5/phase4-testing-and-analysis.md)** — a
+  clinician/business-stakeholder/architect testing-and-analysis pass over completed Phase 4, done
+  against real running services, and Phase 5's primary input (not a Phase 5 PRD itself).
+  **Leads with a live, unresolved safety bug** (§0) found by testing with a realistic
+  multi-record patient rather than the existing small demo fixture.
+
+**Phase 6 — reserved name only, nothing built: "Agent Platform Hardening + Overall
+Observability."** Hardening the LLM-agent tier (`mcp-agent`, later `claims-agent`):
+memory/session management, distributed tracing & metrics, multi-provider LLM support, and
+fail-closed output-safety controls. Brainstormed only — no PRD, design doc, milestone plan, or
+code exists in this repo yet. Planning starts in a dedicated Phase 6 session, not here.
 
 ## Conventions for this folder
 

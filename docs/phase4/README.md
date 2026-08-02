@@ -2,7 +2,15 @@
 
 > ## Canonical status
 >
-> **Phase 4 complete — M1 through M5 all built.** `epic-emulator/` is a real Spring Boot module: a
+> **⚠️ All 5 milestones are built and merged, but a post-merge safety finding is still open — see
+> [`docs/phase5/phase4-testing-and-analysis.md`](../phase5/phase4-testing-and-analysis.md) §0
+> before treating this as demo-ready; durable record: [`decisions.md` E16](./decisions.md).**
+> Summary: a realistic multi-allergy patient can get a
+> silent false-negative ("safe to dispense") result through `epic-emulator` due to the pagination
+> quirk (M4) combined with a pre-existing gap in `client/clinical`'s FHIR client. Not yet fixed.
+>
+> **Phase 4 milestones: complete — M1 through M5 all built.** `epic-emulator/` is a real Spring
+> Boot module: a
 > pass-through proxy (verified by 3 tests), gated behind a simulated SMART Backend Services JWT
 > client-assertion auth flow (6 more tests), backfilling a placeholder Epic-style extension on
 > `MedicationRequest`/`AllergyIntolerance` reads (6 more tests), and exhibiting all three named
@@ -13,7 +21,7 @@
 > actual prescription-refill-risk-triage scenario against a real running `fhir-service` and
 > `epic-emulator`, twice (HIGH-risk drug-allergy-conflict and LOW-risk control), and got identical
 > `RiskAssessment` outcomes direct vs. via the emulator both times. The coupling note (PRD G6) is
-> [`coupling-note.md`](./coupling-note.md). `decisions.md` indexes 15 decisions (`E1`–`E15`).
+> [`coupling-note.md`](./coupling-note.md). `decisions.md` indexes 16 decisions (`E1`–`E16`).
 >
 > M2's other stated task — pinning a specific Epic documentation version — is **still only
 > partially done**: one real check confirmed Epic's docs site is genuinely public at a shell level
@@ -35,14 +43,22 @@
 >   Phase 2/Phase 3.
 > - [`coupling-note.md`](./coupling-note.md) — PRD G6: which capability areas shared state/logic in
 >   practice, evidence for Phase 5's decomposition.
+> - [`../phase5/README.md`](../phase5/README.md) — Phase 5's canonical status: reserved for this
+>   decomposition, not started, and explicitly *not* the "Agent Platform Hardening" work (that's
+>   Phase 6).
 > - [`../../epic-emulator/README.md`](../../epic-emulator/README.md) — the module's own README:
 >   how the proxy, auth flow, extensions, and quirks work, build/test/run instructions.
 > - [`../../e2e/test_epic_emulator_acceptance.py`](../../e2e/test_epic_emulator_acceptance.py) —
 >   the live acceptance test.
 >
-> **What's next:** Phase 4 is done. A future Phase 5 would decompose along whatever the coupling
-> note actually shows, not the original three-area guess — see the coupling note and the PRD's
-> forward note (§10). No Phase 5 work has started; no timeline set.
+> **What's next:** Phase 4 is built and merged, but **not fully closed** — a post-merge
+> clinician/business/architect testing pass found a live, unresolved safety bug (pagination can
+> silently drop clinical data — see
+> [`docs/phase5/phase4-testing-and-analysis.md`](../phase5/phase4-testing-and-analysis.md) §0/§4.0,
+> durable record [`decisions.md` E16](./decisions.md)) that should be decided on before treating
+> this module as demo-ready. Phase 5 — reserved for decomposing along whatever the coupling note
+> actually shows, not the original three-area guess — has its own canonical status doc:
+> [`docs/phase5/README.md`](../phase5/README.md). No Phase 5 work has started; no timeline set.
 
 ## What Phase 4 is
 
