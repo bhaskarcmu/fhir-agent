@@ -1871,6 +1871,32 @@ Once "Llama wins absent explicit `LLM_PROVIDER`" ships, there's currently *no co
 
 Everything else from this round (1b, 2a, 2c, 3's milestone-and-docs directive, 4, 5, 6a, 6b, 7, 8) is a settled decision on my end — I'm not holding on any of those. I'm holding all implementation until you weigh in on these two.
 
+## Turn 27
+
+### Prompt
+
+2 (b) HArder gate, please -  CI rule is enforced technically (a check that fails loud if LLM_PROVIDER=anthropic appears in CI config). Everything else seems resolved.
+
+2 (c) Seems resolved.
+
+8. Looks like this is resolved with one clarification - cache the Ollama model directory across CI runs now itself, not fast follow.
+
+____________________________
+
+Open item 1: Choose Option B (three provider identities instead of two)
+
+Open Item 2: Option B (a minimal rail now)
+
+_______________________
+
+Looke like everything is resolved now. Expand M5's scope to reqork any previous milestones based on latest decisions. Also update all documentation for all phases including top level README as needed (including update Phase 6 plan document)
+
+Proceed to re-work M5
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 879 tool events</summary>
 
@@ -3346,6 +3372,6 @@ echo "---ollama tags shape (a…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 15:32 UTC
-- **Turns:** 26
+- **Last updated:** 2 August 2026, 15:43 UTC
+- **Turns:** 27
 - **Status:** Incomplete
