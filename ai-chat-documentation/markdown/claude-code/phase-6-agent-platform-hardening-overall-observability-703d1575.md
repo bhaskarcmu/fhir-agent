@@ -1899,8 +1899,10 @@ This is a large rework — let me gather the remaining context I need before res
 
 Good, real CI workflow files exist. Let me inspect them plus the README and PRD sections that reference M5.
 
+Now rewriting `providers.py` with the three-identity model, default-to-ollama, the production guardrail, and discovery functions.
+
 <details>
-<summary>Execution details — 882 tool events</summary>
+<summary>Execution details — 891 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3371,6 +3373,17 @@ echo "---ollama tags shape (a…`
 - **Bash** `echo "=== CI/automation files ==="; find /workspaces/fhir-agent -maxdepth 3 -iname "*.yml" -path "*workflow*" -o -maxdepth 3 -path "*.github*" 2>/dev/null; find /workspaces/fhir-agent -maxdepth 2 -ina…`
 - **Bash** `echo "=== tests.yml ==="; cat /workspaces/fhir-agent/.github/workflows/tests.yml
 echo "=== automations.yaml ==="; cat /workspaces/fhir-agent/.ona/automations.yaml`
+- **Bash** `gh run list --workflow=tests.yml --limit 5 2>&1
+echo "---checking PyPI for a name collision---"
+pip index versions agent-platform 2>&1 | head -5`
+- **Bash** `grep -n "ANTHROPIC_API_KEY\|mcp-agent\|LLM_PROVIDER\|Claude\|Anthropic" /workspaces/fhir-agent/README.md | head -40`
+- **Bash** `cat /workspaces/fhir-agent/.env.example 2>/dev/null | grep -n -i "anthropic\|claude\|llm"`
+- **Bash** `grep -n "M5\|gen_ai.system\|only.live.backend\|live backend" /workspaces/fhir-agent/docs/phase6/prd.md`
+- **Bash** `grep -n "gen_ai.system\|anthropic\|openai_compatible" /workspaces/fhir-agent/docs/phase6/telemetry-schema.md`
+- **Bash** `grep -rln "DEPLOYMENT_ENV\|APP_ENV\|ENVIRONMENT_TIER\|SPRING_PROFILES_ACTIVE" /workspaces/fhir-agent --include="*.yml" --include="*.yaml" --include="*.py" --include="*.java" 2>/dev/null | grep -v node…`
+- **TodoWrite** `{"todos": [{"content": "Rework agent_platform/providers.py: 3 provider identities (anthropic/ollama/openai_compatible), default=ollama, DEPLOYMENT_ENV production guardrail, discovery functions", "stat…`
+- **Read** `/workspaces/fhir-agent/agent-platform/src/agent_platform/providers.py`
+- **Edit** `/workspaces/fhir-agent/agent-platform/src/agent_platform/providers.py`
 
 </details>
 
@@ -3381,6 +3394,6 @@ echo "=== automations.yaml ==="; cat /workspaces/fhir-agent/.ona/automations.yam
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 15:45 UTC
+- **Last updated:** 2 August 2026, 15:47 UTC
 - **Turns:** 27
 - **Status:** Incomplete
