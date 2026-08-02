@@ -841,7 +841,7 @@ Create a Phase 6 PR with thorough documentation, including a PRD, design documen
 *[Claude has not completed this turn yet.]*
 
 <details>
-<summary>Execution details — 100 tool events</summary>
+<summary>Execution details — 101 tool events</summary>
 
 ### Turn 1 activity
 
@@ -987,6 +987,7 @@ gh pr view 55 --json state,mergedAt,mergeCommit 2>&1`
 - **Write** `/workspaces/fhir-agent/docs/phase6/prd.md`
 - **Write** `/workspaces/fhir-agent/docs/phase6/design.md`
 - **Write** `/workspaces/fhir-agent/docs/phase6/milestone-plan.md`
+- **Write** `/workspaces/fhir-agent/docs/phase6/decisions.md`
 
 </details>
 
