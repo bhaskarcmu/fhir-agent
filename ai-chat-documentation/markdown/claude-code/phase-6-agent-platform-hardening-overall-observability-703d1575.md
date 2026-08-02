@@ -1198,8 +1198,12 @@ Now the token-budget/compaction module, grounded in the real measured numbers:
 
 Now let's write `context_budget` tests (pure logic, no DB needed) and a `conftest.py` for the DB-backed session store tests, following the established self-skip pattern.
 
+Now updating `agent.py`. First the imports and constants:
+
+Now `run_query`'s signature and compaction wiring:
+
 <details>
-<summary>Execution details — 568 tool events</summary>
+<summary>Execution details — 574 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2185,6 +2189,12 @@ python -m pytest agent-platform/tests/test_session_store.py -v 2>&1 | tail -30`
 - **Bash** `wc -l /workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
 - **Bash** `sed -n '1,110p' /workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
 - **Bash** `sed -n '110,160p' /workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Bash** `grep -n "^def interactive_mode\|^def non_interactive_mode\|^def main\|^if __name__" /workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Bash** `sed -n '377,453p' /workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
 
 </details>
 
@@ -2195,6 +2205,6 @@ python -m pytest agent-platform/tests/test_session_store.py -v 2>&1 | tail -30`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 13:06 UTC
+- **Last updated:** 2 August 2026, 13:07 UTC
 - **Turns:** 18
 - **Status:** Complete
