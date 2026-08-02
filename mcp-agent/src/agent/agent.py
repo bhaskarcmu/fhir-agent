@@ -10,26 +10,41 @@ The agent contains no clinical logic. It orchestrates tool calls and
 composes narratives. Clinical logic lives in the triage service.
 
 Usage:
-  # Interactive mode
+  # Interactive mode -- self-hosted Llama by default, free, PHI stays local.
   python3 mcp-agent/src/agent/agent.py
 
   # Non-interactive (demo / CI)
   python3 mcp-agent/src/agent/agent.py --query "Check refill risk for Kristle Mraz"
 
+  # See what's actually available before choosing (docs/phase6/decisions.md H48)
+  python3 mcp-agent/src/agent/agent.py --list-models ollama
+
+  # Explicit opt-in to a stronger, third-party-hosted model for this run
+  python3 mcp-agent/src/agent/agent.py --provider anthropic --model claude-sonnet-4-5 \
+      --query "Check refill risk for Kristle Mraz"
+
 Environment variables:
-  ANTHROPIC_API_KEY    Anthropic API key (required unless LLM_PROVIDER=openai_compatible)
   FHIR_GATEWAY_URL     FHIR server base URL (required)
   FHIR_API_KEY         Kong API key (omit for local dev)
   TRIAGE_SERVICE_URL   Triage service base URL (default: http://localhost:8001)
 
-  M5 provider seam (docs/phase6/decisions.md H4) -- Anthropic remains the
-  default and only production backend; these only matter if you explicitly
-  opt into the OpenAI-compatible adapter (Ollama, DeepSeek, vLLM, ...):
-  LLM_PROVIDER   "anthropic" (default) or "openai_compatible"
-  LLM_MODEL      Model name. Required when LLM_PROVIDER=openai_compatible
-                 (e.g. "llama3.2:1b"); optional override otherwise.
-  LLM_BASE_URL   OpenAI-compatible base URL, e.g. http://localhost:11434/v1
+  Provider seam (docs/phase6/decisions.md H4, superseded by H45-H48) -- three
+  identities, --provider/--model above take precedence over these for a
+  single run:
+  LLM_PROVIDER   "ollama" (default when unset -- self-hosted, free, PHI
+                 never leaves this host) | "anthropic" | "openai_compatible".
+                 A present ANTHROPIC_API_KEY does NOT change this default on
+                 its own (H46) -- only an explicit LLM_PROVIDER does.
+  LLM_MODEL      Model name. Optional for "ollama" (default "llama3.2:1b")
+                 and "anthropic" (default "claude-sonnet-4-5"); REQUIRED for
+                 "openai_compatible" (no safe generic default exists).
+  LLM_BASE_URL   Optional for "ollama" (default http://localhost:11434/v1);
+                 REQUIRED for "openai_compatible".
   LLM_API_KEY    Optional -- Ollama needs none, DeepSeek/OpenRouter do.
+  ANTHROPIC_API_KEY / CLAUDE_API_KEY   Required only when LLM_PROVIDER=anthropic.
+  DEPLOYMENT_ENV=production            Refuses to silently default to Ollama
+                 if LLM_PROVIDER is unset (H47) -- a minimal guardrail
+                 pending the fuller environment-tier design deferred to M7.
 """
 
 from __future__ import annotations
@@ -47,6 +62,8 @@ from agent_platform import (
     CircuitOpenError,
     CostLimitExceededError,
     ESTIMATED_TOKENS_PER_CALL,
+    ResolvedProvider,
+    build_client_for,
     build_llm_client,
     call_with_resilience,
     compact,
@@ -55,6 +72,9 @@ from agent_platform import (
     get_tracer,
     is_unknown,
     layer_attrs,
+    list_anthropic_models,
+    list_ollama_models,
+    list_openai_compatible_models,
     load_session,
     record_usage,
     safe_set_attributes,
@@ -433,14 +453,13 @@ def _print_tool_result(name: str, result_str: str) -> None:
 # Entry points
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _check_env() -> tuple[anthropic.Anthropic | object, str, str]:
+def _resolve_provider() -> ResolvedProvider:
     """
-    Validate required environment variables and return
-    (client, model, gen_ai_system).
-    Anthropic is the default provider (docs/phase6/decisions.md H4); set
-    LLM_PROVIDER=openai_compatible to use the M5 seam instead (Ollama,
-    DeepSeek, vLLM, ...) -- see agent_platform.providers.build_llm_client
-    for the full env var contract.
+    Validate required environment variables and resolve the LLM provider.
+    Ollama is the default when LLM_PROVIDER is unset (docs/phase6/
+    decisions.md H45) -- self-hosted, free, PHI stays on this host. See
+    agent_platform.providers.build_llm_client for the full env var
+    contract, including the DEPLOYMENT_ENV=production guardrail (H47).
     """
     fhir_url = os.environ.get("FHIR_GATEWAY_URL", "")
     if not fhir_url:
@@ -457,30 +476,50 @@ def _check_env() -> tuple[anthropic.Anthropic | object, str, str]:
         sys.exit(1)
 
 
-def interactive_mode(
-    client: anthropic.Anthropic,
-    session_id: str | None = None,
-    model: str = MODEL,
-    gen_ai_system: str = "anthropic",
-) -> None:
+def _maybe_print_disclosure(resolved: ResolvedProvider) -> None:
+    """
+    Disclose, never silently substitute (docs/phase6/decisions.md H46):
+    only prints when the self-hosted default was actually used (not an
+    explicit choice) and a human is plausibly reading this -- sys.stdin's
+    TTY-ness is used *only* to decide whether to show this message, never
+    to change which model gets used. A test harness/automated caller
+    (stdin not a TTY) sees nothing extra. The HTTP transport has no TTY
+    concept at all and doesn't get this disclosure -- a documented
+    limitation (docs/phase6/decisions.md H46), not a safety gap: the
+    underlying default-selection rule doesn't depend on this signal.
+    """
+    if resolved.is_default and sys.stdin.isatty():
+        print(error_block(
+            "Using self-hosted Llama (free -- no data leaves this host) since no "
+            "LLM_PROVIDER was set. For stronger reasoning, explicitly opt into a "
+            "third-party model: --provider anthropic --model claude-sonnet-4-5 "
+            "(requires ANTHROPIC_API_KEY) -- data would then leave this host. "
+            "Run --list-models to see what's actually available first."
+        ))
+
+
+def interactive_mode(resolved: ResolvedProvider, session_id: str | None = None) -> None:
     """
     Run the agent in interactive REPL mode.
 
     If session_id is given, resumes that session from the Postgres session
-    store (docs/phase6/design.md Section 4.3, decisions.md H12). If
+    store (docs/phase6/design.md Section 4.3, decisions.md H12) -- using
+    THAT session's own pinned provider/model (H49), not `resolved`, which
+    is only the freshly-resolved default/choice for a *new* session. If
     DATABASE_URL is set but no session_id is given, starts a new persisted
-    session. If DATABASE_URL isn't set at all, falls back to a purely
-    in-memory session -- the same zero-setup behavior this REPL always had,
-    just without cross-process resume (mirrors claims-agent's own
-    no-API-key deterministic fallback: degrade gracefully, don't crash).
-    Context-budget compaction (H13) applies either way -- it only needs
-    token_count threaded through in-memory turn to turn, not the DB.
-
-    model is whichever model build_llm_client() resolved -- Anthropic's by
-    default, or the operator-supplied LLM_MODEL when running against the
-    M5 OpenAI-compatible seam (docs/phase6/decisions.md H4).
+    session using `resolved`. If DATABASE_URL isn't set at all, falls back
+    to a purely in-memory session -- the same zero-setup behavior this
+    REPL always had, just without cross-process resume (mirrors
+    claims-agent's own no-API-key deterministic fallback: degrade
+    gracefully, don't crash). Context-budget compaction (H13) applies
+    either way -- it only needs token_count threaded through in-memory
+    turn to turn, not the DB.
     """
     print(welcome())
+
+    client = resolved.client
+    model = resolved.model
+    gen_ai_system = resolved.gen_ai_system
 
     messages: list[dict] = []
     token_count = 0
@@ -488,19 +527,34 @@ def interactive_mode(
 
     if session_id:
         try:
-            messages, token_count = load_session(session_id)
+            loaded = load_session(session_id)
+            messages, token_count = loaded.messages, loaded.token_count
             persisted = True
-            print(f"(resumed session {session_id}, {len(messages)} prior message(s))")
+            # A resumed session keeps using what it was created with (H49),
+            # not today's default/CLI choice -- rebuild the client to match.
+            # Whether that original choice was itself a default fallback
+            # isn't persisted (only provider/model are, H49) -- so this
+            # print is an unconditional disclosure instead of a TTY-gated
+            # one; it's not trying to reconstruct that lost information.
+            client = build_client_for(loaded.provider, loaded.model)
+            model, gen_ai_system = loaded.model, loaded.provider
+            print(f"(resumed session {session_id}, {len(messages)} prior message(s), "
+                  f"provider={loaded.provider} model={loaded.model})")
         except Exception as exc:
             print(error_block(f"Could not resume session {session_id}: {exc}"))
             return
-    elif os.environ.get("DATABASE_URL"):
-        try:
-            session_id = create_session()
-            persisted = True
-            print(f"(session {session_id})")
-        except Exception as exc:
-            print(error_block(f"Session store unavailable, continuing in-memory only: {exc}"))
+    else:
+        # A fresh session (persisted or in-memory-only) -- resolved.is_default
+        # accurately reflects whether this run fell back to the self-hosted
+        # default, so the disclosure gate below is meaningful here.
+        _maybe_print_disclosure(resolved)
+        if os.environ.get("DATABASE_URL"):
+            try:
+                session_id = create_session(gen_ai_system, model)
+                persisted = True
+                print(f"(session {session_id}, provider={gen_ai_system} model={model})")
+            except Exception as exc:
+                print(error_block(f"Session store unavailable, continuing in-memory only: {exc}"))
 
     while True:
         try:
@@ -526,7 +580,7 @@ def interactive_mode(
         except (anthropic.APIError, httpx.HTTPError) as exc:
             # A single call failure below M4's circuit breaker threshold --
             # print and continue the REPL rather than crashing it, for
-            # either provider (docs/phase6/decisions.md H4, H20).
+            # any of the three provider identities (docs/phase6/decisions.md H4, H20).
             print(error_block(f"LLM API error: {exc}"))
             continue
         except Exception as exc:
@@ -541,13 +595,7 @@ def interactive_mode(
                 print(error_block(f"Failed to persist session: {exc}"))
 
 
-def non_interactive_mode(
-    client: anthropic.Anthropic,
-    query: str,
-    session_id: str | None = None,
-    model: str = MODEL,
-    gen_ai_system: str = "anthropic",
-) -> int:
+def non_interactive_mode(resolved: ResolvedProvider, query: str, session_id: str | None = None) -> int:
     """
     Run a single query and exit. Returns exit code.
 
@@ -555,22 +603,30 @@ def non_interactive_mode(
     behavior; pass one to resume/continue a persisted session (docs/phase6/
     design.md Section 4.3), making a single-shot invocation usable as a real
     multi-turn conversation across separate process runs, e.g. from a test
-    program issuing one query per invocation against the same session.
-
-    model is whichever model build_llm_client() resolved (docs/phase6/
-    decisions.md H4, M5).
+    program issuing one query per invocation against the same session. As
+    in interactive_mode, a resumed session uses its own pinned
+    provider/model (H49), not `resolved`.
     """
+    client = resolved.client
+    model = resolved.model
+    gen_ai_system = resolved.gen_ai_system
+
     messages: list[dict] = []
     token_count = 0
     persisted = False
 
     if session_id:
         try:
-            messages, token_count = load_session(session_id)
+            loaded = load_session(session_id)
+            messages, token_count = loaded.messages, loaded.token_count
             persisted = True
+            client = build_client_for(loaded.provider, loaded.model)
+            model, gen_ai_system = loaded.model, loaded.provider
         except Exception as exc:
             print(error_block(f"Could not resume session {session_id}: {exc}"))
             return 1
+    else:
+        _maybe_print_disclosure(resolved)
 
     print(f"\nQuery: {query}\n")
     stats: dict = {}
@@ -591,6 +647,35 @@ def non_interactive_mode(
         return 1
 
 
+def _print_model_list(provider: str) -> None:
+    """
+    Discovery (docs/phase6/decisions.md H48) -- opt-in only, called only
+    when --list-models is explicitly passed. Succeeds or raises; no
+    partial results, no silent fallback to the default.
+    """
+    if provider == "ollama":
+        base_url = os.environ.get("LLM_BASE_URL", "") or None
+        models = list_ollama_models(base_url) if base_url else list_ollama_models()
+    elif provider == "anthropic":
+        api_key = os.environ.get("ANTHROPIC_API_KEY", "") or os.environ.get("CLAUDE_API_KEY", "")
+        if not api_key:
+            print(error_block("ANTHROPIC_API_KEY is not set (CLAUDE_API_KEY is also accepted)."))
+            sys.exit(1)
+        models = list_anthropic_models(api_key)
+    else:  # openai_compatible
+        base_url = os.environ.get("LLM_BASE_URL", "")
+        if not base_url:
+            print(error_block(
+                "LLM_BASE_URL is not set (required to list openai_compatible models)."
+            ))
+            sys.exit(1)
+        models = list_openai_compatible_models(base_url, api_key=os.environ.get("LLM_API_KEY", ""))
+
+    print(f"Available models for provider={provider!r}:")
+    for name in models:
+        print(f"  {name}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Agentic Healthcare Platform — Clinical Assistant"
@@ -607,17 +692,45 @@ def main() -> None:
              "Interactive mode starts a new session automatically when omitted "
              "and DATABASE_URL is set.",
     )
+    parser.add_argument(
+        "--provider",
+        choices=["anthropic", "ollama", "openai_compatible"],
+        help="Override LLM_PROVIDER for this run only (docs/phase6/decisions.md H4). "
+             "An explicit choice here is never treated as the self-hosted default (H46).",
+    )
+    parser.add_argument(
+        "--model",
+        metavar="MODEL",
+        help="Override LLM_MODEL for this run only.",
+    )
+    parser.add_argument(
+        "--list-models",
+        metavar="PROVIDER",
+        choices=["anthropic", "ollama", "openai_compatible"],
+        help="Query and print the models actually available for PROVIDER, then exit "
+             "(docs/phase6/decisions.md H48) -- does not run a query.",
+    )
     args = parser.parse_args()
 
+    if args.list_models:
+        _print_model_list(args.list_models)
+        return
+
+    # CLI flags take precedence over the environment for this single run
+    # (a human explicitly choosing beats an ambient env var, same principle
+    # as H46: explicit always wins over incidental).
+    if args.provider:
+        os.environ["LLM_PROVIDER"] = args.provider
+    if args.model:
+        os.environ["LLM_MODEL"] = args.model
+
     setup_tracing("mcp-agent")
-    client, model, gen_ai_system = _check_env()
+    resolved = _resolve_provider()
 
     if args.query:
-        sys.exit(non_interactive_mode(
-            client, args.query, session_id=args.session_id, model=model, gen_ai_system=gen_ai_system,
-        ))
+        sys.exit(non_interactive_mode(resolved, args.query, session_id=args.session_id))
     else:
-        interactive_mode(client, session_id=args.session_id, model=model, gen_ai_system=gen_ai_system)
+        interactive_mode(resolved, session_id=args.session_id)
 
 
 if __name__ == "__main__":

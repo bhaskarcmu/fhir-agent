@@ -63,9 +63,14 @@ Five topics, referenced by number throughout Phase 6's documents (see
   (§`milestone-plan.md` M6) is explicitly designed so retrieval only ever grounds an
   *explanation* of a decision `triage-service` already made — never a premise the agent reasons
   over to reach its own conclusion.
-- **No live switch away from Anthropic.** The provider seam (M5) exists to prove the seam works,
-  not to change the production default. Anthropic remains the only live backend Phase 6 ships
-  with.
+- **No live switch away from a strong model *in production*, without an explicit, deliberate
+  choice.** Revised from the original non-goal (which read "Anthropic remains the only live
+  backend Phase 6 ships with") after a design-review pass reversed that default — see
+  [`decisions.md` H45](./decisions.md). The provider seam (M5) now defaults to self-hosted Ollama
+  everywhere *except* where an operator explicitly opts into a different provider; a real
+  clinical production deployment guaranteeing a strong model is M7's job
+  (§`milestone-plan.md` M7), not something M5 itself enforces beyond the minimal
+  `DEPLOYMENT_ENV=production` guardrail (H47).
 - **No Phase 3 or Phase 4 agent work.** `provider-search-agent`, `provider-curation-agent`, and
   any future Epic-emulator-adjacent agent work are explicitly out of scope — Phase 6 pilots on
   `mcp-agent` (Phase 1) and carries to `claims-agent` (Phase 2) only.
@@ -118,12 +123,25 @@ Grouped by topic; each maps to the milestone(s) that deliver it in
 - **R13.** A circuit breaker specifically wraps the LLM API call, documented as a deliberate
   divergence from this repo's otherwise-consistent "no breaker" convention.
 
-**Multi-provider (topic 4, → M5)**
-- **R14.** Exactly two provider adapters — Anthropic native and one OpenAI-compatible adapter
-  covering Llama/DeepSeek/Ollama/vLLM/hosted endpoints. Model selection is configuration, not
-  code.
+**Multi-provider (topic 4, → M5, reworked post-review — [`decisions.md` H45](./decisions.md))**
+- **R14.** Three provider identities, two adapter implementations — Anthropic native,
+  self-hosted Ollama (the only identity ever selected automatically), and one OpenAI-compatible
+  adapter for any other endpoint (DeepSeek/OpenRouter/Groq/self-hosted vLLM), never a default.
+  Model selection is configuration, not code. *(Originally "exactly two adapters,
+  Anthropic-default" — revised to add the self-hosted/third-party distinction and the default
+  flip.)*
 - **R15-agent.** *(named to avoid collision with Phase 2's R15)* Conversation history correctly
-  round-trips through both adapters and through R11's session store regardless of provider.
+  round-trips through all provider identities and through R11's session store regardless of
+  provider — now including a persisted per-session provider/model pin (H49), not just the
+  message content.
+- **R20.** With no explicit provider configuration, the agent defaults to a self-hosted model —
+  never a third party — and this default is disclosed to an interactive human caller, never
+  silently substituted (H46).
+
+**Strong model in production (→ M7, planned, not yet implemented)**
+- **R21.** A real production deployment cannot silently end up running the self-hosted default
+  meant for dev/CI — the exact mechanism (beyond M5's minimal `DEPLOYMENT_ENV=production`
+  guardrail, H47) is M7's open design question.
 
 **Policy, knowledge, judge (topic 5, → M6)**
 - **R16.** `policy.md`'s rules are always present in the system prompt.
@@ -142,11 +160,12 @@ Grouped by topic; each maps to the milestone(s) that deliver it in
 | Milestone | Metric |
 |---|---|
 | M1 | Zero off-contract final answers escape the enum gate across the full adversarial test corpus (Claude + local/weak model). Zero cases where an `UNKNOWN`/failed triage check is narrated as safe. |
-| M2 | 100% of agent runs (across both providers, once M5 lands) produce a complete, PHI-clean trace. R15 formally closed: `claims-service`/`rxclaim-emulator` export equivalent traces/metrics. |
+| M2 | 100% of agent runs (across all provider identities, once M5 lands) produce a complete, PHI-clean trace. R15 formally closed: `claims-service`/`rxclaim-emulator` export equivalent traces/metrics. |
 | M3 | Zero conversation state lost across an HTTP-API session restart. Token-budget number is cited back to real M2 telemetry, not asserted without a source. |
 | M4 | A simulated LLM-API outage never silently blocks a real clinical query (alert fires, request still completes or fails closed to `REVIEW` — never a raw crash or silent drop). |
-| M5 | The full M1 adversarial test corpus passes unmodified against the OpenAI-compatible adapter pointed at a local Ollama model. |
+| M5 | The full M1 adversarial test corpus passes unmodified against the real Ollama-backed default (not just the OpenAI-compatible adapter in the abstract) — live-confirmed, including the CLI running with zero `LLM_PROVIDER`/API key configured at all. |
 | M6 | Judge flags are reviewed and none override a hard R1–R3 invariant during acceptance testing; every knowledge-base citation traces to a `triage-service` decision that already existed before retrieval fired. |
+| M7 | A real production deployment cannot start (or cannot silently serve queries) while resolved to the self-hosted default — planned acceptance bar, not yet built. |
 
 ## 6. Provenance
 

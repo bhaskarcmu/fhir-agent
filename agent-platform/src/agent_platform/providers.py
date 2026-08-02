@@ -1,11 +1,26 @@
 """
 Provider abstraction for the one LLM API call every agent turn makes
-(docs/phase6/design.md Section 4.5, decisions.md H4). Exactly two
-adapters, never more: Anthropic (native) and one OpenAI-compatible
-adapter covering Llama, DeepSeek, Ollama, vLLM, and hosted
-OpenAI-compatible endpoints (DeepSeek API, OpenRouter, Groq). Model
-choice becomes a config value (LLM_PROVIDER/LLM_MODEL/LLM_BASE_URL/
-LLM_API_KEY), never a code branch.
+(docs/phase6/design.md Section 4.5, decisions.md H4, superseded by H45).
+
+Three provider *identities*, two adapter *implementations*:
+  - "anthropic"         -- Anthropic native. Third-party-hosted.
+  - "ollama"             -- a local, self-hosted Ollama instance. The only
+                            identity eligible to be selected automatically
+                            when nothing is configured (H45-H47).
+  - "openai_compatible" -- any OTHER OpenAI-chat-completions-shaped
+                            endpoint: DeepSeek API, OpenRouter, Groq, a
+                            self-hosted vLLM box, etc. Third-party-hosted
+                            by convention here (a self-hosted vLLM user
+                            gets the same safety property "openai_compatible"
+                            already had -- explicit opt-in required -- just
+                            without automatic default-eligibility; see H45).
+
+"ollama" and "openai_compatible" share one adapter implementation
+(OpenAICompatibleProvider below) -- Ollama speaks the same wire protocol,
+so no separate translation code is needed. The identity split exists
+purely to answer one question safely: *who hosts the inference*. That
+is the property that actually matters for keeping PHI off a third party
+(H45), not which wire protocol is spoken.
 
 The real Anthropic client needs no wrapper here: anthropic.Anthropic
 already exposes exactly the surface run_query calls --
@@ -14,16 +29,30 @@ messages=...) -> a response with .stop_reason, .content (blocks with
 .type/.text/.name/.input/.id), .usage.input_tokens/output_tokens.
 OpenAICompatibleProvider below duck-types that same surface so
 run_query, agent.py, and every existing test's fake client need zero
-changes to use either provider interchangeably (the same additive-only
-discipline as H31).
+changes to use any of the three identities interchangeably (the same
+additive-only discipline as H31).
 
-Anthropic remains the only *live* backend in production even after this
-ships (H4) -- LLM_PROVIDER defaults to "anthropic" and the
-OpenAI-compatible seam only activates when explicitly requested. It
-exists to prove PHI-off-third-party is achievable when that becomes an
-active business rule, and to let M1's local-LLM adversarial testing
-(decisions.md H11) run through the real agent loop instead of talking to
-Ollama directly the way it did before this module existed.
+**The default flipped (H45, superseding H4's "Anthropic is the only
+live backend"):** with no explicit LLM_PROVIDER set, build_llm_client()
+now resolves to "ollama" -- self-hosted, free, and (the primary
+rationale, not a side effect) PHI never leaves this host. Presence of a
+paid API key is *not* enough to select a paid/third-party provider --
+only an explicit LLM_PROVIDER does that (H46) -- because a key's mere
+presence is an easily-accidental signal (a leftover .env, a shared
+devcontainer image), while an explicit LLM_PROVIDER is a deliberate one.
+This default is disclosed, never silently substituted -- see agent.py's
+TTY-gated disclosure and docs/phase6/decisions.md H46.
+
+**Production is not "the vacuum" (H47):** DEPLOYMENT_ENV=production
+makes an unset LLM_PROVIDER a loud error instead of a silent Llama
+fallback -- a minimal guardrail pending the fuller environment-tier
+design deferred to M7 ("Strong Model in Production," not yet built).
+
+list_models() below is the discovery seam a human or a test script can
+use to see what is actually available before choosing -- opt-in only,
+never called unless something explicitly asks; it either succeeds or
+raises, no partial/best-effort degradation (docs/phase6/decisions.md
+H48).
 """
 
 from __future__ import annotations
@@ -240,48 +269,177 @@ class OpenAICompatibleProvider:
         return _from_openai_response(response.json())
 
 
-def build_llm_client() -> tuple[object, str, str]:
-    """
-    Resolve LLM_PROVIDER/LLM_MODEL/LLM_BASE_URL/LLM_API_KEY into a
-    (client, model, gen_ai_system) triple. Anthropic is the default and
-    only *live* production backend (H4) -- the OpenAI-compatible seam
-    activates only when LLM_PROVIDER is explicitly set to
-    "openai_compatible". Raises RuntimeError on misconfiguration (mirrors
-    session_store.py's DATABASE_URL contract) -- callers decide whether
-    that means sys.exit (the CLI) or a 503 (the HTTP transport).
+DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-5"
+# Self-hosted, zero-required-config identity -- these two defaults are
+# why LLM_PROVIDER=ollama needs nothing else set to work, unlike
+# "openai_compatible" which requires an explicit LLM_BASE_URL/LLM_MODEL
+# (there's no safe generic default for an arbitrary third-party endpoint).
+DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434/v1"
+DEFAULT_OLLAMA_MODEL = "llama3.2:1b"
 
-    gen_ai_system is returned explicitly rather than left for a caller to
-    infer via isinstance(client, ...) -- every existing test in this repo
-    exercises run_query with a duck-typed fake client, not a real
-    anthropic.Anthropic instance, so type-based detection would call
-    every one of them "openai_compatible". Explicit is simpler and
-    correct for both real and faked clients.
+_VALID_PROVIDERS = ("anthropic", "ollama", "openai_compatible")
+
+
+@dataclass
+class ResolvedProvider:
     """
-    provider = os.environ.get("LLM_PROVIDER", "anthropic").strip().lower()
+    What build_llm_client() resolves LLM_PROVIDER (or its absence) into.
+    A small dataclass rather than a growing bare tuple -- it was already
+    an awkward 3-tuple before is_default existed.
+
+    client:         anthropic.Anthropic or OpenAICompatibleProvider.
+    model:          resolved model name.
+    gen_ai_system:  "anthropic" | "ollama" | "openai_compatible" -- for
+                    telemetry (fhir_agent's gen_ai.system attribute).
+                    Explicit, never inferred via isinstance(): every
+                    existing test in this repo exercises run_query with a
+                    duck-typed fake client, not a real SDK instance, so
+                    type-based detection would mislabel all of them.
+    is_default:     True only when LLM_PROVIDER was unset and this is the
+                    Ollama fallback (H46) -- False for every explicit
+                    choice, including an explicit LLM_PROVIDER=ollama.
+                    Callers use this to decide whether to show the
+                    cost/privacy disclosure (agent.py) -- never to change
+                    behavior itself.
+    """
+
+    client: object
+    model: str
+    gen_ai_system: str
+    is_default: bool = False
+
+
+def _construct_client(provider: str) -> object:
+    """
+    Build the actual client object for an already-decided provider
+    identity, reading only infrastructure-level config (base URL, API
+    key) from the current environment -- never a per-session secret,
+    since nothing session-scoped is persisted here (docs/phase6/
+    decisions.md H49: only provider/model are persisted per session,
+    deliberately not base_url/api_key).
+    """
+    if provider == "ollama":
+        base_url = os.environ.get("LLM_BASE_URL", DEFAULT_OLLAMA_BASE_URL)
+        return OpenAICompatibleProvider(base_url=base_url, api_key=os.environ.get("LLM_API_KEY", ""))
 
     if provider == "openai_compatible":
         base_url = os.environ.get("LLM_BASE_URL", "")
         if not base_url:
             raise RuntimeError(
-                "LLM_BASE_URL is not set (required when LLM_PROVIDER=openai_compatible). "
-                "e.g. export LLM_BASE_URL=http://localhost:11434/v1 for a local Ollama."
+                "LLM_BASE_URL is not set (required when LLM_PROVIDER=openai_compatible -- "
+                "there's no safe generic default for an arbitrary third-party endpoint). "
+                "e.g. export LLM_BASE_URL=https://api.deepseek.com/v1"
             )
+        return OpenAICompatibleProvider(base_url=base_url, api_key=os.environ.get("LLM_API_KEY", ""))
+
+    # provider == "anthropic"
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "") or os.environ.get("CLAUDE_API_KEY", "")
+    if not api_key:
+        raise RuntimeError("ANTHROPIC_API_KEY is not set (CLAUDE_API_KEY is also accepted).")
+    return anthropic.Anthropic(api_key=api_key)
+
+
+def build_llm_client() -> ResolvedProvider:
+    """
+    Resolve LLM_PROVIDER/LLM_MODEL/LLM_BASE_URL/LLM_API_KEY (and
+    DEPLOYMENT_ENV) into a ResolvedProvider for a *new* session/process --
+    i.e. this is the "nothing has been decided yet" entry point. To
+    rebuild the client for an *existing* session's already-pinned
+    provider/model, use build_client_for() instead (docs/phase6/
+    decisions.md H49) -- model choice is a per-session decision, so a
+    resumed session must keep using what it was created with, not
+    silently pick up today's default or this process's own config.
+
+    Raises RuntimeError on misconfiguration (mirrors session_store.py's
+    DATABASE_URL contract) -- callers decide whether that means sys.exit
+    (the CLI) or a 503 (the HTTP transport).
+
+    With LLM_PROVIDER unset, resolves to "ollama" (H45) -- self-hosted,
+    free, and (the actual point) PHI never leaves this host. A paid key
+    being present is not enough on its own to select a paid provider
+    (H46); DEPLOYMENT_ENV=production makes the unset case a loud error
+    instead, since production is never allowed to be "the vacuum" (H47).
+    """
+    provider = os.environ.get("LLM_PROVIDER", "").strip().lower()
+    explicit = bool(provider)
+
+    if not explicit:
+        if os.environ.get("DEPLOYMENT_ENV", "").strip().lower() == "production":
+            raise RuntimeError(
+                "DEPLOYMENT_ENV=production but LLM_PROVIDER is not set. Production "
+                "deployments must explicitly choose a provider -- refusing to silently "
+                "fall back to the self-hosted Ollama default in a production environment "
+                "(docs/phase6/decisions.md H47). Set LLM_PROVIDER=anthropic (or "
+                "whichever provider this deployment is meant to run) explicitly."
+            )
+        provider = "ollama"
+
+    if provider not in _VALID_PROVIDERS:
+        raise RuntimeError(
+            f"Unrecognized LLM_PROVIDER={provider!r} -- expected one of {_VALID_PROVIDERS}."
+        )
+
+    # Construct the client first -- it validates base_url/API-key
+    # prerequisites, which should surface before a missing-model error
+    # when both are absent (openai_compatible requires both explicitly).
+    client = _construct_client(provider)
+
+    if provider == "ollama":
+        model = os.environ.get("LLM_MODEL", DEFAULT_OLLAMA_MODEL)
+    elif provider == "openai_compatible":
         model = os.environ.get("LLM_MODEL", "")
         if not model:
             raise RuntimeError(
                 "LLM_MODEL is not set (required when LLM_PROVIDER=openai_compatible). "
-                "e.g. export LLM_MODEL=llama3.2:1b"
+                "e.g. export LLM_MODEL=deepseek-chat"
             )
-        client = OpenAICompatibleProvider(base_url=base_url, api_key=os.environ.get("LLM_API_KEY", ""))
-        return client, model, "openai_compatible"
+    else:
+        model = os.environ.get("LLM_MODEL", DEFAULT_ANTHROPIC_MODEL)
 
-    if provider != "anthropic":
-        raise RuntimeError(
-            f"Unrecognized LLM_PROVIDER={provider!r} -- expected 'anthropic' or 'openai_compatible'."
-        )
+    return ResolvedProvider(client, model, provider, is_default=not explicit)
 
-    api_key = os.environ.get("ANTHROPIC_API_KEY", "") or os.environ.get("CLAUDE_API_KEY", "")
-    if not api_key:
-        raise RuntimeError("ANTHROPIC_API_KEY is not set (CLAUDE_API_KEY is also accepted).")
+
+def build_client_for(provider: str, model: str) -> object:
+    """
+    Rebuild just the client object for an already-decided (provider,
+    model) pair -- used to resume an existing session with the exact
+    provider it was pinned to at creation (docs/phase6/decisions.md H49),
+    regardless of what LLM_PROVIDER this process would otherwise default
+    or resolve to right now. Infrastructure-level config (base URL, API
+    key) still comes from the current environment -- see
+    _construct_client()'s docstring on why that's not a session-persisted
+    value. Raises RuntimeError the same way build_llm_client() does if
+    that infrastructure config is missing (e.g. no ANTHROPIC_API_KEY, but
+    the session was pinned to "anthropic").
+    """
+    if provider not in _VALID_PROVIDERS:
+        raise RuntimeError(f"Unknown provider {provider!r} recorded for this session.")
+    return _construct_client(provider)
+
+
+# ── Discovery (docs/phase6/decisions.md H48) ─────────────────────────────
+# Opt-in only -- nothing above calls these. A human (--list-models) or a
+# test script calls one of these explicitly; it either returns a real
+# list or raises. No partial results, no silent fallback to the default:
+# discovery failing means "can't list options," full stop.
+
+def list_anthropic_models(api_key: str) -> list[str]:
     client = anthropic.Anthropic(api_key=api_key)
-    return client, os.environ.get("LLM_MODEL", "claude-sonnet-4-5"), "anthropic"
+    return [m.id for m in client.models.list()]
+
+
+def list_ollama_models(base_url: str = DEFAULT_OLLAMA_BASE_URL) -> list[str]:
+    # Ollama's own /api/tags, not /v1/models -- the OpenAI-compatible
+    # surface Ollama exposes doesn't include a models-list endpoint with
+    # local model names the way /api/tags does.
+    root = base_url.rstrip("/").removesuffix("/v1")
+    response = httpx.get(f"{root}/api/tags", timeout=10.0)
+    response.raise_for_status()
+    return [m["name"] for m in response.json().get("models", [])]
+
+
+def list_openai_compatible_models(base_url: str, api_key: str = "") -> list[str]:
+    headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
+    response = httpx.get(f"{base_url.rstrip('/')}/models", headers=headers, timeout=10.0)
+    response.raise_for_status()
+    return [m["id"] for m in response.json().get("data", [])]

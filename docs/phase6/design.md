@@ -250,19 +250,25 @@ both untestable against a single-process REPL holding a Python list.
   state). Grafana's dashboard API confirmed the provisioned dashboard loads with all 4 panels;
   Prometheus's own `/api/v1/targets` confirmed `mcp-agent-api` scraping as `up`.
 
-### 4.5 Multi-provider (→ M5) — implemented
+### 4.5 Multi-provider (→ M5) — implemented, reworked post-review
 
-Exactly two adapters ([`decisions.md` H4](./decisions.md)): Anthropic (native tool-use) and one
-OpenAI-compatible adapter covering Llama, DeepSeek, Ollama, vLLM, and hosted OpenAI-compatible
-endpoints (DeepSeek API, OpenRouter, Groq). Model selection is a config value
-(`LLM_PROVIDER`/`LLM_MODEL`/`LLM_BASE_URL`/`LLM_API_KEY`, resolved once by
-`agent_platform.providers.build_llm_client()`); Llama-vs-DeepSeek is never a code branch.
+Three provider *identities*, two adapter *implementations* ([`decisions.md` H45](./decisions.md),
+superseding H4's "exactly two adapters, Anthropic is the default"): `"anthropic"` (native),
+`"ollama"` (self-hosted, the only identity ever selected automatically), and
+`"openai_compatible"` (any other OpenAI-chat-completions-shaped endpoint — DeepSeek API,
+OpenRouter, Groq, a self-hosted vLLM box — never a default, always explicit). `"ollama"` and
+`"openai_compatible"` share one adapter implementation (`OpenAICompatibleProvider`); the split
+exists purely to answer *who hosts the inference*, which is the property that actually matters
+for keeping PHI off a third party — not which wire protocol is spoken. Model selection is a
+config value (`LLM_PROVIDER`/`LLM_MODEL`/`LLM_BASE_URL`/`LLM_API_KEY`/`DEPLOYMENT_ENV`, resolved
+by `agent_platform.providers.build_llm_client()`); Llama-vs-DeepSeek-vs-Claude is never a code
+branch.
 
 - **No wrapper needed for Anthropic** ([`decisions.md` H40](./decisions.md)): `anthropic.Anthropic`
   already returns exactly the shape `run_query` expects, so it's used completely unwrapped.
   `OpenAICompatibleProvider` duck-types the same `client.messages.create(**kwargs)` surface, so
   `run_query`, `agent.py`, and every one of M1-M4's existing fake-client test fixtures need zero
-  changes to use either provider interchangeably.
+  changes to use any of the three identities interchangeably.
 - **Conversation-history translation** — the actual hard engineering problem — lives in
   `agent_platform/providers.py`: `_to_openai_messages()`/`_to_openai_tools()` outbound (our
   Anthropic-shaped messages/tool definitions → OpenAI chat-completions shape, including turning
@@ -273,31 +279,67 @@ endpoints (DeepSeek API, OpenRouter, Groq). Model selection is a config value
   rather than raising ([`H43`](./decisions.md)) — the standing local-LLM testing rule (H11)
   applied to the translation layer itself.
 - **Resilience is provider-agnostic** ([`decisions.md` H42](./decisions.md)): M4's circuit breaker
-  now treats both `anthropic.APIError` and `httpx.HTTPError` as tripping failures, since
+  treats both `anthropic.APIError` and `httpx.HTTPError` as tripping failures, since
   `OpenAICompatibleProvider` raises the latter, not the former. `anthropic` and `httpx` became
   real (non-optional) `agent-platform` dependencies as a direct result.
-- **`gen_ai_system` is explicit, not inferred** ([`decisions.md` H41](./decisions.md)):
-  `build_llm_client()` returns `(client, model, gen_ai_system)`, threaded through
-  `run_query`'s new `model`/`gen_ai_system` parameters (both purely additive, defaulting to the
-  pre-M5 constants — the same discipline as H31's `stats`). Caught during implementation: a
+- **`gen_ai_system` is explicit, not inferred** ([`decisions.md` H41](./decisions.md)): a
   type-based `isinstance(client, anthropic.Anthropic)` check mislabeled every existing
-  fake-client test as `"openai_compatible"`, since none of them are real SDK instances.
-- **Anthropic remains the only *live* production backend** — `LLM_PROVIDER` defaults to
-  `"anthropic"`; the OpenAI-compatible seam only activates when explicitly requested. The seam
-  exists to prove PHI-off-third-party is achievable when that becomes an active business rule —
-  it is not a default switch.
+  fake-client test as `"openai_compatible"`, caught while implementing M5 the first time — every
+  identity is threaded through explicitly instead.
+- **The default flipped to `"ollama"`** ([`decisions.md` H45](./decisions.md)) — self-hosted,
+  free, and (the actual, primary rationale, not a side effect) PHI never leaves this host when
+  nothing is explicitly configured. A present `ANTHROPIC_API_KEY` does **not**, on its own, select
+  Anthropic ([`H46`](./decisions.md)) — only an explicit `LLM_PROVIDER` does, since a key's mere
+  presence is too easily accidental (a leftover `.env`, a shared devcontainer image) to trust with
+  that decision. This is a real, acknowledged breaking behavior change for every pre-rework
+  docker-compose/dev setup that only ever set `ANTHROPIC_API_KEY`.
+- **Disclosed, never silently substituted** ([`H46`](./decisions.md)): the CLI prints a one-time
+  message when the self-hosted default was actually used, gated on `sys.stdin.isatty()` — that
+  signal decides *whether to show the message*, never which model runs; an automated caller (not
+  a TTY) sees nothing extra. `ResolvedProvider.is_default` carries this from
+  `build_llm_client()` through to `agent.py`'s `_maybe_print_disclosure()`. The HTTP transport has
+  no TTY concept and shows nothing — a documented, accepted limitation, since the underlying
+  default-selection rule doesn't depend on that signal at all.
+- **`DEPLOYMENT_ENV=production` is a minimal guardrail, not the full design**
+  ([`H47`](./decisions.md)): an unset `LLM_PROVIDER` becomes a loud `RuntimeError` instead of a
+  silent `ollama` fallback when set — production must never be "the vacuum." The fuller,
+  auditable, fail-loud environment-tier design is deferred to **M7** (§4.7 below); this closes
+  only the most dangerous immediate gap (a misconfigured deployment silently downgrading to a 1B
+  local model while still producing plausible-looking output).
+- **Discovery is opt-in and all-or-nothing** ([`H48`](./decisions.md)): `list_anthropic_models()`/
+  `list_ollama_models()`/`list_openai_compatible_models()`, the CLI's `--list-models`/`--provider`/
+  `--model` flags, and the API's `GET /models?provider=...` — none of these are called unless
+  something explicitly asks; once asked, discovery either returns a real list or raises, with no
+  partial results and no fallback logic to maintain.
+- **Model choice is per-session (API) / per-process (CLI)** ([`H49`](./decisions.md)): pinned at
+  creation, immutable for that conversation's lifetime. `agent_sessions` gained persisted
+  `provider`/`model` columns (`ALTER TABLE ... ADD COLUMN IF NOT EXISTS`, confirmed live against a
+  real pre-existing table, not just a fresh one). `build_client_for(provider, model)` rebuilds the
+  exact client for a resumed CLI session or any API query, reading only infrastructure-level
+  config (base URL, API key) from the *current* environment — no session-scoped secret is ever
+  persisted. Live-confirmed on the real API: a session explicitly pinned to `anthropic` correctly
+  used real Claude for every query even while the process's own default resolved to `ollama`.
 - **M1's adversarial local-model test corpus becomes the real acceptance suite, not a stand-in**:
   M1's own live Ollama test talked to Ollama directly, bypassing the agent loop entirely, because
   this translation layer didn't exist yet. `mcp-agent/tests/test_provider_integration.py` now
   exercises the exact same weak model (`llama3.2:1b`) through the *real* `run_query` loop and the
-  *real* translation layer — live-confirmed passing, plus a full CLI run against real FHIR/triage
-  services and the real Ollama model end to end (not simulated).
+  *real* translation layer. Ollama is now a **required** test dependency for these specific tests
+  ([`H50`](./decisions.md)) — hard-fail, not self-skip — while the large body of fake-client
+  agent-loop tests deliberately stays fake-client-only, unaffected by Ollama's availability.
 - **A real bug found only by this live weak-model run, not any prior mocked test**
   ([`decisions.md` H44](./decisions.md)): `tools.py`'s `execute_tool` raised an uncaught `KeyError`
   when `llama3.2:1b` omitted a required tool argument — aborting the whole query instead of the
   intended `RISK_UNKNOWN`/`REVIEW` fail-closed path. This gap predates M5 (it existed since M1)
   but only a genuinely weak model ever exercised it. Fixed with the same structured-error
   convention `assess_refill_risk` already uses elsewhere in that file.
+- **Live-validated end to end, not just unit-tested**: the CLI with no `LLM_PROVIDER` set at all
+  ran a real query against real FHIR/triage services and the real self-hosted model, with zero
+  API key required; `--list-models ollama` printed the real locally-pulled models;
+  `DEPLOYMENT_ENV=production` with no `LLM_PROVIDER` refused to start with the documented error;
+  `--provider anthropic --model claude-sonnet-4-5` correctly used real Claude; and the live API's
+  `GET /models?provider=anthropic` returned real Anthropic model names while
+  `GET /models?provider=ollama` (unreachable from inside that container) cleanly 502'd rather than
+  crashing.
 
 ### 4.6 Policy, knowledge, judge (→ M6)
 
@@ -325,6 +367,16 @@ endpoints (DeepSeek API, OpenRouter, Groq). Model selection is a config value
   This corpus choice remains provisional — M6 is last in the build order, and which agent
   (`mcp-agent` or a carried-over `claims-agent`) ends up consuming it may become clearer once
   M1–M5 land.
+
+### 4.7 Strong model in production (→ M7) — planned, not yet implemented
+
+Deferred scope, not yet built: an explicit, auditable, fail-loud environment-tier declaration
+that a real production deployment cannot accidentally misrepresent (unlike an easily-forgotten
+env var) — the actual mechanism that guarantees a *real* clinical deployment runs a strong model,
+building on the minimal `DEPLOYMENT_ENV=production` guardrail ([`decisions.md` H47](./decisions.md))
+already shipped in M5's rework. See
+[`milestone-plan.md` M7](./milestone-plan.md#m7--strong-model-in-production-planned-not-yet-implemented)
+for the full scope and open design questions.
 
 ## 5. Testing strategy
 

@@ -14,18 +14,24 @@ across turns; the session store persists conversation *history*
 Usage:
   uvicorn agent.api:app --host 0.0.0.0 --port 8010
 
-Environment variables: same as agent.agent (ANTHROPIC_API_KEY/CLAUDE_API_KEY,
-FHIR_GATEWAY_URL, FHIR_API_KEY, TRIAGE_SERVICE_URL, and M5's provider seam
-LLM_PROVIDER/LLM_MODEL/LLM_BASE_URL/LLM_API_KEY -- docs/phase6/decisions.md
-H4) plus DATABASE_URL (required -- unlike the CLI, this transport has no
-in-memory fallback, since an HTTP session with no persistence isn't a
-session), plus M4's resilience knobs (MAX_CONCURRENT_LLM_QUERIES,
-LLM_QUERY_QUEUE_DEADLINE_SECONDS, LLM_CIRCUIT_FAILURE_THRESHOLD,
-LLM_CIRCUIT_RESET_SECONDS, LLM_ALERT_TOKENS_PER_MINUTE,
-LLM_HARD_BACKSTOP_TOKENS_PER_MINUTE -- all optional, defaults in
-agent_platform.resilience). /metrics exposes Prometheus counters/
-histograms for LLM token usage, call outcomes, and rate-limit alerts
-(docs/phase6/decisions.md H27).
+Environment variables: same as agent.agent (FHIR_GATEWAY_URL, FHIR_API_KEY,
+TRIAGE_SERVICE_URL, and the provider seam LLM_PROVIDER/LLM_MODEL/
+LLM_BASE_URL/LLM_API_KEY/ANTHROPIC_API_KEY/DEPLOYMENT_ENV -- docs/phase6/
+decisions.md H4, H45-H49) plus DATABASE_URL (required -- unlike the CLI,
+this transport has no in-memory fallback, since an HTTP session with no
+persistence isn't a session), plus M4's resilience knobs
+(MAX_CONCURRENT_LLM_QUERIES, LLM_QUERY_QUEUE_DEADLINE_SECONDS,
+LLM_CIRCUIT_FAILURE_THRESHOLD, LLM_CIRCUIT_RESET_SECONDS,
+LLM_ALERT_TOKENS_PER_MINUTE, LLM_HARD_BACKSTOP_TOKENS_PER_MINUTE -- all
+optional, defaults in agent_platform.resilience). /metrics exposes
+Prometheus counters/histograms for LLM token usage, call outcomes, and
+rate-limit alerts (docs/phase6/decisions.md H27).
+
+GET /models?provider=... is the discovery seam a test script can use
+over HTTP (docs/phase6/decisions.md H48) -- there's no TTY concept here,
+so unlike the CLI this transport never shows a disclosure message; a
+documented limitation (H46), not a safety gap, since the underlying
+default-selection rule doesn't depend on that signal.
 """
 
 from __future__ import annotations
@@ -41,15 +47,18 @@ from prometheus_client import make_asgi_app
 from pydantic import BaseModel
 
 from agent_platform import (
+    build_client_for,
     build_llm_client,
     create_session,
     current_trace_id,
+    list_anthropic_models,
+    list_ollama_models,
+    list_openai_compatible_models,
     load_session,
     save_session,
     setup_tracing,
 )
 
-from .agent import MODEL as MODEL_DEFAULT
 from .agent import run_query
 
 # Concurrency limiter for query_session specifically -- not session count
@@ -86,26 +95,31 @@ FastAPIInstrumentor.instrument_app(app)
 app.mount("/metrics", make_asgi_app())
 
 _client: anthropic.Anthropic | object | None = None
-_model = MODEL_DEFAULT
-_gen_ai_system = "anthropic"
+_model = ""
+_gen_ai_system = ""
 
 
 def _get_client() -> anthropic.Anthropic:
     """
-    Returns the cached LLM client, building it on first call via
-    agent_platform.build_llm_client() (docs/phase6/decisions.md H4, M5) --
-    Anthropic by default, or the OpenAI-compatible seam when
-    LLM_PROVIDER=openai_compatible. Also caches the resolved model/
-    gen_ai_system for _get_model_and_system() to read -- kept as a
-    separate function (not folded into this one's return value) so this
-    function's own contract -- and every existing test mocking it with
-    `return_value=object()` -- stays unchanged.
+    Returns the cached *default* LLM client for this process, building it
+    on first call via agent_platform.build_llm_client() (docs/phase6/
+    decisions.md H4, H45) -- self-hosted Ollama unless LLM_PROVIDER is set
+    explicitly. Used only by create_new_session() when a request doesn't
+    specify an explicit provider/model. query_session() does NOT use this
+    -- it always rebuilds the client from the session's own pinned
+    provider/model instead (H49), since different sessions on the same
+    process can be pinned to different providers. Also caches the
+    resolved model/gen_ai_system for _get_model_and_system() to read --
+    kept as a separate function (not folded into this one's return value)
+    so this function's own contract -- and every existing test mocking it
+    with `return_value=object()` -- stays unchanged.
     """
     global _client, _model, _gen_ai_system
     if _client is None:
         if not os.environ.get("FHIR_GATEWAY_URL"):
             raise RuntimeError("FHIR_GATEWAY_URL is not set.")
-        _client, _model, _gen_ai_system = build_llm_client()
+        resolved = build_llm_client()
+        _client, _model, _gen_ai_system = resolved.client, resolved.model, resolved.gen_ai_system
     return _client
 
 
@@ -116,6 +130,19 @@ def _get_model_and_system() -> tuple[str, str]:
 
 class SessionCreated(BaseModel):
     session_id: str
+    provider: str
+    model: str
+
+
+class SessionCreateRequest(BaseModel):
+    """
+    Optional explicit choice (docs/phase6/decisions.md H49) -- a human or
+    test script that already called GET /models can pin a session to a
+    specific provider/model. Omit both to get this process's default
+    resolution (H45-H47), same as the CLI with no --provider/--model.
+    """
+    provider: str | None = None
+    model: str | None = None
 
 
 class QueryRequest(BaseModel):
@@ -131,6 +158,11 @@ class HealthResponse(BaseModel):
     status: str
 
 
+class ModelsResponse(BaseModel):
+    provider: str
+    models: list[str]
+
+
 @app.get("/health", response_model=HealthResponse, tags=["ops"])
 def health(response: Response) -> HealthResponse:
     trace_id = current_trace_id()
@@ -139,18 +171,71 @@ def health(response: Response) -> HealthResponse:
     return HealthResponse(status="ok")
 
 
-@app.post("/sessions", response_model=SessionCreated, tags=["sessions"])
-def create_new_session(response: Response) -> SessionCreated:
-    """Start a new, empty, persisted session."""
+@app.get("/models", response_model=ModelsResponse, tags=["ops"])
+def list_models(provider: str) -> ModelsResponse:
+    """
+    Discovery (docs/phase6/decisions.md H48) -- opt-in only, never called
+    by any other route. Succeeds or raises 502/400; no partial results.
+    There's no TTY concept over HTTP, so this is also the only way an API
+    caller learns what's actually available before choosing (H46).
+    """
     try:
-        session_id = create_session()
+        if provider == "ollama":
+            base_url = os.environ.get("LLM_BASE_URL", "") or None
+            models = list_ollama_models(base_url) if base_url else list_ollama_models()
+        elif provider == "anthropic":
+            api_key = os.environ.get("ANTHROPIC_API_KEY", "") or os.environ.get("CLAUDE_API_KEY", "")
+            if not api_key:
+                raise HTTPException(status_code=400, detail="ANTHROPIC_API_KEY is not set.")
+            models = list_anthropic_models(api_key)
+        elif provider == "openai_compatible":
+            base_url = os.environ.get("LLM_BASE_URL", "")
+            if not base_url:
+                raise HTTPException(status_code=400, detail="LLM_BASE_URL is not set.")
+            models = list_openai_compatible_models(base_url, api_key=os.environ.get("LLM_API_KEY", ""))
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unrecognized provider={provider!r} -- expected anthropic, ollama, or openai_compatible.",
+            )
+    except (anthropic.APIError, httpx.HTTPError) as exc:
+        raise HTTPException(status_code=502, detail=f"Could not list models for {provider!r}: {exc}")
+
+    return ModelsResponse(provider=provider, models=models)
+
+
+@app.post("/sessions", response_model=SessionCreated, tags=["sessions"])
+def create_new_session(response: Response, body: SessionCreateRequest = SessionCreateRequest()) -> SessionCreated:
+    """
+    Start a new, empty, persisted session. body.provider/body.model pin
+    an explicit choice for this session's whole lifetime (H49); omit both
+    for this process's default resolution.
+    """
+    if body.provider or body.model:
+        if not (body.provider and body.model):
+            raise HTTPException(
+                status_code=400, detail="Both provider and model are required if either is given."
+            )
+        try:
+            build_client_for(body.provider, body.model)  # fail fast on a bad pin, not on the first query
+        except RuntimeError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        provider, model = body.provider, body.model
+    else:
+        try:
+            model, provider = _get_model_and_system()
+        except RuntimeError as exc:
+            raise HTTPException(status_code=503, detail=str(exc))
+
+    try:
+        session_id = create_session(provider, model)
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=f"Session store unavailable: {exc}")
 
     trace_id = current_trace_id()
     if trace_id:
         response.headers["X-Trace-Id"] = trace_id
-    return SessionCreated(session_id=session_id)
+    return SessionCreated(session_id=session_id, provider=provider, model=model)
 
 
 @app.post("/sessions/{session_id}/query", response_model=QueryResponse, tags=["sessions"])
@@ -159,19 +244,23 @@ def query_session(session_id: str, body: QueryRequest, response: Response) -> Qu
     Ask a question within an existing session. Loads prior history, runs
     the same agent loop the CLI uses (including M1's fail-closed enum
     gate and M3's context-budget compaction), persists the result.
+
+    Always rebuilds the client from the session's own pinned
+    provider/model (docs/phase6/decisions.md H49) rather than this
+    process's cached default -- different sessions on the same process
+    can be pinned to different providers.
     """
     try:
-        client = _get_client()
-        model, gen_ai_system = _get_model_and_system()
-    except RuntimeError as exc:
-        raise HTTPException(status_code=503, detail=str(exc))
-
-    try:
-        messages, token_count = load_session(session_id)
+        loaded = load_session(session_id)
     except KeyError:
         raise HTTPException(status_code=404, detail=f"Unknown session_id: {session_id}")
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=f"Session store unavailable: {exc}")
+
+    try:
+        client = build_client_for(loaded.provider, loaded.model)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
 
     if not _query_slots.acquire(timeout=_QUERY_QUEUE_DEADLINE_SECONDS):
         raise HTTPException(
@@ -184,8 +273,8 @@ def query_session(session_id: str, body: QueryRequest, response: Response) -> Qu
     try:
         stats: dict = {}
         final_text, messages = run_query(
-            client, body.query, messages, verbose=False, token_count=token_count, stats=stats,
-            model=model, gen_ai_system=gen_ai_system,
+            client, body.query, loaded.messages, verbose=False, token_count=loaded.token_count, stats=stats,
+            model=loaded.model, gen_ai_system=loaded.provider,
         )
     except (anthropic.APIError, httpx.HTTPError) as exc:
         # A single call failure below the circuit breaker's threshold --
@@ -195,13 +284,13 @@ def query_session(session_id: str, body: QueryRequest, response: Response) -> Qu
         # to FastAPI's default 500, an ungraceful failure mode for a
         # milestone specifically about deploy resilience. 502, not 500:
         # the failure is in the upstream LLM API, not this service's own
-        # code. httpx.HTTPError covers the M5 OpenAI-compatible provider,
-        # which raises plain httpx errors rather than anthropic's.
+        # code. httpx.HTTPError covers the M5 OpenAI-compatible/Ollama
+        # provider, which raises plain httpx errors rather than anthropic's.
         raise HTTPException(status_code=502, detail=f"LLM API error: {exc}")
     finally:
         _query_slots.release()
 
-    save_session(session_id, messages, stats.get("token_count", token_count))
+    save_session(session_id, messages, stats.get("token_count", loaded.token_count))
 
     # Read from stats, not current_trace_id() -- run_query's root span has
     # already closed by the time control returns here (see agent.py's own

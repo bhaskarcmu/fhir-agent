@@ -2,13 +2,20 @@
 
 > ## Canonical status
 >
-> **📋 Planning complete. Build not started. M1 is next.**
+> **🚧 M1-M5 implemented (M5 PR open, unmerged as of this note). M6 not started. M7 planned,
+> not started.**
 >
-> PRD, design, milestone plan, and a 23-entry decision index are all done as of 2026-08-02 —
-> every open question raised during scoping has been resolved (see
-> [`decisions.md`](./decisions.md)). No code, no `agent-platform/` package, no branch beyond this
-> planning doc set exists yet. **M1 (Output Contract & Fail-Closed Enforcement) starts in a
-> follow-up session** — see [`milestone-plan.md`](./milestone-plan.md).
+> M1 (Output Contract & Fail-Closed Enforcement), M2 (Observability, Platform-Wide), M3 (Context,
+> Memory & Session Transport), M4 (Deploy Resilience & Cost Control), and M5 (Provider
+> Abstraction & Cross-Model Follow-ups) are all built, tested, and live-validated — see
+> [`milestone-plan.md`](./milestone-plan.md) for each milestone's real implementation detail. M5
+> was substantially reworked after a design-review pass (the default provider flipped from
+> Anthropic to self-hosted Ollama, among other changes — see
+> [`decisions.md` H45-H51](./decisions.md)). **M7 ("Strong Model in Production") was added to the
+> build order after M5** to carry the fuller production-safety design M5's minimal
+> `DEPLOYMENT_ENV=production` guardrail was deliberately left as a stopgap for — see
+> [`milestone-plan.md` M7](./milestone-plan.md#m7--strong-model-in-production-planned-not-yet-implemented).
+> **M6 (Policy, Knowledge & Judge) starts next**, once M5 merges.
 >
 > *This is the one canonical status statement. Other documents link here rather than restate it.*
 >
@@ -16,11 +23,11 @@
 >   success metrics.
 > - [`design.md`](./design.md) — target architecture (`agent-platform/`), the five topics,
 >   cross-cutting principles, per-topic deep dives, testing strategy.
-> - [`milestone-plan.md`](./milestone-plan.md) — M1–M6, short and long story for each, dependency
+> - [`milestone-plan.md`](./milestone-plan.md) — M1–M7, short and long story for each, dependency
 >   order, status table. **Kept as its own document, not folded into `design.md`** — see
 >   [`decisions.md` H23](./decisions.md).
-> - [`decisions.md`](./decisions.md) — ADR-style index of every decision (H1–H27), same
->   status-and-supersession convention as Phase 2/3/4.
+> - [`decisions.md`](./decisions.md) — ADR-style index of every decision (H1–H51 as of this note),
+>   same status-and-supersession convention as Phase 2/3/4.
 > - [`telemetry-schema.md`](./telemetry-schema.md) — the custom span-attribute dictionary:
 >   `fhir_agent.layer`/`.component` grounded in each service's real package structure, the
 >   `TELEMETRY_VERBOSITY` depth model, and request-ID surfacing.
@@ -55,10 +62,12 @@ long-open **R15** requirement in the same pass — see [`decisions.md` H16](./de
 
 ## Terminology
 
-Internal work is tracked as **milestones** (M1–M6, in [`milestone-plan.md`](./milestone-plan.md))
+Internal work is tracked as **milestones** (M1–M7, in [`milestone-plan.md`](./milestone-plan.md))
 — never "Phase 6.x". "Phase" is reserved for top-level phases. No sub-phase (e.g. a "Phase 6b")
 is anticipated — this phase is cloud-agnostic and local-first throughout, so it doesn't have the
-live-deploy-deferred shape Phase 2b/3b/4b address for their phases.
+live-deploy-deferred shape Phase 2b/3b/4b address for their phases. M7 was added mid-build (after
+M5's design-review rework) as a genuinely new milestone in the same sequence, not a sub-phase —
+see [`decisions.md` H47](./decisions.md).
 
 ## Provenance
 

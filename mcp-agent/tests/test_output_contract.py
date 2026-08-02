@@ -199,7 +199,10 @@ class TestWeakModelAdversarialInputs:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 3. Live local model -- self-skips when Ollama isn't reachable
+# 3. Live local model -- hard-fails (not self-skips) when Ollama isn't
+#    reachable (docs/phase6/decisions.md H50); see conftest.py's
+#    ensure_ollama_model_available fixture, which also pulls the model on
+#    demand.
 # ─────────────────────────────────────────────────────────────────────────────
 
 OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
@@ -209,31 +212,17 @@ OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2:1b")
 
 
-def _ollama_reachable() -> bool:
-    try:
-        import httpx
-        httpx.get(f"{OLLAMA_HOST}/api/tags", timeout=2.0)
-        return True
-    except Exception:
-        return False
-
-
-@pytest.mark.skipif(
-    not _ollama_reachable(),
-    reason=f"Ollama not reachable at {OLLAMA_HOST} -- skipping live local-LLM adversarial "
-           f"test (docs/phase6/decisions.md H11). Set OLLAMA_HOST to point at a running "
-           f"instance to exercise this.",
-)
 class TestLiveLocalModelAdversarial:
     """
     A genuinely weak/local model, not simulated -- the harshest realistic
     adversary for the enum gate (docs/phase6/design.md Section 5). Talks to
     Ollama directly (not through the Anthropic-shaped agent loop -- that
-    translation layer is M5's job); this pins that the *gate itself*
-    degrades safely no matter what a real weak model actually says.
+    translation layer is M5's job, exercised in
+    test_provider_integration.py instead); this pins that the *gate
+    itself* degrades safely no matter what a real weak model actually says.
     """
 
-    def test_live_local_model_output_is_handled_safely(self):
+    def test_live_local_model_output_is_handled_safely(self, ensure_ollama_model_available):
         import httpx
 
         resp = httpx.post(

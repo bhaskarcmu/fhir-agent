@@ -5,12 +5,21 @@
 A clinician types a natural-language query. The agent fetches FHIR data, evaluates medication safety, and returns a structured recommendation — in one turn.
 
 ```bash
-cp .env.example .env          # set ANTHROPIC_API_KEY (or CLAUDE_API_KEY)
 docker compose up --build -d fhir triage
 python3 data/scripts/seed_demo.py
-# The mcp-agent image's entrypoint already runs the agent — pass only its args:
+# The mcp-agent image's entrypoint already runs the agent — pass only its args.
+# No API key needed: the agent defaults to a self-hosted, free model (see below).
 docker compose run --rm mcp-agent --query "Check refill risk for Kristle Mraz"
 ```
+
+By default the agent runs against a self-hosted Ollama model — no API key, no cost, and PHI
+never leaves this host (docs/phase6/decisions.md H45). The docker-compose `mcp-agent`/
+`mcp-agent-api` services don't yet have host-Ollama networking wired in (a known, deferred gap —
+see `docs/phase6/milestone-plan.md` M5), so for now, to use a real Claude model in the demo
+above, set `ANTHROPIC_API_KEY` in `.env` (`cp .env.example .env`) and add
+`--provider anthropic --model claude-sonnet-4-5` to the query above. Running the CLI directly on
+the host (not via docker-compose) already works against a locally-running `ollama serve` with no
+extra configuration.
 
 Expected output:
 ```
@@ -94,7 +103,7 @@ The platform is built as a collection of microservices, designed to be cloud-agn
 | **epic-emulator** | Placeholder — will add Epic-specific customisations (auth stubs, custom profiles, proprietary extensions). | ⏳ Not yet implemented |
 | **athena-emulator** | Placeholder — will add Athena-specific customisations. | ⏳ Not yet implemented |
 | **triage-service** | FastAPI drug-allergy rule engine → FHIR `RiskAssessment` (HIGH/MODERATE/LOW) with audit trail. | ✅ Running (local + Docker Compose) |
-| **mcp-agent** | LLM-powered orchestration layer (Anthropic tool-use) that composes FHIR + triage tools. | ✅ Running (local + Docker Compose) |
+| **mcp-agent** | LLM-powered orchestration layer that composes FHIR + triage tools. Self-hosted Ollama by default (no API key, no cost); Anthropic and other OpenAI-compatible providers available via explicit opt-in (`docs/phase6/decisions.md` H45). | ✅ Running (local + Docker Compose) |
 | **rxclaim-emulator** *(Phase 2)* | Simulated legacy IBM i / RxClaim adjudication core: fixed-width DDS-style records, DB2/SQL400-style tables, RPG/CL-style `ADJRXCLM`. Internal-only. | ✅ Running (`--profile phase2`) |
 | **claims-service** *(Phase 2)* | Spring Boot claims-adjudication façade: anti-corruption layer + layered rules engine + Decision Contract; persists a FHIR decision graph. | ✅ Running (`--profile phase2`) |
 | **claims-agent** *(Phase 2)* | Non-authoritative agent that explains adjudication decisions in plain language. | ✅ Running (`--profile phase2`) |
@@ -317,8 +326,9 @@ The project uses a **devcontainer** to ensure a consistent environment across al
 
 ```bash
 # Python packages (editable installs + test tooling via the [dev] extras)
-python -m pip install -e "client/clinical[dev]" -e "triage-service[dev]" -e "mcp-agent[dev]"
+python -m pip install -e "client/clinical[dev]" -e "agent-platform[dev]" -e "triage-service[dev]" -e "mcp-agent[dev]"
 pytest                              # runs all Python suites (config in pytest.ini)
+pytest agent-platform/tests -q      # separate invocation -- see pytest.ini's own comment on why
 
 # FHIR service (Java).
 # NOTE: unset any SPRING_DATASOURCE_URL / NEON_* env vars first, so the tests use

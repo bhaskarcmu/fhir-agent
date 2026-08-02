@@ -1,17 +1,18 @@
 """
-Live integration test: run_query through the real M5 OpenAI-compatible
-provider (docs/phase6/decisions.md H4), pointed at a real local Ollama
-instance -- not a fake, not a stub. This is the milestone's own stated
-acceptance criterion (docs/phase6/prd.md M5: "The full M1 adversarial
-test corpus passes unmodified against the OpenAI-compatible adapter
-pointed at a local Ollama model") -- M1's own live-Ollama test
+Live integration test: run_query through the real M5 "ollama" provider
+identity (docs/phase6/decisions.md H4, H45), pointed at a real local
+Ollama instance -- not a fake, not a stub. This is the milestone's own
+stated acceptance criterion (docs/phase6/prd.md M5: "The full M1
+adversarial test corpus passes unmodified against the OpenAI-compatible
+adapter pointed at a local Ollama model") -- M1's own live-Ollama test
 (test_output_contract.py) talked to Ollama directly, bypassing the agent
 loop, because this translation layer didn't exist yet; this file is that
 same standing rule (H11) now exercised through the real thing.
 
-Self-skips when Ollama isn't reachable, same convention as
-test_output_contract.py's own live Ollama test and provider-registry-
-service's DB-backed tests.
+Hard-fails (not self-skips) when Ollama isn't reachable -- Ollama is now
+a required CI/dev dependency for this test, per decisions.md H50. See
+conftest.py's ensure_ollama_model_available fixture, which also pulls the
+required model on demand if Ollama is up but the model isn't pulled yet.
 
 Run:
   python3 -m pytest mcp-agent/tests/test_provider_integration.py -v
@@ -23,9 +24,6 @@ import json
 import os
 from unittest.mock import patch
 
-import httpx
-import pytest
-
 from agent.agent import run_query
 from agent_platform import AgentDecision
 from agent_platform.providers import OpenAICompatibleProvider
@@ -33,24 +31,8 @@ from agent_platform.providers import OpenAICompatibleProvider
 OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
 # Matches test_output_contract.py's own default -- the lightest tag the
 # setup instructions actually pull (`ollama pull llama3.2:1b`), and one
-# confirmed to advertise "tools" capability.
+# confirmed to advertise "tools" capability. Also conftest.py's default.
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2:1b")
-
-
-def _ollama_reachable() -> bool:
-    try:
-        httpx.get(f"{OLLAMA_HOST}/api/tags", timeout=2.0)
-        return True
-    except Exception:
-        return False
-
-
-pytestmark = pytest.mark.skipif(
-    not _ollama_reachable(),
-    reason=f"Ollama not reachable at {OLLAMA_HOST} -- skipping live M5 provider test "
-           f"(docs/phase6/decisions.md H4, H11). Set OLLAMA_HOST to point at a running "
-           f"instance to exercise this.",
-)
 
 
 def _fake_execute_tool(risk_level: str):
@@ -69,7 +51,7 @@ def _fake_execute_tool(risk_level: str):
     return _execute
 
 
-def test_live_ollama_resolves_to_a_valid_gated_decision():
+def test_live_ollama_resolves_to_a_valid_gated_decision(ensure_ollama_model_available):
     """
     Exercises the real translation layer (outbound tool schema + messages,
     inbound tool_calls/finish_reason) against a genuinely weak local
@@ -86,14 +68,14 @@ def test_live_ollama_resolves_to_a_valid_gated_decision():
             "Check refill risk for patient Test Patient",
             verbose=False,
             model=OLLAMA_MODEL,
-            gen_ai_system="openai_compatible",
+            gen_ai_system="ollama",
         )
 
     assert any(decision.value in final_text for decision in AgentDecision)
     assert isinstance(messages, list)
 
 
-def test_live_ollama_unknown_risk_is_never_narrated_as_dispense():
+def test_live_ollama_unknown_risk_is_never_narrated_as_dispense(ensure_ollama_model_available):
     """
     The core M1 invariant (decisions.md H18), now proven against a real
     weak model through the real translation layer rather than a canned
@@ -107,7 +89,7 @@ def test_live_ollama_unknown_risk_is_never_narrated_as_dispense():
             "Check refill risk for patient Test Patient",
             verbose=False,
             model=OLLAMA_MODEL,
-            gen_ai_system="openai_compatible",
+            gen_ai_system="ollama",
         )
 
     assert "REVIEW" in final_text

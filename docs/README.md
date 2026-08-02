@@ -19,7 +19,7 @@ Start with what you're trying to do.
 | **Audit Phase 6 decisions** (status + supersession) | [`phase6/decisions.md`](./phase6/decisions.md) | 5 min |
 | **Check what Phase 5 and Phase 6 are actually reserved for** | [`phase5/README.md`](./phase5/README.md) | 5 min |
 | **Know exactly what was agreed** (normative) | [`phase2/requirements.md`](./phase2/requirements.md) | reference |
-| **Know what to build next** | [`phase2/plan.md` §16](./phase2/plan.md#16-future-work) (Phase 2) / [`phase3/README.md`](./phase3/README.md) (Phase 3b) / [`phase5/README.md`](./phase5/README.md) (Phase 5) / [`phase6/milestone-plan.md`](./phase6/milestone-plan.md) (Phase 6, M1 next) | 5 min |
+| **Know what to build next** | [`phase2/plan.md` §16](./phase2/plan.md#16-future-work) (Phase 2) / [`phase3/README.md`](./phase3/README.md) (Phase 3b) / [`phase5/README.md`](./phase5/README.md) (Phase 5) / [`phase6/milestone-plan.md`](./phase6/milestone-plan.md) (Phase 6, M6 next, M1-M5 built) | 5 min |
 
 ## The guides
 
@@ -102,16 +102,17 @@ timeline exists yet. See [`phase5/README.md`](./phase5/README.md) for the canoni
   multi-record patient rather than the existing small demo fixture.
 
 **[`phase6/`](./phase6/README.md)** — Agent Platform Hardening + Overall Observability.
-**Planning complete, build not started, M1 is next.** Hardening the LLM-agent tier
+**M1-M5 built (M5 PR open), M6 next, M7 planned.** Hardening the LLM-agent tier
 (`mcp-agent`, later `claims-agent`): output-safety enforcement, observability (also closing
-Phase 2's R15), memory/session management, deployment resilience, and a multi-provider seam.
+Phase 2's R15), memory/session management, deployment resilience, and a multi-provider seam
+(reworked post-review to default to a self-hosted model — see `phase6/decisions.md` H45).
 
 - **[`README.md`](./phase6/README.md)** — the canonical status statement for Phase 6.
-- **[`prd.md`](./phase6/prd.md)** — problem, goals/non-goals, functional requirements (R1–R19),
+- **[`prd.md`](./phase6/prd.md)** — problem, goals/non-goals, functional requirements (R1–R21),
   success metrics.
 - **[`design.md`](./phase6/design.md)** — architecture (`agent-platform/`), the five topics,
   cross-cutting principles, per-topic deep dives, testing strategy.
-- **[`milestone-plan.md`](./phase6/milestone-plan.md)** — M1–M6, short and long story for each,
+- **[`milestone-plan.md`](./phase6/milestone-plan.md)** — M1–M7, short and long story for each,
   kept as its own document rather than folded into `design.md` (see `decisions.md` H23).
 - **[`telemetry-schema.md`](./phase6/telemetry-schema.md)** — the custom span-attribute
   dictionary, by architectural tier, plus the configurable-depth (`TELEMETRY_VERBOSITY`) model.
