@@ -841,6 +841,20 @@ My own local checkout was sitting on this exact branch (clean, in sync with orig
 
 Let me re-check — this looks like state changed since my last check, possibly PR #56 was just merged while I was working.
 
+Confirmed — PR #56 is still open (not merged); what changed was that `main` picked up newer commits I hadn't seen yet (a merged PR #55 plus a direct commit clarifying Phase 5 vs. Phase 6 scope and adding `docs/phase5/README.md` — separate from my work, now pulled in cleanly, nothing to revert).
+
+## Summary
+
+**Unmerged PRs:**
+- **PR #56** — `docs(phase6): PRD, design, milestone plan, decisions index — planning complete`, branch `docs/phase6-planning`, still open. This is the separate Phase 6 (agent hardening) planning effort, unrelated to this session's Phase 4 work. Leaving it alone.
+
+**Merged branches not yet deleted:**
+- **`feature/walking-skeleton`** — merged via PR #12 back on 2026-03-26 (the original walking-skeleton demo), ref never cleaned up since. Safe to delete, but I haven't touched it — want me to delete it (local + remote)? There's no local copy, so it'd just be `git push origin --delete feature/walking-skeleton`.
+
+**Your own recent session's branches:** all clean — every branch from PR #48 through #54 (this session's Phase 4 work) was already deleted both locally and remotely as each PR merged.
+
+One more thing worth surfacing: `docs/phase4/decisions.md` now has an **E16** entry recording the pagination safety finding from PR #54 as a durable, indexed decision — looks like that's already been picked up and formalized outside this conversation, which is good continuity.
+
 <details>
 <summary>Execution details — 437 tool events</summary>
 
