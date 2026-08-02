@@ -513,6 +513,81 @@ Now handling branch deletion — first verifying merge status.
 
 Both confirmed merged. Deleting the branches (remote + local).
 
+Both PRs merged, branches deleted (local + remote), `main` is up to date. Memory note saved re: not over-relying on private memory given the archive tool. Now the open-areas outline for Phase 6.
+
+## Phase 6 open areas before milestone planning can start
+
+Grouped into the original brainstorm's unresolved items and what the codebase audit surfaced as new. **Recommended option bolded in each.**
+
+### From the original brainstorm
+
+**1. Enum set + REVIEW semantics for the M1 output gate**
+- **A. Reuse `claims-service`'s vocabulary directly** (`Severity{DENY,PEND,REVIEW,INFO}`/`Outcome{...,ROUTED_FOR_REVIEW}`) mapped onto agent output.
+- **B. Define an agent-specific enum** (e.g. `DISPENSE`/`DO_NOT_DISPENSE`/`REVIEW`) — refill triage isn't claims adjudication, so the domains don't map cleanly.
+- **✅ C. Hybrid (recommended)** — agent gets its own small enum sized to what refill triage actually decides, but keeps `REVIEW` as the literal term for the fail-closed/human-escalation case, matching `claims-service`'s existing use of that word. Consistent platform vocabulary without forcing a domain-mismatched enum.
+
+**2. Definition of "important" response that triggers the judge (M6)**
+- A. Every response carrying a HIGH-risk / do-not-dispense-equivalent recommendation.
+- B. Every response, uniformly — highest quality bar, but real added latency/cost on every turn.
+- C. Sampled judging (e.g. 10% of turns) for continuous quality monitoring, not real-time gating.
+- **✅ Recommended: A.** Matches "important = clinically consequential," keeps judge cost bounded, and is the direct extension of this repo's fail-closed thesis — scrutiny scales with risk.
+
+**3. Session-store tech + where the shared layer lives**
+- Store: **A. Redis** (purpose-built for ephemeral session state, but a new infra dependency) vs. **✅ B. Postgres/Neon (recommended)** — already wired into this repo (FHIR cloud, Kong rate-limit counters), avoids a new dependency for what's initially modest session volume; swappable later, same "documented scale swap" pattern Phase 2's C3 already uses for its rules-data store.
+- Layer location: **✅ A. New top-level `agent-platform/` package (recommended)**, built shared from day one — matches the "build once, pilot on mcp-agent, carry to claims-agent" decision already locked in; building it in-place inside `mcp-agent/` first just creates an extraction refactor later. vs. B. in-place refactor, extract only when actually porting to `claims-agent`.
+
+**4. Memory token-budget numbers**
+- **✅ A. Keep genuinely deferred (recommended)** — no numbers until M2 gives real token/turn data; guessing now just gets re-guessed later.
+- B. Add a crude placeholder cap now (e.g. fixed max-turns before truncation) purely as a stopgap, since `interactive_mode` currently grows `messages` with *zero* bound — there's a real (if low-probability) unbounded-growth risk before M2 ships.
+- I'd actually pair these: keep the *real* budget-setting deferred to M2 data (A), but do B as a cheap 10-line safety net if M1 ships before M2 — worth a explicit yes/no from you rather than me silently doing both.
+
+**5. Conversational transport**
+- A. Stay CLI REPL only — smallest scope.
+- **✅ B. Thin HTTP API wrapper around the existing agent loop (recommended)**, FastAPI-style to match `triage-service`'s convention — doesn't commit to a UI, but unlocks the multi-session testing M3 (session store) and M4 (concurrency) actually need. A REPL can't exercise concurrent sessions.
+- C. Full web/chat UI now — likely premature; forces streaming-design decisions before anything else is built.
+
+**6. M6 RAG corpus scope**
+- **✅ A. Defer entirely (recommended)** — nothing in the audit surfaced an urgent knowledge-base need; matches the minimal-cut philosophy (M1+M2 first) and avoids a new data-curation project riding along.
+- B. Pilot narrowly on the existing `data/payer-kb/` fixtures (already real, in-repo data).
+- C. Purpose-build a drug-information/formulary corpus — real effort, no clear trigger for it yet.
+
+**8. Does the observability slice formally close Phase 2's R15?**
+- A. Yes — declare it closed once M2 ships equivalent instrumentation, retroactively.
+- **✅ B. No (recommended)** — R15 was scoped to `claims-service`/`rxclaim-emulator`; Phase 6's M2 targets the agent tier. Closing R15 needs the *same* instrumentation in the Phase 2 services specifically, not adjacent work elsewhere. Keep them separately tracked; Phase 6 can *inform* a future R15 fix, not substitute for it.
+
+### Newly surfaced by the codebase audit (not in the original brainstorm)
+
+**9. Where does mcp-agent's fail-closed enforcement actually live?**
+- A. Entirely at the M1 output-gate (tool-with-enum-output + code validation) — single enforcement point, simplest.
+- **✅ B. Also add a data-layer guard around the triage-service call (recommended)** — a Python equivalent of `HttpTriageClient.java`'s wrapper, so "unrecognized/failed check → never treated as safe" is enforced independent of whether the LLM even reads the tool result correctly. Defense in depth; mirrors the one real fail-closed precedent in this codebase rather than inventing a single point of failure.
+
+**10. Rate/cost-control posture for the LLM API call (M4)**
+- A. Alert-only, never shed (the original brainstorm's instinct) — never blocks a clinician's query on cost.
+- B. Hard reject over a limit — consistent with every other rate limiter in this repo (Kong, `provider-registry-service`), but is a bad fit for "never drop a care request."
+- **✅ C. Hybrid (recommended)** — alert-only for normal clinical traffic, but a hard backstop specifically for runaway/bug-driven spend (e.g. an accidental loop), which pure alert-only has zero protection against. Gets the clinical property A wants without the blind spot A has.
+
+**11. Error-shape/output-contract for the agent's fail-closed result**
+- A. Mirror FHIR `OperationOutcome` (consistent with fhir-service/claims-service/epic-emulator).
+- B. Mirror `{error_type, message}` (consistent with `provider-registry-service`'s newer convention).
+- **✅ C. Neither — define it as the M1 enum-tool-output shape on its own terms (recommended).** This isn't an HTTP error response like the other two (it's a successful turn whose *content* happens to be a fail-closed decision) — forcing it into either existing convention is a category mismatch. Borrow the *vocabulary* (`REVIEW`, etc. — see #1) without borrowing the transport shape.
+
+**12. Observability target: feed the existing (declared, unconfirmed-scraped) Kong/Managed-Prometheus pipeline, or stand up something else for local dev**
+- A. Feed the existing pipeline only.
+- B. Stand up an independent local stack (Jaeger/Grafana via docker-compose) since GKE Managed Prometheus scraping isn't even confirmed active.
+- **✅ C. Both, via standard OTLP (recommended)** — instrument with OTel `gen_ai.*` conventions and export via OTLP; point it at a local Jaeger/Grafana today for real dev-loop value, repoint at Cloud Trace/Managed Prometheus later with a config change, zero code change.
+
+**13. The live Kong PHI-in-logs exposure — fix opportunistically during M2's PHI-redaction work, or leave out of scope**
+- A. In scope — small, related fix while already doing PHI-redaction work.
+- **✅ B. Out of scope (recommended)** — it's gateway-owned infra, not agent-tier; pulling it in blurs the "own phase, no scope creep" discipline this whole cleanup pass was about. Flag it as a standalone gateway-runbook follow-up instead, not Phase 6 work.
+
+**14. Circuit breaker for the LLM API call (M4) — new pattern vs. matching the no-breaker precedent**
+- A. No breaker — match repo precedent exactly (this repo defers circuit breakers everywhere, explicitly, as "changes latency, not policy").
+- **✅ B. Add one anyway, explicitly as a deliberate divergence (recommended)** — the LLM API is a materially different risk (external, metered, cost-bearing SaaS) than the internal service-to-service calls that precedent was written for. Worth doing, but document it as "we diverged here and here's why," not silently.
+
+---
+
+That's 12 live decision points (items 1–6, 8–14; #7's phase number is already resolved). Given the volume, my suggestion: don't try to resolve all twelve in one pass — the four I'd prioritize discussing first are **#1 (enum/REVIEW), #3 (store + package location), #9 (fail-closed enforcement layer), and #5 (transport)**, since M1–M3 depend directly on them and the rest either follow from those choices or are independently deferrable (#4, #6, #8, #13).
+
 <details>
 <summary>Execution details — 89 tool events</summary>
 
