@@ -178,3 +178,55 @@ def test_no_span_ever_carries_the_patients_name(memory_tracer):
         for value in span.attributes.values():
             assert "Kristle" not in str(value)
             assert "Mraz" not in str(value)
+
+
+def test_spans_carry_layer_and_component_attributes(memory_tracer):
+    """docs/phase6/telemetry-schema.md Section 3.1 -- the agent-tier layer taxonomy."""
+    responses = [
+        _resp("tool_use", [_tool_use("assess_refill_risk", {"patient_id": "patient-1"})]),
+        _resp("tool_use", [_tool_use(
+            "submit_decision",
+            {"decision": "DISPENSE", "patient_id": "patient-1", "rationale": "ok"},
+        )]),
+    ]
+    client = _FakeClient(responses)
+    with patch("agent.agent.execute_tool", _fake_execute_tool()):
+        run_query(client, "check refill risk", verbose=False)
+
+    by_name = {s.name: s for s in memory_tracer.get_finished_spans()}
+
+    assert by_name["agent.run_query"].attributes["fhir_agent.layer"] == "agent.orchestration"
+    assert by_name["agent.run_query"].attributes["fhir_agent.component"] == "run_query"
+    assert by_name["agent.run_query"].attributes["fhir_agent.verbosity"] == "standard"
+
+    assert by_name["execute_tool assess_refill_risk"].attributes["fhir_agent.layer"] == "agent.tools"
+    assert (
+        by_name["execute_tool assess_refill_risk"].attributes["fhir_agent.component"]
+        == "assess_refill_risk"
+    )
+
+    assert by_name["agent.submit_decision"].attributes["fhir_agent.layer"] == "agent.orchestration"
+    assert by_name["agent.submit_decision"].attributes["fhir_agent.component"] == "submit_decision"
+
+
+def test_decision_block_output_includes_the_trace_id(memory_tracer):
+    """docs/phase6/telemetry-schema.md Section 5 -- surfaced to the CLI user, not just Jaeger."""
+    responses = [
+        _resp("tool_use", [_tool_use("assess_refill_risk", {"patient_id": "patient-1"})]),
+        _resp("tool_use", [_tool_use(
+            "submit_decision",
+            {"decision": "DISPENSE", "patient_id": "patient-1", "rationale": "ok"},
+        )]),
+    ]
+    client = _FakeClient(responses)
+    with patch("agent.agent.execute_tool", _fake_execute_tool()):
+        final_text, _ = run_query(client, "check refill risk", verbose=False)
+
+    assert "Trace ID:" in final_text
+    assert "Trace ID: (none)" not in final_text
+
+    root_span = next(
+        s for s in memory_tracer.get_finished_spans() if s.name == "agent.run_query"
+    )
+    expected_trace_id = format(root_span.context.trace_id, "032x")
+    assert expected_trace_id in final_text

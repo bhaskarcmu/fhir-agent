@@ -31,9 +31,11 @@ from opentelemetry.trace import Span
 # Attributes that are safe to attach to a span: FHIR resource IDs (needed
 # for audit/debug correlation, same as this repo's existing Provenance
 # resources referencing Patient/id), gen_ai.* semantic-convention fields,
-# and tool/decision metadata. Never a name, birth date, address, or any
-# other demographic text -- those never get a code path into this
-# function to begin with.
+# tool/decision metadata, real OTel code.* semantic-convention fields (source
+# location), and this repo's own fhir_agent.* namespace (architectural
+# meaning -- see docs/phase6/telemetry-schema.md). Never a name, birth date,
+# address, or any other demographic text -- those never get a code path into
+# this function to begin with.
 ALLOWED_SPAN_ATTRIBUTE_KEYS = frozenset({
     "patient_id",
     "medication_id",
@@ -47,7 +49,16 @@ ALLOWED_SPAN_ATTRIBUTE_KEYS = frozenset({
     "gen_ai.usage.input_tokens",
     "gen_ai.usage.output_tokens",
     "gen_ai.tool.name",
+    "code.function.name",
+    "fhir_agent.layer",
+    "fhir_agent.component",
+    "fhir_agent.verbosity",
 })
+
+# TELEMETRY_VERBOSITY (docs/phase6/telemetry-schema.md Section 4). Deliberately
+# not OTEL_-prefixed -- that prefix is reserved for the real OpenTelemetry
+# SDK's own environment variables, not repo-specific settings.
+VALID_VERBOSITY_LEVELS = ("standard", "detailed")
 
 _configured = False
 
@@ -85,6 +96,51 @@ def setup_tracing(service_name: str) -> None:
 
 def get_tracer(name: str) -> trace.Tracer:
     return trace.get_tracer(name)
+
+
+def verbosity() -> str:
+    """
+    Current TELEMETRY_VERBOSITY level: "standard" (default, enrich existing
+    spans only) or "detailed" (opt-in, adds sub-spans at the one boundary
+    documented in docs/phase6/telemetry-schema.md Section 4.2). An
+    unrecognized value fails closed to "standard" -- the lower-volume,
+    lower-overhead option -- rather than silently going maximally verbose.
+    """
+    value = os.environ.get("TELEMETRY_VERBOSITY", "standard").strip().lower()
+    return value if value in VALID_VERBOSITY_LEVELS else "standard"
+
+
+def is_detailed() -> bool:
+    return verbosity() == "detailed"
+
+
+def layer_attrs(layer: str, component: str) -> dict:
+    """
+    The standard fhir_agent.* attribute set for a span at a given
+    architectural layer/component (docs/phase6/telemetry-schema.md Section 2).
+    Pass the result to safe_set_attributes() or start_span()'s attrs param.
+    """
+    return {
+        "fhir_agent.layer": layer,
+        "fhir_agent.component": component,
+        "fhir_agent.verbosity": verbosity(),
+    }
+
+
+def current_trace_id() -> str | None:
+    """
+    The active span's trace ID as a lowercase 32-hex-digit string (the
+    standard W3C Trace Context textual form), or None if there is no active
+    span. Used to surface the trace ID back to whoever made the request
+    (docs/phase6/telemetry-schema.md Section 5) -- a trace ID only visible
+    inside span context is useless to a human or test program that isn't
+    already looking at the tracing backend.
+    """
+    span = trace.get_current_span()
+    ctx = span.get_span_context()
+    if not ctx.is_valid:
+        return None
+    return format(ctx.trace_id, "032x")
 
 
 def safe_set_attributes(span: Span, attrs: dict) -> None:

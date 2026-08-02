@@ -10,7 +10,16 @@ it never decides anything clinical or financial itself.
 from __future__ import annotations
 
 from .fail_closed import RISK_UNKNOWN, is_unknown, safe_risk_level
-from .observability import get_tracer, safe_set_attributes, setup_tracing, start_span
+from .observability import (
+    current_trace_id,
+    get_tracer,
+    is_detailed,
+    layer_attrs,
+    safe_set_attributes,
+    setup_tracing,
+    start_span,
+    verbosity,
+)
 from .output_gate import AgentDecision, validate_decision
 
 __all__ = [
@@ -23,4 +32,8 @@ __all__ = [
     "get_tracer",
     "safe_set_attributes",
     "start_span",
+    "verbosity",
+    "is_detailed",
+    "layer_attrs",
+    "current_trace_id",
 ]

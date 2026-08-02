@@ -9,11 +9,20 @@ not a live collector -- these tests never need Jaeger running.
 
 from __future__ import annotations
 
+import pytest
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
-from agent_platform.observability import ALLOWED_SPAN_ATTRIBUTE_KEYS, safe_set_attributes, start_span
+from agent_platform.observability import (
+    ALLOWED_SPAN_ATTRIBUTE_KEYS,
+    current_trace_id,
+    is_detailed,
+    layer_attrs,
+    safe_set_attributes,
+    start_span,
+    verbosity,
+)
 
 
 def _tracer_with_memory_exporter():
@@ -84,6 +93,58 @@ def test_gen_ai_semantic_convention_keys_are_allowlisted():
     attrs = dict(exporter.get_finished_spans()[0].attributes)
     assert attrs["gen_ai.system"] == "anthropic"
     assert attrs["gen_ai.usage.input_tokens"] == 42
+
+
+def test_verbosity_defaults_to_standard(monkeypatch):
+    monkeypatch.delenv("TELEMETRY_VERBOSITY", raising=False)
+    assert verbosity() == "standard"
+    assert is_detailed() is False
+
+
+def test_verbosity_reads_detailed(monkeypatch):
+    monkeypatch.setenv("TELEMETRY_VERBOSITY", "detailed")
+    assert verbosity() == "detailed"
+    assert is_detailed() is True
+
+
+@pytest.mark.parametrize("raw", ["DETAILED", "  detailed  ", "Detailed"])
+def test_verbosity_is_case_and_whitespace_insensitive(monkeypatch, raw):
+    monkeypatch.setenv("TELEMETRY_VERBOSITY", raw)
+    assert verbosity() == "detailed"
+
+
+def test_unrecognized_verbosity_fails_closed_to_standard(monkeypatch):
+    """An unrecognized value degrades to the lower-volume option, not maximum verbosity."""
+    monkeypatch.setenv("TELEMETRY_VERBOSITY", "maximum-overdrive")
+    assert verbosity() == "standard"
+
+
+def test_layer_attrs_shape(monkeypatch):
+    monkeypatch.delenv("TELEMETRY_VERBOSITY", raising=False)
+    attrs = layer_attrs("triage.rules", "evaluate")
+    assert attrs == {
+        "fhir_agent.layer": "triage.rules",
+        "fhir_agent.component": "evaluate",
+        "fhir_agent.verbosity": "standard",
+    }
+
+
+def test_layer_attrs_are_all_allowlisted():
+    attrs = layer_attrs("agent.orchestration", "run_query")
+    assert set(attrs).issubset(ALLOWED_SPAN_ATTRIBUTE_KEYS)
+
+
+def test_current_trace_id_none_with_no_active_span():
+    assert current_trace_id() is None
+
+
+def test_current_trace_id_matches_the_active_span():
+    tracer, _exporter = _tracer_with_memory_exporter()
+    with tracer.start_as_current_span("test.span") as span:
+        trace_id = current_trace_id()
+        expected = format(span.get_span_context().trace_id, "032x")
+        assert trace_id == expected
+        assert len(trace_id) == 32
 
 
 def test_allowlist_has_no_demographic_looking_keys():

@@ -88,6 +88,14 @@ architecture:
   milestone number, so it can't go stale if this phase's own numbering shifts.
 - **Testing:** trace/span assertions against the local Jaeger backend in CI; PHI-redaction unit
   tests asserting raw identifiers never appear in exported span attributes.
+- **Custom attribute taxonomy + configurable depth** ([`decisions.md` H24–H27](./decisions.md)):
+  every span gets `fhir_agent.layer`/`.component` (real OTel `code.function.name` alongside a
+  custom namespace for architectural meaning — full dictionary in
+  [`telemetry-schema.md`](./telemetry-schema.md)), a two-level `TELEMETRY_VERBOSITY` setting
+  (`standard` default enriches existing spans only; `detailed` adds per-rule spans in
+  `triage-service/rules.py`, the one boundary judged worth the extra volume), and the trace ID is
+  surfaced back to the caller (`X-Trace-Id` header / CLI output), not left inside span context
+  only Jaeger can read.
 - **End-of-milestone checkpoint:** the minimal-viable-cut question (§Order above) gets decided
   here, once M2's actual delivered size is known.
 
@@ -132,7 +140,10 @@ repo's usual "no breaker" convention.
   LLM API's external, metered, cost-bearing risk profile is materially different from the
   internal service-to-service calls that precedent was written for.
 - **Grafana dashboards** become buildable now that M2 exists — cost/rate panels alongside
-  trace/span panels.
+  trace/span panels. This is also where LLM token/cost usage becomes a real Prometheus
+  counter/histogram, not just the per-span `gen_ai.usage.*` attributes M2 already has
+  ([`decisions.md` H27](./decisions.md)) — M4 is the actual consumer (the rate/cost limiter needs
+  a threshold to alert on), so the metric is built here, not earlier.
 - **Concurrent-session-count scaling** (deferred from M3) gets addressed here, tied to the
   concurrency-limiter design.
 - **Testing:** chaos-style tests — simulated LLM API timeouts/5xx/rate-limit responses, confirming

@@ -33,8 +33,10 @@ import sys
 import anthropic
 
 from agent_platform import (
+    current_trace_id,
     get_tracer,
     is_unknown,
+    layer_attrs,
     safe_set_attributes,
     setup_tracing,
     start_span,
@@ -119,12 +121,18 @@ def run_query(
     # One trace per agent run (docs/phase6/design.md Section 4.2, R4).
     # Deliberately no user_input text as a span attribute -- a clinician's
     # query can itself contain a patient name.
-    with start_span("agent.run_query", _tracer):
+    with start_span(
+        "agent.run_query", _tracer, layer_attrs("agent.orchestration", "run_query")
+    ):
         while True:
             with start_span(
                 f"chat {MODEL}",
                 _tracer,
-                {"gen_ai.system": "anthropic", "gen_ai.request.model": MODEL},
+                {
+                    "gen_ai.system": "anthropic",
+                    "gen_ai.request.model": MODEL,
+                    **layer_attrs("agent.orchestration", "run_query"),
+                },
             ) as chat_span:
                 response = client.messages.create(
                     model=MODEL,
@@ -170,6 +178,7 @@ def run_query(
                         {
                             "gen_ai.tool.name": block.name,
                             "patient_id": block.input.get("patient_id"),
+                            **layer_attrs("agent.tools", block.name),
                         },
                     ):
                         result_str = execute_tool(block.name, block.input)
@@ -194,7 +203,11 @@ def run_query(
                 # ── submit_decision: terminal action, validated and enforced ──
                 if decision_block_data is not None:
                     inputs = decision_block_data.input
-                    with start_span("agent.submit_decision", _tracer) as decision_span:
+                    with start_span(
+                        "agent.submit_decision",
+                        _tracer,
+                        layer_attrs("agent.orchestration", "submit_decision"),
+                    ) as decision_span:
                         decision, override_reason = validate_decision(
                             inputs.get("decision"),
                             saw_unknown_risk=saw_unknown_risk,
@@ -227,6 +240,7 @@ def run_query(
                         risk_assessment_id=inputs.get("risk_assessment_id"),
                         rationale=str(inputs.get("rationale", "")),
                         override_reason=override_reason,
+                        trace_id=current_trace_id(),
                     )
                     return final_text, messages
 
@@ -251,7 +265,11 @@ def run_query(
                 {"role": "assistant", "content": response.content}
             ]
 
-            with start_span("agent.submit_decision", _tracer) as decision_span:
+            with start_span(
+                "agent.submit_decision",
+                _tracer,
+                layer_attrs("agent.orchestration", "submit_decision"),
+            ) as decision_span:
                 decision, override_reason = validate_decision(
                     None, saw_unknown_risk=saw_unknown_risk
                 )
@@ -266,6 +284,7 @@ def run_query(
                 risk_assessment_id=None,
                 rationale=narrative.strip() or "(no rationale provided)",
                 override_reason=override_reason,
+                trace_id=current_trace_id(),
             )
             return final_text, messages
 

@@ -251,7 +251,11 @@ scalable BigQuery decision-warehouse + rule-fire dashboard is **deferred to Phas
   incl. the proxy. **PHI-safe logging** — scrub identifiers (fixes the Kong `file-log`
   URI leak). **AuthN** stays API-key for the prototype, OIDC/JWT the documented path.
 - **Tracing** → OpenTelemetry (`traceparent`) across the fan-out → Cloud Trace; **metrics**
-  → Managed Prometheus (per-stage latency + approvals/denials/pends/rule-fires).
+  → Managed Prometheus (per-stage latency + approvals/denials/pends/rule-fires). Now built (see
+  [C5](./decisions.md)); `claims-service`'s spans carry a custom attribute taxonomy
+  (`fhir_agent.layer`/`.component`, one value per real package — `api`, `pipeline`, `rules`,
+  `acl`, `fhir`, `kb`) defined by a later platform-wide observability effort's own schema
+  document, not restated here to avoid duplication or a citation that could go stale.
 - **IaC/CI-CD (R16)** → Terraform (Cloud Run, Cloud SQL/Neon, Secret Manager, Artifact
   Registry, networking) + GitHub Actions (build → scan → push → deploy).
 

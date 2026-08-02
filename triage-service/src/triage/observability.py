@@ -33,7 +33,46 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
+# TELEMETRY_VERBOSITY / fhir_agent.* / trace-ID surfacing (docs/phase6/
+# telemetry-schema.md). Small, deliberate duplication of agent-platform's
+# equivalent helpers -- see the module docstring for why this isn't shared.
+VALID_VERBOSITY_LEVELS = ("standard", "detailed")
+
 _configured = False
+
+
+def verbosity() -> str:
+    value = os.environ.get("TELEMETRY_VERBOSITY", "standard").strip().lower()
+    return value if value in VALID_VERBOSITY_LEVELS else "standard"
+
+
+def is_detailed() -> bool:
+    return verbosity() == "detailed"
+
+
+def get_tracer(name: str) -> trace.Tracer:
+    return trace.get_tracer(name)
+
+
+def tag_current_span(layer: str, component: str) -> None:
+    """
+    Enrich whatever span is currently active (typically the auto-instrumented
+    FastAPI server span) with fhir_agent.layer/.component/.verbosity. Doesn't
+    create a new span -- this is the "standard" verbosity path: attribute
+    enrichment on spans that already exist, not new span volume.
+    """
+    span = trace.get_current_span()
+    span.set_attribute("fhir_agent.layer", layer)
+    span.set_attribute("fhir_agent.component", component)
+    span.set_attribute("fhir_agent.verbosity", verbosity())
+
+
+def current_trace_id() -> str | None:
+    """The active span's trace ID as lowercase hex, or None with no active span."""
+    ctx = trace.get_current_span().get_span_context()
+    if not ctx.is_valid:
+        return None
+    return format(ctx.trace_id, "032x")
 
 
 def setup_tracing(app: FastAPI, service_name: str = "triage-service") -> None:

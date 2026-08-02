@@ -23,6 +23,8 @@ from typing import Callable, Literal
 
 from fhir_clinical_client import Allergy, Medication
 
+from .observability import get_tracer, is_detailed
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Rule result
@@ -295,6 +297,9 @@ _DEFAULT_LOW = RuleResult(
 # Engine entry point
 # ─────────────────────────────────────────────────────────────────────────────
 
+_tracer = get_tracer("triage.rules")
+
+
 def evaluate(
     medications: list[Medication],
     allergies: list[Allergy],
@@ -302,9 +307,28 @@ def evaluate(
     """
     Evaluate all rules against the patient's medications and allergies.
     Returns the first matching result, or LOW risk if no rule fires.
+
+    At TELEMETRY_VERBOSITY=detailed (docs/phase6/telemetry-schema.md Section
+    4.2), each rule tried gets its own span -- the single highest-value place
+    in this whole platform to see "which specific rule fired, and what did
+    the ones before it decide" (first-match-wins order matters clinically).
+    At the standard (default) verbosity this loop is unchanged, zero extra
+    span volume.
     """
+    if not is_detailed():
+        for rule in RULES:
+            result = rule.evaluate(medications, allergies)
+            if result is not None:
+                return result
+        return _DEFAULT_LOW
+
     for rule in RULES:
-        result = rule.evaluate(medications, allergies)
+        with _tracer.start_as_current_span(f"triage.rules {rule.id}") as span:
+            result = rule.evaluate(medications, allergies)
+            span.set_attribute("fhir_agent.layer", "triage.rules")
+            span.set_attribute("fhir_agent.component", rule.id)
+            span.set_attribute("fhir_agent.verbosity", "detailed")
+            span.set_attribute("matched", result is not None)
         if result is not None:
             return result
     return _DEFAULT_LOW

@@ -39,3 +39,9 @@ management:
   otlp:
     tracing:
       endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4317}
+
+# Custom span attribute depth (docs/phase6/telemetry-schema.md Section 4). "standard" (default)
+# tags the current request span with fhir_agent.layer/.component; "detailed" is not currently
+# used by this service (reserved for a future per-stage span tier, see the schema doc).
+telemetry:
+  verbosity: ${TELEMETRY_VERBOSITY:standard}

@@ -19,7 +19,7 @@ import os
 import uuid
 import logging
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from fastapi.responses import JSONResponse
 
 from fhir_clinical_client import FHIRClient, FHIRClientError, NotFoundError
@@ -34,7 +34,7 @@ from .models import (
     RiskAssessmentResponse,
     TriageRequest,
 )
-from .observability import setup_tracing
+from .observability import current_trace_id, setup_tracing, tag_current_span
 from .rules import RuleResult, evaluate
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -124,8 +124,12 @@ def _build_risk_assessment(
 # ─────────────────────────────────────────────────────────────────────────────
 
 @app.get("/health", response_model=HealthResponse, tags=["ops"])
-def health() -> HealthResponse:
+def health(response: Response) -> HealthResponse:
     """Liveness check."""
+    tag_current_span("triage.api", "health")
+    trace_id = current_trace_id()
+    if trace_id:
+        response.headers["X-Trace-Id"] = trace_id
     return HealthResponse(status="ok", version=VERSION)
 
 
@@ -136,7 +140,7 @@ def health() -> HealthResponse:
     summary="Evaluate refill risk for a patient",
     response_description="FHIR RiskAssessment resource with risk level and clinical rationale",
 )
-def assess_refill_risk(request: TriageRequest) -> RiskAssessmentResponse:
+def assess_refill_risk(request: TriageRequest, response: Response) -> RiskAssessmentResponse:
     """
     Evaluate drug-allergy conflict risk for a patient.
 
@@ -148,6 +152,10 @@ def assess_refill_risk(request: TriageRequest) -> RiskAssessmentResponse:
     MedicationRequest and AllergyIntolerance resources that triggered the
     assessment — providing a full audit trail.
     """
+    tag_current_span("triage.api", "assess_refill_risk")
+    trace_id = current_trace_id()
+    trace_headers = {"X-Trace-Id": trace_id} if trace_id else None
+
     client = _get_client()
     patient_id = request.patient_id
 
@@ -158,10 +166,18 @@ def assess_refill_risk(request: TriageRequest) -> RiskAssessmentResponse:
         medications = client.get_medications(patient_id)
         allergies = client.get_allergies(patient_id)
     except NotFoundError:
-        raise HTTPException(status_code=404, detail=f"Patient {patient_id} not found.")
+        raise HTTPException(
+            status_code=404,
+            detail=f"Patient {patient_id} not found.",
+            headers=trace_headers,
+        )
     except FHIRClientError as exc:
         log.error("FHIR error for patient %s: %s", patient_id, exc)
-        raise HTTPException(status_code=502, detail=f"FHIR server error: {exc}")
+        raise HTTPException(
+            status_code=502,
+            detail=f"FHIR server error: {exc}",
+            headers=trace_headers,
+        )
 
     # ── Filter to specific medication if requested ────────────────────────────
     if request.medication_id:
@@ -171,6 +187,7 @@ def assess_refill_risk(request: TriageRequest) -> RiskAssessmentResponse:
                 status_code=404,
                 detail=f"MedicationRequest {request.medication_id} not found "
                        f"in active medications for patient {patient_id}.",
+                headers=trace_headers,
             )
 
     log.info(
@@ -186,4 +203,6 @@ def assess_refill_risk(request: TriageRequest) -> RiskAssessmentResponse:
         patient_id, result.risk_level, result.rule_id,
     )
 
+    if trace_id:
+        response.headers["X-Trace-Id"] = trace_id
     return _build_risk_assessment(patient_id, result)
