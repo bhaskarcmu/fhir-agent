@@ -834,7 +834,7 @@ Check if there are any unmerged PRs and merged branches lying around
 *[Claude has not completed this turn yet.]*
 
 <details>
-<summary>Execution details — 434 tool events</summary>
+<summary>Execution details — 435 tool events</summary>
 
 ### Turn 2 activity
 
@@ -1527,6 +1527,13 @@ gh pr view 56 --json title,state,createdAt,updatedAt,mergeable,headRefName,baseR
 echo
 echo "=== Is origin/feature/walking-skeleton merged into main? ==="
 gi…`
+- **Bash** `echo "=== git status (uncommitted work check) ==="
+git status
+echo
+echo "=== PR #54 status (my last Phase 4 doc PR) ==="
+gh pr view 54 --json state,mergedAt 2>&1
+echo
+echo "=== Any other local feature…`
 
 </details>
 
