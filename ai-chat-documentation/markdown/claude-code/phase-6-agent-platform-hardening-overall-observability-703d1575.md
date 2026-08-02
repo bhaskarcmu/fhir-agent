@@ -947,8 +947,29 @@ Two real options, different tradeoffs:
 
 Local is the lower-friction choice for right now since it needs no external account.
 
+zstd installed. Retrying the Ollama installer.
+
+Ollama is running. Now pulling the two lightest models.
+
+Llama 3.2 1B pulled. Now DeepSeek R1's lightest distill.
+
+Both models are pulled. Let's verify and quickly sanity-check the OpenAI-compatible endpoint responds.
+
+This already demonstrates the point nicely — asked for the literal word "OK," it replied "Yes." instead. Exactly the kind of instruction-following weakness the enum gate exists for. Now running the previously-skipped M1 test for real:
+
+That test now genuinely runs and passes against a real weak local model. Let's also try it with DeepSeek-R1 for a second, different-shaped adversary, and run the full suite once more.
+
+All 59 tests pass now (0 skipped). Set up:
+
+- **Ollama installed** (`/usr/local/bin/ollama`), running in the background (`nohup ollama serve`, PID detached — not a systemd service, since this container doesn't run systemd; it won't survive a container restart, so re-run `ollama serve &` if this environment restarts).
+- **`llama3.2:1b`** (1.3GB) and **`deepseek-r1:1.5b`** (1.1GB) pulled — the lightest official chat variant of each. ~4GB total disk used (36GB/79GB now, plenty of headroom).
+- Confirmed both work through Ollama's OpenAI-compatible `/v1/chat/completions` endpoint — the same shape M5's future adapter will target.
+- The previously-skipped M1 test now runs for real against both models and passes. Small bonus finding: asked to reply with exactly "OK," Llama 3.2 1B replied "Yes." instead — a live, unprompted demonstration of exactly the instruction-following weakness the enum gate exists to catch.
+
+To use these in future test runs: `export OLLAMA_MODEL=llama3.2:1b` (or `deepseek-r1:1.5b`) before running pytest — no code changes needed, it's already wired via env var. This doesn't unblock M5 (the real provider adapter still doesn't exist), but it does mean every milestone from here on can be tested against a real weak model, not just simulated ones.
+
 <details>
-<summary>Execution details — 187 tool events</summary>
+<summary>Execution details — 198 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1206,6 +1227,29 @@ Implements Phase 6 M1 (Output Contra…`
 - **Bash** `which ollama curl 2>&1; echo ---; df -h / 2>&1 | tail -3; echo ---; free -h 2>&1; echo ---; nproc 2>&1`
 - **Bash** `curl -sI -m 5 https://ollama.com 2>&1 | head -5; echo "exit:$?"`
 - **AskUserQuestion** `{"questions": [{"question": "Want me to install Ollama and pull the lightest models now?", "header": "Install now?", "multiSelect": false, "options": [{"label": "Yes, Llama only (Recommended)", "descr…`
+- **Bash** `git branch --show-current`
+- **Bash** `curl -fsSL https://ollama.com/install.sh | sh 2>&1 | tail -30`
+- **Bash** `sudo apt-get update -qq 2>&1 | tail -5 && sudo apt-get install -y zstd -qq 2>&1 | tail -15`
+- **Bash** `curl -fsSL https://ollama.com/install.sh | sh 2>&1 | tail -30`
+- **Bash** `nohup ollama serve > /tmp/claude-1000/-workspaces-fhir-agent/703d1575-6579-4a4a-834d-bfd055f35840/scratchpad/ollama.log 2>&1 &
+disown
+sleep 3
+curl -s -m 5 http://localhost:11434/api/tags && echo "OK -…`
+- **Bash** `ollama pull llama3.2:1b 2>&1 | tail -20`
+- **Bash** `ollama pull deepseek-r1:1.5b 2>&1 | tail -20`
+- **Bash** `ollama list
+echo ---
+curl -s http://localhost:11434/v1/chat/completions -H "Content-Type: application/json" -d '{
+  "model": "llama3.2:1b",
+  "messages": [{"role":"user","content":"Reply with exactly…`
+- **Bash** `cd /workspaces/fhir-agent
+OLLAMA_MODEL=llama3.2:1b python -m pytest mcp-agent/tests/test_output_contract.py -v -k LiveLocalModel 2>&1 | tail -30`
+- **Bash** `cd /workspaces/fhir-agent
+OLLAMA_MODEL=deepseek-r1:1.5b python -m pytest mcp-agent/tests/test_output_contract.py -v -k LiveLocalModel 2>&1 | tail -30`
+- **Bash** `cd /workspaces/fhir-agent
+OLLAMA_MODEL=llama3.2:1b python -m pytest agent-platform/tests mcp-agent/tests -q 2>&1 | tail -10
+echo ---
+df -h / | tail -1`
 
 </details>
 
@@ -1216,6 +1260,6 @@ Implements Phase 6 M1 (Output Contra…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 11:00 UTC
+- **Last updated:** 2 August 2026, 11:07 UTC
 - **Turns:** 14
 - **Status:** Complete
