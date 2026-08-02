@@ -1531,8 +1531,12 @@ Metrics and Prometheus scrape target are working. Now a live end-to-end query to
 
 That's the known `.env`-shadowing gotcha from earlier milestones — not an M4 bug. Fixing it for a cleaner live validation.
 
+Now let's run a real query with a real patient and confirm token metrics accumulate correctly.
+
+Grafana dashboard auto-provisioned correctly with 4 panels. Now let's test the concurrency limiter live and the circuit breaker with real failures (invalid API key), since these are the harder-to-mock behaviors worth validating for real.
+
 <details>
-<summary>Execution details — 739 tool events</summary>
+<summary>Execution details — 742 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2793,6 +2797,15 @@ echo "--- try…`
 - **Bash** `export FHIR_GATEWAY_URL=http://fhir:8080/fhir && docker compose --profile phase6 up -d --force-recreate mcp-agent-api
 sleep 3
 docker exec fhir-agent-mcp-api env | grep FHIR_GATEWAY_URL`
+- **Bash** `SESSION_ID=$(curl -sS -X POST http://localhost:8010/sessions | python3 -c "import json,sys; print(json.load(sys.stdin)['session_id'])")
+echo "session: $SESSION_ID"
+curl -sS -X POST "http://localhost:8…`
+- **Bash** `curl -s -u admin:admin http://localhost:3000/api/search?query=LLM 2>&1
+echo "---"
+curl -s http://localhost:3000/api/dashboards/uid/phase6-m4-llm-cost-rate | python3 -c "
+import json,sys
+d = json.load(…`
+- **Bash** `export ANTHROPIC_API_KEY=‹redacted:anthropic-key› MAX_CONCURRENT_LLM_QUERIES=10 LLM_QUERY_QUEUE_DEADLINE_SECONDS=5 LLM_CIRCUIT_FAILURE_THRESHOLD=2 LLM_CIRCUIT_RESET_SECONDS=15 FHIR_GATEWAY_…`
 
 </details>
 
@@ -2803,6 +2816,6 @@ docker exec fhir-agent-mcp-api env | grep FHIR_GATEWAY_URL`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 14:01 UTC
+- **Last updated:** 2 August 2026, 14:02 UTC
 - **Turns:** 22
 - **Status:** Incomplete
