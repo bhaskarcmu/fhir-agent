@@ -1649,8 +1649,16 @@ Now updating `design.md` §4.5 to "implemented".
 
 Now updating `milestone-plan.md`'s M5 section.
 
+All good. Now let's review the diff and commit.
+
+I'm still on `main` — I need to create the M5 feature branch before committing this work.
+
+Now staging and committing.
+
+Everything staged matches intended changes, nothing suspicious.
+
 <details>
-<summary>Execution details — 871 tool events</summary>
+<summary>Execution details — 875 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3091,6 +3099,14 @@ cd /workspaces/f…`
 - **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/api.py`
 - **Bash** `python -m pytest agent-platform/tests mcp-agent/tests triage-service/src/triage/tests -q --deselect mcp-agent/tests/test_provider_integration.py::test_live_ollama_resolves_to_a_valid_gated_decision --…`
 - **Bash** `cd /workspaces/fhir-agent && python -m pytest agent-platform/tests mcp-agent/tests triage-service/src/triage/tests -q --deselect mcp-agent/tests/test_provider_integration.py::test_live_ollama_resolves…`
+- **Bash** `git status`
+- **Bash** `git checkout -b feature/phase6-m5-provider-abstraction`
+- **Bash** `git add agent-platform/pyproject.toml agent-platform/src/agent_platform/__init__.py agent-platform/src/agent_platform/resilience.py agent-platform/src/agent_platform/session_store.py agent-platform/sr…`
+- **Bash** `git commit -m "$(cat <<'EOF'
+feat(phase6): M5 — provider abstraction, real conversation-history translation
+
+Formalizes the two-adapter seam (Anthropic native + one OpenAI-compatible
+adapter covering…`
 
 </details>
 
@@ -3101,6 +3117,6 @@ cd /workspaces/f…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 14:36 UTC
+- **Last updated:** 2 August 2026, 14:37 UTC
 - **Turns:** 23
 - **Status:** Incomplete
