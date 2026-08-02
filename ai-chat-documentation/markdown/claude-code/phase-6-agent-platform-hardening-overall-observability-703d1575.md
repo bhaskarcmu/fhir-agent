@@ -1167,8 +1167,10 @@ Let's run the complete test suite one final time before committing.
 
 Let's do one more live smoke test to confirm the trace ID actually shows up in real output:
 
+Everything validated live. Now committing to the same M2 branch/PR:
+
 <details>
-<summary>Execution details — 525 tool events</summary>
+<summary>Execution details — 529 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2053,6 +2055,20 @@ export FHIR_GATEWAY_URL=http://fhir:8080/fhir
 docker compose up -d --build triage 2>&1 | tail -8
 docker compose build mcp-agent 2>&1 | tail -5
 docker compose run --name mcp-a…`
+- **Bash** `curl -s -D - -o /dev/null -X POST http://localhost:8001/triage/refill-risk -H "Content-Type: application/json" -d '{"patient_id":"1"}' 2>&1 | grep -i "x-trace-id\|HTTP"
+echo "--- cleanup ---"
+cd /work…`
+- **Bash** `cd /workspaces/fhir-agent
+git status --short | head -40`
+- **Bash** `cd /workspaces/fhir-agent
+git add agent-platform/ claims-service/ docs/ mcp-agent/ triage-service/
+git status --short`
+- **Bash** `cd /workspaces/fhir-agent
+git commit -m "$(cat <<'EOF'
+feat(phase6 M2): custom telemetry schema, verbosity, and trace-ID surfacing
+
+Expands M2 per the user's explicit scope-expansion request: a full
+a…`
 
 </details>
 
@@ -2063,6 +2079,6 @@ docker compose run --name mcp-a…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 12:48 UTC
+- **Last updated:** 2 August 2026, 12:49 UTC
 - **Turns:** 17
 - **Status:** Complete
