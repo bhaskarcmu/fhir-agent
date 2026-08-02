@@ -1498,7 +1498,7 @@ Good — Prometheus/Grafana infra already exists from M2. Let me look at what's 
 Now let's look at `agent.py`'s current chat loop to see where the LLM API call happens and how errors/timeouts are currently handled.
 
 <details>
-<summary>Execution details — 683 tool events</summary>
+<summary>Execution details — 684 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2675,6 +2675,7 @@ echo "=== fail_closed.py ==="
 cat /workspaces/fhir-agent/agent-platform/src/agent_platform/fail_closed.py`
 - **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
 - **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/format.py`
+- **Bash** `grep -rn "prometheus" /workspaces/fhir-agent --include="*.toml" --include="*.txt" --include="*.py" -i | grep -v node_modules | head -40`
 
 </details>
 
