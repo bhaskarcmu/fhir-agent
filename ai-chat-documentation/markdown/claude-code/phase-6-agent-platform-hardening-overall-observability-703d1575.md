@@ -2098,8 +2098,10 @@ Two real Ollama runs already prove the policy/fail-closed integration holds with
 
 A rich, complete live result — real HIGH-risk decision, real openFDA/RxClass citations, and the judge caught a genuine (if debatable) PHI-redundancy issue in the rationale without affecting the decision. Let me tighten the docs with this real transcript detail.
 
+Let's tear down the docker containers used for validation.
+
 <details>
-<summary>Execution details — 1198 tool events</summary>
+<summary>Execution details — 1205 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4008,6 +4010,13 @@ tail -3 /tmp/claude-1000/-workspaces-fhir-agent/703d1575-6579-4a4a-83…`
 - **Bash** `export FHIR_GATEWAY_URL=http://localhost:8080/fhir TRIAGE_SERVICE_URL=http://localhost:8001
 cd /workspaces/fhir-agent/mcp-agent/src && python3 -m agent.agent --provider anthropic --model claude-sonnet…`
 - **Bash** `grep -n "Live-validated.*a real end-to-end query" /workspaces/fhir-agent/docs/phase6/design.md`
+- **Read** `/workspaces/fhir-agent/docs/phase6/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase6/design.md`
+- **Bash** `grep -n "these are third-party services this repo doesn't operate" /workspaces/fhir-agent/docs/phase6/milestone-plan.md`
+- **Bash** `grep -n "unlike Ollama" /workspaces/fhir-agent/docs/phase6/milestone-plan.md`
+- **Read** `/workspaces/fhir-agent/docs/phase6/milestone-plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase6/milestone-plan.md`
+- **Bash** `docker compose down 2>&1 | tail -10`
 
 </details>
 
@@ -4018,6 +4027,6 @@ cd /workspaces/fhir-agent/mcp-agent/src && python3 -m agent.agent --provider ant
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 17:00 UTC
+- **Last updated:** 2 August 2026, 17:01 UTC
 - **Turns:** 28
 - **Status:** Incomplete
