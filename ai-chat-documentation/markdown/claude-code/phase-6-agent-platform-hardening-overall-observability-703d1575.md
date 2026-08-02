@@ -2066,8 +2066,18 @@ All 4 pass. Now let's write `format.py`'s citation/judgment rendering tests.
 
 Let me fix that last test — it's testing a scenario that misrepresents the actual guarantee. Rewriting it to exercise the real `judge_response` failing naturally.
 
+Now let's run all the new M6 test files together.
+
+Now let's run the complete test suite in the background (it's slow) while I prepare live docker validation.
+
+My mistake — same conftest.py collision from before. Running these as two separate invocations, correctly this time.
+
+While that runs, let's run agent-platform's own suite separately too.
+
+While that finishes, let's start on the M6 documentation updates.
+
 <details>
-<summary>Execution details — 1157 tool events</summary>
+<summary>Execution details — 1169 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3928,6 +3938,19 @@ python -m pytest mcp-agent/tests -q --deselect mcp-agent/tests/test_provider_int
 - **Bash** `python -m pytest mcp-agent/tests/test_format.py -v 2>&1 | tail -40`
 - **Write** `/workspaces/fhir-agent/mcp-agent/tests/test_run_query_citations_and_judgment.py`
 - **Edit** `/workspaces/fhir-agent/mcp-agent/tests/test_run_query_citations_and_judgment.py`
+- **Bash** `python -m pytest mcp-agent/tests/test_run_query_citations_and_judgment.py -v 2>&1 | tail -50`
+- **Write** `/workspaces/fhir-agent/mcp-agent/tests/test_judge_integration.py`
+- **Write** `/workspaces/fhir-agent/mcp-agent/tests/test_knowledge_integration.py`
+- **Bash** `python -m pytest mcp-agent/tests/test_judge_integration.py mcp-agent/tests/test_knowledge_integration.py -v 2>&1 | tail -60`
+- **TodoWrite** `{"todos": [{"content": "Build policy.py loader in agent_platform + mcp-agent/policy.md content, wire into SYSTEM_PROMPT", "status": "completed", "activeForm": "Building policy loader and policy.md"},…`
+- **Bash** `python -m pytest agent-platform/tests mcp-agent/tests triage-service/src/triage/tests -q > /tmp/claude-1000/-workspaces-fhir-agent/703d1575-6579-4a4a-834d-bfd055f35840/scratchpad/m6_full_suite.log 2>&…`
+- **ToolSearch** `select:TaskStop`
+- **Read** `/tmp/claude-1000/-workspaces-fhir-agent/703d1575-6579-4a4a-834d-bfd055f35840/scratchpad/m6_full_suite.log`
+- **Bash** `python -m pytest mcp-agent/tests triage-service/src/triage/tests -q > /tmp/claude-1000/-workspaces-fhir-agent/703d1575-6579-4a4a-834d-bfd055f35840/scratchpad/m6_mcp_suite.log 2>&1; echo "EXIT=$?" >> /…`
+- **Bash** `python -m pytest agent-platform/tests -q > /tmp/claude-1000/-workspaces-fhir-agent/703d1575-6579-4a4a-834d-bfd055f35840/scratchpad/m6_agentplatform_suite.log 2>&1; echo "EXIT=$?" >> /tmp/claude-1000/-…`
+- **Read** `/tmp/claude-1000/-workspaces-fhir-agent/703d1575-6579-4a4a-834d-bfd055f35840/tasks/b7zrs7ind.output`
+- **Bash** `grep -n "| \*\*H15\*\*" /workspaces/fhir-agent/docs/phase6/decisions.md
+grep -n "^| \*\*H5" /workspaces/fhir-agent/docs/phase6/decisions.md | tail -5`
 
 </details>
 
@@ -3938,6 +3961,6 @@ python -m pytest mcp-agent/tests -q --deselect mcp-agent/tests/test_provider_int
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 16:52 UTC
+- **Last updated:** 2 August 2026, 16:54 UTC
 - **Turns:** 28
 - **Status:** Incomplete
