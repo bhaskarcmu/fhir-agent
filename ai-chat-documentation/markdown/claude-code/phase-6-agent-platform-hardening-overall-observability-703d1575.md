@@ -1220,8 +1220,10 @@ Confirmed — same `.env` leak affecting `mcp-agent-api`. Also found a real bug:
 
 Now updating `api.py` to use `stats["trace_id"]`:
 
+Found another real gap — `api.py` never instruments the FastAPI app itself, so `/health` and `/sessions` never get a server span or trace ID. Fixing it:
+
 <details>
-<summary>Execution details — 625 tool events</summary>
+<summary>Execution details — 628 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2308,6 +2310,11 @@ curl -s -X POST "http://localhost:8010/sessions/$SESSION_ID/query" -H "Content-T
 - **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
 - **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
 - **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/api.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/pyproject.toml`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/api.py`
+- **Bash** `cd /workspaces/fhir-agent
+python -m pip install -e "mcp-agent[dev]" -q 2>&1 | tail -20
+python -m pytest agent-platform/tests mcp-agent/tests -q 2>&1 | tail -15`
 
 </details>
 
@@ -2318,6 +2325,6 @@ curl -s -X POST "http://localhost:8010/sessions/$SESSION_ID/query" -H "Content-T
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 13:17 UTC
+- **Last updated:** 2 August 2026, 13:18 UTC
 - **Turns:** 18
 - **Status:** Complete
