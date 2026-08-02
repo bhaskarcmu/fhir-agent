@@ -1549,8 +1549,12 @@ All pass. Now let's update the documentation: `decisions.md`, `design.md` §4.4,
 
 Now appending H34–H39 for M4.
 
+Now updating `design.md` §4.4 to "implemented" with real detail.
+
+Now updating `milestone-plan.md`'s M4 section and `telemetry-schema.md` §7.
+
 <details>
-<summary>Execution details — 762 tool events</summary>
+<summary>Execution details — 764 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2850,6 +2854,8 @@ SESSION_ID=$(curl -sS -X POST http://localhost:8010/sess…`
 - **Read** `/workspaces/fhir-agent/docs/phase6/decisions.md`
 - **Read** `/workspaces/fhir-agent/docs/phase6/decisions.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase6/decisions.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase6/design.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase6/milestone-plan.md`
 
 </details>
 
@@ -2860,6 +2866,6 @@ SESSION_ID=$(curl -sS -X POST http://localhost:8010/sess…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 14:08 UTC
+- **Last updated:** 2 August 2026, 14:09 UTC
 - **Turns:** 22
 - **Status:** Incomplete
