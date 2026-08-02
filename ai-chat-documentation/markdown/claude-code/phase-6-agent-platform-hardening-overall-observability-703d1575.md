@@ -1923,8 +1923,10 @@ Now `non_interactive_mode`:
 
 Now `main()` — add the `--list-models`/`--provider`/`--model` flags and wire everything through.
 
+All 9 pass. Now let's run the full mcp-agent suite to see what else needs updating.
+
 <details>
-<summary>Execution details — 939 tool events</summary>
+<summary>Execution details — 942 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3461,6 +3463,9 @@ os.environ.…`
 - **Bash** `python -m pip install -q -e "mcp-agent[dev]" 2>&1 | tail -10
 python -m pytest mcp-agent/tests -q 2>&1 | tail -100`
 - **Read** `/workspaces/fhir-agent/mcp-agent/tests/test_session_persistence.py`
+- **Write** `/workspaces/fhir-agent/mcp-agent/tests/test_session_persistence.py`
+- **Bash** `python -m pytest mcp-agent/tests/test_session_persistence.py -v 2>&1 | tail -60`
+- **Bash** `python -m pytest mcp-agent/tests -q -x --deselect mcp-agent/tests/test_provider_integration.py::test_live_ollama_resolves_to_a_valid_gated_decision --deselect mcp-agent/tests/test_provider_integration…`
 
 </details>
 
@@ -3471,6 +3476,6 @@ python -m pytest mcp-agent/tests -q 2>&1 | tail -100`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 15:58 UTC
+- **Last updated:** 2 August 2026, 15:59 UTC
 - **Turns:** 27
 - **Status:** Incomplete
