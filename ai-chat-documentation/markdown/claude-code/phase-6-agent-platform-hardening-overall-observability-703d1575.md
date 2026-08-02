@@ -1042,8 +1042,24 @@ Confirmed clean on the Kong boundary. Now the final full test pass before commit
 
 112 pass. Now the Java side one more time:
 
+**PR #58 is open**: [`feat(phase6 M2): observability, platform-wide — closes Phase 2 R15`](https://github.com/bhaskarcmu/fhir-agent/pull/58), branch `feature/phase6-m2-observability` → `main`.
+
+**What it does:** OTel/OTLP tracing across the agent tier and the three Java services (`claims-service`, `rxclaim-emulator`, `fhir-service`), real Prometheus metrics exposed on all three, a new local `observability` docker-compose profile (Jaeger/Prometheus/Grafana), and closure of Phase 2's long-open R15 gap. Kong's PHI-log fix (H17) was deliberately left untouched, per the separate-go-ahead requirement.
+
+**Validated for real, not just unit-tested:** brought up the actual stack, ran a live `mcp-agent` query through `triage-service` to `fhir-service`, and confirmed in Jaeger a single continuous trace across both services with correct token-usage data and zero PHI. Prometheus confirmed scraping all three Java services; Grafana confirmed both datasources live.
+
+**Two real bugs found and fixed along the way, not hidden:**
+- `mcp-agent`'s Dockerfile never installed `agent-platform` at all — a gap dating to M1, only surfaced now because M2 was the first time I actually ran the container.
+- `fhir-service`'s `/actuator/prometheus` was enabled internally but never web-exposed (declared-but-not-delivered, the exact class of gap this whole effort exists to catch) — fixed in both `application.yaml` and `application-cds.yaml`.
+
+**Known limitations, stated plainly:**
+- `fhir-service`'s full integration-test suite wasn't run to completion (each test boots a ~40s HAPI context, dozens of tests) — verified via clean compile plus one full-context test instead.
+- The default `docker-compose` `fhir` service still pulls the stock `hapiproject/hapi` image (a pre-existing, separately-tracked version drift), so `fhir-service/`'s own tracing fix doesn't get exercised by that specific compose target by default — its metrics endpoint did, since that already worked against the stock image.
+
+Test totals: 112 Python tests, 53 claims-service, 8 rxclaim-emulator — all passing, no regressions anywhere.
+
 <details>
-<summary>Execution details — 423 tool events</summary>
+<summary>Execution details — 426 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1775,6 +1791,11 @@ feat(phase6 M2): observability, platform-wide — closes Phase 2 R15
 Implements Phase 6 M2 per docs/phase6/milestone-plan.md and
 decisions.md H16/…`
 - **Bash** `git push -u origin feature/phase6-m2-observability`
+- **Bash** `cd /workspaces/fhir-agent
+gh pr create --base main --head feature/phase6-m2-observability --title "feat(phase6 M2): observability, platform-wide — closes Phase 2 R15" --body "$(cat <<'EOF'
+## Summary…`
+- **Edit** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase6-agent-hardening.md`
+- **TodoWrite** `{"todos": [{"content": "Explore current state: pom.xml, docker-compose.yml, client configs", "status": "completed", "activeForm": "Exploring current service configs for M2"}, {"content": "Add agent_pl…`
 
 </details>
 
@@ -1785,6 +1806,6 @@ decisions.md H16/…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 12:04 UTC
+- **Last updated:** 2 August 2026, 12:05 UTC
 - **Turns:** 15
 - **Status:** Complete
