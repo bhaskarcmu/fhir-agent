@@ -1957,8 +1957,12 @@ Now let's live-validate per-session provider persistence end-to-end with a real 
 
 Migration applied correctly to the existing table. Now let's create a session with the default (Ollama), then verify resume behavior.
 
+Session created and pinned to `provider=ollama model=llama3.2:1b`. Let's verify in Postgres and then resume it.
+
+Now let's resume it while the *current* environment has no explicit provider set, confirming it stays pinned to `ollama` (trivial here since that's also the default) — and more importantly, let's test resuming a session pinned to `anthropic` while the environment's default is `ollama`, to prove H49's cross-provider resume actually works.
+
 <details>
-<summary>Execution details — 998 tool events</summary>
+<summary>Execution details — 1000 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3587,6 +3591,10 @@ p…`
 - **Bash** `psql postgresql://agent_platform:‹redacted:url-credentials›localhost:5433/agent_platform -c "\d agent_sessions" 2>&1 | head -15`
 - **Bash** `export FHIR_GATEWAY_URL=http://localhost:8080/fhir TRIAGE_SERVICE_URL=http://localhost:8001 DATABASE_URL=postgresql://agent_platform:‹redacted:url-credentials›localhost:5433/agent_platform
 unset LLM_PROVIDER DEP…`
+- **Bash** `psql postgresql://agent_platform:‹redacted:url-credentials›localhost:5433/agent_platform -c "SELECT session_id, provider, model, token_count FROM agent_sessions;" 2>&1`
+- **Bash** `export FHIR_GATEWAY_URL=http://localhost:8080/fhir TRIAGE_SERVICE_URL=http://localhost:8001 DATABASE_URL=postgresql://agent_platform:‹redacted:url-credentials›localhost:5433/agent_platform
+unset DEPLOYMENT_ENV
+p…`
 
 </details>
 
@@ -3597,6 +3605,6 @@ unset LLM_PROVIDER DEP…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 16:15 UTC
+- **Last updated:** 2 August 2026, 16:16 UTC
 - **Turns:** 27
 - **Status:** Incomplete
