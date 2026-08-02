@@ -1227,7 +1227,7 @@ Full end-to-end persistence confirmed working correctly. Let's clean up and fina
 Now adding H28-H33 for M3's real decisions:
 
 <details>
-<summary>Execution details — 642 tool events</summary>
+<summary>Execution details — 643 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2346,6 +2346,7 @@ docker compose stop tri…`
 - **Edit** `/workspaces/fhir-agent/docs/phase6/design.md`
 - **Bash** `grep -n "M3.*Not started\|## M3" /workspaces/fhir-agent/docs/phase6/milestone-plan.md`
 - **Read** `/workspaces/fhir-agent/docs/phase6/milestone-plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase6/milestone-plan.md`
 
 </details>
 
