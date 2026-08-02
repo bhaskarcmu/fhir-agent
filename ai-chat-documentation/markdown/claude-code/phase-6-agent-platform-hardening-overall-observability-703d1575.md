@@ -1825,7 +1825,51 @@ Overall, tell me what is not resolved and preferable give me options to choose f
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+**Critique of 2b (paid testing shouldn't be excluded from the whole dev environment)**
+
+I agree, and I think this actually resolves a tension I created rather than one that was already there. My earlier advice ("no paid keys in dev/CI at all") was solving a problem that point 4 already solved a different way: once "explicit `LLM_PROVIDER=anthropic` required, key-presence-alone insufficient" is the rule, a key just sitting in a dev environment is no longer a silent-spend risk — nothing uses it unless a human deliberately opts in. So the real distinction isn't "dev vs. CI can have keys," it's "CI is unattended and automated, dev is human-supervised." CI shouldn't have `LLM_PROVIDER=anthropic` set in its own workflow config, ever — not because a key might be present, but because there's no human there to make the deliberate choice that config represents. Dev environments can have both the key and the explicit override, because a person is choosing it in the moment. I'd drop my earlier "no keys in dev" advice as superseded by point 4's mechanism, not as a live open question.
+
+One minor, genuinely optional note: whether that CI rule is enforced technically (a check that fails loud if `LLM_PROVIDER=anthropic` appears in CI config) or just enforced by workflow-file code review. I'd lean toward "code review is enough" since CI workflow files are already reviewed on every change — but flagging it in case you want a harder gate.
+
+**Critique of 2c (accepting the HTTP API's lack of TTY signal)**
+
+Agreed, and I think it's the right trade rather than a compromise. Any synthetic "I'm a human" signal over HTTP (a header, a request flag) would be self-reported and trivially fakeable by an automated caller anyway, so it couldn't be trusted for anything safety-relevant — and since the disclosure mechanism is informational-only (point 2a), the actual cost of not having it is small: an API caller just doesn't get an automatic heads-up the way a REPL user does, and has to read docs or call a `GET /models`-style endpoint to learn about the default and how to override it. The real safety mechanism (explicit `LLM_PROVIDER` required to leave the free/self-hosted default) doesn't depend on this signal at all, so nothing load-bearing is lost — just a UX nicety. Fine to document and move on.
+
+**Critique of point 8 (tests pull the model on demand if missing)**
+
+This is a reasonable, self-healing design and squares nicely with 6b's "pull reliably in workflow" preference — I'd actually treat 8 as the refinement of 6b: rather than a separate CI setup step, the test suite's own Ollama-availability fixture becomes responsible for "reachable but model missing → pull it → still missing/failed → hard-fail with a descriptive error." A few things I'd build in when this gets implemented, none of which need a decision from you now, just flagging so the scope is visible:
+
+- Centralize this in one shared, session-scoped fixture (checked once per test run, not once per test) — a per-test check would mean the first test to run eats the pull latency and is otherwise fine, but doing the reachability+pull check redundantly in every test file would be wasteful and easy to let drift out of sync across files.
+- Give the pull itself a bounded timeout, matching the timeout-not-retry-forever convention already used everywhere else in this repo (`HttpTriageClient.java`, M4's breaker/deadline logic) — a stuck download shouldn't be able to hang CI indefinitely.
+- On failure, one clear error naming the model and the underlying cause; no retry loop beyond that, consistent with the "don't over-engineer" instinct from point 7.
+- Worth a fast-follow (not now): caching the Ollama model directory across CI runs, since "pull reliably in workflow" without caching means every single CI run re-downloads the same ~1-2GB. Not a blocker, just worth knowing it's there.
+
+**Point 5** — yes, resolved. Per-process for the CLI, per-session for the API (with the schema consequence I flagged last time — a new persisted column for the session's pinned model/provider). Nothing outstanding.
+
+---
+
+## What's not resolved
+
+Two real open decisions came out of this round — both because your directives (1a and 3) are correct in spirit but leave a specific mechanism undecided, and I don't think I should just pick for you on either.
+
+**Open item 1 — how to actually encode "self-hosted vs. third-party" (from 1a)**
+
+Today `OpenAICompatibleProvider` is one adapter class that treats Ollama and DeepSeek API/OpenRouter/Groq identically — same wire protocol, same code path. "Who hosts the inference" isn't a distinction the current shape can express at all. Two ways to add it:
+
+- **Option A — a flag alongside the existing config.** Add something like `LLM_SELF_HOSTED=true|false` next to `LLM_BASE_URL`. Keeps H4's "exactly two adapters" framing completely intact; self-hosted-ness becomes metadata layered on top, not a new provider identity. Con: one more variable to know about, and it's possible to set it wrong (mark a third-party endpoint as self-hosted by mistake).
+- **Option B — three provider identities instead of two.** `LLM_PROVIDER=anthropic | ollama | openai_compatible`, where `ollama` is a new first-class, default-eligible identity with a sensible built-in base URL (`http://localhost:11434/v1`) so it needs zero extra config in the common case, and `openai_compatible` is reserved for third-party-hosted endpoints that are *never* default-eligible. Cleaner ergonomics, but it's a real (small) revision of H4's literal "exactly two adapters" wording — the underlying HTTP-translation code would still be shared/reused between `ollama` and `openai_compatible`, so it's two *implementations* but three *identities*. Worth being honest that this touches a decision that's been written down as settled.
+
+I lean slightly toward B for ergonomics, but it's your call since it changes the public env var contract shape either way.
+
+**Open item 2 — how much production-safety guardrail to build now vs. defer to M7 (from point 3)**
+
+Once "Llama wins absent explicit `LLM_PROVIDER`" ships, there's currently *no code-level difference* between "a dev laptop with nothing set" and "a real production deployment with nothing set" — both would identically get Llama. Whether that's an urgent problem depends on a fact I should ask rather than assume: **does a production deployment path for `mcp-agent-api` already exist** (I've only seen it live in docker-compose so far), or is this still purely theoretical until one is built? Depending on the answer:
+
+- **Option A — ship as-is, no new guardrail.** Fine if no production path exists yet; the risk is real but not live. Revisit fully at M7.
+- **Option B — a minimal rail now.** A single explicit variable (e.g. `DEPLOYMENT_ENV=production`) that makes `build_llm_client()` *refuse* (loud error, not a silent Llama fallback) when set and `LLM_PROVIDER` is unset. Small, forward-compatible with M7's eventual full design, closes the scariest gap specifically.
+- **Option C — disclosure only, no blocking.** Just make the "using Llama by default" log line impossible to miss, without any refusal logic. Cheapest, but doesn't actually prevent the silent-downgrade scenario, only makes it loud after the fact.
+
+Everything else from this round (1b, 2a, 2c, 3's milestone-and-docs directive, 4, 5, 6a, 6b, 7, 8) is a settled decision on my end — I'm not holding on any of those. I'm holding all implementation until you weigh in on these two.
 
 <details>
 <summary>Execution details — 879 tool events</summary>
@@ -3302,6 +3346,6 @@ echo "---ollama tags shape (a…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 15:29 UTC
+- **Last updated:** 2 August 2026, 15:32 UTC
 - **Turns:** 26
 - **Status:** Incomplete
