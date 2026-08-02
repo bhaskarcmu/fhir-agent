@@ -1911,8 +1911,12 @@ Default resolution works correctly. Let's rewrite `test_providers.py` for the ne
 
 Let me rewrite the `build_llm_client()` env-var-contract section of the tests for the new 3-identity model, keeping the translation-layer tests (they're unaffected).
 
+Now let's run these tests.
+
+All 27 pass. Now let's add discovery function tests, then move to wiring `agent.py`.
+
 <details>
-<summary>Execution details — 917 tool events</summary>
+<summary>Execution details — 924 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3426,6 +3430,13 @@ import os
 os.environ.…`
 - **Read** `/workspaces/fhir-agent/agent-platform/tests/test_providers.py`
 - **Edit** `/workspaces/fhir-agent/agent-platform/tests/test_providers.py`
+- **Edit** `/workspaces/fhir-agent/agent-platform/tests/test_providers.py`
+- **Bash** `python -m pytest agent-platform/tests/test_providers.py -v 2>&1 | tail -80`
+- **Read** `/workspaces/fhir-agent/agent-platform/src/agent_platform/providers.py`
+- **Read** `/workspaces/fhir-agent/agent-platform/src/agent_platform/providers.py`
+- **Edit** `/workspaces/fhir-agent/agent-platform/src/agent_platform/providers.py`
+- **Bash** `python -m pytest agent-platform/tests/test_providers.py -v 2>&1 | tail -15`
+- **Edit** `/workspaces/fhir-agent/agent-platform/tests/test_providers.py`
 
 </details>
 
@@ -3436,6 +3447,6 @@ os.environ.…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 15:53 UTC
+- **Last updated:** 2 August 2026, 15:54 UTC
 - **Turns:** 27
 - **Status:** Incomplete
