@@ -5,6 +5,9 @@ WORKDIR /app
 COPY client/clinical /app/client/clinical
 RUN pip install --no-cache-dir -e /app/client/clinical
 
+COPY agent-platform /app/agent-platform
+RUN pip install --no-cache-dir -e /app/agent-platform
+
 COPY mcp-agent/pyproject.toml /app/mcp-agent/pyproject.toml
 COPY mcp-agent/src /app/mcp-agent/src
 RUN pip install --no-cache-dir -e /app/mcp-agent

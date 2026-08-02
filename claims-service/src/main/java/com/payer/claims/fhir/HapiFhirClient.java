@@ -1,11 +1,15 @@
 package com.payer.claims.fhir;
 
 import ca.uhn.fhir.context.FhirContext;
+import ca.uhn.fhir.rest.client.api.IClientInterceptor;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
+import ca.uhn.fhir.rest.client.api.IHttpRequest;
+import ca.uhn.fhir.rest.client.api.IHttpResponse;
 import com.payer.claims.domain.AdjudicationDecision;
 import com.payer.claims.domain.Finding;
 import com.payer.claims.domain.Outcome;
 import com.payer.claims.domain.Severity;
+import com.payer.claims.observability.TracePropagation;
 import java.util.List;
 import java.util.Optional;
 import org.hl7.fhir.r4.model.Bundle;
@@ -21,9 +25,25 @@ public class HapiFhirClient implements FhirClient {
     private final FhirContext ctx = FhirContext.forR4();
     private final IGenericClient client;
 
-    public HapiFhirClient(@Value("${fhir.base-url:http://localhost:8080/fhir}") String baseUrl) {
+    public HapiFhirClient(
+            @Value("${fhir.base-url:http://localhost:8080/fhir}") String baseUrl,
+            TracePropagation tracePropagation) {
         this.ctx.getRestfulClientFactory().setSocketTimeout(20_000);
         this.client = ctx.newRestfulGenericClient(baseUrl);
+        // Manual propagation (docs/phase6/decisions.md H16): HAPI's IGenericClient has its
+        // own internal HTTP transport, not Spring's RestClient, so it isn't auto-instrumented
+        // either -- a no-op when tracing isn't configured.
+        this.client.registerInterceptor(new IClientInterceptor() {
+            @Override
+            public void interceptRequest(IHttpRequest request) {
+                tracePropagation.headers().forEach(request::addHeader);
+            }
+
+            @Override
+            public void interceptResponse(IHttpResponse response) {
+                // no-op
+            }
+        });
     }
 
     @Override

@@ -7,7 +7,12 @@ name = "agent-platform"
 version = "0.1.0"
 description = "Shared hardening layer for this repo's LLM agents (mcp-agent, later claims-agent): fail-closed output contracts and safety guards. See docs/phase6/."
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "opentelemetry-sdk>=1.27",
+    "opentelemetry-exporter-otlp-proto-grpc>=1.27",
+    "opentelemetry-instrumentation-httpx>=0.48b0",
+    "opentelemetry-instrumentation-urllib>=0.48b0",
+]
 
 [project.optional-dependencies]
 # Test tooling — install with: pip install -e "agent-platform[dev]"

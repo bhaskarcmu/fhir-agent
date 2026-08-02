@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.payer.claims.domain.CanonicalClaim;
 import com.payer.claims.domain.RiskLevel;
+import com.payer.claims.observability.TracePropagation;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -33,9 +34,13 @@ public class HttpTriageClient implements TriageClient {
             .version(HttpClient.Version.HTTP_1_1)  // uvicorn is HTTP/1.1-only; avoid the h2c upgrade
             .connectTimeout(Duration.ofSeconds(5)).build();
     private final String baseUrl;
+    private final TracePropagation tracePropagation;
 
-    public HttpTriageClient(@Value("${triage.base-url:http://localhost:8001}") String baseUrl) {
+    public HttpTriageClient(
+            @Value("${triage.base-url:http://localhost:8001}") String baseUrl,
+            TracePropagation tracePropagation) {
         this.baseUrl = baseUrl.replaceAll("/+$", "");
+        this.tracePropagation = tracePropagation;
     }
 
     @Override
@@ -47,9 +52,15 @@ public class HttpTriageClient implements TriageClient {
         try {
             // Only patient_id — triage evaluates all active meds vs. recorded allergies.
             // (Its optional medication_id is a FHIR MedicationRequest id, not an RxNorm code.)
-            HttpRequest req = HttpRequest.newBuilder(URI.create(baseUrl + "/triage/refill-risk"))
+            HttpRequest.Builder reqBuilder = HttpRequest.newBuilder(
+                            URI.create(baseUrl + "/triage/refill-risk"))
                     .timeout(Duration.ofSeconds(20))
-                    .header("Content-Type", "application/json")
+                    .header("Content-Type", "application/json");
+            // Manual propagation (docs/phase6/decisions.md H16): raw JDK HttpClient isn't
+            // auto-instrumented the way Spring's RestClient is, so the current trace context
+            // is injected explicitly -- a no-op when tracing isn't configured.
+            tracePropagation.headers().forEach(reqBuilder::header);
+            HttpRequest req = reqBuilder
                     .POST(HttpRequest.BodyPublishers.ofString(
                             "{\"patient_id\":\"" + fhirPatientId + "\"}"))
                     .build();

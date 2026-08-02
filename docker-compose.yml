@@ -45,6 +45,10 @@ services:
       # Override with the Kong proxy URL for the gated setup, e.g. http://localhost:8000/fhir
       FHIR_GATEWAY_URL: ${FHIR_GATEWAY_URL:-http://fhir:8080/fhir}
       FHIR_API_KEY: ${FHIR_API_KEY:-}            # Kong API key — omit for local dev
+      # Observability profile only (docs/phase6): safe to leave set even when
+      # jaeger isn't running -- the OTLP exporter fails closed in the
+      # background, it never blocks or fails a real request.
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4317}
     depends_on:
       fhir:
         condition: service_healthy
@@ -72,6 +76,7 @@ services:
       FHIR_GATEWAY_URL: ${FHIR_GATEWAY_URL:-http://fhir:8080/fhir}
       FHIR_API_KEY: ${FHIR_API_KEY:-}            # Kong API key — omit for local dev
       TRIAGE_SERVICE_URL: http://triage:8001
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4317}
     depends_on:
       triage:
         condition: service_healthy
@@ -89,6 +94,8 @@ services:
     profiles: ["phase2"]
     # No published port: reachable only at rxclaim-emulator:8091 on the compose network,
     # mirroring the cloud "ingress=internal" posture. Consumers go through claims-service.
+    command:
+      - "--management.otlp.tracing.endpoint=http://jaeger:4317"
     healthcheck:
       test: ["CMD", "bash", "-c", "echo > /dev/tcp/127.0.0.1/8091"]
       interval: 10s
@@ -112,6 +119,7 @@ services:
       - "--rxclaim.base-url=http://rxclaim-emulator:8091"
       - "--triage.base-url=http://triage:8001"
       - "--fhir.base-url=http://fhir:8080/fhir"
+      - "--management.otlp.tracing.endpoint=http://jaeger:4317"
     depends_on:
       fhir:
         condition: service_healthy
@@ -241,6 +249,48 @@ services:
         condition: service_healthy
     stdin_open: true
     tty: true
+
+  # ══ Observability (opt-in: `docker compose --profile observability up`) ═══
+  # Local dev-loop target for Phase 6 M2 (docs/phase6/decisions.md H16/H22).
+  # OTLP traces -> Jaeger; Micrometer/Prometheus metrics -> Prometheus;
+  # Grafana pre-provisioned with both as datasources. Same OTLP-exporting
+  # code in every instrumented service repoints at Cloud Trace/Managed
+  # Prometheus later purely via OTEL_EXPORTER_OTLP_ENDPOINT -- no code change.
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.60
+    container_name: fhir-agent-jaeger
+    profiles: ["observability"]
+    ports:
+      - "16686:16686"   # UI
+      - "4317:4317"     # OTLP gRPC receiver
+      - "4318:4318"     # OTLP HTTP receiver
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    container_name: fhir-agent-prometheus
+    profiles: ["observability"]
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: fhir-agent-grafana
+    profiles: ["observability"]
+    ports:
+      - "3000:3000"
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"    # local dev only -- no login prompt
+      GF_AUTH_ANONYMOUS_ORG_ROLE: "Admin"
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+      - jaeger
 
   # ── Provider search agent (run-once CLI) ───────────────────────────────────
   # Real MCP client/host (design.md §3.1, §8.2) -- spawns provider-mcp-server as a local

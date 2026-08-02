@@ -32,7 +32,14 @@ import sys
 
 import anthropic
 
-from agent_platform import is_unknown, validate_decision
+from agent_platform import (
+    get_tracer,
+    is_unknown,
+    safe_set_attributes,
+    setup_tracing,
+    start_span,
+    validate_decision,
+)
 
 from .format import (
     decision_block,
@@ -54,6 +61,10 @@ MAX_TOKENS = 1024
 # telemetry in Phase 6 M3. This just closes the current zero-bound risk
 # early (docs/phase6/decisions.md H13).
 MAX_REPL_TURNS = 40
+
+# Lazily bound to whatever TracerProvider setup_tracing() installs -- safe to
+# create before setup_tracing() runs (docs/phase6/design.md Section 4.2).
+_tracer = get_tracer("mcp-agent")
 
 SYSTEM_PROMPT = """You are a clinical decision support assistant for healthcare professionals.
 You help clinicians evaluate medication refill safety by checking for drug-allergy conflicts
@@ -105,120 +116,158 @@ def run_query(
     # single query, not the whole session -- see the docstring note below.
     saw_unknown_risk = False
 
-    while True:
-        response = client.messages.create(
-            model=MODEL,
-            max_tokens=MAX_TOKENS,
-            system=SYSTEM_PROMPT,
-            tools=TOOL_DEFINITIONS,
-            messages=messages,
-        )
+    # One trace per agent run (docs/phase6/design.md Section 4.2, R4).
+    # Deliberately no user_input text as a span attribute -- a clinician's
+    # query can itself contain a patient name.
+    with start_span("agent.run_query", _tracer):
+        while True:
+            with start_span(
+                f"chat {MODEL}",
+                _tracer,
+                {"gen_ai.system": "anthropic", "gen_ai.request.model": MODEL},
+            ) as chat_span:
+                response = client.messages.create(
+                    model=MODEL,
+                    max_tokens=MAX_TOKENS,
+                    system=SYSTEM_PROMPT,
+                    tools=TOOL_DEFINITIONS,
+                    messages=messages,
+                )
+                usage = getattr(response, "usage", None)
+                safe_set_attributes(chat_span, {
+                    "gen_ai.response.finish_reasons": [response.stop_reason],
+                    "gen_ai.usage.input_tokens": getattr(usage, "input_tokens", None),
+                    "gen_ai.usage.output_tokens": getattr(usage, "output_tokens", None),
+                })
 
-        # ── Tool use ──────────────────────────────────────────────────────────
-        if response.stop_reason == "tool_use":
-            # Append assistant's tool-use message
+            # ── Tool use ──────────────────────────────────────────────────────
+            if response.stop_reason == "tool_use":
+                # Append assistant's tool-use message
+                messages = messages + [
+                    {"role": "assistant", "content": response.content}
+                ]
+
+                # Execute every non-decision tool call first, updating
+                # saw_unknown_risk as we go, so a submit_decision call
+                # anywhere in this same batch -- before or after the risk
+                # check -- is validated against the fully up-to-date state.
+                tool_results = []
+                decision_block_data = None
+                for block in response.content:
+                    if block.type != "tool_use":
+                        continue
+
+                    if block.name == "submit_decision":
+                        decision_block_data = block
+                        continue
+
+                    if verbose:
+                        _print_tool_call(block.name, block.input)
+
+                    with start_span(
+                        f"execute_tool {block.name}",
+                        _tracer,
+                        {
+                            "gen_ai.tool.name": block.name,
+                            "patient_id": block.input.get("patient_id"),
+                        },
+                    ):
+                        result_str = execute_tool(block.name, block.input)
+
+                    if verbose:
+                        _print_tool_result(block.name, result_str)
+
+                    if block.name == "assess_refill_risk":
+                        try:
+                            parsed = json.loads(result_str)
+                        except json.JSONDecodeError:
+                            parsed = {}
+                        if is_unknown(parsed.get("risk_level")):
+                            saw_unknown_risk = True
+
+                    tool_results.append({
+                        "type": "tool_result",
+                        "tool_use_id": block.id,
+                        "content": result_str,
+                    })
+
+                # ── submit_decision: terminal action, validated and enforced ──
+                if decision_block_data is not None:
+                    inputs = decision_block_data.input
+                    with start_span("agent.submit_decision", _tracer) as decision_span:
+                        decision, override_reason = validate_decision(
+                            inputs.get("decision"),
+                            saw_unknown_risk=saw_unknown_risk,
+                        )
+                        safe_set_attributes(decision_span, {
+                            "decision": decision.value,
+                            "override_reason": override_reason,
+                            "patient_id": inputs.get("patient_id"),
+                        })
+
+                    if verbose:
+                        _print_tool_call("submit_decision", inputs)
+
+                    ack = {
+                        "recorded_decision": decision.value,
+                        "override_reason": override_reason,
+                    }
+                    tool_results.append({
+                        "type": "tool_result",
+                        "tool_use_id": decision_block_data.id,
+                        "content": json.dumps(ack, indent=2),
+                    })
+                    messages = messages + [
+                        {"role": "user", "content": tool_results}
+                    ]
+
+                    final_text = decision_block(
+                        decision=decision.value,
+                        patient_id=str(inputs.get("patient_id", "")),
+                        risk_assessment_id=inputs.get("risk_assessment_id"),
+                        rationale=str(inputs.get("rationale", "")),
+                        override_reason=override_reason,
+                    )
+                    return final_text, messages
+
+                # No decision this round -- feed results back to Claude and keep going.
+                messages = messages + [
+                    {"role": "user", "content": tool_results}
+                ]
+                continue
+
+            # ── Final response without submit_decision ──────────────────────
+            # The model answered in free text instead of calling
+            # submit_decision. That's an off-contract turn (docs/phase6/
+            # decisions.md H5, H21) -- fail closed to REVIEW, but keep the
+            # model's own narrative visible as supporting context rather
+            # than discarding it.
+            narrative = ""
+            for block in response.content:
+                if hasattr(block, "text"):
+                    narrative += block.text
+
             messages = messages + [
                 {"role": "assistant", "content": response.content}
             ]
 
-            # Execute every non-decision tool call first, updating
-            # saw_unknown_risk as we go, so a submit_decision call anywhere
-            # in this same batch -- before or after the risk check -- is
-            # validated against the fully up-to-date state.
-            tool_results = []
-            decision_block_data = None
-            for block in response.content:
-                if block.type != "tool_use":
-                    continue
-
-                if block.name == "submit_decision":
-                    decision_block_data = block
-                    continue
-
-                if verbose:
-                    _print_tool_call(block.name, block.input)
-
-                result_str = execute_tool(block.name, block.input)
-
-                if verbose:
-                    _print_tool_result(block.name, result_str)
-
-                if block.name == "assess_refill_risk":
-                    try:
-                        parsed = json.loads(result_str)
-                    except json.JSONDecodeError:
-                        parsed = {}
-                    if is_unknown(parsed.get("risk_level")):
-                        saw_unknown_risk = True
-
-                tool_results.append({
-                    "type": "tool_result",
-                    "tool_use_id": block.id,
-                    "content": result_str,
-                })
-
-            # ── submit_decision: terminal action, validated and enforced ──────
-            if decision_block_data is not None:
-                inputs = decision_block_data.input
+            with start_span("agent.submit_decision", _tracer) as decision_span:
                 decision, override_reason = validate_decision(
-                    inputs.get("decision"),
-                    saw_unknown_risk=saw_unknown_risk,
+                    None, saw_unknown_risk=saw_unknown_risk
                 )
-
-                if verbose:
-                    _print_tool_call("submit_decision", inputs)
-
-                ack = {
-                    "recorded_decision": decision.value,
+                safe_set_attributes(decision_span, {
+                    "decision": decision.value,
                     "override_reason": override_reason,
-                }
-                tool_results.append({
-                    "type": "tool_result",
-                    "tool_use_id": decision_block_data.id,
-                    "content": json.dumps(ack, indent=2),
                 })
-                messages = messages + [
-                    {"role": "user", "content": tool_results}
-                ]
 
-                final_text = decision_block(
-                    decision=decision.value,
-                    patient_id=str(inputs.get("patient_id", "")),
-                    risk_assessment_id=inputs.get("risk_assessment_id"),
-                    rationale=str(inputs.get("rationale", "")),
-                    override_reason=override_reason,
-                )
-                return final_text, messages
-
-            # No decision this round -- feed results back to Claude and keep going.
-            messages = messages + [
-                {"role": "user", "content": tool_results}
-            ]
-            continue
-
-        # ── Final response without submit_decision ──────────────────────────
-        # The model answered in free text instead of calling submit_decision.
-        # That's an off-contract turn (docs/phase6/decisions.md H5, H21) --
-        # fail closed to REVIEW, but keep the model's own narrative visible
-        # as supporting context rather than discarding it.
-        narrative = ""
-        for block in response.content:
-            if hasattr(block, "text"):
-                narrative += block.text
-
-        messages = messages + [
-            {"role": "assistant", "content": response.content}
-        ]
-
-        decision, override_reason = validate_decision(None, saw_unknown_risk=saw_unknown_risk)
-        final_text = decision_block(
-            decision=decision.value,
-            patient_id="",
-            risk_assessment_id=None,
-            rationale=narrative.strip() or "(no rationale provided)",
-            override_reason=override_reason,
-        )
-        return final_text, messages
+            final_text = decision_block(
+                decision=decision.value,
+                patient_id="",
+                risk_assessment_id=None,
+                rationale=narrative.strip() or "(no rationale provided)",
+                override_reason=override_reason,
+            )
+            return final_text, messages
 
 
 def _print_tool_call(name: str, inputs: dict) -> None:
@@ -351,6 +400,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    setup_tracing("mcp-agent")
     client = _check_env()
 
     if args.query:

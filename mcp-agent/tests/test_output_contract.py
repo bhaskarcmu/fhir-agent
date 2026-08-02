@@ -203,7 +203,10 @@ class TestWeakModelAdversarialInputs:
 # ─────────────────────────────────────────────────────────────────────────────
 
 OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
-OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2")
+# Default matches the lightest tag the setup instructions actually pull
+# (`ollama pull llama3.2:1b`) -- the bare "llama3.2" tag resolves to a
+# different (unpulled) model and 404s if this default drifts from it.
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2:1b")
 
 
 def _ollama_reachable() -> bool:

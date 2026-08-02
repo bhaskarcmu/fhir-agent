@@ -34,6 +34,7 @@ from .models import (
     RiskAssessmentResponse,
     TriageRequest,
 )
+from .observability import setup_tracing
 from .rules import RuleResult, evaluate
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -57,6 +58,8 @@ app = FastAPI(
     ),
     version=VERSION,
 )
+
+setup_tracing(app)
 
 
 def _get_client() -> FHIRClient:

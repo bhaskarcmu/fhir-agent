@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.payer.claims.client.HttpTriageClient;
 import com.payer.claims.domain.CanonicalClaim;
 import com.payer.claims.domain.RiskLevel;
+import com.payer.claims.observability.TracePropagation;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -69,7 +70,7 @@ class HttpTriageClientTest {
     void sendsPatientIdInTheRequestBody_andMapsHighRisk() throws IOException {
         String url = startStub(200, riskJson("high"));
 
-        RiskLevel risk = new HttpTriageClient(url).assess(claim(), "member-000000009");
+        RiskLevel risk = new HttpTriageClient(url, TracePropagation.noop()).assess(claim(), "member-000000009");
 
         assertThat(risk).isEqualTo(RiskLevel.HIGH);
         // The body must actually arrive — an empty body is the failure this test exists to catch.
@@ -79,14 +80,14 @@ class HttpTriageClientTest {
     @Test
     void mapsLowRisk_whenTriageChecksAndFindsNothing() throws IOException {
         String url = startStub(200, riskJson("low"));
-        assertThat(new HttpTriageClient(url).assess(claim(), "member-000000001"))
+        assertThat(new HttpTriageClient(url, TracePropagation.noop()).assess(claim(), "member-000000001"))
                 .isEqualTo(RiskLevel.LOW);
     }
 
     @Test
     void mapsModerateRisk() throws IOException {
         String url = startStub(200, riskJson("moderate"));
-        assertThat(new HttpTriageClient(url).assess(claim(), "member-000000001"))
+        assertThat(new HttpTriageClient(url, TracePropagation.noop()).assess(claim(), "member-000000001"))
                 .isEqualTo(RiskLevel.MODERATE);
     }
 
@@ -94,7 +95,7 @@ class HttpTriageClientTest {
     void unresolvedMember_isUnknown_andTriageIsNotCalled() throws IOException {
         String url = startStub(200, riskJson("low"));
 
-        assertThat(new HttpTriageClient(url).assess(claim(), null)).isEqualTo(RiskLevel.UNKNOWN);
+        assertThat(new HttpTriageClient(url, TracePropagation.noop()).assess(claim(), null)).isEqualTo(RiskLevel.UNKNOWN);
 
         assertThat(calls.get()).isZero(); // no patient to ask about — do not guess, do not approve
     }
@@ -102,28 +103,28 @@ class HttpTriageClientTest {
     @Test
     void patientNotFoundAtTriage_isUnknown_notLow() throws IOException {
         String url = startStub(404, "{\"detail\":\"Patient x not found.\"}");
-        assertThat(new HttpTriageClient(url).assess(claim(), "member-000000009"))
+        assertThat(new HttpTriageClient(url, TracePropagation.noop()).assess(claim(), "member-000000009"))
                 .isEqualTo(RiskLevel.UNKNOWN);
     }
 
     @Test
     void triageServerError_isUnknown_notLow() throws IOException {
         String url = startStub(502, "{\"detail\":\"FHIR server error\"}");
-        assertThat(new HttpTriageClient(url).assess(claim(), "member-000000009"))
+        assertThat(new HttpTriageClient(url, TracePropagation.noop()).assess(claim(), "member-000000009"))
                 .isEqualTo(RiskLevel.UNKNOWN);
     }
 
     @Test
     void unrecognisedRiskCode_isUnknown_notLow() throws IOException {
         String url = startStub(200, riskJson("catastrophic"));
-        assertThat(new HttpTriageClient(url).assess(claim(), "member-000000009"))
+        assertThat(new HttpTriageClient(url, TracePropagation.noop()).assess(claim(), "member-000000009"))
                 .isEqualTo(RiskLevel.UNKNOWN);
     }
 
     @Test
     void responseMissingTheRiskCode_isUnknown_notLow() throws IOException {
         String url = startStub(200, "{\"resourceType\":\"RiskAssessment\"}");
-        assertThat(new HttpTriageClient(url).assess(claim(), "member-000000009"))
+        assertThat(new HttpTriageClient(url, TracePropagation.noop()).assess(claim(), "member-000000009"))
                 .isEqualTo(RiskLevel.UNKNOWN);
     }
 
@@ -133,7 +134,7 @@ class HttpTriageClientTest {
         server.stop(0);   // nothing is listening now
         server = null;
 
-        assertThat(new HttpTriageClient(url).assess(claim(), "member-000000009"))
+        assertThat(new HttpTriageClient(url, TracePropagation.noop()).assess(claim(), "member-000000009"))
                 .isEqualTo(RiskLevel.UNKNOWN);
     }
 }
