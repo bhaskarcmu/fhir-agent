@@ -1973,8 +1973,18 @@ Now let's update `milestone-plan.md`'s M5 section and add a new M7 entry.
 
 Now let's rewrite M5's long story section.
 
+Now let's check and update the other README sections.
+
+Now let's find and fix the other two spots (line ~232 and ~320 originally, though line numbers have shifted).
+
+Now let's update `.env.example`.
+
+Found more stale text here too. Let me fix it.
+
+Clean. Now let's do a final full test suite run to confirm the doc-only changes didn't break anything (they shouldn't, but let's be thorough), then commit.
+
 <details>
-<summary>Execution details — 1041 tool events</summary>
+<summary>Execution details — 1061 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3656,6 +3666,30 @@ grep -rn -B1 "H46\b" /workspaces/fhir-agent/agent-platform/s…`
 - **Edit** `/workspaces/fhir-agent/docs/phase6/prd.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase6/prd.md`
 - **Read** `/workspaces/fhir-agent/README.md`
+- **Edit** `/workspaces/fhir-agent/README.md`
+- **Read** `/workspaces/fhir-agent/README.md`
+- **Read** `/workspaces/fhir-agent/README.md`
+- **Edit** `/workspaces/fhir-agent/README.md`
+- **Bash** `grep -n "ANTHROPIC_API_KEY\|needs ANTHROPIC\|client/clinical\[dev\]" /workspaces/fhir-agent/README.md`
+- **Read** `/workspaces/fhir-agent/README.md`
+- **Read** `/workspaces/fhir-agent/README.md`
+- **Edit** `/workspaces/fhir-agent/README.md`
+- **Read** `/workspaces/fhir-agent/.env.example`
+- **Edit** `/workspaces/fhir-agent/.env.example`
+- **Bash** `grep -rn "Anthropic remains the only\|only live backend\|exactly two adapters\|Anthropic is the default\|LLM_PROVIDER.*anthropic.*default\|defaults to.*anthropic" /workspaces/fhir-agent/docs/phase6/*.…`
+- **Read** `/workspaces/fhir-agent/docs/phase6/decisions.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase6/decisions.md`
+- **Bash** `grep -n "gen_ai" /workspaces/fhir-agent/docs/phase6/telemetry-schema.md | head -10
+echo "---top level docs/README.md---"
+grep -n "Phase 6\|mcp-agent" /workspaces/fhir-agent/docs/README.md 2>/dev/null`
+- **Read** `/workspaces/fhir-agent/docs/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/README.md`
+- **Read** `/workspaces/fhir-agent/docs/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/README.md`
+- **Bash** `grep -rn "M1–M6\|M1-M6\|M1 is next\|M1, is next" /workspaces/fhir-agent/docs/phase6/*.md /workspaces/fhir-agent/docs/README.md /workspaces/fhir-agent/README.md 2>/dev/null`
+- **Bash** `cd /workspaces/fhir-agent && python -m pytest mcp-agent/tests triage-service/src/triage/tests -q 2>&1 | tail -15
+echo "=== agent-platform separate ==="
+python -m pytest agent-platform/tests -q 2>&1 |…`
 
 </details>
 
@@ -3666,6 +3700,6 @@ grep -rn -B1 "H46\b" /workspaces/fhir-agent/agent-platform/s…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 16:24 UTC
+- **Last updated:** 2 August 2026, 16:26 UTC
 - **Turns:** 27
 - **Status:** Incomplete
