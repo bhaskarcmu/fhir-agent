@@ -1961,8 +1961,10 @@ Session created and pinned to `provider=ollama model=llama3.2:1b`. Let's verify 
 
 Now let's resume it while the *current* environment has no explicit provider set, confirming it stays pinned to `ollama` (trivial here since that's also the default) — and more importantly, let's test resuming a session pinned to `anthropic` while the environment's default is `ollama`, to prove H49's cross-provider resume actually works.
 
+Let me test this more directly via the live API, which makes the cross-provider proof cleaner.
+
 <details>
-<summary>Execution details — 1000 tool events</summary>
+<summary>Execution details — 1001 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3595,6 +3597,9 @@ unset LLM_PROVIDER DEP…`
 - **Bash** `export FHIR_GATEWAY_URL=http://localhost:8080/fhir TRIAGE_SERVICE_URL=http://localhost:8001 DATABASE_URL=postgresql://agent_platform:‹redacted:url-credentials›localhost:5433/agent_platform
 unset DEPLOYMENT_ENV
 p…`
+- **Bash** `export FHIR_GATEWAY_URL=http://fhir:8080/fhir ANTHROPIC_API_KEY CLAUDE_API_KEY
+unset LLM_PROVIDER DEPLOYMENT_ENV
+docker compose --profile phase6 up -d --build mcp-agent-api 2>&1 | tail -15`
 
 </details>
 
