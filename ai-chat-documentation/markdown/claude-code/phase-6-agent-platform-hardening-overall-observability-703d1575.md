@@ -1963,8 +1963,10 @@ Now let's resume it while the *current* environment has no explicit provider set
 
 Let me test this more directly via the live API, which makes the cross-provider proof cleaner.
 
+All validation passing. Let's tear down the docker stack now.
+
 <details>
-<summary>Execution details — 1002 tool events</summary>
+<summary>Execution details — 1004 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3604,6 +3606,9 @@ docker compose --profile phase6 up -d --build mcp-agent-api 2>&1 | tail -15`
 SESSION_JSON=$(curl -sS -X POST http://localhost:8010/sessions -H "Content-Type: application/json" -d '{"provider": "anthropic", "model": "claude-sonnet-4-5"}')
 echo "$SESSION_JSON"
 SESSION_ID…`
+- **Bash** `echo "=== GET /models?provider=anthropic ==="
+curl -sS "http://localhost:8010/models?provider=anthropic" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['provider'], len(d['models']), '…`
+- **Bash** `docker compose --profile phase6 down 2>&1 | tail -15`
 
 </details>
 
