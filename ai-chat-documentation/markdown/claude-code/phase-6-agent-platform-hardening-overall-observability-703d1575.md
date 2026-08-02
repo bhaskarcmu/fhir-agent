@@ -1014,8 +1014,16 @@ All 52 tests pass, including `HttpTriageClientTest` (9 tests) — no regression.
 
 All 8 pass. Now the manual trace-context injection in `HttpTriageClient.java` and `HapiFhirClient.java` (the two raw clients not auto-instrumented).
 
+Now wiring it into `HttpTriageClient.java`:
+
+Now updating the 9 test call-sites in `HttpTriageClientTest.java`:
+
+Good, all 9 updated cleanly. Now `HapiFhirClient.java`:
+
+Compiles clean. Now running the full test suite to verify:
+
 <details>
-<summary>Execution details — 306 tool events</summary>
+<summary>Execution details — 323 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1460,6 +1468,23 @@ cat /workspaces/fhir-agent/rxclaim-emulator/src/main/resources/application.yml`
 - **Bash** `cd /workspaces/fhir-agent/rxclaim-emulator && timeout 180 mvn -o test 2>&1 | grep -E "Tests run|BUILD SUCCESS|BUILD FAILURE|ERROR" | tail -40`
 - **TodoWrite** `{"todos": [{"content": "Explore current state: pom.xml, docker-compose.yml, client configs", "status": "completed", "activeForm": "Exploring current service configs for M2"}, {"content": "Add agent_pl…`
 - **Bash** `grep -n "new HttpTriageClient\|new HapiFhirClient" /workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/*.java`
+- **Write** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/observability/TracePropagation.java`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/client/HttpTriageClient.java`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/client/HttpTriageClient.java`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/client/HttpTriageClient.java`
+- **Bash** `grep -n "^import" /workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/HttpTriageClientTest.java`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/HttpTriageClientTest.java`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/HttpTriageClientTest.java`
+- **Bash** `grep -rn "new HttpTriageClient" /workspaces/fhir-agent/claims-service/src/`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/fhir/HapiFhirClient.java`
+- **Edit** `/workspaces/fhir-agent/claims-service/src/main/java/com/payer/claims/fhir/HapiFhirClient.java`
+- **Bash** `grep -rn "new HapiFhirClient" /workspaces/fhir-agent/claims-service/src/`
+- **Bash** `cd /workspaces/fhir-agent/claims-service && timeout 90 mvn -q -o -DskipTests compile 2>&1 | tail -80; echo "COMPILE_EXIT:$?"`
+- **Bash** `timeout 180 mvn -o test 2>&1 | grep -E "Tests run|BUILD SUCCESS|BUILD FAILURE|ERROR|error:" | tail -50`
+- **Bash** `grep -n "<scope>test</scope>" /workspaces/fhir-agent/claims-service/pom.xml | head -3`
+- **Read** `/workspaces/fhir-agent/claims-service/pom.xml`
+- **Edit** `/workspaces/fhir-agent/claims-service/pom.xml`
+- **Bash** `sed -n '1,30p' /workspaces/fhir-agent/claims-service/src/test/java/com/payer/claims/ClaimIntakeContractTest.java`
 
 </details>
 
@@ -1470,6 +1495,6 @@ cat /workspaces/fhir-agent/rxclaim-emulator/src/main/resources/application.yml`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 11:33 UTC
+- **Last updated:** 2 August 2026, 11:35 UTC
 - **Turns:** 15
 - **Status:** Complete
