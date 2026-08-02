@@ -1497,8 +1497,16 @@ Good — Prometheus/Grafana infra already exists from M2. Let me look at what's 
 
 Now let's look at `agent.py`'s current chat loop to see where the LLM API call happens and how errors/timeouts are currently handled.
 
+Branch created. Now implementing the resilience module.
+
+Now update `agent-platform`'s `__init__.py` and `pyproject.toml`.
+
+Now integrate into `agent.py`'s chat loop.
+
+Now add the `_fail_closed_unavailable` helper function after `run_query`.
+
 <details>
-<summary>Execution details — 690 tool events</summary>
+<summary>Execution details — 702 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2690,6 +2698,18 @@ print(inspect.signature(anthropic.RateLi…`
 - **Read** `/workspaces/fhir-agent/mcp-agent/tests/test_tracing.py`
 - **Read** `/workspaces/fhir-agent/agent-platform/src/agent_platform/session_store.py`
 - **Bash** `git checkout main 2>&1 | tail -2; git checkout -b feature/phase6-m4-deploy-resilience-cost 2>&1`
+- **Write** `/workspaces/fhir-agent/agent-platform/src/agent_platform/resilience.py`
+- **Edit** `/workspaces/fhir-agent/agent-platform/src/agent_platform/resilience.py`
+- **Edit** `/workspaces/fhir-agent/agent-platform/src/agent_platform/__init__.py`
+- **Edit** `/workspaces/fhir-agent/agent-platform/src/agent_platform/__init__.py`
+- **Read** `/workspaces/fhir-agent/agent-platform/pyproject.toml`
+- **Edit** `/workspaces/fhir-agent/agent-platform/pyproject.toml`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Read** `/workspaces/fhir-agent/mcp-agent/pyproject.toml`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/pyproject.toml`
 
 </details>
 
@@ -2700,6 +2720,6 @@ print(inspect.signature(anthropic.RateLi…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 13:51 UTC
+- **Last updated:** 2 August 2026, 13:53 UTC
 - **Turns:** 22
 - **Status:** Incomplete
