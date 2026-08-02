@@ -1924,7 +1924,7 @@ Now `non_interactive_mode`:
 Now `main()` — add the `--list-models`/`--provider`/`--model` flags and wire everything through.
 
 <details>
-<summary>Execution details — 938 tool events</summary>
+<summary>Execution details — 939 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3460,6 +3460,7 @@ os.environ.…`
 - **Bash** `python3 -c "import ast; ast.parse(open('/workspaces/fhir-agent/mcp-agent/src/agent/agent.py').read())" && echo "syntax OK"`
 - **Bash** `python -m pip install -q -e "mcp-agent[dev]" 2>&1 | tail -10
 python -m pytest mcp-agent/tests -q 2>&1 | tail -100`
+- **Read** `/workspaces/fhir-agent/mcp-agent/tests/test_session_persistence.py`
 
 </details>
 
@@ -3470,6 +3471,6 @@ python -m pytest mcp-agent/tests -q 2>&1 | tail -100`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 15:57 UTC
+- **Last updated:** 2 August 2026, 15:58 UTC
 - **Turns:** 27
 - **Status:** Incomplete
