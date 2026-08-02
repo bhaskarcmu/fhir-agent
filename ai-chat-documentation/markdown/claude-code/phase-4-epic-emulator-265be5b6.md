@@ -855,8 +855,20 @@ Confirmed — PR #56 is still open (not merged); what changed was that `main` pi
 
 One more thing worth surfacing: `docs/phase4/decisions.md` now has an **E16** entry recording the pagination safety finding from PR #54 as a durable, indexed decision — looks like that's already been picked up and formalized outside this conversation, which is good continuity.
 
+## Turn 19
+
+### Prompt
+
+Delete branch feature/walking-skeleton
+
+### Claude response
+
+Confirmed merged (2026-03-26). Deleting the remote branch — no local copy exists.
+
+Deleted. Remote branches are now just `main`, `ai-chat-history`, and the still-open `docs/phase6-planning` — no more merged-branch debt lying around.
+
 <details>
-<summary>Execution details — 437 tool events</summary>
+<summary>Execution details — 439 tool events</summary>
 
 ### Turn 2 activity
 
@@ -1565,6 +1577,11 @@ git log main -8 --format="%h %ad %s" --date=format:"%Y-%m-%d %H:%M"
 echo
 echo "=== doe…`
 
+### Turn 19 activity
+
+- **Bash** `gh pr view 12 --json state,mergedAt,headRefName 2>&1`
+- **Bash** `git push origin --delete feature/walking-skeleton`
+
 </details>
 
 ---
@@ -1574,6 +1591,6 @@ echo "=== doe…`
 - **Source:** Claude Code
 - **Session ID:** `265be5b6-c550-4af6-bed7-7be2bca6b9c4`
 - **Created:** 31 July 2026, 12:31 UTC
-- **Last updated:** 2 August 2026, 10:39 UTC
-- **Turns:** 18
+- **Last updated:** 2 August 2026, 10:41 UTC
+- **Turns:** 19
 - **Status:** Complete
