@@ -1613,8 +1613,22 @@ Now `non_interactive_mode`:
 
 Now `main()`:
 
+Now updating `agent.py` accordingly.
+
+Now update `_check_env`, `interactive_mode`, `non_interactive_mode`, and `main()` for the 3-tuple.
+
+Now `main()` and the chat-span attribute reference to `gen_ai_system`:
+
+Now let's find the `gen_ai_system` reference in the chat span attrs to make sure it uses the parameter, not a local computed variable (which I removed).
+
+Correct — line 183 already references the parameter directly since it's inside `run_query`'s scope. Now let's update `api.py` for the same 3-tuple.
+
+Now update `query_session` to use the resolved model/system.
+
+That's fine as a type hint approximation; leaving it. Now let's install and run the tests.
+
 <details>
-<summary>Execution details — 816 tool events</summary>
+<summary>Execution details — 839 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2993,6 +3007,30 @@ from agent_platform.providers import _to_openai_messages, _to_openai_tools, _fro
 - **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
 - **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
 - **Bash** `python -m pytest agent-platform/tests mcp-agent/tests -q 2>&1 | tail -40`
+- **Edit** `/workspaces/fhir-agent/agent-platform/src/agent_platform/providers.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Bash** `grep -n "gen_ai_system\|gen_ai\.system" /workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/api.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/api.py`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/api.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/api.py`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/api.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/api.py`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/api.py`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/api.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/api.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/api.py`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/api.py`
+- **Bash** `python -m pip install -q -e "agent-platform[dev]" -e "mcp-agent[dev]" 2>&1 | tail -10
+python -m pytest agent-platform/tests mcp-agent/tests -q 2>&1 | tail -60`
 
 </details>
 
@@ -3003,6 +3041,6 @@ from agent_platform.providers import _to_openai_messages, _to_openai_tools, _fro
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 14:22 UTC
+- **Last updated:** 2 August 2026, 14:25 UTC
 - **Turns:** 23
 - **Status:** Incomplete
