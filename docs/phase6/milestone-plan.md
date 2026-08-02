@@ -20,6 +20,7 @@ Order is by dependency, **not** by the topic numbering in [`design.md` §2](./de
 | **M4** | ⏳ Not started | Deploy Resilience & Cost Control | 2 | M2, M3 |
 | **M5** | ⏳ Not started | Provider Abstraction & Cross-Model Follow-ups | 4 | M1, M3 |
 | **M6** | ⏳ Not started | Policy, Knowledge & Judge | 5 | M1, M5 |
+| **M7** | 📋 Planned, not started | Strong Model in Production | 4 | M5 |
 
 **Minimal-viable-cut re-examination is deliberately deferred to the end of M2**, not decided now
 ([`decisions.md` H23](./decisions.md)). M2's scope grew substantially once it took on closing
@@ -208,22 +209,89 @@ repo's usual "no breaker" convention.
 
 ## M5 — Provider Abstraction & Cross-Model Follow-ups
 
-**Short story:** Formalize the two-adapter seam (Anthropic native + OpenAI-compatible) so
-Llama/DeepSeek/local models become config, not code — making official what M1's local-LLM testing
-already forced into informal existence.
+**Short story:** Formalize the provider seam so Llama/DeepSeek/local models become config, not
+code — making official what M1's local-LLM testing already forced into informal existence. Built
+once during M5, then **substantially reworked after a design-review pass** (documented below and
+in [`decisions.md` H45-H51](./decisions.md)): the default flipped from Anthropic to self-hosted
+Ollama, three provider identities replaced two, and model choice became a real per-session
+decision instead of a process-wide constant.
 
-**Long story:** (full design: [`design.md` §4.5](./design.md#45-multi-provider--m5))
+**Long story:** (full design: [`design.md` §4.5](./design.md#45-multi-provider--m5--implemented-reworked-post-review))
 
-- **Two adapters only** ([`decisions.md` H4](./decisions.md)): Anthropic native + one
-  OpenAI-compatible adapter covering Llama, DeepSeek, Ollama, vLLM, hosted OpenAI-compatible
-  endpoints. Model choice becomes config (base URL + model name), never a code branch.
-- **Conversation-history translation** across providers is the real engineering work here —
-  written and tested for the first time, not assumed.
-- M1's local-LLM adversarial test corpus becomes this milestone's acceptance suite — M5
-  formalizes a seam that was informally load-bearing since M1.
-- **Anthropic stays the only live backend in production** even after this ships.
-- **Testing:** the full three-tier harness from [`design.md` §5](./design.md#5-testing-strategy)
-  — stub server, Ollama local, hosted OpenAI-compatible spot-check.
+- **Three identities, two implementations** ([`decisions.md` H45](./decisions.md), superseding
+  H4's "exactly two adapters, Anthropic is the default"): `"anthropic"` (native, used completely
+  unwrapped — its response shape already matches what `run_query` expects,
+  [`H40`](./decisions.md)), `"ollama"` (self-hosted, the only identity ever selected
+  automatically), and `"openai_compatible"` (any other OpenAI-shaped endpoint — DeepSeek API,
+  OpenRouter, Groq, a self-hosted vLLM box — never a default). `"ollama"`/`"openai_compatible"`
+  share one adapter class; the split exists to answer *who hosts the inference*, the property
+  that actually matters for PHI, not which wire protocol is spoken.
+- **The default flipped to `"ollama"`** ([`H45`](./decisions.md)) — self-hosted, free, and (the
+  actual, primary rationale) PHI never leaves this host when nothing is configured. A present
+  `ANTHROPIC_API_KEY` does **not** select Anthropic on its own ([`H46`](./decisions.md)) — only an
+  explicit `LLM_PROVIDER` does, since a key's presence alone is too easily accidental to trust
+  with that decision. **Disclosed, never silently substituted**: the CLI prints a one-time message
+  when the default was actually used, gated on `sys.stdin.isatty()` (that signal only decides
+  whether to show the message, never which model runs); the HTTP transport has no TTY concept and
+  shows nothing — documented, accepted.
+- **`DEPLOYMENT_ENV=production` guardrail** ([`H47`](./decisions.md)): an unset `LLM_PROVIDER`
+  becomes a loud error instead of a silent `ollama` fallback when set — a minimal rail pending the
+  fuller design in **M7** (below), not a complete environment-tier system yet.
+- **Discovery, opt-in and all-or-nothing** ([`H48`](./decisions.md)): `list_anthropic_models()`/
+  `list_ollama_models()`/`list_openai_compatible_models()` in `agent_platform.providers`; CLI
+  `--list-models`/`--provider`/`--model`; API `GET /models?provider=...`. Never called unless
+  explicitly requested; once requested, succeeds or raises — no partial results, no fallback logic.
+- **Model choice is per-session/per-process** ([`H49`](./decisions.md)): `agent_sessions` gained
+  persisted `provider`/`model` columns (`ALTER TABLE ... ADD COLUMN IF NOT EXISTS`, live-confirmed
+  against a real pre-existing table). `build_client_for(provider, model)` rebuilds the exact
+  client for a resumed session or any API query — reading infra config (base URL, API key) from
+  the *current* environment only, never a persisted secret.
+- **Conversation-history translation** — the actual hard engineering problem — written and tested
+  for real, not assumed: `_to_openai_messages()`/`_to_openai_tools()` outbound,
+  `_from_openai_response()` inbound, including turning our own `tool_result` entries into separate
+  OpenAI `"tool"`-role messages and falling back to an empty tool-call input on malformed JSON
+  from a weak model ([`H43`](./decisions.md)) rather than raising.
+- **Resilience made provider-agnostic** ([`H42`](./decisions.md)): M4's circuit breaker trips on
+  `httpx.HTTPError` too, not just `anthropic.APIError` — otherwise M4's protections would silently
+  not cover the ollama/openai_compatible path at all.
+- **`gen_ai_system` is explicit** ([`H41`](./decisions.md)), not inferred by `isinstance` — caught
+  during implementation when a type-based check mislabeled every existing fake-client test.
+- **Testing:** `agent-platform` — 30 unit tests: the translation layer, `build_llm_client()`'s
+  full 3-identity/guardrail env var contract, `build_client_for()`, and discovery functions (mocked
+  HTTP), no network. `mcp-agent` — 2 **live** integration tests against a real local Ollama
+  (`llama3.2:1b`), plus 12 session-persistence/disclosure/API tests. **Ollama is now a required
+  test dependency for the live tests specifically** ([`H50`](./decisions.md)) — hard-fail
+  (`pytest.fail`), not self-skip, via a shared session-scoped fixture that also pulls the model on
+  demand if it isn't present. The large body of fake-client agent-loop tests deliberately stays
+  fake-client-only, untouched by Ollama's availability. CI: `~/.ollama/models` cached across runs;
+  a dedicated job fails the build if the LLM provider env var is found pinned to a paid/
+  third-party value anywhere in CI config — enforced technically, not left to code review
+  ([`H50`](./decisions.md)). `agent-platform/tests` now runs in CI too (a pre-existing gap, fixed
+  opportunistically) as its own separate pytest invocation — combining it with `mcp-agent/tests`
+  in one process collides on both packages' `tests/conftest.py` under `--import-mode=importlib`
+  ([`H51`](./decisions.md), a real error hit and fixed during this rework).
+- **A real bug found live, not by any mocked test**: running the full CLI end to end against
+  real FHIR/triage services and the real Ollama model, `llama3.2:1b` omitted a required tool
+  argument entirely; `tools.py`'s `execute_tool` raised an uncaught `KeyError`, aborting the query
+  instead of reaching the intended `RISK_UNKNOWN`/`REVIEW` fail-closed path. This gap predates M5
+  (present since M1) but no test — mocked or live — had exercised a model weak enough to trigger
+  it until now. Fixed with the same structured-error convention `assess_refill_risk` already uses
+  elsewhere in that file ([`H44`](./decisions.md)); re-ran the same live CLI query afterward and
+  confirmed a clean `REVIEW` decision instead of a crash.
+- **Live-validated end to end**: CLI with no `LLM_PROVIDER` set ran a real query against real
+  FHIR/triage and the real self-hosted model, zero API key required; `--list-models ollama`
+  printed the real locally-pulled models; `DEPLOYMENT_ENV=production` with no `LLM_PROVIDER`
+  refused to start with the documented error; `--provider anthropic --model claude-sonnet-4-5`
+  correctly used real Claude; a session explicitly pinned to `anthropic` via the live API
+  correctly used real Claude for every query even while that process's own default resolved to
+  `ollama`; `GET /models?provider=anthropic` returned real model names while
+  `GET /models?provider=ollama` (unreachable from inside that container) cleanly 502'd.
+- **Known limitation, not solved this milestone**: `mcp-agent-api` running inside docker-compose
+  cannot reach a host-run Ollama by default (containers don't see `localhost:11434` on the host) —
+  validated instead via the CLI running directly on the host, and via the API's explicit-provider
+  path (`anthropic`), which doesn't depend on that networking gap. Wiring an Ollama service into
+  the docker-compose stack itself (so the containerized API gets a real free default too) is
+  deferred, not yet scheduled.
 
 ## M6 — Policy, Knowledge & Judge
 
@@ -251,3 +319,32 @@ enforcing every hard invariant.
   pre-existing deterministic decision, not a retrieval-then-reason sequence.
 
 Sources verified for the knowledge-base decision: [openFDA — explore the API](https://open.fda.gov/apis/drug/label/explore-the-api-with-an-interactive-chart/) · [NIH Discontinues their Drug Interaction API](https://blog.drugbank.com/nih-discontinues-their-drug-interaction-api/) · [RxClass API](https://lhncbc.nlm.nih.gov/RxNav/APIs/RxClassAPIs.html)
+
+## M7 — Strong Model in Production (planned, not yet implemented)
+
+**Short story:** Guarantee that a *real* clinical deployment actually runs a strong model,
+replacing M5's minimal `DEPLOYMENT_ENV=production` guardrail with the fuller mechanism it was
+always meant to be a stopgap for.
+
+**Long story:** (full design: [`design.md` §4.7](./design.md#47-strong-model-in-production--m7--planned-not-yet-implemented))
+
+- **The problem M5 left open:** `DEPLOYMENT_ENV=production` ([`decisions.md` H47](./decisions.md))
+  only refuses to start when `LLM_PROVIDER` is *unset* — it does nothing to stop a misconfigured
+  deployment from explicitly (if mistakenly) setting `LLM_PROVIDER=ollama` in what's actually a
+  production environment, or from `DEPLOYMENT_ENV` itself being absent/wrong on a real deployment.
+  A one-off env var is exactly the kind of thing that's easy to get right in a demo and wrong in a
+  real rollout.
+- **What "the fuller design" needs to answer**, not yet decided:
+  1. What actually *declares* an environment as production, in a way a deployment can't
+     accidentally misrepresent — a signed/provisioned value from the deploy pipeline itself
+     (Terraform output, a GKE workload identity claim, a value only settable by whoever owns the
+     deployment), not a plain env var anyone could type wrong.
+  2. What the fail-loud behavior is precisely — refuse to start entirely, or start but refuse to
+     serve `/sessions`/`/query` until a valid provider is confirmed reachable?
+  3. Whether this needs a real allowlist ("production may only run `anthropic`, never `ollama`")
+     versus just "production may not silently default" (M5's current, narrower guarantee).
+  4. How this interacts with the docker-compose dev/demo stack, which is explicitly *not*
+     production and must keep working with zero required configuration.
+- **Deliberately not started yet** — this is exactly the kind of change CLAUDE.md flags for
+  deeper architectural care (hard to reverse, touches production reliability) and the user
+  explicitly asked to defer it rather than bolt it on inside M5's rework.

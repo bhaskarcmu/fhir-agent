@@ -22,6 +22,15 @@ from .observability import (
     verbosity,
 )
 from .output_gate import AgentDecision, validate_decision
+from .providers import (
+    OpenAICompatibleProvider,
+    ResolvedProvider,
+    build_client_for,
+    build_llm_client,
+    list_anthropic_models,
+    list_ollama_models,
+    list_openai_compatible_models,
+)
 from .resilience import (
     ESTIMATED_TOKENS_PER_CALL,
     CircuitOpenError,
@@ -61,4 +70,11 @@ __all__ = [
     "get_rate_limiter",
     "record_usage",
     "reset_resilience_state",
+    "OpenAICompatibleProvider",
+    "ResolvedProvider",
+    "build_llm_client",
+    "build_client_for",
+    "list_anthropic_models",
+    "list_ollama_models",
+    "list_openai_compatible_models",
 ]

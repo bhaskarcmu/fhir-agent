@@ -15,10 +15,16 @@ Pydantic models, not plain dicts, so they need model_dump(mode="json")
 before they're JSON-safe at all -- see serialize_messages(). Storing as
 text with manual (de)serialization avoids needing a psycopg JSONB adapter
 tuned to that conversion.
+
+M5 (docs/phase6/decisions.md H49): each session pins its provider/model
+choice at creation time and keeps it for the session's whole lifetime --
+"model choice is a per-session decision," not something that could drift
+mid-conversation if the environment's own defaults change later.
 """
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import os
 import uuid
@@ -51,9 +57,16 @@ def reset_pool() -> None:
 
 
 def _to_jsonable(obj):
-    """Recursively convert Anthropic SDK objects (Pydantic models) to plain JSON-safe values."""
+    """
+    Recursively convert Anthropic SDK objects (Pydantic models) and M5's
+    provider-abstraction content blocks (plain dataclasses --
+    providers.py's TextBlock/ToolUseBlock, produced by the
+    OpenAICompatibleProvider) to plain JSON-safe values.
+    """
     if hasattr(obj, "model_dump"):
         return obj.model_dump(mode="json")
+    if dataclasses.is_dataclass(obj) and not isinstance(obj, type):
+        return _to_jsonable(dataclasses.asdict(obj))
     if isinstance(obj, list):
         return [_to_jsonable(x) for x in obj]
     if isinstance(obj, dict):
@@ -76,32 +89,48 @@ def deserialize_messages(raw: str) -> list[dict]:
     return json.loads(raw)
 
 
-def create_session() -> str:
-    """Create a new, empty session. Returns the new session_id."""
+@dataclasses.dataclass
+class LoadedSession:
+    """What load_session() returns -- a small dataclass rather than a growing bare tuple."""
+
+    messages: list[dict]
+    token_count: int
+    provider: str
+    model: str
+
+
+def create_session(provider: str, model: str) -> str:
+    """
+    Create a new, empty session, pinning the provider/model choice that
+    was already resolved (typically via agent_platform.build_llm_client())
+    for this session's entire lifetime (docs/phase6/decisions.md H49).
+    Returns the new session_id.
+    """
     session_id = str(uuid.uuid4())
     pool = get_pool()
     with pool.connection() as conn:
         conn.execute(
-            "INSERT INTO agent_sessions (session_id, messages, token_count) "
-            "VALUES (%s, %s, %s)",
-            (session_id, serialize_messages([]), 0),
+            "INSERT INTO agent_sessions (session_id, messages, token_count, provider, model) "
+            "VALUES (%s, %s, %s, %s, %s)",
+            (session_id, serialize_messages([]), 0, provider, model),
         )
         conn.commit()
     return session_id
 
 
-def load_session(session_id: str) -> tuple[list[dict], int]:
-    """Returns (messages, token_count). Raises KeyError if session_id is unknown."""
+def load_session(session_id: str) -> LoadedSession:
+    """Raises KeyError if session_id is unknown."""
     pool = get_pool()
     with pool.connection() as conn:
         row = conn.execute(
-            "SELECT messages, token_count FROM agent_sessions WHERE session_id = %s",
+            "SELECT messages, token_count, provider, model FROM agent_sessions "
+            "WHERE session_id = %s",
             (session_id,),
         ).fetchone()
     if row is None:
         raise KeyError(f"Unknown session_id: {session_id}")
-    raw_messages, token_count = row
-    return deserialize_messages(raw_messages), token_count
+    raw_messages, token_count, provider, model = row
+    return LoadedSession(deserialize_messages(raw_messages), token_count, provider, model)
 
 
 def save_session(session_id: str, messages: list[dict], token_count: int) -> None:

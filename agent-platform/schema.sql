@@ -13,3 +13,11 @@ CREATE TABLE IF NOT EXISTS agent_sessions (
     created_at      timestamptz NOT NULL DEFAULT now(),
     updated_at      timestamptz NOT NULL DEFAULT now()
 );
+
+-- M5 (decisions.md H49): the provider/model choice a session was created with, pinned for
+-- that session's whole lifetime -- "model choice is a per-session decision," not something
+-- that could drift mid-conversation if the environment's own defaults change later.
+-- ADD COLUMN IF NOT EXISTS, not a fresh CREATE TABLE, so an existing dev database with
+-- pre-M5 rows gets these columns added rather than the table being dropped and recreated.
+ALTER TABLE agent_sessions ADD COLUMN IF NOT EXISTS provider text NOT NULL DEFAULT 'ollama';
+ALTER TABLE agent_sessions ADD COLUMN IF NOT EXISTS model text NOT NULL DEFAULT 'llama3.2:1b';

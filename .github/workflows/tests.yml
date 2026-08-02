@@ -9,6 +9,30 @@ permissions:
   contents: read
 
 jobs:
+  # ── The LLM provider env var must never be pinned to a paid/third-party value in
+  #    CI config (docs/phase6/decisions.md H50) -- CI is unattended/automated; only a
+  #    human's deliberate, in-the-moment choice may select a paid provider (H46).
+  #    Checked here, not just left to code review, per the user's explicit "harder
+  #    gate" call. NOTE: the pattern below is built from two half-strings at run time
+  #    so this step's own source line never literally spells out what it's looking
+  #    for -- otherwise this check would trip on itself. ──────────────────────────
+  ci-config-llm-provider-gate:
+    name: ci config (no paid LLM provider)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fail if the LLM provider var is pinned to a paid provider anywhere in CI config
+        run: |
+          var_name="LLM""_PROVIDER"
+          pattern="${var_name}[=:] *[\"']?(anthropic|openai_compatible)"
+          hits=$(grep -rEn "$pattern" .github/workflows .ona 2>/dev/null || true)
+          if [ -n "$hits" ]; then
+            echo "$hits"
+            echo "::error::The LLM provider env var was found pinned to a paid/third-party value in CI config above. CI must never spend money automatically (docs/phase6/decisions.md H50) -- only a human's deliberate choice may select a paid provider (H46). Remove it; CI should always use the free, self-hosted ollama default."
+            exit 1
+          fi
+          echo "OK -- no paid LLM provider pin found in CI config."
+
   # ── Phase 1 independence (R9): Phase 1 suites pass with NO Phase 2 packages installed,
   #    and a plain `docker compose up` still resolves to exactly the Phase 1 services. ──
   phase1:
@@ -19,15 +43,43 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      # Ollama is now a required test dependency (docs/phase6/decisions.md H45, H50):
+      # mcp-agent's default provider is self-hosted Llama, and the live adversarial
+      # tests hard-fail (not self-skip) without it. Cache ~/.ollama/models across runs
+      # so a warm cache doesn't re-download every run (the model is ~1.3GB).
+      - name: Cache Ollama models
+        uses: actions/cache@v4
+        with:
+          path: ~/.ollama/models
+          key: ollama-models-llama3.2-1b-v1
+      - name: Install and start Ollama
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sh
+          ollama serve &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:11434/api/tags > /dev/null && break
+            sleep 1
+          done
+      - name: Pull the test model (cache hit makes this a fast no-op)
+        run: ollama pull llama3.2:1b
       - name: Install Phase 1 packages only
         run: |
           python -m pip install --upgrade pip
-          pip install -e "client/clinical[dev]" -e "triage-service[dev]" -e "mcp-agent[dev]"
+          pip install -e "client/clinical[dev]" -e "agent-platform[dev]" -e "triage-service[dev]" -e "mcp-agent[dev]"
       - name: Run Phase 1 test suites (no Phase 2 present)
         run: |
           pytest client/clinical/tests \
                  triage-service/src/triage/tests \
                  mcp-agent/tests -q
+      - name: Run agent-platform's own test suite
+        # Deliberately a separate pytest invocation, not combined into the
+        # command above: agent-platform/tests isn't in the root pytest.ini's
+        # testpaths (that file's own --import-mode=importlib comment explains
+        # why -- same-named tests/conftest.py packages collide when collected
+        # in one process together). agent-platform has its own pyproject.toml
+        # pytest config, so this runs it standalone the same way a developer
+        # would locally.
+        run: pytest agent-platform/tests -q
       - name: Default compose stack is unchanged (additive-only guarantee)
         run: |
           got=$(docker compose config --services | sort | paste -sd' ' -)
