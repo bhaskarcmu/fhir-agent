@@ -1165,8 +1165,10 @@ Let's run the complete test suite one final time before committing.
 
 130 pass. Now Java one final time:
 
+Let's do one more live smoke test to confirm the trace ID actually shows up in real output:
+
 <details>
-<summary>Execution details — 524 tool events</summary>
+<summary>Execution details — 525 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2046,6 +2048,11 @@ python -m pytest agent-platform/tests mcp-agent/tests triage-service/src/triage/
 - **Bash** `cd /workspaces/fhir-agent/claims-service && timeout 180 mvn -o test 2>&1 | grep -E "Tests run:|BUILD SUCCESS|BUILD FAILURE" | tail -15
 echo "=== rxclaim-emulator ==="
 cd /workspaces/fhir-agent/rxclaim…`
+- **Bash** `cd /workspaces/fhir-agent
+export FHIR_GATEWAY_URL=http://fhir:8080/fhir
+docker compose up -d --build triage 2>&1 | tail -8
+docker compose build mcp-agent 2>&1 | tail -5
+docker compose run --name mcp-a…`
 
 </details>
 
@@ -2056,6 +2063,6 @@ cd /workspaces/fhir-agent/rxclaim…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 12:47 UTC
+- **Last updated:** 2 August 2026, 12:48 UTC
 - **Turns:** 17
 - **Status:** Complete
