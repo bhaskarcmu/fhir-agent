@@ -341,32 +341,63 @@ branch.
   `GET /models?provider=ollama` (unreachable from inside that container) cleanly 502'd rather than
   crashing.
 
-### 4.6 Policy, knowledge, judge (→ M6)
+### 4.6 Policy, knowledge, judge (→ M6) — implemented
 
-- **Policy:** `policy.md`'s rules load directly into the system prompt — they always apply, so
-  retrieval is structurally the wrong mechanism for them
-  ([`decisions.md` H6](./decisions.md)).
-- **Judge:** runs on every response, not a filtered "important" subset
-  ([`decisions.md` H11](./decisions.md), superseding [`H7`](./decisions.md)) — checks soft
-  qualities only (groundedness, tone, PHI leak) and never overrides a hard invariant M1's gate
-  already enforced. Evaluated, per the standing testing rule, against outputs a local/weak model
-  actually produced via M5's adapters — not only against Claude's own clean output.
+- **Policy** (`agent_platform/policy.py`'s `load_policy()`, `mcp-agent/policy.md`,
+  [`decisions.md` H6](./decisions.md), [`H52`](./decisions.md)): rules load directly into the
+  system prompt — always apply, so retrieval is structurally the wrong mechanism for them.
+  `SYSTEM_PROMPT` is now `_TOOL_USE_INSTRUCTIONS + policy.md`'s content, loaded once at import
+  time — a missing policy file fails the whole process at startup, not silently at first query.
+  `policy.md` covers scope, authority (decision support, not autonomous dispensing), the same
+  safety invariants M1's gate already enforces in code (restated here as policy, not duplicated
+  logic), communication standard, and data handling — distinct from `_TOOL_USE_INSTRUCTIONS`,
+  which is tool-orchestration mechanics, not policy.
+- **Judge** (`agent_platform/judge.py`'s `judge_response()`, [`decisions.md` H11](./decisions.md),
+  superseding [`H7`](./decisions.md)): runs on every response, not a filtered "important"
+  subset — checks soft qualities only (groundedness, tone, PHI leak in the rationale text) via a
+  forced `submit_judgment` tool call, the same structured-output-over-free-text discipline M1's
+  gate already established. **Structurally incapable of overriding a decision**
+  ([`H54`](./decisions.md)), not just instructed not to: called strictly after
+  `validate_decision()` resolves, result never fed back into any decision path. **Deliberately
+  bypasses `agent_platform.resilience`'s shared circuit breaker/rate limiter**
+  ([`H53`](./decisions.md)) — a string of judge failures must never trip the same breaker
+  protecting the actual clinical call. Fails closed to `JudgeResult(available=False)` on
+  literally anything going wrong; never raises. Live-tested against a real Ollama model
+  (`test_judge_integration.py`), per the standing testing rule.
 - **Knowledge base** ([`decisions.md` H15](./decisions.md)): **openFDA Drug Label API**
   (`boxed_warning`/`contraindications` fields, free, no auth, actively maintained) and **RxClass
   API** (NLM/RxNav, drug-class relationships, confirmed active). Both are new to this repo and
   distinct in domain from `data/payer-kb/` (Phase 2's claims/coverage data — a different
   knowledge domain than `mcp-agent`'s drug-safety pilot). NLM's separate Drug-Drug *Interaction*
-  API is explicitly excluded — discontinued January 2024.
+  API is explicitly excluded — discontinued January 2024. **openFDA is queried by generic drug
+  name, RxClass by RxNorm code** ([`H56`](./decisions.md)) — verified live: this repo's FHIR data
+  carries ingredient-level RxNorm codes (RXCUI 723 for plain amoxicillin), which 404 against
+  openFDA's product-level `openfda.rxcui` field but work directly with RxClass.
 
   **The non-clinical-judgment constraint is structural, not a prompt instruction:** retrieval
   only fires *after* `triage-service` has already returned a determination, to fetch citation
   text for a decision that already exists — never *before*, as an input the agent reasons over.
   This is the concrete implementation of §3's "deterministic services decide" principle, applied
   to the one place in Phase 6 an LLM might otherwise be tempted to reason clinically on its own.
+  Concretely: `tools.py`'s `assess_refill_risk` surfaces which medication(s) the *already-computed*
+  risk result flagged (RxNorm code + display, correlated from the triage response's own
+  `basis` references against a fresh `get_medications()` call — re-fetch, not recall); `agent.py`'s
+  `_fetch_citations()` triggers on that code-observable signal alone, never by re-deriving "is
+  this HIGH risk" itself ([`H55`](./decisions.md)). Citations render in `decision_block()` as
+  strictly supplementary text, incapable of changing the decision already printed above them.
 
   This corpus choice remains provisional — M6 is last in the build order, and which agent
   (`mcp-agent` or a carried-over `claims-agent`) ends up consuming it may become clearer once
-  M1–M5 land.
+  M1–M5 land. As shipped, it's wired into `mcp-agent` only, the pilot target.
+- **Live-validated**: a real end-to-end query for the HIGH-risk amoxicillin/penicillin-allergy
+  reference case (real Claude, real FHIR/triage) produced real openFDA contraindication text and
+  real RxClass drug classes as citations, alongside the correct `DO_NOT_DISPENSE` decision. The
+  judge, in the same live run, flagged a genuine (if debatable) issue -- the model's rationale
+  repeated the patient's name unnecessarily -- and that flag rendered as an advisory note without
+  touching the decision above it, exactly per H54's structural guarantee. Separately, two live
+  runs against the real self-hosted default (`llama3.2:1b`) confirmed the fail-closed paths (H5,
+  H18, H21) still resolve correctly end to end with a genuinely weak model driving the whole loop,
+  policy included.
 
 ### 4.7 Strong model in production (→ M7) — planned, not yet implemented
 

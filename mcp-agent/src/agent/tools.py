@@ -276,6 +276,28 @@ def assess_refill_risk(
         # The response parsed fine but the code itself wasn't recognized --
         # distinct from a missing code, worth surfacing to the agent as text.
         result["error"] = f"Triage returned an unrecognized risk code: {raw_code!r}"
+
+    # Best-effort: the RxNorm code/display for whichever medication(s) this
+    # assessment's basis actually references -- feeds M6's post-decision
+    # citation lookup (docs/phase6/decisions.md H15) only, never an input to
+    # the risk determination itself, which has already happened above.
+    # Failure here must not affect the risk result already computed.
+    flagged_medication_ids = {
+        ref.split("/", 1)[1]
+        for ref in result["basis_references"]
+        if ref.startswith("MedicationRequest/")
+    }
+    if flagged_medication_ids:
+        try:
+            medications = _fhir_client().get_medications(patient_id)
+            result["flagged_medications"] = [
+                {"rxnorm_code": m.code, "display": m.display}
+                for m in medications
+                if m.id in flagged_medication_ids
+            ]
+        except (FHIRClientError, RuntimeError):
+            pass  # citation data is a nice-to-have; the risk result above already stands
+
     return result
 
 

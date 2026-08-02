@@ -53,6 +53,7 @@ import argparse
 import json
 import os
 import sys
+from pathlib import Path
 
 import anthropic
 import httpx
@@ -69,12 +70,17 @@ from agent_platform import (
     compact,
     create_session,
     current_trace_id,
+    extract_generic_name,
+    fetch_drug_class,
+    fetch_drug_label_citation,
     get_tracer,
     is_unknown,
+    judge_response,
     layer_attrs,
     list_anthropic_models,
     list_ollama_models,
     list_openai_compatible_models,
+    load_policy,
     load_session,
     record_usage,
     safe_set_attributes,
@@ -103,7 +109,11 @@ MAX_TOKENS = 1024
 # create before setup_tracing() runs (docs/phase6/design.md Section 4.2).
 _tracer = get_tracer("mcp-agent")
 
-SYSTEM_PROMPT = """You are a clinical decision support assistant for healthcare professionals.
+# mcp-agent/policy.md, two directories up from this file (mcp-agent/src/agent/
+# -> mcp-agent/). Copied into the Docker image alongside src/ -- see Dockerfile.
+POLICY_PATH = Path(__file__).resolve().parents[2] / "policy.md"
+
+_TOOL_USE_INSTRUCTIONS = """You are a clinical decision support assistant for healthcare professionals.
 You help clinicians evaluate medication refill safety by checking for drug-allergy conflicts
 and other clinical risks.
 
@@ -123,6 +133,15 @@ If risk is HIGH, be direct and emphatic in your rationale. Patient safety is the
 If you cannot find a patient, say so clearly in your rationale and suggest alternatives, then
 submit_decision with REVIEW.
 Never fabricate patient data or clinical information."""
+
+# Policy rules load straight into the system prompt (docs/phase6/decisions.md
+# H6) -- they always apply, so retrieval would be the wrong mechanism for
+# them. Distinct from _TOOL_USE_INSTRUCTIONS above: that's tool-orchestration
+# mechanics ("how to use these tools"); policy.md is clinical/business policy
+# ("what this agent is and isn't allowed to do"). Loaded once at import time
+# -- a missing policy file fails the whole process at startup (load_policy's
+# own contract), not silently at first query.
+SYSTEM_PROMPT = _TOOL_USE_INSTRUCTIONS + "\n\n" + load_policy(POLICY_PATH)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -181,6 +200,10 @@ def run_query(
     # regardless of which order the model called tools in. Scoped to this
     # single query, not the whole session -- see the docstring note below.
     saw_unknown_risk = False
+    # Medication(s) flagged by assess_refill_risk during this run, if any --
+    # feeds the post-decision citation lookup only (docs/phase6/decisions.md
+    # H15). Never read before a decision is final; see _fetch_citations().
+    flagged_medications: list[dict] = []
 
     # One trace per agent run (docs/phase6/design.md Section 4.2, R4).
     # Deliberately no user_input text as a span attribute -- a clinician's
@@ -289,6 +312,7 @@ def run_query(
                             parsed = {}
                         if is_unknown(parsed.get("risk_level")):
                             saw_unknown_risk = True
+                        flagged_medications.extend(parsed.get("flagged_medications") or [])
 
                     tool_results.append({
                         "type": "tool_result",
@@ -330,13 +354,16 @@ def run_query(
                         {"role": "user", "content": tool_results}
                     ]
 
+                    rationale = str(inputs.get("rationale", ""))
                     final_text = decision_block(
                         decision=decision.value,
                         patient_id=str(inputs.get("patient_id", "")),
                         risk_assessment_id=inputs.get("risk_assessment_id"),
-                        rationale=str(inputs.get("rationale", "")),
+                        rationale=rationale,
                         override_reason=override_reason,
                         trace_id=current_trace_id(),
+                        citations=_fetch_citations(flagged_medications) if flagged_medications else [],
+                        judgment=judge_response(client, model, query=user_input, rationale=rationale),
                     )
                     return final_text, messages
 
@@ -374,13 +401,16 @@ def run_query(
                     "override_reason": override_reason,
                 })
 
+            rationale = narrative.strip() or "(no rationale provided)"
             final_text = decision_block(
                 decision=decision.value,
                 patient_id="",
                 risk_assessment_id=None,
-                rationale=narrative.strip() or "(no rationale provided)",
+                rationale=rationale,
                 override_reason=override_reason,
                 trace_id=current_trace_id(),
+                citations=_fetch_citations(flagged_medications) if flagged_medications else [],
+                judgment=judge_response(client, model, query=user_input, rationale=rationale),
             )
             return final_text, messages
 
@@ -411,6 +441,36 @@ def _fail_closed_unavailable(reason: str, messages: list[dict]) -> tuple[str, li
         trace_id=current_trace_id(),
     )
     return final_text, messages
+
+
+def _fetch_citations(flagged_medications: list[dict]) -> list[dict]:
+    """
+    Post-decision knowledge-base lookup (docs/phase6/decisions.md H15):
+    called only from the two places in run_query where a decision is
+    already final -- never as an input the model reasons over. Best-effort
+    -- any lookup failure already returns None/[] from knowledge.py itself,
+    so this never raises and never blocks the decision it's attached to.
+    """
+    citations = []
+    with start_span(
+        "agent.fetch_citations", _tracer, layer_attrs("agent.knowledge", "fetch_citations")
+    ) as span:
+        for med in flagged_medications:
+            display = med.get("display", "")
+            rxnorm_code = med.get("rxnorm_code", "")
+            label = fetch_drug_label_citation(extract_generic_name(display)) if display else None
+            drug_classes = fetch_drug_class(rxnorm_code) if rxnorm_code else []
+            if label or drug_classes:
+                citations.append({
+                    "drug": display or rxnorm_code,
+                    "label": label,
+                    "drug_classes": drug_classes,
+                })
+        safe_set_attributes(span, {
+            "knowledge.found": bool(citations),
+            "knowledge.source": "openFDA + RxClass" if citations else None,
+        })
+    return citations
 
 
 def _print_tool_call(name: str, inputs: dict) -> None:
