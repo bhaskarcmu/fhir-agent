@@ -2264,6 +2264,28 @@ Every one of these was found by running the real stack (docker-compose, real API
 - **New packages**: `agent_platform.{context_budget, session_store, resilience, providers, policy, judge, knowledge}` — all shared, reusable by `claims-agent` per the original M2 decision (H2), none yet carried over.
 - **Deferred, by design, not oversight**: M7 (Strong Model in Production) — the fuller environment-tier guarantee that a real deployment can't accidentally misrepresent itself; a `mcp-agent-api` ↔ host-Ollama docker-compose networking gap; carrying the shared platform to `claims-agent`.
 
+## Turn 30
+
+### Prompt
+
+A friend of mine showed Phase 2 (before Phase 6 was started) to a technical audience. Here is the feedback she received:
+
+1. Your team doesn't seem to know much about long-term and short term memory. Tell us what these are, and what were your considerations with respect to these when you implemented the agent?
+
+2. A conversation needs to support "follow ups". User may want clarifications or add information to previous prompts or turns. How did you implement this? How does that vary across different ways to implement agents used in the industry, and tell me how this varies if you use different LLM models? (show code snippets)
+
+3. How do you provide natural language rules to each session, such that the LLM behaves as if it is already prompted with the rules before the first user prompt? I.e., you mentioned you gave natural language rules to the LLM agent. How, and how does that work?
+
+4. Observability. You said your team has experience with tracing, spans, and RED & USE concepts in API and middle-tier service development using SpringBoot for example. Tell us how, when an agent is involved with tooling behind it that comes from APIs, how observability and tracing work (and are implemented in your case).
+
+______________
+
+Now, After Phase 6 M6, I want to be able to say to her that I rewrote the agent to fill gaps in team's understanding, implementation, and observability/tracing. I also want to say that the API development, Springboot, and all the observability/tracing was production grade, and the same/similar approach were applie3d to the agent part. Explain for an impressive follow-up message to the same audience, with one leading paragraph followed by a few bullets that have bold headers each. Subsequently, give a longer story with code snippets to prove our team knows what we are talking about.
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 1215 tool events</summary>
 
@@ -4210,6 +4232,6 @@ Implements Phase 6 Milestone 6 — "Policy, Knowledge & Judge" (`docs/phase6/mil
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 17:09 UTC
-- **Turns:** 29
+- **Last updated:** 2 August 2026, 17:11 UTC
+- **Turns:** 30
 - **Status:** Incomplete
