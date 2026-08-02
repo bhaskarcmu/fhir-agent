@@ -2042,8 +2042,12 @@ Known `.env`-shadowing issue again. Fixing it the established way.
 
 Found a real gap before it could bite: the Dockerfile never copies `policy.md` into the image. Fixing it now.
 
+Now let's wire policy loading into `agent.py`.
+
+Now let's add the `POLICY_PATH` constant and concatenate it into `SYSTEM_PROMPT`.
+
 <details>
-<summary>Execution details — 1121 tool events</summary>
+<summary>Execution details — 1126 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3867,6 +3871,11 @@ import json…`
 - **Bash** `sed -n '120,135p' /workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
 - **Bash** `cat /workspaces/fhir-agent/mcp-agent/Dockerfile`
 - **Edit** `/workspaces/fhir-agent/mcp-agent/Dockerfile`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Bash** `grep -n "^def run_query\|saw_unknown_risk = False\|if block.name == \"assess_refill_risk\"\|decision_block_data is not None\|final_text = decision_block\|return final_text, messages\|# ── Final respon…`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
 
 </details>
 
@@ -3877,6 +3886,6 @@ import json…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 16:43 UTC
+- **Last updated:** 2 August 2026, 16:44 UTC
 - **Turns:** 28
 - **Status:** Incomplete
