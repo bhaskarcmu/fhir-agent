@@ -2028,8 +2028,12 @@ Let's build the policy loader first.
 
 Now let's export `load_policy` from `agent_platform/__init__.py`.
 
+Let me fix the span-attribute naming — reusing `"decision"` for the judge's own outcome would be misleading. I'll add proper judge-specific keys to the telemetry allowlist.
+
+Now let's fix `judge.py` to use these proper attribute names.
+
 <details>
-<summary>Execution details — 1098 tool events</summary>
+<summary>Execution details — 1102 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3803,6 +3807,10 @@ ls /workspaces/fhir-agent/mcp-agent/src/agent/`
 - **Write** `/workspaces/fhir-agent/mcp-agent/policy.md`
 - **Read** `/workspaces/fhir-agent/agent-platform/src/agent_platform/__init__.py`
 - **Bash** `cat /workspaces/fhir-agent/agent-platform/src/agent_platform/__init__.py`
+- **Write** `/workspaces/fhir-agent/agent-platform/src/agent_platform/judge.py`
+- **Read** `/workspaces/fhir-agent/agent-platform/src/agent_platform/observability.py`
+- **Edit** `/workspaces/fhir-agent/agent-platform/src/agent_platform/observability.py`
+- **Edit** `/workspaces/fhir-agent/agent-platform/src/agent_platform/judge.py`
 
 </details>
 
@@ -3813,6 +3821,6 @@ ls /workspaces/fhir-agent/mcp-agent/src/agent/`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 16:39 UTC
+- **Last updated:** 2 August 2026, 16:40 UTC
 - **Turns:** 28
 - **Status:** Incomplete
