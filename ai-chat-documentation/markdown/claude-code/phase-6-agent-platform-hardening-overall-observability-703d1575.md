@@ -989,7 +989,7 @@ Confirmed working. Now writing the `agent-platform` observability tests, then wi
 All 36 pass. Now wiring OTel into `mcp-agent`.
 
 <details>
-<summary>Execution details — 231 tool events</summary>
+<summary>Execution details — 233 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1329,6 +1329,8 @@ from opentelemetry.sdk.trace.export.in_mem…`
 - **Bash** `python -m pytest agent-platform/tests -v 2>&1 | tail -15`
 - **TodoWrite** `{"todos": [{"content": "Explore current state: pom.xml, docker-compose.yml, client configs", "status": "completed", "activeForm": "Exploring current service configs for M2"}, {"content": "Add agent_pl…`
 - **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
 
 </details>
 
