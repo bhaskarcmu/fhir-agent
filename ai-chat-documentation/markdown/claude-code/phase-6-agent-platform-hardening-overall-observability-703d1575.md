@@ -1932,7 +1932,7 @@ Now `test_api_resilience.py`:
 All 19 pass. Now let's run the full mcp-agent + agent-platform suite (excluding slow live tests) to check nothing else broke.
 
 <details>
-<summary>Execution details — 957 tool events</summary>
+<summary>Execution details — 959 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3487,6 +3487,8 @@ python -m pytest mcp-agent/tests -q 2>&1 | tail -100`
 - **Write** `/workspaces/fhir-agent/mcp-agent/tests/test_api_resilience.py`
 - **Bash** `python -m pytest mcp-agent/tests/test_session_api.py mcp-agent/tests/test_api_resilience.py -v 2>&1 | tail -100`
 - **Bash** `python -m pytest agent-platform/tests mcp-agent/tests triage-service/src/triage/tests -q --deselect mcp-agent/tests/test_provider_integration.py::test_live_ollama_resolves_to_a_valid_gated_decision --…`
+- **TodoWrite** `{"todos": [{"content": "Rework agent_platform/providers.py: 3 provider identities (anthropic/ollama/openai_compatible), default=ollama, DEPLOYMENT_ENV production guardrail, discovery functions", "stat…`
+- **Bash** `ls /workspaces/fhir-agent/mcp-agent/tests/ | grep -i conftest`
 
 </details>
 
@@ -3497,6 +3499,6 @@ python -m pytest mcp-agent/tests -q 2>&1 | tail -100`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 16:03 UTC
+- **Last updated:** 2 August 2026, 16:04 UTC
 - **Turns:** 27
 - **Status:** Incomplete
