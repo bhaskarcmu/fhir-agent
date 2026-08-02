@@ -994,8 +994,10 @@ Now wiring `setup_tracing()` into `main()`:
 
 Now let's reinstall mcp-agent and verify everything still imports and passes correctly.
 
+Found it — not an OTel/instrumentation issue at all: the test's default `OLLAMA_MODEL` ("llama3.2") was never pulled, only the `:1b` tag was. Fixing the default to match the actual setup instructions:
+
 <details>
-<summary>Execution details — 241 tool events</summary>
+<summary>Execution details — 247 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1352,6 +1354,27 @@ resp = httpx.post('http://localhost:11434/v1/chat/completions', json={
 - **Bash** `grep -rn "setup_tracing\|HTTPXClientInstrumentor\|\.instrument(" /workspaces/fhir-agent/mcp-agent/tests/ /workspaces/fhir-agent/agent-platform/tests/`
 - **Bash** `cd /workspaces/fhir-agent
 python -m pytest mcp-agent/tests/test_output_contract.py -v -k LiveLocalModel 2>&1 | tail -40`
+- **Bash** `cd /workspaces/fhir-agent
+python3 -c "
+import sys
+sys.path.insert(0, 'mcp-agent/src')
+sys.path.insert(0, 'agent-platform/src')
+from agent.agent import run_query  # mirrors test module's import
+import…`
+- **Bash** `cat /workspaces/fhir-agent/pytest.ini 2>/dev/null
+echo "---root conftest---"
+find /workspaces/fhir-agent -maxdepth 2 -iname "conftest.py"
+echo "---mcp-agent pyproject pytest section---"
+grep -A5 "\[to…`
+- **Bash** `cd /workspaces/fhir-agent
+cat > /tmp/claude-1000/-workspaces-fhir-agent/703d1575-6579-4a4a-834d-bfd055f35840/scratchpad/test_repro.py <<'EOF'
+import httpx
+
+def test_ollama_direct():
+    resp = httpx.p…`
+- **Bash** `curl -s http://localhost:11434/v1/chat/completions -H "Content-Type: application/json" -d '{"model":"llama3.2","messages":[{"role":"user","content":"hi"}]}' -w "\nHTTP:%{http_code}\n"`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/tests/test_output_contract.py`
+- **Bash** `python -m pytest agent-platform/tests mcp-agent/tests -q 2>&1 | tail -15`
 
 </details>
 
@@ -1362,6 +1385,6 @@ python -m pytest mcp-agent/tests/test_output_contract.py -v -k LiveLocalModel 2>
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 11:21 UTC
+- **Last updated:** 2 August 2026, 11:22 UTC
 - **Turns:** 15
 - **Status:** Complete
