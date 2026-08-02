@@ -1553,8 +1553,10 @@ Now updating `design.md` §4.4 to "implemented" with real detail.
 
 Now updating `milestone-plan.md`'s M4 section and `telemetry-schema.md` §7.
 
+Now updating `telemetry-schema.md` §7 to mark the metric as built.
+
 <details>
-<summary>Execution details — 764 tool events</summary>
+<summary>Execution details — 766 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2856,6 +2858,10 @@ SESSION_ID=$(curl -sS -X POST http://localhost:8010/sess…`
 - **Edit** `/workspaces/fhir-agent/docs/phase6/decisions.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase6/design.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase6/milestone-plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase6/telemetry-schema.md`
+- **Bash** `docker ps --format "{{.Names}}" | grep fhir-agent || echo "no fhir-agent containers running"
+echo "---"
+python -m pytest agent-platform/tests mcp-agent/tests triage-service/src/triage/tests -q 2>&1 |…`
 
 </details>
 
