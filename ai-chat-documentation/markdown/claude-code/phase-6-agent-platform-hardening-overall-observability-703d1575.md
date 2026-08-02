@@ -1919,8 +1919,12 @@ Let me read the full current `agent.py` to plan the exact edits precisely.
 
 Now the imports:
 
+Now `non_interactive_mode`:
+
+Now `main()` — add the `--list-models`/`--provider`/`--model` flags and wire everything through.
+
 <details>
-<summary>Execution details — 931 tool events</summary>
+<summary>Execution details — 936 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3448,6 +3452,11 @@ os.environ.…`
 - **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
 - **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
 - **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Read** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/src/agent/agent.py`
 
 </details>
 
@@ -3458,6 +3467,6 @@ os.environ.…`
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 15:56 UTC
+- **Last updated:** 2 August 2026, 15:57 UTC
 - **Turns:** 27
 - **Status:** Incomplete
