@@ -1035,7 +1035,7 @@ Found it — a pre-existing `.env` file (gitignored, tuned for host-direct runs)
 Correct now. Let's re-run the smoke test:
 
 <details>
-<summary>Execution details — 386 tool events</summary>
+<summary>Execution details — 395 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1607,6 +1607,42 @@ docker compose run --name mcp-agent-smoketest -T \
   -e OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317 \
   -e FHIR_GATEWAY_URL=http://fhir:8080/fhir \
   -e TRIAGE_SERVICE_URL…`
+- **Bash** `docker logs fhir-agent-triage --tail 10 2>&1`
+- **Bash** `docker exec fhir-agent-triage python3 -c "
+import urllib.request
+try:
+    resp = urllib.request.urlopen('http://fhir:8080/fhir/metadata', timeout=5)
+    print('STATUS:', resp.status)
+except Exception…`
+- **Bash** `docker exec fhir-agent-triage python3 -c "
+from fhir_clinical_client import FHIRClient
+client = FHIRClient(gateway_url='http://fhir:8080/fhir')
+try:
+    meds = client.get_medications('1')
+    print('M…`
+- **Bash** `curl -s -X POST http://localhost:8001/triage/refill-risk -H "Content-Type: application/json" -d '{"patient_id":"1"}' -w "\nHTTP:%{http_code}\n"`
+- **Bash** `docker exec fhir-agent-triage python3 -c "
+from opentelemetry.instrumentation.urllib import URLLibInstrumentor
+URLLibInstrumentor().instrument()
+from fhir_clinical_client import FHIRClient
+client = FH…`
+- **Bash** `docker exec fhir-agent-triage python3 -c "
+import triage.main as m
+try:
+    resp = m.assess_refill_risk(m.TriageRequest(patient_id='1'))
+    print('OK:', resp)
+except Exception as e:
+    print('ERROR:…`
+- **Bash** `grep -n "@app.post\|def " /workspaces/fhir-agent/triage-service/src/triage/main.py | head -10`
+- **Bash** `docker exec fhir-agent-triage python3 -c "
+import sys
+import triage.main as m
+print('imported OK', flush=True)
+from triage.models import TriageRequest
+try:
+    resp = m.assess_refill_risk(TriageReques…`
+- **Bash** `docker exec fhir-agent-triage python3 -c "print('hello world')"
+echo "exit: $?"`
 
 </details>
 
@@ -1617,6 +1653,6 @@ docker compose run --name mcp-agent-smoketest -T \
 - **Source:** Claude Code
 - **Session ID:** `703d1575-6579-4a4a-834d-bfd055f35840`
 - **Created:** 2 August 2026, 03:48 UTC
-- **Last updated:** 2 August 2026, 11:55 UTC
+- **Last updated:** 2 August 2026, 11:56 UTC
 - **Turns:** 15
 - **Status:** Complete
