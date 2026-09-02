@@ -38,8 +38,156 @@ Neither blocks calling this "Phase 7" — Phase 5 stays reserved separately for 
 
 Want me to draft the standard `docs/phase7/prd.md` + `design.md` (matching the pattern the other phases use), or do you want to go straight to a milestone breakdown?
 
+## Turn 2
+
+### Prompt
+
+Tell me based on what you know so far, if "Patient Medications Reconciliation" is a good name for this phase. And, here is more inout to help with PRD writing:
+
+======================
+Why medication reconciliation is the right slice
+
+Three reasons, in order of how much they'll matter.
+
+One: it's the only transitions-of-care requirement that is genuinely a data-merge problem. Of the four national transitions-of-care indicators, three are essentially "did someone do a thing and write it down" — notification received, discharge information received, patient contacted. Medication reconciliation is different. It is defined as comparing the medications ordered at discharge against the most recent medication list in the outpatient record and resolving the differences (NCQA, Humana measure flyer). That is literally a two-source join with conflict resolution. It's the one indicator you cannot satisfy without solving the problem you actually solved at Oak Street.
+
+Two: the regulation already describes the architecture you want to build. The Joint Commission's medication safety goal spells out the steps: obtain the current medication list including name, dose, route, frequency, duration and purpose; compare it against what the organization has ordered "in order to identify and resolve discrepancies"; and it explicitly defines discrepancies as "omissions, duplications, contraindications, unclear information, and changes." It also includes this note: "It is often difficult to obtain complete information on current medications... A good faith effort to obtain this information from a patient or resident and/or other sources will be considered as meeting the intent" (The Joint Commission, effective January 2026).
+
+Read that last note again. The regulator has written your fail-closed doctrine into the standard: incomplete is an acceptable outcome as long as you documented the attempt. Your existing output_gate.py / fail_closed.py pattern is already the right answer, and now it has a regulatory citation rather than just being good engineering taste.
+
+Three: the problem is real and heavily documented. A study of 339 older patients found 68% experienced unintentional medication discrepancies somewhere in their care transitions — 35% at admission, 20% at transfer, and 49% at discharge (PMC). A systematic review found the median rate of unintentional medication discrepancies after discharge was around 50% (PMC). And specific to your nursing-home gap: at least one discrepancy occurs in 75% of hospital-to-nursing-facility admissions (UCLA, citing Kerstenetsky et al.). Half of transitions produce a medication error. You don't have to argue that this matters.
+
+Your repo already has the socket for this
+This is the part that makes the answer an emphatic yes rather than a "sure, you could."
+
+From your own Phase 4 documentation: epic-emulator is built through M5 — pass-through proxy, simulated backend-services auth, Epic-style extension backfill on MedicationRequest and AllergyIntolerance, three named quirks including the required patient + status parameter combination and Epic-shaped error responses. And then there's this, written by you:
+
+"This module was reserved as an empty placeholder back in Phase 2 alongside a sibling athena-emulator. That sibling remains a placeholder — Phase 4 builds out only the Epic half. The original two-emulator 'portability isn't provable with just one edge' framing is not fulfilled by Phase 4 alone; whether athena-emulator is ever built is a separate, later decision."
+
+You left yourself the exact door you now want to walk through. Medication reconciliation is the first use case that genuinely requires two edges — a single-source med list needs no reconciling. So the story isn't "I added another emulator for symmetry." It's "I found the workload that made the second edge necessary, and building it proved the portability claim I'd only asserted."
+
+Everything else you need is also already there: triage-service already fetches medications and allergies and returns a RiskAssessment with basis references; your rules engine already detects duplicate therapeutic class, which is one of the four reconciliation conflict types; claims-service already emits Provenance; and your Phase 6 agent already re-fetches rather than recalling medication data. This is an extension, not a new project.
+
+What you can actually get, for free
+Source	Reality	Use in this build
+Epic sandbox	Free developer signup; R4 base at https://fhir.epic.com/interconnect-fhir-oauth/api/FHIR/R4/, live capability statement confirms FHIR 4.0.1 (Epic on FHIR, metadata)	The hospital-side list
+Epic MedicationRequest	Read + Search, R4, with a documented required-parameter pattern	Discharge orders
+Epic Outside Record APIs	Medication, MedicationRequest, and MedicationDispense all have distinct (Outside Record) variants at R4 (Epic on FHIR)	See below — this is the find
+Epic MedicationDispense (Fill Status)	Read + Search, R4	Did the patient actually pick it up
+athenahealth R4	Published sandbox base URLs, e.g. https://ap23sandbox.fhirapi.athenahealth.com/demoAPIServer/fhir/r4 (athenahealth GitHub); implementation guide v25.0.0 (athenahealth)	The outpatient-side list
+RxNorm / RxNav	Free, no API key, no license for the RxNorm API; findRxcuiByString supports exact, normalized, and approximate matching — normalized ignores word order, punctuation, inflections and salt forms, so "morphine sulfate" resolves to morphine and "hctz" matches hydrochlorothiazide (NLM, NLM FAQs)	The matching engine
+US Core MedicationRequest	Servers SHALL support patient + intent=order,plan, and SHALL support _include=MedicationRequest:medication (HL7 US Core)	Your portable contract
+Two things to note carefully.
+
+The Outside Record APIs are the whole thesis in one detail. Epic ships a separate set of medication endpoints for data that originated outside the organization. Which means Epic itself models "this came from somewhere else" as a first-class, structurally distinct thing — because provenance changes how the data may be trusted. Every reconciliation engine has to make that same distinction. If you build it, you're not imitating Epic's design, you're independently arriving at it, and you can say so.
+
+One caveat to verify before you assert it. The athenahealth R4 implementation guide describes the API server in "athenaPractice and athenaFlow products" (athenahealth) — those are the former GE Centricity lines, not athenaOne, whose API sits at a different base (per this integration guide — treat that source as secondary). Confirm which one you're hitting before you say "athenahealth" flatly in an interview. Getting that distinction right is itself a credibility signal; getting it wrong in front of someone who knows is expensive.
+
+The trap to avoid
+Do not build a drug-interaction checker. The National Library of Medicine discontinued the free RxNav drug-drug interaction API on or about January 2, 2024, and removed the Interactions tab from the web interface at the same time. NLM's own FAQ confirms it and lists the two sources it had drawn from (NLM RxNav, NLM FAQs). Salesforce removed the drug-interaction tab from its Medication Management product as a direct consequence (Salesforce release notes).
+
+There is a real upside here. Knowing this makes you sound like someone who has actually shipped against these APIs rather than read about them. And the correct architectural response is a good answer in itself: interaction checking is a licensed-content dependency, so you isolate it behind an interface with a null implementation, and your gate returns "cannot assess" rather than "no interactions found." An empty result from a dead endpoint rendered as "safe" is exactly the class of bug your fail-closed module exists to prevent.
+
+What the build actually looks like
+Six components. Call it Phase 7.
+
+1. athena-emulator — finally build it. Same shape as epic-emulator: proxy in front of fhir-service, its own auth flavor, its own quirks. Deliberately make its quirks different from Epic's — different pagination behavior, different required parameters, different error envelope. The point of the second edge is to make source-specific behavior impossible to hide in shared code.
+
+2. med-normalizer — the honest hard part. Two lists never match on strings. Metoprolol tartrate 25mg twice daily versus metoprolol succinate 50mg extended-release once daily: same ingredient, different salt, different release profile, different clinical meaning. Resolve every entry to an RxNorm concept identifier and record which term type you landed on — the ingredient level, the clinical drug level, or the branded level. Then classify the match:
+
+Identical — same clinical-drug concept, same dose, same frequency
+
+Equivalent — same concept, differences that don't change therapy
+
+Same ingredient, different product — the metoprolol case; needs a human
+
+Ingredient-level only — you matched, but not precisely enough to compare doses
+
+Unresolved — you could not code it
+
+That last bucket is the most important thing on the screen. A reconciliation tool that silently drops what it couldn't parse is worse than no tool, because it manufactures false confidence. Report the unresolved count as a headline number, not a footnote.
+
+3. recon-engine — the four discrepancy types the regulator names. Use their vocabulary, not your own: omission (present at discharge, absent in the outpatient list), addition/duplication (the same therapeutic class twice — you already have this rule), change (dose, route, or frequency differs), and unclear (couldn't code, or sources conflict irreconcilably). Emit each one with the source that contributed each side, the timestamp of each side, and the match classification. Your existing RiskAssessment + basis-reference pattern already produces exactly this shape.
+
+4. A precedence policy that lives in a config file, not in code. Which source wins, per field, with reasons. Discharge orders beat the outpatient list on what was prescribed because they're newer. The outpatient list may beat discharge orders on what the patient is actually taking because the clinic knows the patient. Fill data beats both on whether the drug was ever obtained. Put it in YAML next to policy.md so a reviewer can read your clinical reasoning without reading Java. Reviewers who can read the policy trust the code more.
+
+5. Provenance and freshness on every single field. Provenance resources are already in your claims service — extend them here. Each reconciled line carries which system it came from, when that system last answered, and how old the underlying record is. Then the rule you already believe in: a source that didn't answer renders as "we could not reach athenahealth as of 14:02," never as a blank cell and never as an absence.
+
+6. The gate. Reuse output_gate.py and fail_closed.py unchanged. Outcomes: RECONCILED, DISCREPANCIES_FOUND, INCOMPLETE_SOURCES. There is no "clean" outcome available when a source was unreachable. And because the Joint Commission explicitly accepts a documented good-faith effort, INCOMPLETE_SOURCES isn't a failure state — it's a compliant one, as long as you recorded what you tried. Say that out loud in the interview; it shows you understand that the regulation and the architecture agree.
+
+What you demo in ninety seconds
+One patient. Two live sandboxes. On screen: the hospital list, the outpatient list, and the reconciled view in the middle, with each line labeled by discrepancy type, each field showing its source and age, and the unresolved count visible at the top. Then kill the athenahealth emulator mid-demo and show the view degrade to "one source unavailable — reconciliation incomplete" instead of quietly showing a one-sided list that looks complete.
+
+That last five seconds is the entire demo. Anyone can show a working happy path. Almost nobody shows what their product does when a feed goes dark, which is the state a transitions platform is in most of the time.
+
+The lines this earns you
+"I picked medication reconciliation because it's the only one of the four transitions indicators you can't satisfy with a workflow checkbox — it requires reconciling two medication lists from two systems that don't agree, which is the problem I actually had at Oak Street with Greenway on one side and Epic on the other."
+
+"The interesting part isn't the API calls, it's the match classification. Same ingredient, different salt, different release profile is not a match, and a tool that scores it as one is dangerous. So every line carries how confidently it was coded, and the count of what couldn't be coded is on the screen, not in a log."
+
+"I built the athenahealth emulator specifically because reconciliation needs two sources. My own Phase 4 notes say portability isn't provable with one edge — this is the workload that made the second edge necessary."
+
+One piece of scope discipline
+Don't extend this to the nursing home. The temptation is obvious given everything we've discussed, and it's the wrong move: there is no free nursing-facility API sandbox, so you'd be inventing your data, and an interviewer from PointClickCare will know immediately. Keep the build strictly hospital-to-clinic, where both sources are real.
+
+Then say the extension out loud instead of building it: "This works because both endpoints expose a standards-based API. The reason the same pattern breaks going hospital-to-nursing-facility is that the third list — what the facility is actually administering — only exists inside the facility's own system of record. That's a data-access problem, not an algorithm problem, and it's the gap I'd want to understand how you're closing."
+
+That converts an honest scope limit into your closing question, and it lands you exactly where their product strategy lives.
+
+Is it fair to set the requirement as: "Either through a notification of facility admission/discharge, or through a clinician simply manually asking for medication information by identifying a patient - take a patient's identity as input and find their latest set of medications" ?
+
+Mostly fair. The trigger half is right and the input half hides the two hardest problems in the build. Let me take it apart.
+
+What's right
+Separating the trigger from the capability is correct, and it's the thing junior requirements get wrong. Both paths converge on one operation — resolve a patient, then assemble their medications — and only the entry point differs. That means one testable core with two thin adapters in front of it, instead of two parallel implementations that drift. Keep that.
+
+It also correctly refuses to make the notification the product. That's the same point you made about pings, expressed as a requirement, and it's the right instinct.
+
+Problem one: "take a patient's identity as input" is the project, not the input
+Those five words are where most of the engineering lives, and stating them as a given is the kind of thing an architect will probe.
+
+There is no portable patient identity. A medical record number is reliable inside one organization and not portable outside it, because source systems use different identifier namespaces — the hospital's number for the patient is not your number for the patient (FirestarterPro — secondary source, but the claim is uncontroversial). So Epic requires one of several minimum data sets before it will match a patient at all: the Epic FHIR identifier, a typed identifier pair, a social security number, given plus family name plus birth date, or given plus family name plus legal sex plus phone or email (reported here — treat as secondary; Epic's own guidance points developers to the Patient.$match demographics operation for finding an existing record, Epic on FHIR).
+
+And the standards treat this as a distinct, hard operation rather than a search. Patient/$match accepts a partially complete Patient resource and hands it to a master patient index, which returns candidates with scores (HL7 FHIR). There is an entire US implementation guide devoted to extending $match for cross-organizational use, with graded input profiles by identity assurance level (HL7 US Identity Matching IG).
+
+How badly does this fail in practice? Facilities fail to link records for the same patient as often as half the time, and matching within a single facility can be as low as 80% (Pew Charitable Trusts). A study of 398,939 confirmed duplicate records found middle name was the top mismatch field at 58.3%, with social security number second at over half (PMC). And the tolerance is brutally asymmetric: organizations reportedly accept roughly one in a million false positives, because merging two patients' charts is a catastrophic error (University of Memphis thesis).
+
+So your requirement needs to say what happens when identity is ambiguous. The correct behavior is not "pick the best candidate." It's: return the candidate set with match evidence, refuse to merge, and make a human confirm. That's another fail-closed case, and it's a better answer than a clean one.
+
+Also — and this is the part that will land — your two triggers are not equivalent inputs. A facility notification arrives with an encounter attached: which facility, admitted when, discharged when. A clinician typing a name arrives with nothing. That encounter context is what makes the medications reconcilable, because it defines the window. Presenting the two paths as interchangeable with "either/or" flattens a real difference. The manual path needs the clinician to also pick an encounter, or the system has to infer one and say which one it inferred.
+
+Problem two: "their latest set of medications" is the wrong noun
+This is the bigger issue, because it quietly contradicts the thing you're building.
+
+There is no latest set. That's the entire premise of reconciliation. There are multiple concurrent lists, each authoritative for a different question — what the hospital ordered at discharge, what the clinic believes the patient is taking, what the pharmacy actually dispensed — and they disagree. "Latest" implies you can order them on one timeline and take the top one. You can't, for three reasons:
+
+Recency is ambiguous. Prescribed-on date, record-last-updated date, and last-clinically-verified date are three different timestamps that answer three different questions, and the newest record is frequently not the truest one.
+
+Newer isn't more authoritative per field. Discharge orders are newer, but the clinic may know the patient stopped taking something. Fill data is the only source that knows whether the drug was ever obtained.
+
+A single flattened list destroys the output. If you return one merged list, you've thrown away the discrepancies — which are the deliverable.
+
+If you build to "find the latest set," you'll build a med list viewer. You already have the better design in your head; the requirement just doesn't say it yet.
+
+The rewrite
+Capability. Given a confirmed patient identity and a discharge encounter, retrieve the medication list from each connected source independently, normalize each entry to a standard drug concept, and return a reconciled view that preserves every source's contribution, labels each line by discrepancy type, and attaches the source and timestamp to every field.
+
+Trigger A — event. A facility admission or discharge notification supplies the patient identity and the encounter context.
+
+Trigger B — on demand. A clinician supplies demographics; the system resolves candidates and requires human confirmation of both patient and encounter before retrieval.
+
+Non-goals. Does not produce a single merged medication list. Does not auto-resolve ambiguous patient identity. Does not assess drug interactions.
+
+Acceptance criteria. Every returned line carries its source, that source's response time, and its match confidence. Any source that did not respond is reported as unreachable, never as empty. Entries that could not be coded are counted and surfaced, never dropped. A single unreachable source yields an incomplete-sources outcome, never a reconciled one.
+
+Two sentences of that are worth saying out loud in the interview: the non-goal that you deliberately do not produce one merged list, and the criterion that an unreachable source can never render as an empty one. Both are choices a reviewer can disagree with, which is exactly why they signal that you made them.
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
-<summary>Execution details — 6 tool events</summary>
+<summary>Execution details — 7 tool events</summary>
 
 ### Turn 1 activity
 
@@ -57,6 +205,10 @@ cat docs/phase5/README.md 2>/dev/null | hea…`
 echo "--- any athena mentions ---"
 grep -rniE "athena" . --include="*.md…`
 
+### Turn 2 activity
+
+- **Bash** `for f in docs/phase2/prd.md docs/phase3/prd.md docs/phase4/prd.md docs/phase6/prd.md; do echo "=== $f ==="; head -5 "$f" 2>/dev/null; echo; done`
+
 </details>
 
 ---
@@ -66,6 +218,6 @@ grep -rniE "athena" . --include="*.md…`
 - **Source:** Claude Code
 - **Session ID:** `b4b04851-828e-40dd-9240-5f17ee29eb7d`
 - **Created:** 2 September 2026, 02:43 UTC
-- **Last updated:** 2 September 2026, 02:43 UTC
-- **Turns:** 1
-- **Status:** Complete
+- **Last updated:** 2 September 2026, 02:48 UTC
+- **Turns:** 2
+- **Status:** Incomplete
