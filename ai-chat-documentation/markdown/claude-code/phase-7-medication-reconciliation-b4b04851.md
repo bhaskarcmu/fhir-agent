@@ -311,6 +311,16 @@ Here's the milestone plan in plain terms — [docs/phase7/milestone-plan.md](doc
 
 **Deliberately not a milestone:** a real Epic/Athena sandbox check, a third connected source, prod/cloud deployment, and the nursing-facility extension — all named in the plan's closing section so nobody mistakes their absence for an oversight.
 
+## Turn 7
+
+### Prompt
+
+Explain the clinical user's experience when this phase is done. Should w4e introduce anything agentic here?
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 31 tool events</summary>
 
@@ -388,6 +398,6 @@ discharge encount…`
 - **Source:** Claude Code
 - **Session ID:** `b4b04851-828e-40dd-9240-5f17ee29eb7d`
 - **Created:** 2 September 2026, 02:43 UTC
-- **Last updated:** 2 September 2026, 03:16 UTC
-- **Turns:** 6
-- **Status:** Complete
+- **Last updated:** 2 September 2026, 03:17 UTC
+- **Turns:** 7
+- **Status:** Incomplete
