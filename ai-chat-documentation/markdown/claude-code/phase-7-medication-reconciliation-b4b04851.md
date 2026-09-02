@@ -222,8 +222,25 @@ Ask me questions to clarify scope, especially in terms of data sources
 
 I've got your four answers locked in (epic-emulator as the Epic source, build athena-emulator for real this phase, RxNorm via a live-first abstraction layer, and a new minimal identity/encounter resolver). While I dig into the codebase to ground the remaining questions in what actually exists today (rather than guessing), let me ask a second round on the parts that are genuinely judgment calls, not fact-lookups.
 
+Good — the codebase check confirms a few things that matter for what I write: `client/clinical`'s `FHIRClient` already takes an arbitrary base URL (so pointing it at both emulators needs no client rework), but `get_medications()` is scoped to the triage use case only — hardcoded `status=active`, and dosage collapsed to a text string rather than structured dose/route/frequency. Given the "real structured comparison" and "MedicationDispense in scope" answers, Phase 7 will need to extend `client/clinical` (not bypass it — that's the repo's existing shared-abstraction convention) rather than write parallel FHIR-fetch code. I'll note that as a stated assumption in the PRD rather than a fresh question, since the repo's own layout already dictates the answer.
+
+I now have enough to draft. Writing `docs/phase7/prd.md`.
+
+`docs/phase7/prd.md` is written, and `docs/phase7/` is created (no `README.md`/`design.md`/`decisions.md` yet — deliberately, since none of that is settled).
+
+Summary of what's in it:
+- **§1–2**: problem statement grounded in NCQA/Joint Commission/PMC citations, plus a table of the four scope decisions you already made (epic-emulator-only, build athena-emulator for real, RxNorm as a live-first abstraction, new identity resolver) and the follow-up ones (Outside Record modeling, MedicationDispense in scope, structured dose/route/frequency comparison, one new `med-reconciliation-service`).
+- **§3–5**: goals, non-goals, and the two triggers — written to keep Trigger A/B asymmetric (B needs encounter confirmation, A doesn't), per your original rewrite.
+- **§6**: 17 functional requirements, including one the codebase audit surfaced that you hadn't decided yet — `client/clinical`'s `get_medications()` is hardcoded to `status=active` and flattens dosage to text, so FR3 commits to extending it (backward-compatibly) rather than bypassing it, since that's the repo's existing shared-abstraction convention.
+- **§9**: your four acceptance criteria, plus one I added explicitly requiring both patient *and* encounter confirmation on Trigger B (implied by your capability doc but not stated as a standalone bar).
+- **§10**: seven open questions I did *not* resolve myself — repo module naming, where the epic-emulator Outside-Record work lands procedurally, precedence-policy schema, RxNorm term-type mechanics, real-sandbox validation, demo surface, and the third-source question.
+
+One thing worth flagging: I made a call in FR3 without asking — extending `client/clinical` in place rather than writing separate fetch code — because CLAUDE.md already states that library is "shared by agent + triage" and the two `client/` subfolders shouldn't be bypassed. Low-risk, but say so if you'd rather isolate Phase 7's changes from `client/clinical` entirely.
+
+Want to keep going on the §10 open questions next, or is there another data-source angle you want to press on first?
+
 <details>
-<summary>Execution details — 14 tool events</summary>
+<summary>Execution details — 15 tool events</summary>
 
 ### Turn 1 activity
 
@@ -263,6 +280,7 @@ cat docs/README.md`
 - **AskUserQuestion** `{"questions": [{"question": "For the hospital-side (Epic) medication source, what should Phase 7 actually call?", "header": "Epic source", "multiSelect": false, "options": [{"label": "epic-emulator on…`
 - **Agent** `Survey existing modules relevant to Phase 7 scope`
 - **AskUserQuestion** `{"questions": [{"question": "The brainstorm doc calls out Epic's separate \"Outside Record\" medication endpoints (Medication/MedicationRequest/MedicationDispense variants for data that originated out…`
+- **Write** `/workspaces/fhir-agent/docs/phase7/prd.md`
 
 </details>
 
@@ -273,6 +291,6 @@ cat docs/README.md`
 - **Source:** Claude Code
 - **Session ID:** `b4b04851-828e-40dd-9240-5f17ee29eb7d`
 - **Created:** 2 September 2026, 02:43 UTC
-- **Last updated:** 2 September 2026, 03:03 UTC
+- **Last updated:** 2 September 2026, 03:06 UTC
 - **Turns:** 4
 - **Status:** Complete
