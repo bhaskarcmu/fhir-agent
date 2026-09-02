@@ -1,4 +1,4 @@
-# Patient Medications Reconciliation Phase 7
+# Phase 7: Medication Reconciliation
 
 ## Turn 1
 
