@@ -22,8 +22,27 @@ and `design.md` — rather than a separate meeting doc).
 | R13 | The demo/consumer surface is a CLI script producing a terminal three-panel view, not a new HTTP API or UI | Accepted | Matches this repo's existing acceptance-test-as-demo convention (e.g. `e2e/test_epic_emulator_acceptance.py`); the demo's payoff (the mid-demo source-kill degrading to `INCOMPLETE_SOURCES`) doesn't need a UI to land. `milestone-plan.md` M8. |
 | R14 | Whether a third connected source is added this phase stays explicitly open | Deferred, not resolved | Recorded as a deliberate non-decision, not an oversight — see `prd.md` §10. Revisit after M1–M8 ship with two sources. |
 
+## Second pass — agentic clinical experience, overrides, audit, and formal records
+
+Added after working through, in conversation with the repo owner, whether and where an agentic
+interface belongs in this phase. Landed on a layered answer rather than all-or-nothing: yes for
+intake and explanation, yes-with-an-audit-trail for overrides, and explicitly no for the
+fail-closed gate — with a formal-record mechanism built specifically to replace what a chat-based
+override would otherwise be asked to do.
+
+| ID | Decision | Status | Rationale / where it lives |
+|---|---|---|---|
+| R15 | A new agent, `med-reconciliation-agent`, handles conversational Trigger-B intake | Accepted | Mirrors `mcp-agent`'s existing tool-use shape: extracts demographics, calls the deterministic resolver's tools, relays explicit human confirmation. Never resolves ambiguity itself. `prd.md` G11, FR18. |
+| R16 | The same agent narrates the reconciled view in plain language, grounded only in the deterministic data it's given | Accepted | Same non-authoritative explanation pattern `claims-agent` already uses for adjudication decisions; same grounding discipline as Phase 6 M6's knowledge-base citations (retrieval/narration only ever follows a decision that already exists). `prd.md` G12, FR19. |
+| R17 | A human can submit an explicit, attributed override of a computed RxNorm classification or discrepancy type through the agent | Accepted | Real clinicians catch things automation gets wrong; the override is captured, not silently applied — append-only via the audit ledger (R21). `prd.md` G13, FR20. |
+| R18 | The fail-closed gate (`RECONCILED`/`DISCREPANCIES_FOUND`/`INCOMPLETE_SOURCES`) has **no** corresponding agent tool, in any form | Accepted, load-bearing | A chatbot is exactly the interface that makes waving away an incomplete result feel low-stakes — the repo owner explicitly ruled this out. Enforced by the *absence* of a tool (`design.md` §3), not a runtime permission check that could be misconfigured or bypassed. `prd.md` G14, FR21. |
+| R19 | Every run generates a formal, persisted FHIR `Composition` ("Medication Reconciliation Record"), any outcome, not only incomplete ones | Accepted | The concrete alternative to R18: a queryable fact, not a conversation, is what satisfies the Joint Commission's "good faith effort... documented" language. `prd.md` G15, FR22, `design.md` §4. |
+| R20 | The record's per-source attempt-log narrative is built from a fixed template + real telemetry, never LLM-generated free text | Accepted | A document whose purpose is proving an effort was made cannot itself contain an unverified (hallucination-risked) claim. A cosmetic polish layer is a plausible later addition, explicitly not built now (`prd.md` §8). `prd.md` G16, FR23. |
+| R21 | A human's manual-verification follow-up is captured as a new, appended `Provenance` entry — never a mutation of the original Composition or gate value | Accepted | Preserves both facts permanently and separately: the system's computed state at run time, and the human's later out-of-band confirmation. Storage-layer guarantee (`audit.py`, `design.md` §5), not a display convention. `prd.md` G17, FR24, FR25. |
+| R22 | `med-reconciliation-agent` is a new top-level package, not folded into `med-reconciliation-service` | Accepted | Matches existing repo convention — every other "explains and orchestrates" agent (`mcp-agent`, `claims-agent`, `provider-search-agent`, `provider-curation-agent`) is its own package, never merged into the deterministic service it calls. |
+| R23 | `med-reconciliation-agent` is built directly on `agent-platform` (Phase 6) — session/memory, observability, multi-provider seam, and the output-gate *pattern* | Accepted | Phase 6 built this infrastructure specifically so later agents wouldn't reinvent it. The agent's own turn-safety enum (`turn_gate.py`) is a **new**, agent-scoped gate with zero access to the clinical `ReconciliationOutcome` gate (R18) — two different gates guarding two different questions, deliberately kept structurally separate. `prd.md` G18. |
+
 ## Supersession notes
 
-None yet — this is the first decisions pass. Future entries that revise one of the above will
-say so explicitly here, same convention as Phase 4 (`decisions.md` E-series) and Phase 6
-(`decisions.md` H-series).
+None yet. Future entries that revise one of the above will say so explicitly here, same
+convention as Phase 4 (`decisions.md` E-series) and Phase 6 (`decisions.md` H-series).

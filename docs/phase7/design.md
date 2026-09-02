@@ -1,13 +1,12 @@
 # Phase 7 Design — Medication Reconciliation
 
-Architecture, component breakdown, and the two technical sketches (precedence policy, RxNorm
-term-type matching) that `milestone-plan.md` builds against. Status and requirements live in
-[`README.md`](./README.md) and [`prd.md`](./prd.md) — not restated here.
+Architecture, component breakdown, and the technical sketches `milestone-plan.md` builds against.
+Status and requirements live in [`README.md`](./README.md) and [`prd.md`](./prd.md).
 
 ## 1. Repo layout
 
 ```
-med-reconciliation-service/     # new — deterministic core service (R8)
+med-reconciliation-service/     # deterministic core (R8) — no conversational logic
   src/med_reconciliation/
     identity.py                 # patient/encounter resolution (candidates + confirmation)
     normalizer.py                # RxNorm concept resolution + term-type detection (R3, R11)
@@ -15,147 +14,146 @@ med-reconciliation-service/     # new — deterministic core service (R8)
     recon.py                     # four discrepancy types (omission/addition/change/unclear)
     precedence.py                # loads precedence-policy.yaml, exposes reference labels only (R10)
     provenance.py                # per-field source/timestamp/age
-    gate.py                      # RECONCILED / DISCREPANCIES_FOUND / INCOMPLETE_SOURCES
+    gate.py                      # RECONCILED / DISCREPANCIES_FOUND / INCOMPLETE_SOURCES — no external writer but this module
+    composition.py               # builds + persists the Medication Reconciliation Record (R19)
+    audit.py                     # append-only ledger: overrides + manual-verification entries (R17, R21)
+    tools.py                     # the tool surface med-reconciliation-agent is allowed to call — see §3
   precedence-policy.yaml         # G6 — clinical reasoning, reviewable without reading code
-  cli.py                         # demo surface (R13)
+  cli.py                         # structured-path demo surface (R13)
 
-athena-emulator/                 # built out this phase (R2) — mirrors epic-emulator's shape
-  (Java/Spring Boot, own auth flavor + quirks, deliberately different from epic-emulator's)
+med-reconciliation-agent/       # NEW — conversational layer (R22), own top-level package
+  src/med_reconciliation_agent/
+    agent.py                     # tool-use loop, built on agent-platform (R23)
+    explain.py                   # grounded narration of a reconciled view (G12)
+    turn_gate.py                 # agent-turn safety enum — distinct from, no access to, gate.py above
 
+athena-emulator/                 # built out this phase (R2)
 epic-emulator/                   # extended this phase (R5, R9) — Outside Record endpoint variants
-
 client/clinical/                 # extended, backward-compatible (FR3)
-  fhir_client.py                 # broader status filter, structured dosage fields, dispense fetch
 ```
 
-`med-reconciliation-service` calls both emulators through two `FHIRClient` instances
-(`client/clinical`'s existing arbitrary-base-URL support — no new HTTP client written). It does
-not import `triage-service` or `claims-service`, and neither of those is modified except where
-`client/clinical` additions are backward-compatible by construction (FR3).
+`med-reconciliation-agent` depends on `med-reconciliation-service`'s `tools.py` (via HTTP, or
+in-process if colocated — an implementation detail for the design pass at build time, not decided
+here) and on `agent-platform` (Phase 6) for session/memory, observability, and the
+multi-provider seam. It does **not** depend on `client/clinical` directly, `triage-service`, or
+`claims-service` — same "agent has no clinical logic of its own" boundary this repo already
+holds.
 
 ## 2. Component responsibilities
 
+Unchanged from the first design pass: `identity.py`, `normalizer.py`, `match.py`, `recon.py`,
+`precedence.py`, `provenance.py`, `gate.py` — see prior revision (preserved in git history) for
+full detail; sketches in §5–§7 below still apply. Two components are new:
+
 | Component | Responsibility | Consumes | Produces |
 |---|---|---|---|
-| `identity.py` | Trigger A: pass through notification's patient+encounter. Trigger B: demographic search → scored candidates → human confirmation (patient, then encounter). | `client/clinical` Patient/Encounter search against both sources | Confirmed `(patient_id, encounter_id)` per source, or a rejected/pending state — never a silent best guess |
-| `normalizer.py` | Resolve each MedicationRequest/MedicationDispense entry to an RxNorm concept + term type | Raw entries from `client/clinical` | `(rxcui, term_type, source_entry)` or `unresolved` |
-| `match.py` | Pair entries across sources at the same/related RxNorm concept; classify into 5 tiers using structured dose/route/frequency | Normalized entries from both sources | `MatchResult` per pairing |
-| `recon.py` | Turn match results into the 4 Joint-Commission discrepancy types, one line per medication concept | `MatchResult`s + unpaired entries (→ omissions) | `ReconciledLine[]` |
-| `precedence.py` | Load `precedence-policy.yaml`; attach a reference label per line (which source *generally* wins this question, and why) — never mutates or drops a source's contribution | `ReconciledLine[]`, policy file | Same lines, annotated |
-| `provenance.py` | Attach source system, response time, and record age to every field | Per-source fetch metadata (timing, timestamps) | Field-level provenance envelope |
-| `gate.py` | Roll up source reachability + discrepancy presence into one outcome enum | Per-source reachability flags, `ReconciledLine[]` | `RECONCILED \| DISCREPANCIES_FOUND \| INCOMPLETE_SOURCES` |
+| `composition.py` | Build and persist the Medication Reconciliation Record at the end of every run | `ReconciledLine[]`, per-source attempt telemetry, `gate.py`'s outcome | A FHIR `Composition`, written to `fhir-service` |
+| `audit.py` | Append-only storage for classification/discrepancy overrides and manual-verification entries | Override/verification submissions (human-attributed) | New `Provenance`-shaped entries linked to an existing Composition — never a mutation of it |
 
-## 3. RxNorm term-type matching (R11 — sketch, unvalidated until M5)
+## 3. The agent's tool contract — and what's deliberately not in it
 
-RxNav's `findRxcuiByString` (with `search=2`, approximate matching) resolves free text /
-structured `Medication.code` display text to a candidate RxCUI. Each RxCUI carries a **TTY**
-(term type) attribute — e.g. `IN` (ingredient), `SCD`/`SCDC` (semantic clinical drug — the
-dose+route+form level), `SBD` (branded). The plan:
+`tools.py` (in `med-reconciliation-service`) defines exactly what `med-reconciliation-agent` can
+call:
 
-1. Resolve each entry to its best-matching RxCUI, recording the TTY reached.
-2. If the TTY is already `SCD`/`SBD` (clinical/branded drug — dose and form baked in), use RxNav's
-   relatedness API (`getRelatedByType` / ingredient relationship) to also derive the ingredient
-   RxCUI, so two entries at different TTYs (e.g. one source codes to `SCD`, the other only reaches
-   `IN`) can still be recognized as *related*, and classified as "ingredient-level-only" rather
-   than "unresolved."
-3. Pair entries whose ingredient RxCUI matches. Within a matched pair, compare:
-   - **Same clinical-drug RxCUI** → `identical`.
-   - **Same ingredient, same dose/route, different formulation with no clinical difference**
-     (e.g. brand vs. generic of the same clinical drug) → `equivalent`.
-   - **Same ingredient, different salt/release-profile/dose** (the metoprolol tartrate vs.
-     succinate case from the brainstorm doc) → `same-ingredient-different-product`.
-   - **Matched only at the ingredient TTY**, dose/route not comparable → `ingredient-level-only`.
-   - **No RxCUI resolved at all** → `unresolved`.
-4. Dose/route/frequency for the comparison above comes from FR3's structured
-   `dosageInstruction` fields (`client/clinical`'s extension) — not from re-parsing display text.
+| Tool | What it does | What it cannot do |
+|---|---|---|
+| `search_patients(demographics)` | Runs `identity.py`'s candidate search | Cannot auto-select a candidate |
+| `search_encounters(patient_id)` | Runs `identity.py`'s encounter search | Cannot auto-select a candidate |
+| `confirm_patient(candidate_id)` | Relays an explicit human confirmation | Only callable with a human-originated selection already in the conversation |
+| `confirm_encounter(candidate_id)` | Same, for encounter | Same constraint |
+| `get_reconciled_view(patient_id, encounter_id)` | Returns `ReconciledLine[]` + gate outcome + Composition reference | Read-only |
+| `submit_classification_override(line_id, new_classification, reason, practitioner_id)` | Calls `audit.py` to append an override | Cannot delete or replace the original computed value (`audit.py` enforces append-only at the storage layer, not just by convention) |
+| `submit_manual_verification(composition_id, source, method, outcome, practitioner_id)` | Calls `audit.py` to append a `Provenance` entry | Same append-only constraint |
 
-This is a design sketch, not a verified integration. M5 is where RxNav's actual behavior (rate
-limits, approximate-match quality, relationship-API coverage) gets confirmed against real data,
-the way Phase 4's M2 had to downgrade an assumed live-Epic-docs check to a documented,
-honestly-flagged placeholder when reality didn't cooperate. If RxNav's relationship API turns out
-to be insufficient for step 2, the fallback is documented in `decisions.md` when that's known —
-not guessed here.
+**There is no `set_outcome` / `override_gate` / `mark_reconciled` tool, and none is planned.**
+This is the load-bearing design decision from this pass (`prd.md` G14, FR21): the gate's
+unreachability from the agent is enforced by the tool surface simply not including a way to do
+it, not by a permission check the agent could be prompted around. A future contributor adding
+agent capabilities should read this table as the actual contract, not a suggestion — extending it
+to touch `gate.py`'s output is a decision that needs its own review, not a routine addition.
 
-## 4. Precedence policy (R10 — sketch)
+`explain.py` calls `get_reconciled_view` and produces plain-language narration; its system prompt
+constrains it to only state facts present in the returned data, the same grounding discipline
+Phase 6 M6 uses for knowledge-base citations ("retrieval fires only after a deterministic decision
+already exists... never before, as an input the agent reasons over").
 
-`precedence-policy.yaml`, loaded by `precedence.py`, keyed by **question type**, not by
-individual FHIR field — matching how the brainstorm doc frames it and how a clinical reviewer
-would actually think about it:
+`turn_gate.py` is a **separate** enum from `gate.py`'s `ReconciliationOutcome` — it governs
+whether a given agent turn is safe to show the user at all (e.g., did the model stay grounded, did
+it attempt something outside the tool contract), mirroring `agent-platform/output_gate.py`'s
+pattern. It has no read or write access to the clinical gate. Two different gates, two different
+questions — worth stating explicitly because conflating them was the exact failure mode this
+design avoids.
 
-```yaml
-# precedence-policy.yaml — read by clinicians and engineers alike.
-# This is reference/labeling only. It never causes a source's value to be dropped or overwritten
-# (prd.md G6, non-goals) — see gate.py / recon.py, which always preserve every source's line.
+## 4. The Medication Reconciliation Record (R19)
 
-question_types:
-  what_was_prescribed:
-    precedence: [epic_discharge_orders, athena_outpatient_list]
-    reason: >
-      Discharge orders are the newest, most specific record of intended therapy at the
-      transition point.
+A FHIR `Composition`, generated by `composition.py` at the end of every run — `RECONCILED`,
+`DISCREPANCIES_FOUND`, and `INCOMPLETE_SOURCES` alike, not only the incomplete case:
 
-  what_patient_is_actually_taking:
-    precedence: [athena_outpatient_list, epic_discharge_orders]
-    reason: >
-      The outpatient clinic has longitudinal knowledge of the patient (e.g. drugs the patient
-      self-discontinued) that a single discharge encounter cannot capture.
-
-  was_drug_ever_obtained:
-    precedence: [epic_medication_dispense, athena_medication_dispense]
-    reason: >
-      Fill/dispense data is the only signal describing what actually happened at the pharmacy;
-      order data from either EHR only describes intent.
+```
+Composition
+  subject: Patient reference
+  encounter: Encounter reference
+  date: run timestamp
+  section[attempt-log]:
+    - source: "epic_discharge_orders"
+      queried_at, response_time_ms, status: succeeded | failed | timed_out
+      narrative: templated from the above fields (R20) — e.g.
+        "Queried epic_discharge_orders at 14:02:03. Responded in 340ms."
+        "Queried athena_outpatient_list at 14:02:03. No response after 3 retries over 90s
+         (connection timeout). No further automated retrieval attempted."
+  section[reconciled-lines]: reference to ReconciledLine[] (§5 of the prior design revision)
+  section[outcome]: gate.py's ReconciliationOutcome — RECONCILED | DISCREPANCIES_FOUND | INCOMPLETE_SOURCES
+  section[unresolved-count]: integer
 ```
 
-Each `ReconciledLine` gets an advisory label ("per policy, `athena_outpatient_list` is generally
-more trustworthy for 'is the patient actually taking this'") attached alongside — not instead
-of — both sources' raw values. A reviewer reads the YAML to audit the clinical reasoning without
-reading the service's code, same intent as the brainstorm doc's original framing.
+The attempt-log narrative is the artifact that satisfies the Joint Commission's "a good faith
+effort... will be considered as meeting the intent" language — it is what makes an
+`INCOMPLETE_SOURCES` outcome a *documented*, compliant state rather than an undocumented failure.
+It is built entirely from a fixed template and real telemetry values (R20) — never model-generated
+text — specifically because a document whose purpose is proving an effort was made cannot itself
+contain an unverified claim.
 
-## 5. Reconciled-line data model (sketch)
+Once created, a Composition is immutable. Later human action doesn't edit it — it adds to it (§5).
 
-```python
-@dataclass
-class FieldProvenance:
-    source: str            # e.g. "epic_discharge_orders"
-    response_time_ms: int
-    record_age: timedelta
-    queried_at: datetime
+## 5. The audit ledger (R17, R21)
 
-@dataclass
-class ReconciledLine:
-    rxcui: str | None                  # None only if unresolved
-    term_type: str | None
-    discrepancy_type: Literal["omission", "addition_duplication", "change", "unclear"]
-    match_tier: Literal["identical", "equivalent", "same_ingredient_different_product",
-                         "ingredient_level_only", "unresolved"]
-    contributions: dict[str, FieldProvenance]   # source name -> provenance, one entry per source that had this line
-    precedence_label: str | None                # advisory only (§4)
+`audit.py` implements one generic append-only mechanism, reused for both use cases the PRD names:
+
+```
+AuditEntry
+  target_composition: reference
+  entry_type: "classification_override" | "manual_verification"
+  submitted_by: Practitioner reference   # never optional — every entry is attributed
+  submitted_at: timestamp
+  # classification_override fields:
+  target_line_id, original_value, new_value, reason
+  # manual_verification fields:
+  source, method, outcome
 ```
 
-An `unresolved` line still appears with whatever raw source data exists — it is never dropped
-(`prd.md` FR9, acceptance criteria).
+Each `AuditEntry` is written as (or alongside) a FHIR `Provenance` resource targeting the original
+Composition, following `claims-service`'s `Provenance`-emission as a pattern precedent — not
+shared code. Reading a record's full history means reading the Composition **plus** every
+`AuditEntry` targeting it, in submission order; nothing is ever deleted or updated in place. This
+is what makes FR25 ("every override and manual-verification entry is independently queryable...
+nothing is hidden by a later action") a storage-layer guarantee, not a display-layer convention
+that a future UI could quietly violate.
 
-## 6. Fail-closed gate (mirrors `agent-platform/output_gate.py` / `fail_closed.py`)
+## 6. RxNorm term-type matching, precedence policy, reconciled-line data model, fail-closed gate
 
-```python
-class ReconciliationOutcome(str, Enum):
-    RECONCILED = "reconciled"                  # all sources reachable, no discrepancies
-    DISCREPANCIES_FOUND = "discrepancies_found" # all sources reachable, >=1 discrepancy
-    INCOMPLETE_SOURCES = "incomplete_sources"   # >=1 source unreachable — always wins, regardless of discrepancy count
-```
+Unchanged from the first design pass — sketches (RxNav TTY/relationship walk for term-type
+detection, the `precedence-policy.yaml` schema keyed by question type, the `ReconciledLine`/
+`FieldProvenance` dataclasses, and `gate.py`'s three-outcome enum) all still apply as originally
+written; preserved in git history rather than repeated here to keep this revision focused on
+what's new.
 
-`gate.py` is new code in `med-reconciliation-service`, not an import of `agent-platform` (that
-package is the agent tier; this is a deterministic core service, same tier as `triage-service`) —
-it deliberately re-implements the same enum-gate *pattern*, the way `claims-service`'s
-`HttpTriageClient.java` independently re-implemented the fail-closed idea in Java rather than
-sharing code across a language boundary.
+## 7. Demo surface (R13, expanded)
 
-## 7. Demo surface (R13)
-
-`cli.py` — a script in the same spirit as `e2e/test_epic_emulator_acceptance.py`: runs the full
-pipeline for one seeded patient against both live emulators, prints a three-panel terminal view
-(hospital list | outpatient list | reconciled view, discrepancy-labeled), and — as its scripted
-second act — stops `athena-emulator` mid-run and re-runs to show the view degrade to
-`INCOMPLETE_SOURCES` instead of quietly rendering a one-sided list. This is `milestone-plan.md`
-M8's deliverable.
+`cli.py` (structured path, unchanged) and `med-reconciliation-agent`'s own CLI (conversational
+path, mirroring `mcp-agent`'s interactive mode) both drive the same underlying pipeline. The
+milestone-plan's M12 acceptance demo now has three beats instead of one: (1) the original
+three-panel reconciled view, including a source going down mid-demo and the view degrading to
+`INCOMPLETE_SOURCES`; (2) a conversational Trigger-B request resolving an ambiguous patient
+candidate with explicit human confirmation; (3) a classification override submitted through the
+agent, followed by pulling up the record and showing both the original computed value and the
+override, side by side, neither hidden by the other.
