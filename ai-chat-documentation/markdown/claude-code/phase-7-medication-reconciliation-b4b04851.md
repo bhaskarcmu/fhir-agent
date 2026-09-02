@@ -353,7 +353,15 @@ Can these be explicitly done by a human using an agentic (I mean chatbot) interf
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Yes for some, with real caution on one. The key distinction: "agentic interface" is safe here only when the LLM is a *pass-through* for an explicit human decision into a deterministic tool call — never when it's substituting its own judgment for the computed result. Breaking down by item:
+
+**Identity matching — yes, cleanly.** This is exactly the Trigger B pattern already in the design: the deterministic resolver computes candidates + scores, the agent presents them conversationally, the human says "yes, that one," the agent calls a `confirm_patient(candidate_id)` tool. The LLM never decides the match; it relays an explicit human selection. No design change needed beyond what's already sketched.
+
+**RxNorm classification & discrepancy typing — yes, but only with an explicit override mechanism, which isn't designed yet.** A human should be able to ask "why was this classified same-ingredient-different-product?" and get an answer grounded in the actual computed dose/route/frequency comparison — that's safe, same non-authoritative-explanation pattern `claims-agent` already uses. Letting a human *override* a classification through chat is also reasonable (clinicians do catch things automation gets wrong), but the override has to be a logged, attributed action on top of the deterministic result — never the LLM quietly reinterpreting the drug data from its own training knowledge instead of the RxNav call. Today's M1–M8 plan has no override/audit-trail concept at all; adding this means new scope, not just a UI wrapper.
+
+**The fail-closed gate — I'd push back on this one.** `INCOMPLETE_SOURCES` exists specifically to be the thing nobody can casually wave away, and a chatbot is exactly the interface that makes waving things away feel easy ("looks fine, just mark it reconciled"). The Joint Commission's own "good faith effort" language actually points the other way: the compliant response to an incomplete outcome is to document what was tried and act around it — not to relabel it as complete. My recommendation is the gate's enum value stays system-computed and non-overridable through chat; a human can log a manual-verification action (e.g., "confirmed via pharmacy call, 14:10") as an additional annotation, but that never mutates `INCOMPLETE_SOURCES` into `RECONCILED`.
+
+So: one is already covered by the current design, two need a new "explicit override + audit" component we haven't scoped, and one I'd deliberately keep out of the agent's reach entirely. Want me to sketch what that override/audit component would need to look like?
 
 <details>
 <summary>Execution details — 31 tool events</summary>
@@ -432,6 +440,6 @@ discharge encount…`
 - **Source:** Claude Code
 - **Session ID:** `b4b04851-828e-40dd-9240-5f17ee29eb7d`
 - **Created:** 2 September 2026, 02:43 UTC
-- **Last updated:** 2 September 2026, 03:20 UTC
+- **Last updated:** 2 September 2026, 03:21 UTC
 - **Turns:** 8
-- **Status:** Incomplete
+- **Status:** Complete
