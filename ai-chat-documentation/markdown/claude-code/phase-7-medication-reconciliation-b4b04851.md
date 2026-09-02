@@ -251,8 +251,39 @@ Making the calls on the remaining open questions myself (all low-risk/reversible
 
 Now the decisions index.
 
+Now the milestone plan.
+
+Now updating the top-level `docs/README.md` index to register Phase 7, matching how the other phases are listed.
+
+I missed the `telemetry-schema.md` line. Fixing the match now.
+
+Per this repo's working agreements (CLAUDE.md), any change to `main`-branch work defaults to a feature branch + PR, done proactively. Current worktree: `/workspaces/fhir-agent`, current branch `main`, target: a new feature branch. Let me check status first before making any git changes.
+
+There's a pre-existing unrelated modified file (`provider-search-agent/src/provider_search_agent/agent.py`) from before this session — I'll leave that untouched and stage only the docs changes.
+
+Staged correctly — only the docs changes, unrelated file left alone. Committing now.
+
+PR opened: **[#63](https://github.com/bhaskarcmu/fhir-agent/pull/63)** on branch `docs/phase7-medication-reconciliation-planning`. (The "1 uncommitted change" warning `gh` printed is the pre-existing, unrelated `provider-search-agent/agent.py` edit from before this session — left untouched, not part of this PR.)
+
+**What's in it:**
+- `docs/phase7/prd.md` — problem statement, resolved decisions from our two Q&A rounds, goals/non-goals, the two triggers, 17 FRs, acceptance criteria, and the now-mostly-resolved open-questions section.
+- `docs/phase7/decisions.md` — R1–R14, ADR-style, same convention as the other phases.
+- `docs/phase7/design.md` — repo layout, component responsibilities, the RxNorm term-type matching sketch, the precedence-policy YAML sketch, and a reconciled-line data model.
+- `docs/phase7/milestone-plan.md` — M1–M8, none started: athena-emulator build → resource-surface parity (dispense + Outside-Record) → client/clinical extension → identity resolver → normalizer/matcher → recon-engine + precedence policy → provenance + gate → end-to-end acceptance case and demo.
+- `docs/phase7/README.md` — canonical status doc, and `docs/README.md` updated to register Phase 7.
+
+Calls I made without asking (all reversible, flagged in `decisions.md`):
+- Service name `med-reconciliation-service/`, monolith-first shape (R8).
+- `athena-emulator`'s new Outside-Record work is tracked under Phase 7, not reopened as a Phase 4 milestone (R9).
+- Demo surface is a CLI/terminal script, not a new HTTP API or UI (R13).
+- Precedence-policy schema keyed by *question type*, not per-field (R10).
+
+Two things still genuinely open by design, not resolved: whether a third connected source gets added this phase (R14), and RxNorm's relationship-API behavior isn't validated — that's explicitly M5's job, not assumed correct from the design sketch.
+
+Ready for M1 whenever you want to start building, or keep iterating on scope first — the PR stays open and I can push more commits to it as we refine.
+
 <details>
-<summary>Execution details — 19 tool events</summary>
+<summary>Execution details — 31 tool events</summary>
 
 ### Turn 1 activity
 
@@ -300,6 +331,24 @@ cat docs/README.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase7/prd.md`
 - **Write** `/workspaces/fhir-agent/docs/phase7/decisions.md`
 - **Write** `/workspaces/fhir-agent/docs/phase7/design.md`
+- **Write** `/workspaces/fhir-agent/docs/phase7/milestone-plan.md`
+- **Write** `/workspaces/fhir-agent/docs/phase7/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/README.md`
+- **Read** `/workspaces/fhir-agent/docs/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/README.md`
+- **Bash** `git status`
+- **Bash** `git checkout -b docs/phase7-medication-reconciliation-planning`
+- **Bash** `git add docs/README.md docs/phase7/ && git status`
+- **Bash** `git commit -m "$(cat <<'EOF'
+docs(phase7): Medication Reconciliation — PRD, design, decisions, milestone plan
+
+Planning pass for a new Phase 7: given a confirmed patient identity and
+discharge encount…`
+- **Bash** `git push -u origin docs/phase7-medication-reconciliation-planning`
+- **Bash** `gh pr create --title "docs(phase7): Medication Reconciliation — PRD, design, decisions, milestone plan" --body "$(cat <<'EOF'
+## Summary
+- New Phase 7: given a confirmed patient identity and discharge…`
 
 </details>
 
@@ -310,6 +359,6 @@ cat docs/README.md`
 - **Source:** Claude Code
 - **Session ID:** `b4b04851-828e-40dd-9240-5f17ee29eb7d`
 - **Created:** 2 September 2026, 02:43 UTC
-- **Last updated:** 2 September 2026, 03:10 UTC
+- **Last updated:** 2 September 2026, 03:13 UTC
 - **Turns:** 5
 - **Status:** Complete
