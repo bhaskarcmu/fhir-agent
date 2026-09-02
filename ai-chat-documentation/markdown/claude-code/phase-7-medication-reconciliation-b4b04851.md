@@ -414,8 +414,31 @@ Continuing on branch `docs/phase7-medication-reconciliation-planning` (PR #63 is
 
 Now the milestone plan — inserting M8–M11 for the audit/record/agent layer and moving the end-to-end demo to M12.
 
+Now appending the new decisions to `decisions.md`.
+
+Now updating the canonical status doc and the top-level `docs/README.md` blurb to reflect the expanded scope.
+
+Now the top-level `docs/README.md` blurb and index line for Phase 7.
+
+Now committing and updating the PR.
+
+Only the docs files staged — the pre-existing unrelated edit is left alone.
+
+Now updating the PR title/description to reflect the expanded scope.
+
+**PR #63** is updated with the expanded scope: https://github.com/bhaskarcmu/fhir-agent/pull/63
+
+**What changed across all four docs:**
+
+- **`prd.md`** — added G11–G18 (conversational intake, grounded explanation, audited override, the gate's structural exclusion from the agent, the formal Composition record, templated compliance narrative, append-only manual verification, building on `agent-platform`), FR18–FR25, updated non-goals/acceptance criteria, and trimmed open questions to what's genuinely still undecided (Composition resource shape, override permissions model).
+- **`design.md`** — new `med-reconciliation-agent/` package on top of `med-reconciliation-service`; the full tool contract table (§3) that makes the gate's exclusion explicit — there's no `set_outcome`/`override_gate` tool, period; the Medication Reconciliation Record sketch (§4); the append-only audit ledger sketch (§5).
+- **`decisions.md`** — R15–R23, including R18 marked "load-bearing": the gate has no agent tool in any form, by design.
+- **`milestone-plan.md`** — expanded M1–M8 to M1–M12: M8 builds the Composition record, M9 the audit ledger, M10 the agent's intake/explanation, M11 wires overrides and — critically — is where the gate's unreachability gets *adversarially tested*, not just documented. M12 (the live demo) now has three beats: source-kill degrade, conversational identity resolution, and a submitted override shown side-by-side with the original computed value.
+
+Same pattern as before — no code, still fully reversible, ready for more brainstorming or to start M1 whenever you want.
+
 <details>
-<summary>Execution details — 35 tool events</summary>
+<summary>Execution details — 43 tool events</summary>
 
 ### Turn 1 activity
 
@@ -488,6 +511,20 @@ discharge encount…`
 - **Write** `/workspaces/fhir-agent/docs/phase7/prd.md`
 - **Write** `/workspaces/fhir-agent/docs/phase7/design.md`
 - **Write** `/workspaces/fhir-agent/docs/phase7/milestone-plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase7/decisions.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase7/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase7/README.md`
+- **Edit** `/workspaces/fhir-agent/docs/README.md`
+- **Bash** `git add docs/README.md docs/phase7/ && git status --short`
+- **Bash** `git commit -m "$(cat <<'EOF'
+docs(phase7): expand scope — agentic layer, audited overrides, formal records
+
+Second planning pass. Working through whether a clinician's experience
+with reconciliation s…`
+- **Bash** `git push`
+- **Bash** `gh pr edit 63 --title "docs(phase7): Medication Reconciliation — PRD, design, decisions, milestone plan" --body "$(cat <<'EOF'
+## Summary
+- New Phase 7: given a confirmed patient identity and discharg…`
 
 </details>
 
@@ -498,6 +535,6 @@ discharge encount…`
 - **Source:** Claude Code
 - **Session ID:** `b4b04851-828e-40dd-9240-5f17ee29eb7d`
 - **Created:** 2 September 2026, 02:43 UTC
-- **Last updated:** 2 September 2026, 03:34 UTC
+- **Last updated:** 2 September 2026, 03:35 UTC
 - **Turns:** 10
 - **Status:** Complete
