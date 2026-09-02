@@ -249,8 +249,10 @@ Continue with open questions, and proceed to milestone planning if ready
 
 Making the calls on the remaining open questions myself (all low-risk/reversible — naming, doc organization, technical sketches), then moving straight to milestones. I'll update the PRD, add a `decisions.md`, a `design.md` with the technical sketches milestone planning needs, and the milestone plan itself.
 
+Now the decisions index.
+
 <details>
-<summary>Execution details — 17 tool events</summary>
+<summary>Execution details — 18 tool events</summary>
 
 ### Turn 1 activity
 
@@ -296,6 +298,7 @@ cat docs/README.md`
 
 - **Edit** `/workspaces/fhir-agent/docs/phase7/prd.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase7/prd.md`
+- **Write** `/workspaces/fhir-agent/docs/phase7/decisions.md`
 
 </details>
 
@@ -306,6 +309,6 @@ cat docs/README.md`
 - **Source:** Claude Code
 - **Session ID:** `b4b04851-828e-40dd-9240-5f17ee29eb7d`
 - **Created:** 2 September 2026, 02:43 UTC
-- **Last updated:** 2 September 2026, 03:09 UTC
+- **Last updated:** 2 September 2026, 03:10 UTC
 - **Turns:** 5
 - **Status:** Complete
