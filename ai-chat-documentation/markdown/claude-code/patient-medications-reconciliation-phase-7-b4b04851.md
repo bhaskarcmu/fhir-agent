@@ -26,6 +26,18 @@ Tell me first if "Phase 7" is an available, compltetely unused, phase for this!
 
 I'll check whether "Phase 7" has already been used anywhere in this repo before answering.
 
+Yes — **Phase 7 is completely unused.** I checked docs/ (only phase2–phase6 exist), git log/branches/PR titles (highest is phase6, all merged), and grepped the whole tree for "phase 7" / "phase7" — zero hits anywhere.
+
+Two things from that search are directly relevant to how you scope this, though:
+
+1. **Athena is not real yet.** `athena-emulator/` is an explicit placeholder — no auth, no data, nothing implemented (confirmed in its README and `docs/phase4/README.md`). If Phase 7 needs to actually query "Athena EHR APIs," that's new build work, not an existing integration to point at. Worth deciding up front whether Phase 7 builds out athena-emulator, or targets a real Athena sandbox, or treats Athena as an environment-provided source to defer (your "more to be clarified later" already leaves room for this).
+
+2. **Epic-emulator (Phase 4) has a known unresolved safety bug.** `docs/phase5/README.md` documents E16: its pagination cap can silently drop records (documented for allergies, but the same pagination path likely affects medication lists too) — flagged as a precondition to fix/mitigate before building more on top of it. Given your acceptance criteria explicitly demand *no silent drops, ever* for coded/uncoded entries, this bug is squarely in Phase 7's blast radius if Epic is one of your two required sources.
+
+Neither blocks calling this "Phase 7" — Phase 5 stays reserved separately for epic-emulator decomposition and doesn't conflict with a new Phase 7 number.
+
+Want me to draft the standard `docs/phase7/prd.md` + `design.md` (matching the pattern the other phases use), or do you want to go straight to a milestone breakdown?
+
 <details>
 <summary>Execution details — 6 tool events</summary>
 
