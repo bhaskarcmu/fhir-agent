@@ -118,8 +118,18 @@ Config resolves correctly — 1 session found (this one), watcher stopped, point
 
 Catch-up sync worked — it just archived and pushed this conversation (commit `cb3595f6`). Now starting the persistent watcher.
 
+The watcher is live and it already caught the startup-catch-up burst — status confirms `Watcher: running` and a fresh commit `da5a13b` from just now.
+
+**Set up and running:**
+- Worktree: `/workspaces/.ai-chat-history` on branch `ai-chat-history`, tracking `origin/ai-chat-history`
+- Installed system dependency `inotify-tools` (was missing) and the `archive-ai` Python package (editable)
+- Ran catch-up sync — archived the month of gap, pushed commit `cb3595f6`
+- Started `archive-ai watch` as a background process (task `bmja442h3`) — it's now inotify-watching your Claude Code session file and will auto-commit/push on a 15s debounce after each burst of activity
+
+**One caveat:** this background process only lives as long as this session/container does — there's no systemd/cron here to restart it on a container restart or crash (the original design assumed "Ona service supervision," which isn't present in this Gitpod-based container). So archiving is live again now, but if this container restarts, someone needs to re-run `archive-ai watch` (or I can, next time you're here). Want me to look into making it survive a restart, or is manual restart fine for now?
+
 <details>
-<summary>Execution details — 79 tool events</summary>
+<summary>Execution details — 80 tool events</summary>
 
 ### Turn 2 activity
 
@@ -218,6 +228,7 @@ grep -n "Schema\|migrat\|liquibase\…`
 - **Bash** `python3 -m pip install -e /workspaces/.ai-chat-history/ai-chat-documentation/scripts -q 2>&1 | tail -20 && which archive-ai && archive-ai status 2>&1`
 - **Bash** `cd /workspaces/.ai-chat-history && archive-ai sync 2>&1`
 - **Bash** `cd /workspaces/.ai-chat-history && archive-ai watch`
+- **Bash** `sleep 3; cd /workspaces/.ai-chat-history && archive-ai status 2>&1`
 
 </details>
 
