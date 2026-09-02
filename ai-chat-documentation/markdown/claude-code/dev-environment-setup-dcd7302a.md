@@ -142,8 +142,20 @@ The environment does have Ona's automation supervisor, and it already tried this
 
 Process is gone — the lock is stale, and `acquire_lock` will detect and clear it automatically. Now starting the Ona-supervised service.
 
+It's `SERVICE_PHASE_RUNNING` and reporting `Ready`, under Ona's supervision.
+
+**Done.** The watcher is now running as `aiChatArchiveWatcher` under Ona's own service supervisor rather than my ad-hoc background process:
+
+- Stopped my manual `archive-ai watch` process and cleared its stale lock file.
+- Started it via `gitpod environment service start aiChatArchiveWatcher` — this is the service **already declared in `.ona/automations.yaml`** (`postEnvironmentStart` trigger), which had been sitting in `SERVICE_PHASE_FAILED` since environment boot because its prerequisites (the worktree, `inotify-tools`, `archive-ai`) didn't exist yet.
+- It's now `SERVICE_PHASE_RUNNING`/`Ready`, and just committed and pushed `d663a80`.
+
+Because Ona supervises this service and the trigger includes `postEnvironmentStart`, it will restart automatically both if the process crashes and when the environment itself restarts — no manual step needed going forward, as long as the worktree, `inotify-tools`, and the `archive-ai` install (all now in place) survive that restart, which they should for a stop/resume of this same environment.
+
+One residual risk: if this environment is ever rebuilt from scratch (not just stopped/resumed), `inotify-tools` and the pip install aren't baked into `.devcontainer/Dockerfile`, so the service would fail again until someone reruns this setup. That's an infra/Dockerfile change on `main`, which I'd want your go-ahead on before touching — want me to open a PR for that too, or leave it as-is for now?
+
 <details>
-<summary>Execution details — 89 tool events</summary>
+<summary>Execution details — 92 tool events</summary>
 
 ### Turn 2 activity
 
@@ -255,6 +267,9 @@ grep -n "Schema\|migrat\|liquibase\…`
 - **Bash** `ls -la /workspaces/.ai-chat-history/ai-chat-documentation/logs/watcher.lock 2>&1; cat /workspaces/.ai-chat-history/ai-chat-documentation/logs/watcher.lock 2>&1`
 - **Bash** `ps -p 205510 2>&1; echo "exit: $?"`
 - **Bash** `gitpod environment service start aiChatArchiveWatcher 2>&1`
+- **Bash** `sleep 3; gitpod environment service list 2>&1`
+- **Bash** `gitpod environment service logs aiChatArchiveWatcher 2>&1 | tail -20`
+- **Bash** `archive-ai status 2>&1`
 
 </details>
 
@@ -265,6 +280,6 @@ grep -n "Schema\|migrat\|liquibase\…`
 - **Source:** Claude Code
 - **Session ID:** `dcd7302a-8360-4a43-bfd2-72c7b5d6c2d5`
 - **Created:** 2 September 2026, 02:17 UTC
-- **Last updated:** 2 September 2026, 02:38 UTC
+- **Last updated:** 2 September 2026, 02:39 UTC
 - **Turns:** 7
 - **Status:** Incomplete
