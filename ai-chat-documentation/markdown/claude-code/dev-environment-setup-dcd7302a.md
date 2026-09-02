@@ -136,10 +136,14 @@ make it survive a restart
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+This is useful — `.ona/automations.yaml` on `main` **already declares** an `aiChatArchiveWatcher` service (`postEnvironmentStart` trigger, Ona-supervised with auto-restart) pointing at the same `autostart.sh` I read earlier. It just wasn't running because its prerequisites — the worktree and `archive-ai` package — didn't exist. Let me check if there's a CLI to inspect/control Ona's automation supervisor directly, and whether package installs here persist across a restart.
+
+The environment does have Ona's automation supervisor, and it already tried this service — `aiChatArchiveWatcher` is sitting in `SERVICE_PHASE_FAILED` (from the failed attempt at environment boot, before the worktree existed). This is the real fix: get Ona to manage it instead of my ad-hoc background process, since Ona will restart it automatically on crashes and environment restarts. First I need to stop my manual watcher so it doesn't hold the lock file and collide.
+
+Process is gone — the lock is stale, and `acquire_lock` will detect and clear it automatically. Now starting the Ona-supervised service.
 
 <details>
-<summary>Execution details — 82 tool events</summary>
+<summary>Execution details — 89 tool events</summary>
 
 ### Turn 2 activity
 
@@ -244,6 +248,13 @@ grep -n "Schema\|migrat\|liquibase\…`
 
 - **Bash** `cat /workspaces/fhir-agent/.ona/automations.yaml`
 - **Bash** `cat /workspaces/fhir-agent/.devcontainer/devcontainer.json`
+- **Bash** `which gitpod ona 2>&1; gitpod --help 2>&1 | head -30`
+- **Bash** `gitpod automations service --help 2>&1; echo "---"; gitpod automations service list 2>&1`
+- **ToolSearch** `select:TaskStop`
+- **TaskStop** `{"task_id": "bmja442h3"}`
+- **Bash** `ls -la /workspaces/.ai-chat-history/ai-chat-documentation/logs/watcher.lock 2>&1; cat /workspaces/.ai-chat-history/ai-chat-documentation/logs/watcher.lock 2>&1`
+- **Bash** `ps -p 205510 2>&1; echo "exit: $?"`
+- **Bash** `gitpod environment service start aiChatArchiveWatcher 2>&1`
 
 </details>
 
@@ -254,6 +265,6 @@ grep -n "Schema\|migrat\|liquibase\…`
 - **Source:** Claude Code
 - **Session ID:** `dcd7302a-8360-4a43-bfd2-72c7b5d6c2d5`
 - **Created:** 2 September 2026, 02:17 UTC
-- **Last updated:** 2 September 2026, 02:37 UTC
+- **Last updated:** 2 September 2026, 02:38 UTC
 - **Turns:** 7
 - **Status:** Incomplete
