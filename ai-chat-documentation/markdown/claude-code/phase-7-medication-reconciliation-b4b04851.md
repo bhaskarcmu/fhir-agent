@@ -252,7 +252,7 @@ Making the calls on the remaining open questions myself (all low-risk/reversible
 Now the decisions index.
 
 <details>
-<summary>Execution details — 18 tool events</summary>
+<summary>Execution details — 19 tool events</summary>
 
 ### Turn 1 activity
 
@@ -299,6 +299,7 @@ cat docs/README.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase7/prd.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase7/prd.md`
 - **Write** `/workspaces/fhir-agent/docs/phase7/decisions.md`
+- **Write** `/workspaces/fhir-agent/docs/phase7/design.md`
 
 </details>
 
