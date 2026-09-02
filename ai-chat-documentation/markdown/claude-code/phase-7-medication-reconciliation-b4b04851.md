@@ -445,7 +445,29 @@ describe the milestones
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Here's the full M1–M12 plan — [docs/phase7/milestone-plan.md](docs/phase7/milestone-plan.md).
+
+**The shape:** the first seven milestones (deterministic core) are unchanged from before. From M8 on, it splits into two tracks that don't depend on each other — building the audit/record mechanism, and building the agent — before both converge in M11 and get proven live in M12.
+
+| # | What it builds | Depends on | Why here |
+|---|---|---|---|
+| **M1** | `athena-emulator` — proxy, auth, quirks | — | The second source has to exist before anything can reconcile against it. |
+| **M2** | MedicationDispense on both emulators + Epic's Outside-Record variants | M1 | Both new resource types are needed by M5's matching and M8's precedence/attempt-log data. |
+| **M3** | `client/clinical` extended — broader status filter, structured dosage, dispense fetch | M2 | Backward-compatible only — `triage-service` must not notice. |
+| **M4** | Identity + encounter resolver (both triggers) | M3 | Produces the confirmed `(patient_id, encounter_id)` everything downstream needs. |
+| **M5** | Normalizer + five-tier match classifier | M2 | The riskiest deterministic milestone. Runs in parallel with M4 — neither needs the other. |
+| **M6** | recon-engine (4 discrepancy types) + precedence-policy config | M5 | Turns matches into labeled, policy-annotated lines. |
+| **M7** | Provenance + the fail-closed gate | M6 | `INCOMPLETE_SOURCES` must win unconditionally whenever a source is unreachable. |
+| **M8** | The Medication Reconciliation Record (FHIR `Composition`) | M7 | Every run — any outcome — gets a persisted, templated attempt log. This is the artifact that satisfies "good faith effort... documented," built *before* the agent exists. |
+| **M9** | The audit ledger — one append-only mechanism for both overrides and manual verification | M8 | Built and tested standalone (direct calls, no agent yet) so the append-only guarantee is proven before anything conversational can reach it. |
+| **M10** | `med-reconciliation-agent` — conversational intake + grounded explanation | M4, M7 | Runs in parallel with M8/M9 — this track doesn't need the audit ledger yet, just the resolver and something to explain. |
+| **M11** | Agent-mediated overrides + manual-verification submission | M9, M10 | Where the two tracks converge. The real deliverable isn't the two new tools — it's the *adversarial test* confirming no prompt, tool, or conversational sequence can reach `gate.py`'s output. This is the milestone that actually proves R18, not just documents it. |
+| **M12** | End-to-end wiring, live acceptance case, three-beat demo | M11 | Everything together, against real running emulators: (1) source killed mid-demo → `INCOMPLETE_SOURCES` degrade, (2) conversational identity resolution with explicit human confirmation, (3) a submitted override shown side-by-side with the original computed value, neither hiding the other. |
+
+**Two things worth noticing:**
+
+- **M4/M5 and M8–M9/M10 are each a parallel split.** If you had two people, M4 and M5 could run side by side, and once M7 lands, the audit-ledger track (M8–M9) and the agent track (M10) could too. M6, M7, M11, and M12 are the actual forced-sequence points.
+- **M11 is the milestone that matters most for the thing you were most emphatic about.** M8's Composition and the tool-contract table in `design.md` *document* that the gate is unreachable from the agent. M11 is where that claim gets tested adversarially rather than just asserted — worth treating as the milestone you'd want the most scrutiny on when it actually gets built.
 
 <details>
 <summary>Execution details — 43 tool events</summary>
@@ -545,6 +567,6 @@ with reconciliation s…`
 - **Source:** Claude Code
 - **Session ID:** `b4b04851-828e-40dd-9240-5f17ee29eb7d`
 - **Created:** 2 September 2026, 02:43 UTC
-- **Last updated:** 2 September 2026, 03:38 UTC
+- **Last updated:** 2 September 2026, 03:39 UTC
 - **Turns:** 11
-- **Status:** Incomplete
+- **Status:** Complete
