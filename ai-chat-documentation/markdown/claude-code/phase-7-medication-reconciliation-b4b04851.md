@@ -400,6 +400,18 @@ This is genuinely new scope — nothing in M1–M8 generates or persists this do
 
 Want me to write this into `design.md` as a new §8 and add M9 to `milestone-plan.md`, or keep it verbal for now while we keep brainstorming?
 
+## Turn 10
+
+### Prompt
+
+Okay, so I just expanded scope to add all new agentic clinical experience, safeguards, overrides, audit components, immutable documents and records, provenance - the entire shebang.
+
+Reqwrite and expand the PRD and rework and expand milestones acoordingly. Prepare the docs PR
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 31 tool events</summary>
 
@@ -477,6 +489,6 @@ discharge encount…`
 - **Source:** Claude Code
 - **Session ID:** `b4b04851-828e-40dd-9240-5f17ee29eb7d`
 - **Created:** 2 September 2026, 02:43 UTC
-- **Last updated:** 2 September 2026, 03:25 UTC
-- **Turns:** 9
-- **Status:** Complete
+- **Last updated:** 2 September 2026, 03:30 UTC
+- **Turns:** 10
+- **Status:** Incomplete
