@@ -319,7 +319,29 @@ Explain the clinical user's experience when this phase is done. Should w4e intro
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Worth being honest here: as currently scoped (M1–M8), there isn't really a "clinical user experience" yet — it's a pipeline proven to work via a CLI demo, not a clinician-facing product. Let me walk through both triggers as scoped today, and where the real gaps are.
+
+## Trigger A (event) — today's scope
+
+A test harness (or, eventually, a real ADT feed) hands the pipeline a patient ID + encounter ID directly, and it runs straight through to a reconciled result. **There is no actual notification listener built in this plan** — M4 says "pass through notification's patient+encounter," but nothing ingests a real HL7v2 ADT message or FHIR `Encounter` subscription. A clinician experiences nothing here yet; this trigger exists in code as an entry point, not as a live integration.
+
+## Trigger B (on demand) — today's scope
+
+A clinician's actual experience, as scoped, is: someone runs `cli.py` with demographics as arguments, gets a printed list of candidate patients in a terminal, and... M4 says confirmation is "required," but no interactive confirmation UI is designed — M8's demo is explicitly a **scripted** run against one seeded patient, not a live back-and-forth. So today, "confirm the patient, then confirm the encounter" is a data contract the pipeline enforces, not a screen a clinician clicks through.
+
+## The output itself
+
+`ReconciledLine[]` — a data structure, rendered by M8 as a terminal three-panel view for demo purposes. Real fields (source, response time, discrepancy type, unresolved count, `INCOMPLETE_SOURCES` banner) are all there, but "legible to a clinician under time pressure" is a UI design problem this phase doesn't touch, same way Phase 6 built only a thin HTTP API and stopped short of any UI.
+
+So: Phase 7 as scoped proves the *engine* works. A real clinician-facing product needs, on top of it: a real ADT/notification listener (Trigger A), an interactive confirmation UI or conversational front-end (Trigger B), and a legible results screen. None of that is in M1–M8 — worth deciding now whether that's Phase 7b, or explicitly out of scope entirely.
+
+## Should anything be agentic here?
+
+One place fits cleanly: **Trigger B's intake**, as a conversational front-end over M4's deterministic resolver — a clinician says "reconcile meds for the patient in bed 4," the agent extracts demographics and calls the resolver as a tool, presents candidates, and asks for confirmation. This is the exact shape `mcp-agent`/`claims-agent` already use elsewhere in this repo (agent orchestrates and explains, deterministic service decides), so it's low-risk and consistent with how the codebase already draws that line. The tradeoff: it adds a whole new agent surface to a phase that's already eight milestones deep, for a UX improvement rather than a new capability — worth sequencing after M1–M8 ship, not folded into them.
+
+The one place I'd actively avoid an agent: identity matching, RxNorm classification, discrepancy typing, and the fail-closed gate. Those need to stay deterministic — that's both this repo's standing doctrine and literally a stated non-goal in the Phase 7 PRD ("does not auto-resolve ambiguous patient identity").
+
+Want me to sketch what a Phase 7b (or a Phase 7 M9) covering the notification listener, confirmation UI, and the conversational agent would look like — or hold off until M1–M8 actually ship?
 
 <details>
 <summary>Execution details — 31 tool events</summary>
@@ -398,6 +420,6 @@ discharge encount…`
 - **Source:** Claude Code
 - **Session ID:** `b4b04851-828e-40dd-9240-5f17ee29eb7d`
 - **Created:** 2 September 2026, 02:43 UTC
-- **Last updated:** 2 September 2026, 03:17 UTC
+- **Last updated:** 2 September 2026, 03:18 UTC
 - **Turns:** 7
-- **Status:** Incomplete
+- **Status:** Complete
