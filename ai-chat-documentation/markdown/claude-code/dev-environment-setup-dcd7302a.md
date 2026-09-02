@@ -116,8 +116,10 @@ Worktree created and `inotify-tools` installed. Now installing the `archive-ai` 
 
 Config resolves correctly — 1 session found (this one), watcher stopped, pointed at the right worktree/branch. Now running a catch-up sync, then starting the watcher in the background.
 
+Catch-up sync worked — it just archived and pushed this conversation (commit `cb3595f6`). Now starting the persistent watcher.
+
 <details>
-<summary>Execution details — 78 tool events</summary>
+<summary>Execution details — 79 tool events</summary>
 
 ### Turn 2 activity
 
@@ -215,6 +217,7 @@ grep -n "Schema\|migrat\|liquibase\…`
 - **Bash** `sudo apt-get update -q && sudo apt-get install -y inotify-tools 2>&1 | tail -20`
 - **Bash** `python3 -m pip install -e /workspaces/.ai-chat-history/ai-chat-documentation/scripts -q 2>&1 | tail -20 && which archive-ai && archive-ai status 2>&1`
 - **Bash** `cd /workspaces/.ai-chat-history && archive-ai sync 2>&1`
+- **Bash** `cd /workspaces/.ai-chat-history && archive-ai watch`
 
 </details>
 
@@ -225,6 +228,6 @@ grep -n "Schema\|migrat\|liquibase\…`
 - **Source:** Claude Code
 - **Session ID:** `dcd7302a-8360-4a43-bfd2-72c7b5d6c2d5`
 - **Created:** 2 September 2026, 02:17 UTC
-- **Last updated:** 2 September 2026, 02:35 UTC
+- **Last updated:** 2 September 2026, 02:36 UTC
 - **Turns:** 6
 - **Status:** Incomplete
