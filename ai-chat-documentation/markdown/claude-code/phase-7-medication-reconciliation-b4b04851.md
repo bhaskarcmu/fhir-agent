@@ -371,7 +371,34 @@ Agreed to NOT make the fail-closed gate in a chatbot or agent. Describe the alte
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Good call. The right home for this is FHIR's own attestation machinery — this repo already has the pattern (`claims-service`'s `Provenance`, `triage-service`'s `RiskAssessment` + `basis`), it just needs to be pointed at a new resource type.
+
+## The artifact: a formal "Medication Reconciliation Record"
+
+Every pipeline run — regardless of outcome — generates and persists one immutable document, modeled as a FHIR **`Composition`** (FHIR's purpose-built type for "a set of healthcare information assembled and attested together," queryable by patient/encounter, versionable, exactly the shape of a clinical note). It contains:
+
+- Patient + encounter reference (the confirmed identity from M4)
+- Per-source attempt log: which sources were queried, when, response time, success/failure — this *is* the "good faith effort" evidence the Joint Commission language asks for
+- The `ReconciledLine[]` set (or a reference to it), each with its discrepancy type, match tier, and source provenance
+- The unresolved-count headline
+- The final gate outcome (`RECONCILED` / `DISCREPANCIES_FOUND` / `INCOMPLETE_SOURCES`) — written once, by the deterministic gate, never by a human or an LLM
+
+Critically, the good-faith-effort narrative ("attempted `athenahealth` retrieval at 14:02, timed out after 3 retries over 90s") is **templated from the actual telemetry**, not LLM-generated prose — a compliance document is the last place you want a model paraphrasing facts it might get subtly wrong. If natural-language polish is ever wanted, that's a separate, clearly-labeled cosmetic pass over the fixed facts, not the source of the facts.
+
+## How the gate stays non-overridable, but the human's follow-up still gets recorded
+
+This is the part that actually answers your "instead of chat" question. When a human does out-of-band verification (calls the pharmacy, checks a portal), that action becomes a **new, separate `Provenance` entry appended to the Composition** — `agent = Practitioner`, `activity = manual-verification`, timestamp, method, outcome. It never edits the original document or flips the gate's enum. Two things stay true simultaneously and both are queryable later:
+
+- The system's computed fact: `INCOMPLETE_SOURCES` at 14:02, because `athenahealth` didn't answer.
+- The care team's fact: manually verified via pharmacy call at 14:15, by Dr. X.
+
+That distinction — system fact vs. human follow-up fact, both permanent, neither overwriting the other — is exactly what a chatbot override would collapse into one mutable "eh, it's fine now" state. A form/UI action that appends a `Provenance` entry is explicit, attributed, and auditable in a way a conversational "mark it reconciled" never is.
+
+## Where this sits in the build
+
+This is genuinely new scope — nothing in M1–M8 generates or persists this document today; M7's gate computes the enum but nothing writes it anywhere durable. It'd be a new component (`composition.py`, alongside `gate.py`) and likely a new milestone (M9) after M7, since it depends on the gate's output and needs its own Provenance-writing logic against `fhir-service` — following claims-service's `FhirArtifactBuilder` as prior art, not shared code.
+
+Want me to write this into `design.md` as a new §8 and add M9 to `milestone-plan.md`, or keep it verbal for now while we keep brainstorming?
 
 <details>
 <summary>Execution details — 31 tool events</summary>
@@ -450,6 +477,6 @@ discharge encount…`
 - **Source:** Claude Code
 - **Session ID:** `b4b04851-828e-40dd-9240-5f17ee29eb7d`
 - **Created:** 2 September 2026, 02:43 UTC
-- **Last updated:** 2 September 2026, 03:24 UTC
+- **Last updated:** 2 September 2026, 03:25 UTC
 - **Turns:** 9
-- **Status:** Incomplete
+- **Status:** Complete
