@@ -290,7 +290,26 @@ explain the milestone plan
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Here's the milestone plan in plain terms — [docs/phase7/milestone-plan.md](docs/phase7/milestone-plan.md).
+
+**The core sequencing idea:** build the two real sources first, then the plumbing to read them richly, then split into two independent tracks that don't depend on each other, then converge everything into one pipeline and prove it live.
+
+| # | What it builds | Depends on | Why here |
+|---|---|---|---|
+| **M1** | `athena-emulator` — proxy, auth, quirks (deliberately different from Epic's) | nothing new | You can't reconcile two sources until the second one exists. This is the "second edge" the whole phase's thesis rests on. |
+| **M2** | MedicationDispense on both emulators + Epic's `(Outside Record)` endpoint variants | M1 | Both new resource types are needed by later milestones (M5's matching, M6's precedence policy) — added once, to both emulators, so they don't drift apart. |
+| **M3** | `client/clinical` extended — broader status filter, structured dose/route/frequency, dispense fetch | M2 | The existing `get_medications()` is scoped to triage's needs only (active-only, flattened text). This is the one milestone touching code outside Phase 7's new service, kept small and backward-compatible on purpose — `triage-service` must not notice. |
+| **M4** | Identity + encounter resolver (both triggers) | M3 | Needs the search capability M3 provides. Produces a confirmed `(patient_id, encounter_id)` — the input everything downstream needs. |
+| **M5** | Normalizer + five-tier match classifier (RxNorm + structured dose/route/frequency) | M2 | **The riskiest milestone** — "the honest hard part." Doesn't need M3/M4 (identity), so it can run in parallel with M4 against hand-picked test patients. |
+| **M6** | recon-engine (4 discrepancy types) + precedence-policy YAML | M5 | Takes M5's match results and turns them into labeled, policy-annotated lines. Doesn't strictly need M4 either — can be tested with fixed IDs. |
+| **M7** | Provenance + the fail-closed gate (`RECONCILED`/`DISCREPANCIES_FOUND`/`INCOMPLETE_SOURCES`) | M6 | Where the acceptance-critical behavior lives: a dead source must render as "unreachable," never "empty," and must force `INCOMPLETE_SOURCES` no matter what else is true. |
+| **M8** | Wire both triggers through M1–M7, live acceptance test, CLI demo | M4, M7 | Everything converges. Includes the actual "kill athena-emulator mid-demo" moment from the brainstorm doc, verified working — not just described. |
+
+**The one thing worth noticing:** M4 (identity resolver) and M5 (normalizer/matcher) are the two tracks that don't depend on each other — they both only need M2/M3's data surface, not each other's output. So in practice they could be built in either order, or by two people at once; M6/M7/M8 are the ones that force sequencing.
+
+**Highest risk item:** M5. Everything else here is either a known pattern (M1/M2 mirror Phase 4's already-proven emulator shape) or mechanical plumbing (M3, M4, M7). M5 is the one where the design doc's sketch is explicitly marked "unvalidated" — RxNav's relationship API might not actually support walking cleanly from a clinical-drug term type back to its ingredient, and that's only found out by building it.
+
+**Deliberately not a milestone:** a real Epic/Athena sandbox check, a third connected source, prod/cloud deployment, and the nursing-facility extension — all named in the plan's closing section so nobody mistakes their absence for an oversight.
 
 <details>
 <summary>Execution details — 31 tool events</summary>
@@ -369,6 +388,6 @@ discharge encount…`
 - **Source:** Claude Code
 - **Session ID:** `b4b04851-828e-40dd-9240-5f17ee29eb7d`
 - **Created:** 2 September 2026, 02:43 UTC
-- **Last updated:** 2 September 2026, 03:15 UTC
+- **Last updated:** 2 September 2026, 03:16 UTC
 - **Turns:** 6
-- **Status:** Incomplete
+- **Status:** Complete
