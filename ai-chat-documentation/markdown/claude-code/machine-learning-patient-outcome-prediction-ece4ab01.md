@@ -1556,8 +1556,10 @@ Now the decisions: fixing O1 and O4, and adding the experimentation decisions as
 
 Next, the standing protocol document, i.e. the reusable part the milestone builds toward:
 
+Now rewriting the milestone plan in full with the new numbering, the research track, and promotion:
+
 <details>
-<summary>Execution details — 78 tool events</summary>
+<summary>Execution details — 80 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1736,6 +1738,13 @@ def rep(old,new):
 rep("the first (and this phase'…`
 - **Write** `/workspaces/fhir-agent/docs/phase8/experimentation-protocol.md`
 - **Bash** `sed -n 1,50p docs/phase8/design.md | grep -n "" | sed -n 9,50p`
+- **Bash** `python3 - <<'EOF'
+p='docs/phase8/design.md'; s=open(p).read()
+def rep(old,new):
+    global s
+    assert s.count(old)==1,(old[:80],s.count(old)); s=s.replace(old,new)
+rep("""outcome-prediction-agent/…`
+- **Read** `/workspaces/fhir-agent/docs/phase8/milestone-plan.md`
 
 </details>
 
