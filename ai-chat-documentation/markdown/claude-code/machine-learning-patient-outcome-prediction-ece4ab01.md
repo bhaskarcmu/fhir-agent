@@ -1953,7 +1953,7 @@ Next I'll check that the google-cloud-storage calls I use actually exist with th
 Both files pass. Next I'll prove the split works: block the `google.cloud.storage` import, as when the extra isn't installed, and confirm only the GCS module skips:
 
 <details>
-<summary>Execution details — 216 tool events</summary>
+<summary>Execution details — 217 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2413,6 +2413,11 @@ marker="\n\n# ── gs:// mirrors (google-cloud-storage, with an in-memory fake
 import sys
 sys.modules["google.cloud.storage"] = No…`
 - **Bash** `python -m pytest outcome-prediction-service/src/outcome_prediction/tests -q 2>&1 | tail -1; S=/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad; OUTCOME_PREDICTIO…`
+- **Bash** `git commit -q -F - <<'EOF'
+feat(phase8): pin MEPS data in git, preserve originals in private mirrors
+
+Industry practice for data the code doesn't store: pointers in git, originals
+in storage you contr…`
 
 </details>
 
@@ -2423,6 +2428,6 @@ sys.modules["google.cloud.storage"] = No…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 17:55 UTC
+- **Last updated:** 17 October 2026, 17:56 UTC
 - **Turns:** 18
 - **Status:** Complete
