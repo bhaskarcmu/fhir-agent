@@ -2349,6 +2349,133 @@ I'll ground the critique in the actual data rather than general claims. A few re
 - whether diagnosis codes exist in a form that suits TF-IDF;
 - what the installed libraries support.
 
+## How this fits together
+
+Your goals hold up, with three adjustments:
+- **"Improve on the prototype"** only has a clean meaning for the *same* label (any inpatient stay). The unplanned-stay label is a different question, so its numbers aren't directly comparable. The realistic levers:
+  - **Richer features:** condition and drug codes. This is the big one, given the jump from 1.6% to 19.8% above.
+  - **Tuning**, plus attention to the 65+ group, where the prototype is weakest (AUROC 0.695).
+
+  A plausible gain is about +0.01 to +0.03 AUROC, not a step change.
+- **"Other valuable things."** The data supports this: MEPS labels year-2 ED visits, nights in hospital, total and out-of-pocket spending, prescription fills, death, self-rated health, and even loss of insurance. For primary care, the most valuable are probably ED visits, high-cost members and unplanned admissions. Predicting death is possible, but it carries ethical and communication obligations that a care-management tool shouldn't take on casually.
+- **"Predict things just to learn a concept."** That's fine, but I'd mark those rounds as *learning rounds* in the protocol, so a learning model can never drift into promotion.
+
+## 1. TF-IDF without free text
+
+**The idea.** A term's weight in a document is how often it appears there, times how rare it is across all documents: `tf(t,d) × log(N / df(t))`. Common terms count for little; distinctive ones count for a lot. It's a way of turning "documents" into weighted vectors. Three ways to apply it here, in order of value:
+
+**a) Patients as documents, codes as words.** This is the strongest idea, and the evidence above supports it:
+- Each patient's year-1 ICD-10 codes form one "document". CCSR categories (AHRQ's grouping of ICD-10 codes) and drug classes can be added as further "words".
+- TF-IDF then down-weights near-universal codes like `I10` (hypertension, held by 38% of people) and up-weights distinctive rare ones.
+- Feed the sparse matrix to a regularised logistic regression (the classic text-classification set-up), or compress it with truncated SVD ("LSA", latent semantic analysis) and feed the result to gradient boosting.
+
+**b) TF-IDF on real text: the codes' descriptions.**
+- The ICD-10-CM description files are already in `data/reference/icd10`.
+- Represent a patient by the words of their codes' descriptions ("chronic", "heart", "failure"). Related codes then share words, which lets the model generalise across codes.
+- It also bridges to production: Synthea's FHIR conditions arrive as SNOMED codes *with display text*. Comparing TF-IDF vectors of that text could replace the prototype's fragile regular expressions for mapping conditions to diagnosis flags. That's genuinely useful work, not just practice.
+
+**c) Character n-gram TF-IDF on messy drug names.** MEPS's `RXNAME` field holds about 1,585 distinct *abbreviated* drug-name strings. Splitting names into short character sequences and comparing their TF-IDF vectors matches abbreviations to proper drug names, which is the textbook use of this technique for misspelled or shortened text.
+
+**Corrections and caveats:**
+- **Term frequency is mostly 1.** A condition usually appears once per person per year, so TF-IDF here is close to "rarity-weighted yes/no".
+- **Fit the rarity weights on training data only.** Otherwise information leaks from the test set.
+- **The condition files are partial.** They list only conditions linked to a medical event that year, and 8.4% of codes are suppressed.
+- **In production these features need M13's SNOMED → ICD-10 mapping.**
+
+## 2. "Vectorization" with autoencoders
+
+**A correction on terms.** "Vectorization" just means turning something into numbers, so TF-IDF is vectorization too. What you're after is *learned embeddings*. An autoencoder is a neural network trained to rebuild its input through a narrow middle layer. That middle layer becomes a dense, compact description of the patient.
+
+**Honest expectations:**
+- **On the current 25 dense features it adds little.** Gradient boosting already uses those directly.
+- **On the sparse code bags** (280 diagnosis codes plus drug classes), compression is genuinely meaningful.
+
+**What makes it a good learning exercise:**
+- **The linear comparison.** An autoencoder with linear activations learns essentially what PCA or SVD learns. Comparing the two shows you exactly what non-linearity adds.
+- **The denoising variant.** Train the network to rebuild patients from inputs with features deliberately hidden. That's a learned imputer, which ties straight into your missing-values goal (#4).
+- **What to expect.** Embeddings rarely beat gradient boosting on raw sparse indicators for tabular data. Their real payoffs are learning, and "patients similar to this one" lookups.
+- **Tooling.** PyTorch on CPU is plenty. It's a large dependency, so it lives only in the lab, never in the service (O29).
+
+## 3. Random forests and per-patient explanations: the misconception
+
+**A single decision tree** is readable: one path, e.g. "age > 67 → 1+ stays last year → over 30 prescription fills → leaf risk 31%".
+
+**A random forest** averages hundreds of deep trees, so there's *no single path* to read. A forest is no more readable than gradient boosting, which is also made of trees. What tree models *do* allow is an exact breakdown of each prediction:
+
+- **Per-patient contributions (TreeSHAP).** Each prediction equals a baseline plus the sum of per-feature contributions. SHAP (SHapley Additive exPlanations) is the standard method for computing these, and it's exact and fast for trees, our existing gradient-boosting model included. That turns directly into fixed-template text, for example:
+  > "Estimated risk 31%, against an average of 9%. Raised most by: 2 hospital stays last year (+9 points), age 78 (+6 points), 38 prescription fills (+4 points). Lowered by: no ER visits (−1 point)."
+- **A global surrogate.** A shallow tree trained to mimic the model gives readable rules. You report its *fidelity* (how often it agrees with the real model), so nobody over-trusts it.
+- **An inherently interpretable model.** The comparison model (logistic regression on two features) already is one, which is why it sits beside the main score.
+
+**Corrections:**
+- **Explanations describe the model, not the patient's biology.** "Age raised the risk" is not a cause.
+- **Correlated features split credit unpredictably.** Age and blood pressure are an example.
+- **Clinician-facing text stays templated, never LLM-written**, following Phase 7's no-generated-text rule for records (R20).
+- **Random-forest probabilities usually need calibrating**, because averaging trees compresses the extremes.
+- **Expect a random forest to match or slightly trail gradient boosting** on this kind of data.
+
+## 4. Missing values: the biggest correction
+
+**What I just measured.**
+- Missing values in the current training features are 0–0.4% per variable, with most having none at all. AHRQ edits and imputes the core variables before release, so the model has **never seen a missing value**.
+- The prototype also silently decided that "refused" or "don't know" means **"no"**, and clipped categories to 0.
+
+**Production will be the opposite.**
+- Income and household size are almost never in health records, so the poverty category will usually be missing.
+- Care received outside the health system will be missing too.
+- A library that *accepts* blanks is not the same as a model that has *learned* to predict well with them.
+
+That gap between training data and production data is the real problem to solve. Steps:
+1. **Re-encode honestly.**
+   - "Refused" and "don't know" become blanks, not "no".
+   - "Inapplicable" (`-1`) is *not* missing: the question was skipped by design, so it gets its own category.
+2. **Train with deliberately hidden values.** Randomly blank features during training at the rates expected in production, so the model learns to cope.
+3. **Compare strategies.** Native blank handling in tree models, flags marking that a value was missing (missingness itself is often a signal), iterative (MICE) and KNN imputation, and the denoising autoencoder from #2. Imputation is always fitted *inside* each cross-validation fold.
+4. **Per-patient "action items" via the value of information.**
+   - For each missing field, compute how far the prediction could swing across that field's plausible values.
+   - If the swing is large, show a templated prompt, e.g. "Recording household income could change this estimate by up to 6 points."
+   - These are **data-completeness prompts, not clinical recommendations**, which keeps them inside the PRD's non-goals.
+
+## 5. Which features matter, and how much
+
+There are three kinds of answer, and the prototype only gave one:
+- **Global importance.**
+  - *Impurity-based (MDI)* is built into tree models, but it's biased towards continuous and many-valued features.
+  - *Permutation importance* is what the prototype reported.
+  - *Mean absolute SHAP value* is a third option.
+- **Direction and shape.** Partial-dependence and ICE plots, and SHAP dependence plots, show *how* risk changes with age rather than just that age matters.
+- **Local, per-patient.** SHAP, as in #3.
+
+**Caveats:**
+- **Importance is not causation.**
+- **Correlated features underestimate each other.**
+- **Importance belongs to one specific model.**
+- **Report how stable it is across cross-validation folds.** A ranking that reshuffles between folds shouldn't be trusted.
+
+## Ways forward: a concrete M3 sequence
+
+Each step pairs a concept with real MEPS work.
+
+| Step | You learn | We build or measure |
+|---|---|---|
+| 1. Targets | labels, base rates, leakage, prediction forms | Base rates and missingness for every year-2 outcome found above |
+| 2. Evaluation | panel-grouped cross-validation, metrics, test-set discipline | Lab basics: MLflow tracking, the run and compare tools, the holdout ledger |
+| 3. Missing values | MCAR/MAR/MNAR (whether data is missing at random), imputation, training with hidden values | Honest re-encoding; imputer comparison; robustness to production-like gaps |
+| 4. Model families | logistic regression, a single tree, random forest, gradient boosting, calibration | Head-to-head on the same label and folds |
+| 5. TF-IDF | code bags, rarity weighting, sparse linear models, LSA | Condition and drug-class features, plus the description-text and drug-name variants |
+| 6. Autoencoders | embeddings, SVD vs non-linear, denoising | Code embeddings; denoising-autoencoder imputation |
+| 7. Interpretation | SHAP, surrogate trees, partial-dependence plots, value of information | Per-patient templated explanations and missing-data action items |
+| 8. Other targets | Poisson, Tweedie and log-cost losses (losses suited to counts and spending) | ED visits, high cost and more; scorecards; one logged test-set confirmation |
+
+**What this needs:**
+- **More data.** The year-1 condition and prescription files for 2016–2022: 14 more files. Their file numbers have to be *looked up and verified*, never guessed, and added to the manifest.
+- **New lab-only dependencies:** `mlflow`, `shap` (wheels confirmed for Python 3.11 and 3.12), and `torch` (CPU).
+- **A protocol change:** a "learning round" type that can't be promoted.
+
+**Two answers I still need before starting:**
+1. **Depth of maths.** Intuition and practical judgement, or derivations too (why log-loss, how boosting fits residuals, the Shapley formula)?
+2. **Merging milestones.** Confirm that M10 and M11 fold into M3. Your answer suggests yes, but I'd like it explicit, since it changes the milestone plan and two decisions.
+
 <details>
 <summary>Execution details — 294 tool events</summary>
 
@@ -3002,6 +3129,6 @@ X = np.array([[1.0],[…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 23:32 UTC
+- **Last updated:** 17 October 2026, 23:33 UTC
 - **Turns:** 29
 - **Status:** Complete
