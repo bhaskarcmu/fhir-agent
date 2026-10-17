@@ -1788,8 +1788,43 @@ Down to about 7 s. Re-running the real pipeline end to end after that change, in
 
 Same deterministic model ID (`gbm-meps25-v1-950d8be12078`) and the same numbers, and the real CLI refuses to overwrite. Updating the service README and the Phase 8 docs for M2:
 
+Committing on `feature/phase8-m2-training` (worktree `/workspaces/fhir-agent`, PR target `main`):
+
+I'll watch the `phase8 (python)` CI job in the background and let you know the result when it finishes.
+
+M2 is built and passes locally, and it's in **PR #68**: https://github.com/bhaskarcmu/fhir-agent/pull/68. The trained model reproduces the prototype's results exactly, down to the last reported digit, not just within the PRD's allowed tolerance.
+
+| Test panels 26–27 | Comparison model | Main model |
+|---|---|---|
+| AUROC [95% CI] | 0.708 [0.691, 0.725] | 0.769 [0.754, 0.786] |
+| AUPRC [95% CI] | 0.225 [0.206, 0.250] | 0.265 [0.242, 0.290] |
+| Survey-weighted AUROC | | 0.780 |
+
+The rest matches too: top-k, all 10 calibration deciles, all 7 subgroups, the feature-importance ranking, and the comparison model's coefficients. Even the confidence intervals match, because the random resampling runs in the same order as in the prototype.
+
+**What was built** (in `outcome-prediction-service/src/outcome_prediction/model/`):
+- **One command does training and evaluation.** `python -m outcome_prediction.model.train` writes the evaluation reports and the saved model together, in about 18 seconds. `python -m outcome_prediction.model.evaluate` writes just the reports.
+- **Saved model folder.** It holds both models, their metadata and a checksum list. The checksums are checked *before* any model file is loaded, because loading a saved model can run code. A one-byte change to any file, a missing file or an unlisted file is refused; I confirmed this on the real model folder.
+- **Repeatable model ID.** The ID comes from the training table's checksum, so the same data always gives the same ID: `gbm-meps25-v1-950d8be12078`. An existing model folder is never overwritten.
+- **Honest metrics labels.** The metrics stored with the model are labelled as coming from the validation models trained on panels 21–25. The saved model is retrained on all panels, so its own held-out performance can't be measured.
+- **scikit-learn pinned to exactly 1.9.1, the prototype's version.** My first check reported no Python 3.11 wheel for it. That turned out to be a mistake in my query (it used an outdated platform tag); 1.9.1 installs on both 3.11 (CI) and 3.12.
+
+**Validation:**
+- With the MEPS data downloaded: 63 tests pass.
+- Without it, which is how CI runs: 48 pass and 15 skip.
+- No repeated test filenames, and no data or model files committed.
+
+**Branch:** `feature/phase8-m2-training`. **Commit:** `2b75be20`. Docs are updated: the milestone plan records the verified numbers, and the status reads "M1–M2 built, M3 next".
+
+**Known limitations:**
+- CI just started. A background watch on the `phase8 (python)` job is running, and I'll report its result when it finishes.
+- The model files and reports aren't committed (by design), so anyone else rebuilds them with the two commands above.
+- In CI the reproduction tests skip, so only the synthetic-data tests run there. The exact-match check runs only where the MEPS data has been downloaded.
+
+M3 (the `outcome-prediction-lab` experimentation workbench) is next. After PR #68 merges, I'll ask about deleting its branch.
+
 <details>
-<summary>Execution details — 170 tool events</summary>
+<summary>Execution details — 173 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2157,6 +2192,17 @@ def edit(p,pairs):
 
 edit('outco…`
 - **Bash** `grep -c "Phase 8, M1–M2 built, M3 next" docs/README.md; python -m pytest outcome-prediction-service/src/outcome_prediction/tests -q 2>&1 | tail -1; dupes=$(git ls-files "*test_*.py" | xargs -n1 basena…`
+- **Bash** `git commit -q -F - <<'EOF'
+feat(phase8): M2 — training, evaluation, verified model artifact
+
+Reproduces the research prototype's model on real MEPS data, exactly.
+
+- model/__init__: one definition of…`
+- **Bash** `gh pr create --base main --head feature/phase8-m2-training --title "feat(phase8): M2 — training, evaluation, verified model artifact" --body-file - <<'EOF'
+## Summary
+
+Phase 8 **M2**: train, evaluate…`
+- **Bash** `for i in $(seq 1 90); do s=$(gh pr checks 68 2>/dev/null | awk -F'\t' '$1=="phase8 (python)"{print $2}'); [ -n "$s" ] && [ "$s" != "pending" ] && break; sleep 10; done; gh pr checks 68 2>/dev/null | a…`
 
 </details>
 
@@ -2167,6 +2213,6 @@ edit('outco…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 17:34 UTC
+- **Last updated:** 17 October 2026, 17:36 UTC
 - **Turns:** 15
 - **Status:** Complete
