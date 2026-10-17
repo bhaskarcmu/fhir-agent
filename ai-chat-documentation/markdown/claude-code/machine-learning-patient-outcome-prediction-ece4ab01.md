@@ -1291,8 +1291,10 @@ You mentioned 5 areas where the handoff conflicts with this repo. This existing 
 
 Archived bodies verified byte-identical. Now writing the working documents, starting with the decision index, since the other docs cite it.
 
+`decisions.md`, `prd.md`, `design.md` and `milestone-plan.md` are written. Now I'm fixing one sequencing inconsistency, then writing the phase README and updating the docs index.
+
 <details>
-<summary>Execution details — 30 tool events</summary>
+<summary>Execution details — 34 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1344,6 +1346,10 @@ Archived bodies verified byte-identical. Now writing the working documents, star
 - **Write** `/workspaces/fhir-agent/docs/phase8/prd.md`
 - **Write** `/workspaces/fhir-agent/docs/phase8/design.md`
 - **Bash** `cd /workspaces/fhir-agent; find agent-platform -name "output_gate.py" -not -path "*/node_modules/*"; grep -rln "adversarial" mcp-agent/tests agent-platform/tests 2>/dev/null | head -3`
+- **Edit** `/workspaces/fhir-agent/docs/phase8/design.md`
+- **Write** `/workspaces/fhir-agent/docs/phase8/milestone-plan.md`
+- **Edit** `/workspaces/fhir-agent/docs/phase8/milestone-plan.md`
+- **Write** `/workspaces/fhir-agent/docs/phase8/README.md`
 
 </details>
 
@@ -1354,6 +1360,6 @@ Archived bodies verified byte-identical. Now writing the working documents, star
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 16:14 UTC
+- **Last updated:** 17 October 2026, 16:15 UTC
 - **Turns:** 7
 - **Status:** Complete
