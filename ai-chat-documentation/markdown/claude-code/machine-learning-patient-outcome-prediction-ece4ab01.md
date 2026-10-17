@@ -1552,8 +1552,10 @@ The renumbering script also hit the requirement IDs `FR-M3`–`FR-M8`, because t
 
 Requirement IDs are restored, and the milestone references have shifted correctly. Next, the content changes themselves. Reading the passages that need edits:
 
+Now the decisions: fixing O1 and O4, and adding the experimentation decisions as a "second pass" section, the way Phase 7 did.
+
 <details>
-<summary>Execution details — 75 tool events</summary>
+<summary>Execution details — 76 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1724,6 +1726,12 @@ import re
 INV={4:3,5:4,6:5,7:6,8:7,9:8}
 for p in ['docs/phase8/README.md','docs/phase8/prd.md','docs/phase8/design.md','docs/phase8/decisions.md','docs/phase8/prototype-baseline.md']…`
 - **Bash** `grep -n "O4 \|O1 \|O25\|O27" docs/phase8/decisions.md | cut -c1-700; echo; sed -n 76,84p docs/phase8/prd.md; echo ...; sed -n 228,262p docs/phase8/prd.md; grep -n "V12" docs/phase8/prd.md`
+- **Bash** `python3 - <<'EOF'
+p='docs/phase8/decisions.md'; s=open(p).read()
+def rep(old,new):
+    global s
+    assert s.count(old)==1,(old[:80],s.count(old)); s=s.replace(old,new)
+rep("the first (and this phase'…`
 
 </details>
 
