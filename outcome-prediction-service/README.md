@@ -4,8 +4,8 @@ Phase 8's machine-learning service: builds the training data from AHRQ MEPS, and
 milestones) trains, evaluates and serves the 12-month hospitalization model as FHIR
 `RiskAssessment`s. Planning, decisions and status: [`docs/phase8/`](../docs/phase8/README.md).
 
-**Built so far: M1 — MEPS acquisition, dataset build, variable dictionary.** No model, API or
-compose service yet.
+**Built so far:** M1 (MEPS acquisition, dataset build, variable dictionary) and M2 (training,
+evaluation, model artifact). No API or compose service yet.
 
 ## Install
 
@@ -27,7 +27,25 @@ python -m outcome_prediction.meps.build
 # 3. Variable dictionary for any MEPS file (here HC-252)
 python -m outcome_prediction.meps.dictionary 252
 #    -> data/processed/h252_dictionary.csv
+
+# 4. Evaluate (temporal test, panels 21-25 -> 26-27), refit on all panels, write the artifact
+python -m outcome_prediction.model.train
+#    -> models/gbm-meps25-v1-<table sha256[:12]>/   model.joblib, comparison.joblib,
+#                                                   metadata.json, MANIFEST.sha256
+#    -> data/reports/metrics.json, data/reports/model_report.md
+
+# (evaluation only, no artifact)
+python -m outcome_prediction.model.evaluate
 ```
+
+**Artifacts** (`models/`, gitignored) are never overwritten: the model ID is derived from the
+training table's checksum, so rebuilding from the same table means deleting the old artifact
+deliberately. `load_artifact()` verifies every file against `MANIFEST.sha256` *before* any
+`joblib` deserialisation, and refuses missing, changed or unlisted files. The headline metrics in
+`metadata.json` come from the validation models (panels 21–25 → 26–27); the stored models are
+refit on all panels, so their own held-out performance is unknown by construction.
+
+`scikit-learn` is pinned to exactly 1.9.1 — pickled models aren't portable across versions.
 
 Everything generated lands under `outcome-prediction-service/data/` (gitignored). Point several
 worktrees at one cache with `OUTCOME_PREDICTION_DATA_DIR=/path/to/data`.
@@ -42,9 +60,10 @@ if a file changed. Delete the file to re-download deliberately.
 pytest outcome-prediction-service/src/outcome_prediction/tests -q -rs
 ```
 
-Unit tests use tiny synthetic Stata files. `test_meps_reproduction.py` — the M1 acceptance
-check against the prototype's exact numbers — needs the real MEPS cache and **self-skips**
-without it (as in CI, where the download is deliberately not run).
+Unit tests use tiny synthetic Stata files and a synthetic modelling table.
+`test_meps_reproduction.py` and `test_model_reproduction.py` — the M1/M2 acceptance checks
+against the prototype's exact numbers — need the real MEPS cache and **self-skip** without it
+(as in CI, where the download is deliberately not run).
 
 ## Data and licence notes
 

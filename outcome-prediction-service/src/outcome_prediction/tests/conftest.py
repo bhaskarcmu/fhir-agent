@@ -46,6 +46,39 @@ def write_panel(tmp_path):
     return _write
 
 
+def synthetic_table(per_panel: int = 300, seed: int = 0) -> pd.DataFrame:
+    """A modelling table shaped exactly like meps.build's output (same columns, same order),
+    with a real age / prior-stay signal so models have something to learn. Panels 21–27."""
+    import numpy as np
+
+    from outcome_prediction.model import FEATURES, LABEL
+
+    rng = np.random.default_rng(seed)
+    n = per_panel * 7
+    t = pd.DataFrame({"dupersid": np.arange(n), "panel": np.repeat(np.arange(21, 28), per_panel)})
+    t["sex"] = rng.integers(1, 3, n)
+    t["racethx"] = rng.integers(1, 6, n)
+    t["regiony1"] = rng.choice([-1, 1, 2, 3, 4], n)          # -1: a MEPS missing code
+    t["agey1x"] = rng.integers(18, 86, n)
+    t["inscovy1"] = rng.integers(1, 4, n)
+    t["povcaty1"] = rng.integers(1, 6, n)
+    t["ipdisy1"] = rng.binomial(1, 0.12, n) * rng.integers(1, 3, n)
+    t["ipngtdy1"] = t["ipdisy1"] * rng.integers(1, 6, n)
+    for col, lam in (("ertoty1", 0.4), ("obtotvy1", 4), ("optotvy1", 0.5),
+                     ("hhtotdy1", 0.1), ("rxtoty1", 12)):
+        t[col] = rng.poisson(lam, n)
+    t["totexpy1"] = rng.integers(0, 20000, n)
+    for col in FEATURES[14:]:
+        t[col] = rng.binomial(1, 0.15, n)
+    t["longwt"] = rng.uniform(500, 5000, n)
+    t["varstr"] = rng.integers(1, 100, n)
+    t["varpsu"] = rng.integers(1, 3, n)
+    logit = -4.0 + 0.035 * t["agey1x"] + 1.4 * (t["ipdisy1"] > 0)
+    t[LABEL] = rng.binomial(1, 1 / (1 + np.exp(-logit)))
+    order = ["dupersid", "panel", *FEATURES[:14], "longwt", "varstr", "varpsu", *FEATURES[14:], LABEL]
+    return t[order]
+
+
 @pytest.fixture(scope="session")
 def meps_cache() -> Path:
     """The real MEPS cache, or skip. Never downloads: tests must not hit the network."""

@@ -1,6 +1,6 @@
 # Phase 8 Milestone Plan — Patient Outcome Prediction
 
-M1–M13. **M1 built** (verified results below); M2–M13 planned. Expanded from M1–M11 after a second scope pass added a
+M1–M13. **M1–M2 built** (verified results below); M3–M13 planned. Expanded from M1–M11 after a second scope pass added a
 dedicated experimentation track (`decisions.md` O28–O40): M3 (workbench) and M12 (promotion)
 are new, and the former model-improvement milestones are now rounds of the
 [experimentation protocol](./experimentation-protocol.md).
@@ -86,6 +86,17 @@ written as importable functions, not only CLIs — the lab (M3) calls them (O29)
 `metrics.json` + `model_report.md` covering FR-E1–E5; a tampered manifest is refused.
 
 **Depends on:** M1.
+
+**Verified (M2 built):** with `scikit-learn` 1.9.1 (the prototype's version; wheels confirmed
+for Python 3.11 and 3.12), the reproduction is **exact to every reported digit**, not merely
+within tolerance: GBM AUROC 0.769 [0.754, 0.786], comparison 0.708 [0.691, 0.725], AUPRC, Brier,
+top-k, survey-weighted AUROC 0.780, all ten calibration deciles, all seven subgroups, the
+permutation-importance ranking and the comparison coefficients (-4.047, 0.0280, 1.3055) — every
+figure in `prototype-baseline.md` §5.2. Bootstrap CIs match because the shared generator is
+consumed in the prototype's order. Release artifact `gbm-meps25-v1-950d8be12078` (ID derived from
+the training table's checksum); a one-byte change to any file is refused before deserialisation.
+`train` + `evaluate` take ~18 s. Tests: 63 pass with the MEPS cache; 48 pass and 15 self-skip
+without it (CI).
 
 ---
 

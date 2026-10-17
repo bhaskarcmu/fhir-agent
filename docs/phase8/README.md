@@ -2,8 +2,8 @@
 
 > ## Canonical status
 >
-> **🚧 M1 built (PR open) — the MEPS dataset reproduces the prototype exactly. M2 (training,
-> evaluation, artifact) is next; M3–M13 planned.** A research prototype from an earlier session
+> **🚧 M1–M2 built — the MEPS dataset and the model both reproduce the prototype exactly
+> (M2 PR open). M3 (experimentation workbench) is next; M4–M13 planned.** A research prototype from an earlier session
 > was handed over and reconciled with this repo's conventions; what it established is restated
 > in `prototype-baseline.md`, and the raw hand-off documents are not kept in the repo (O5). A
 > second pass added a permanent **experimentation track** (`outcome-prediction-lab`, O28–O40).
