@@ -1944,8 +1944,12 @@ The module is valid and already formatted. `terraform init` also created `.terra
 
 No module in the repo commits its lock file (CI runs `init` every time), so I'm removing the generated files to match:
 
+Next, wiring and docs: the CI `terraform validate` matrix, two new decisions, a design section, the service README (with the steps to apply the bucket), and the data catalog.
+
+Now the service README, with the commands and the steps to apply the bucket:
+
 <details>
-<summary>Execution details — 205 tool events</summary>
+<summary>Execution details — 210 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2370,6 +2374,16 @@ art=jso…`
 - **Bash** `cd /workspaces/fhir-agent/outcome-prediction-service/infra && terraform init -backend=false -input=false 2>&1 | tail -2 && terraform validate && terraform fmt -check -diff; echo "fmt exit: $?"`
 - **Bash** `cd /workspaces/fhir-agent && git ls-files | grep -c "terraform.lock.hcl"; git status --short outcome-prediction-service/infra`
 - **Bash** `cd /workspaces/fhir-agent/outcome-prediction-service/infra && rm -rf .terraform .terraform.lock.hcl && ls -a`
+- **Bash** `cd /workspaces/fhir-agent && python3 - <<'EOF'
+def edit(p,pairs):
+    s=open(p).read()
+    for old,new in pairs:
+        assert s.count(old)==1,(p,old[:70],s.count(old)); s=s.replace(old,new)
+    open…`
+- **Edit** `/workspaces/fhir-agent/outcome-prediction-service/README.md`
+- **Bash** `grep -rn "O1\`–\`O40\|O1–O40\|O28–O39\|O1`–`O40" docs/README.md docs/phase8/*.md | cut -c1-160`
+- **Bash** `sed -i 's/(O1–O40), same convention/(O1–O42), same convention/' docs/README.md && sed -i 's/— `O1`–`O40`\./— `O1`–`O42`./; s/and O28–O39 (second pass, experimentation)\./O28–O39 (second pass, experime…`
+- **Bash** `sed -i 's/O1–O22 (first pass) O28–O39 (second pass, experimentation) and O41–O42 (data provenance)\./O1–O22 (first pass), O28–O39 (second pass, experimentation) and O41–O42 (data provenance)./' docs/p…`
 
 </details>
 
@@ -2380,6 +2394,6 @@ art=jso…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 17:51 UTC
+- **Last updated:** 17 October 2026, 17:52 UTC
 - **Turns:** 18
 - **Status:** Complete
