@@ -1786,8 +1786,10 @@ All 63 pass. Now the CI configuration, with no MEPS cache, which also shows how 
 
 Down to about 7 s. Re-running the real pipeline end to end after that change, into a scratch models directory. It should produce the same deterministic model ID and the same numbers.
 
+Same deterministic model ID (`gbm-meps25-v1-950d8be12078`) and the same numbers, and the real CLI refuses to overwrite. Updating the service README and the Phase 8 docs for M2:
+
 <details>
-<summary>Execution details — 168 tool events</summary>
+<summary>Execution details — 170 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2146,6 +2148,15 @@ def rep(old,new):
     assert s.count(old)==1,(old[:60]); s=s.replace(old,new)
 rep(…`
 - **Bash** `S=/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad; OUTCOME_PREDICTION_MODELS_DIR=$S/models-check python -m outcome_prediction.model.train | head -4; ls $S/model…`
+- **Bash** `python3 - <<'EOF'
+def edit(p,pairs):
+    s=open(p).read()
+    for old,new in pairs:
+        assert s.count(old)==1,(p,old[:70],s.count(old)); s=s.replace(old,new)
+    open(p,'w').write(s)
+
+edit('outco…`
+- **Bash** `grep -c "Phase 8, M1–M2 built, M3 next" docs/README.md; python -m pytest outcome-prediction-service/src/outcome_prediction/tests -q 2>&1 | tail -1; dupes=$(git ls-files "*test_*.py" | xargs -n1 basena…`
 
 </details>
 
