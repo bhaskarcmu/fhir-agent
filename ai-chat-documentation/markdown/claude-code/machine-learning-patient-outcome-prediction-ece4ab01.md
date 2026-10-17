@@ -1868,7 +1868,55 @@ I understand that data is not usually saved with code. What is the indistry stan
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+## Industry practice
+
+The usual model is that **code lives in git, data lives in versioned object storage, and git holds only small pointers to the data**. "We can always download it again" is not treated as a backup plan.
+
+**1. Keep your own copy of the raw data.**
+- Raw inputs are copied once, exactly as received, into versioned object storage you control: S3, GCS or Azure Blob.
+- Object versioning is turned on, and often a retention lock as well, so nothing can be silently overwritten or deleted.
+- Data platforms call this the "raw" or "bronze" zone, and treat it as permanent.
+
+**2. Put the data's fingerprint in git.**
+- Git holds a small manifest of each file: its checksum, size, source URL and date retrieved. It works the way a package lock file does for software dependencies.
+- Common tools for this:
+  - **DVC:** pointer files in git, data in a storage bucket.
+  - **lakeFS:** git-style branches for data stored in object storage.
+  - **Delta Lake / Iceberg:** "time travel" back to earlier versions of a table.
+  - **Git LFS:** works for medium-sized files, but has quotas and gets awkward at this scale.
+- The data itself never goes in git: GitHub rejects files over 100 MB, and the repo would bloat permanently.
+
+**3. Keep the documentation with the data.** The codebook and documentation pages matter as much as the files. Without them, nobody can tell what a variable like `IPDISY2` means later.
+
+**4. Follow the 3-2-1 rule.** Three copies, on two kinds of storage, one of them off-site. For a few dozen MB, two cloud locations is plenty.
+
+**5. Public archives are for publishing, not backup.** Zenodo, Dataverse and Figshare give a dataset a permanent DOI, but they're public, so they're only an option if the licence allows redistribution. For MEPS that's unclear: the same use-terms question as O23. A private bucket avoids the issue.
+
+## How this repo compares
+
+1. **Nothing in git records which data bytes were used.**
+   - `checksums.json` sits inside the gitignored `data/` folder, so it never gets committed.
+   - The model's metadata does record the raw file checksums, but model files aren't committed either.
+   - So if AHRQ quietly re-released a corrected file, which statistical agencies do, a future run would download different bytes and nothing in the repo would show the change. The fix is cheap: commit a small manifest of expected checksums, and have the download step refuse anything that doesn't match.
+
+2. **There is no copy outside this workspace.**
+   - If `meps.ahrq.gov` changes its URLs or removes these files, the exact reproduction can't be repeated anywhere except this workspace.
+   - The prototype's earlier session already hit one URL quirk: the folder-less download address returns 404.
+
+## What I'd recommend here
+
+The scale is tiny: the original zips total about 38 MB, so storage costs pennies.
+
+1. **Commit a data manifest**, `outcome-prediction-service/meps-manifest.json`, holding the checksums of both the zips and the extracted `.dta` files, plus the URLs. The download step checks against it. This needs no new infrastructure, so it can go in right away.
+2. **Mirror the original zips and the documentation pages** into a private GCS bucket, since the repo already uses GCP. Turn on object versioning and a retention lock, and store each file under its checksum, so a changed upstream file can never replace the original.
+3. **Have the download step fall back to the mirror.** It tries AHRQ first and then the mirror, and checks the manifest either way. AHRQ stays the primary source, so the mirror is only a backup copy.
+4. **Skip DVC for now.** The manifest plus a mirror covers what DVC would provide here, without adding another tool. DVC becomes worth it once the lab starts producing many derived datasets, so it's worth reconsidering at M3 or M10.
+
+Two cautions:
+- **Item 2 is an infrastructure change** (a new bucket, with its access and retention settings), so it's your call. It also leaves the bucket's owner holding a copy of MEPS, which only reinforces the open use-terms question (O23). A private bucket is the conservative choice.
+- **None of this applies to customer data.** Patient data would need HIPAA-grade storage under a BAA (Business Associate Agreement), which is a Phase 8b problem. MEPS is public and de-identified, so a simple mirror is fine.
+
+If you agree, I'll do item 1 now as a small PR, and record the approach as a new decision (O41). For items 2 and 3, I'd want your go-ahead on the bucket first.
 
 <details>
 <summary>Execution details — 180 tool events</summary>
@@ -2272,4 +2320,4 @@ Phase 8 **M2**: train, evaluate…`
 - **Created:** 17 October 2026, 15:37 UTC
 - **Last updated:** 17 October 2026, 17:39 UTC
 - **Turns:** 17
-- **Status:** Incomplete
+- **Status:** Complete
