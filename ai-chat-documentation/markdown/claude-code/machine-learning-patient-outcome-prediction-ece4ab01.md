@@ -1781,7 +1781,7 @@ Adding the report and model output locations to the shared settings:
 Pinning scikit-learn exactly in `pyproject.toml`, then running the real training on the M1 table. That run is the reproduction check against 0.769 and 0.708.
 
 <details>
-<summary>Execution details — 158 tool events</summary>
+<summary>Execution details — 160 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2120,6 +2120,13 @@ old='''    "pandas>=2.2",
 assert s.count(old)==1
 s=s.replace(old,'''    "pandas>=2.2",
     "nu…`
+- **Bash** `python3 - <<'EOF'
+import json
+m=json.load(open('outcome-prediction-service/data/reports/metrics.json'))
+s=m['split']; print('split', s['n_train'], s['n_test'], s['events_test'], round(s['rate_test'],4…`
+- **Bash** `ls -la outcome-prediction-service/models/*/ && cat outcome-prediction-service/models/*/MANIFEST.sha256 && python3 - <<'EOF'
+import glob, shutil, pathlib, tempfile
+from outcome_prediction.model.artifac…`
 
 </details>
 
@@ -2130,6 +2137,6 @@ s=s.replace(old,'''    "pandas>=2.2",
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 17:29 UTC
+- **Last updated:** 17 October 2026, 17:30 UTC
 - **Turns:** 15
 - **Status:** Complete
