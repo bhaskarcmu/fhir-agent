@@ -1934,8 +1934,10 @@ Git: worktree `/workspaces/fhir-agent`. First the branch cleanup: I'll confirm P
 
 The doc page names its codebook as `H252CB.PDF`, a separate file. Checking whether it lives at the predictable URL for all seven panels, alongside each documentation page:
 
+First, the mirror module: one interface with a local-directory backend (for tests, and for an extra offline copy) and a GCS backend. Objects are content-addressed and never overwritten.
+
 <details>
-<summary>Execution details — 191 tool events</summary>
+<summary>Execution details — 192 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2338,6 +2340,7 @@ Phase 8 **M2**: train, evaluate…`
 - **Bash** `F=/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad/h252doc.html; grep -iE -B2 -A2 "codebook" $F | sed -E 's/<[^>]+>/ /g; s/ +/ /g' | head -20; echo ---; grep -oi…`
 - **Bash** `for n in 202 210 217 225 234 244 252; do d=$(curl -sS -o /dev/null -w "%{http_code} %{size_download}" https://meps.ahrq.gov/data_stats/download_data/pufs/h$n/h${n}doc.shtml); c=$(curl -sS -o /dev/null…`
 - **Bash** `git checkout -q -b feature/phase8-data-provenance && git branch --show-current && cat outcome-prediction-service/data/raw/meps/checksums.json | head -12`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/meps/mirror.py`
 
 </details>
 
