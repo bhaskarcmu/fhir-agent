@@ -2493,6 +2493,73 @@ What other information can be used to improve predictions? For example, is there
 
 I'll verify a few specifics before recommending them, particularly licensing and what each source actually covers. Loading the web tools:
 
+I've noted both answers: intuition and practical judgement with conceptual coaching, no equations; and M10 and M11 fold into M3. I'll update the milestone plan and decisions in M3's first PR.
+
+## Two kinds of "more information"
+
+It helps to separate these, because they lead to very different answers:
+
+1. **More patients:** extra training data. The UK sources were ruled out for this earlier, and that still holds. CPRD (the UK's large GP-records database) costs £20k–£84k a year and is restricted to public-health research. OpenSAFELY (an NHS research platform) only returns aggregates. UK coding and care also differ from US practice.
+2. **More knowledge:** what researchers have already learned about predicting admissions. This transfers freely across countries and licences, and it's where the real gains are.
+
+## What's available, and how each piece helps
+
+| Source | What it is | How it helps us | Fit and licence |
+|---|---|---|---|
+| **Hospital Frailty Risk Score** (Gilbert et al., *Lancet* 2018, UK) | 109 ICD-10 codes, each with a weight, combined into a frailty score | A ready-made feature from our 3-character codes. Frailty is a known driver of admissions, especially in the 65+ group where the prototype is weakest (AUROC 0.695) | Published; the code list is in the paper's appendix. A few codes are 4-character (e.g. R29.6), so they only map approximately to MEPS's 3-character codes |
+| **Charlson / Elixhauser comorbidity indices** | Long-established ways of summarising a patient's diagnoses into comorbidity scores, with published ICD-10 versions; AHRQ's HCUP programme distributes free Elixhauser software | Turns 280 sparse codes into a few validated scores | US and academic; free |
+| **CMS-HCC** (Medicare risk adjustment) | Medicare's official mapping from ICD-10 codes to condition categories, used to predict cost | Speaks your target customers' language. Very relevant for a "high-cost member" target | US government, published yearly by CMS. Version differences need checking |
+| **AHRQ Prevention Quality Indicators** | Defines admissions for "ambulatory-care-sensitive conditions": ones good primary care can often prevent | **A better *target*, not just a feature.** "Potentially preventable admission" is the most actionable thing for a primary-care team to predict | Free software and specifications. It needs stay-level diagnoses, which MEPS's condition–event link files should provide; to verify |
+| **Systematic reviews** (Wallace 2014; Klunder 2022) | Surveys of 27+ published admission-prediction models | Benchmarks and predictor lists: see the next section | Open access |
+| **QAdmissions** (UK) | A published GP-records model of emergency admission | Its predictor list and published performance are useful reference points | The paper is open access. The code licence is unverified, so I'd use it as knowledge only, not code |
+| **TRIPOD+AI** (BMJ 2024) | The 27-item reporting checklist for ML prediction models | The template for our model cards; it's what a reviewer or counsel will expect | Open access (CC BY) |
+| **OpenCodelists** (from OpenSAFELY) | Curated SNOMED and ICD-10 code lists | Ready-made, peer-built code lists, e.g. for frailty | Licence varies per list (some are UK Open Government Licence), so check each one |
+| **Area-level social data**: ADI, CDC/ATSDR SVI, CDC PLACES, AHRQ SDOH database | Deprivation and community health, by neighbourhood | **Can't be used for training:** public MEPS only gives 4 census regions, so there's nothing to join on. Usable later, on customer data (Phase 8b) | ADI **forbids commercial use** without written permission from the University of Wisconsin; SVI and PLACES are US government |
+
+## A finding that reframes "improving the prototype"
+
+Wallace's review found that models built on **administrative or clinical records** reach a C-statistic (the same measure as AUROC) of **0.63–0.83**. Models built on **self-reported** data reach only **0.61–0.74**. MEPS *is* self-report, so the prototype's 0.769 is already above the top of the self-report range. Two lessons:
+- **Big AUROC gains aren't realistic.** Chasing 0.85 on MEPS would mostly mean overfitting.
+- **The upside is mostly elsewhere:** in better targets (preventable admissions), better calibration and subgroup performance (65+), and portability to customers' records data, where record-based models naturally do better.
+
+## How domain knowledge helps
+
+- **Borrowing strength.** 168 of our 280 codes are each held by under 1% of people. A model can't learn a reliable weight for a code it has seen 40 times. A validated score like Elixhauser groups rare codes with clinically similar ones, using knowledge learned from millions of patients elsewhere. That gives fewer, steadier features, which also carry over to customer data. It's the expert counterpart to what TF-IDF and autoencoders try to *learn*. **Comparing "expert-built features vs learned features" head to head is one of the most instructive experiments we can run.**
+- **Asking a better question.** The prevention-quality indicators turn "who'll be admitted" into "whose admission might be prevented". That's what a care manager can actually act on, and it scores well on the target scorecard.
+- **Constraining the model with common sense.** Gradient boosting can be told that risk must never *fall* as prior admissions rise ("monotonic constraints"). That stops it fitting noise into strange shapes, and it's an easy idea to see in action.
+- **Sanity checks.** The literature's top predictors are prior admissions, multimorbidity, age and polypharmacy. If our model's top features look very different, suspect a bug or leakage before believing a discovery.
+- **Knowing what's realistic.** Benchmarks set expectations, and the reviews' warning about high risk of bias in model analysis tells us where to be strict.
+- **Writing it up properly.** TRIPOD+AI tells us what a credible model card must contain.
+
+## Two cautions
+
+- **Licensing.** You want to commercialise, so every source goes into the data catalog with its terms before it's used (O13). That means ADI is out, QAdmissions code is unverified, and each OpenCodelists list needs checking. Published weights and code lists from papers are generally reusable, but I'd record each one's terms anyway.
+- **Transfer.** UK scores were built on UK hospital coding. Each one gets validated on MEPS before we trust it, and that check itself makes a good learning step.
+
+## Where this lands in M3
+
+- **Step 1 (targets):** add *potentially preventable admission* as a candidate, after verifying the stay-level diagnosis link.
+- **Step 4 (model families):** try monotonic constraints.
+- **Step 5 (codes):** run the expert-vs-learned comparison: frailty, comorbidity and HCC scores against TF-IDF, LSA and autoencoder features, alone and combined.
+- **Step 8 (deciding):** compare against the published benchmarks, and write model cards to the TRIPOD+AI checklist.
+
+When you say go, I'll start M3, step 1: updating the plan and decisions for the merge, then surveying targets and base rates on real MEPS data.
+
+Sources:
+- [Gilbert et al. 2018, Hospital Frailty Risk Score (Southampton ePrints)](https://eprints.soton.ac.uk/418829)
+- [HFRS paper, PMC full text (S-EPMC5946808)](https://omicsdi.org/dataset/biostudies-literature/S-EPMC5946808)
+- [AHRQ Quality Indicators software, ICD-10-CM/PCS (webinar slides)](https://qualityindicators.ahrq.gov/Downloads/Resources/Webinars/2021/AHRQ%20Quality%20Indicators%20Software%20v2021%20ICD-10-CMPCS.pdf)
+- [AHRQ QI SAS software instructions v2024](https://qualityindicators.ahrq.gov/Downloads/Software/SAS/V2024/Software_Inst_SASQI_v2024_July_2024.pdf)
+- [Wallace et al. 2014 systematic review (PMC4219489)](https://pmc.ncbi.nlm.nih.gov/articles/PMC4219489)
+- [Klunder et al. 2022 systematic review, older adults (PMC9506609)](https://pmc.ncbi.nlm.nih.gov/articles/PMC9506609)
+- [CMS FAQ: location of ICD-10 to HCC mappings](https://csscoperations.com/internet/csscw3_a.nsf/DIDC/PQF9FXIETV~Encounter and Risk Adjustment Program (Part C)~FAQs)
+- [QAdmissions, BMJ Open 2013](https://bmjopen.bmj.com/content/3/8/e003482.abstract)
+- [NHS England open-source playbook: clinical risk tools](https://transform.england.nhs.uk/key-tools-and-info/digital-playbooks/open-source-digital-playbook/covid-19-clinical-risk-assessment-tool)
+- [QRISK3 R package licence notes (ClinRisk LGPL)](https://archive.linux.duke.edu/cran/web/packages/QRISK3/COPYRIGHTS)
+- [OpenCodelists](https://www.opencodelists.org/?page=124)
+- [Neighborhood Atlas (ADI) terms of use](https://www.neighborhoodatlas.medicine.wisc.edu/terms-of-use)
+- [TRIPOD+AI statement, BMJ 2024 (PMC11025451)](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11025451/)
+
 <details>
 <summary>Execution details — 303 tool events</summary>
 
@@ -3158,6 +3225,6 @@ X = np.array([[1.0],[…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 23:48 UTC
+- **Last updated:** 17 October 2026, 23:49 UTC
 - **Turns:** 30
 - **Status:** Complete
