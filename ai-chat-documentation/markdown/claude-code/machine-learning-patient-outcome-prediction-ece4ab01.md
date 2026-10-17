@@ -1430,7 +1430,100 @@ Critique the above first before writing anything
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+## Critique
+
+**The idea is right.** The plan picks "any inpatient stay" and one gradient-boosting model as fixed, but whether that's the right thing to predict is still open. O1 settles only the first outcome, and the any-stay vs unplanned-stay question is unresolved. Exploration that engineers can return to and repeat fills a real gap. Five problems with the request as phrased:
+
+**1. A milestone you can revisit breaks how this repo uses milestones.**
+- Every phase treats a milestone as a one-time deliverable that ends as "done". Status in each phase's README depends on that.
+- A milestone that reopens with each round of research means "M7 done" stops meaning anything.
+- Better: split it in two.
+  - A **milestone that builds the tooling** once, and then completes.
+  - A **standing protocol** anyone can run any number of times. Each run leaves a dated, permanent record; nothing gets reopened.
+- Repo precedent: Phase 6 kept `telemetry-schema.md` as a separate, long-lived document beside its milestones.
+
+**2. The biggest risk is overfitting the test set, not tooling.**
+- Exploration that resumes forever, all scored on the same test panels (26–27), slowly tunes everything to those panels. Each look is harmless; hundreds of looks are not.
+- The tools have to enforce a rule:
+  - exploration scores itself only by cross-validation within panels 21–25;
+  - the test panels are opened only to confirm a candidate already chosen, and every opening is logged.
+- When AHRQ releases a newer panel, it becomes a fresh, untouched test set.
+- Without this rule, more exploration makes the results less trustworthy, not more.
+
+**3. Which predictions are advisable isn't purely an ML question.** A model that scores well can still be the wrong product. Each candidate needs a scorecard with non-ML criteria:
+- **Measurable in customer data:** can the outcome be seen in FHIR or claims data? If not, it can never be validated or recalibrated for a customer.
+- **Actionable:** can a care manager do anything about it?
+- **Base rate:** how common is the outcome?
+- **Lead time:** how far ahead does the prediction come?
+- **Fairness.**
+- **Regulatory position:** whether the FDA would treat the score as a medical device.
+
+The space of possible outcomes is also limited to labels MEPS actually contains. Plausible candidates, all to be confirmed against the files:
+
+| Candidate | Type of prediction |
+|---|---|
+| Any stay | Yes/no |
+| Unplanned stay | Yes/no |
+| ED visits | Count |
+| High-cost member (e.g. top 10% of spending) | Yes/no |
+| Nights in hospital | Count |
+
+One thing to state honestly: what care managers most want is a prediction of **who will benefit from outreach** (in ML terms, uplift or "impactability"). MEPS has no intervention data, so that can't be built here. The tools should record that limit, not imply it's covered.
+
+**4. "Exploration tools" isn't the industry term, and the risk is over-building.**
+- The standard terms:
+  - **Experiment tracking:** a record of every run's config, data checksums, code commit, seed and metrics.
+  - A **model registry:** candidates with a promotion stage.
+  - **Model cards:** a standard summary sheet published with each promoted model.
+- The standard open-source tool is **MLflow**:
+  - Apache 2.0 licence, runs entirely locally on file or SQLite storage.
+  - Has a browsing UI.
+  - Fits the "nothing leaves this machine" rule.
+- Alternatives:
+  - **DVC** is more git-native but weaker for browsing results.
+  - **Weights & Biases** is a hosted (SaaS) service, so I'd reject it: it sends data off the machine.
+- Don't build a platform (feature store, pipeline orchestrator). CLAUDE.md asks for the smallest useful solution:
+  - MLflow running locally;
+  - experiment configs plus a command-line tool;
+  - a protocol document;
+  - a scorecard template.
+
+**5. It needs a defined path into production, or exploration quietly changes it.**
+- Results must move through explicit stages: experiment → candidate (scorecard + model card) → a new feature-contract version plus a decision entry → served by the service.
+- The service never loads anything that skipped those stages. This matches the rule already in place that a new contract version is never an edit to an existing one.
+
+**Smaller points**
+- **Notebooks:** allowed for exploring, but stored with outputs stripped. Experiments that count must be scripted and configured so others can repeat them.
+- **Separate package:** a new top-level `outcome-prediction-lab/`, so MLflow and research-only dependencies stay out of the scoring service's runtime.
+- **Name:** `-lab` is a common industry label for this kind of workspace; `outcome-prediction-experiments/` is the more literal option.
+- **Sequencing:** build the tooling right after M2 (the reproduced baseline), alongside the service work. M9 (unplanned-stay label) and M10 (features and tuning) then become the **first two runs of the protocol**, rather than one-off code. That's less code overall.
+
+## What I'd write, if you agree
+
+- A new milestone, **"Experimentation workbench"**, placed after M2:
+  - MLflow tracking and a model registry, stored locally and gitignored;
+  - a command-line tool that runs experiments from config files, with the test-set rule built in;
+  - a scorecard for comparing prediction targets;
+  - a model-card template;
+  - a first exploration that compares the candidate outcomes above.
+- `docs/phase8/experimentation-protocol.md`: the runbook for any future round. It covers how to start a round, the test-set rules, the promotion stages, and how to record the result.
+- M9 and M10 rewritten as rounds of that protocol.
+- Remaining milestones renumbered.
+- New decision entries in `decisions.md`:
+  - MLflow chosen over DVC and W&B;
+  - the test-set access rule;
+  - the promotion stages;
+  - research dependencies kept in a separate package;
+  - uplift recorded as out of reach with MEPS.
+
+Two choices before I write:
+
+1. **Package name:** `outcome-prediction-lab` or `outcome-prediction-experiments`?
+2. **Scope of "types of prediction":**
+   - (a) only which outcome to predict, from the MEPS candidates above; or
+   - (b) also the form of the prediction, e.g. a yes/no probability vs a count (how many ED visits) vs a cost estimate.
+
+   (b) is broader and costs about one extra exploration round.
 
 <details>
 <summary>Execution details — 71 tool events</summary>
@@ -1600,6 +1693,6 @@ trained on AHRQ MEPS…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 16:39 UTC
+- **Last updated:** 17 October 2026, 16:40 UTC
 - **Turns:** 10
-- **Status:** Incomplete
+- **Status:** Complete
