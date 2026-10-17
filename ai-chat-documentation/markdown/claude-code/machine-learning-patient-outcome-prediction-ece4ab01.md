@@ -1293,8 +1293,49 @@ Archived bodies verified byte-identical. Now writing the working documents, star
 
 `decisions.md`, `prd.md`, `design.md` and `milestone-plan.md` are written. Now I'm fixing one sequencing inconsistency, then writing the phase README and updating the docs index.
 
+Now the docs index.
+
+Self-check: link targets, decision-ID references, and stray inconsistencies.
+
+Committing on `docs/phase8-outcome-prediction-planning` (worktree `/workspaces/fhir-agent`; the PR will target `main`).
+
+I've opened the Phase 8 docs PR: **https://github.com/bhaskarcmu/fhir-agent/pull/65**. It's docs only, and the folder layout and writing style match Phases 2–7.
+
+**Files changed**
+- New in `docs/phase8/`:
+  - `README.md`: the single status statement for the phase.
+  - `prd.md`, `design.md`, `decisions.md` and `milestone-plan.md`.
+  - `source-prd.md`, `source-design.md` and `source-developer-notes.md`: your three handoff files, kept unchanged for your records. Each has a note at the top saying it's the input, not the plan to build from, the same way Phase 2 kept its `source-prd.md`.
+- `docs/README.md` now lists Phase 8 alongside Phases 2–7.
+
+**How the handoff fits the repo**
+- **Phase numbers:** the handoff's "Phase 0–4" became Phase 8 milestones M1–M11. Cloud deployment, recalibration and monitoring are set aside as a later Phase 8b, following the Phase 2b/3b pattern.
+- **Order of work:** I changed the handoff's order. The service and agent are built on the reproduced model first, and model improvements come in M9–M11. The least certain part of the design is whether this repo's FHIR records can actually feed the model, so it gets tested early.
+- **Repo setup instead of a separate repo:** one new service, `outcome-prediction-service/`, with its own `phase8` compose profile and CI job. It requires Python 3.11 or later, like every other package, and uses the repo's existing Synthea v4.0.0 and Java 21. `mcp-agent`, `triage-service` and the gateway are untouched.
+- **What it returns:** the service has its own `RiskAssessment` model, because triage's version has no field for a numeric probability. The comparison score and percentile are attached as extensions, and there's no high/moderate/low label until someone clinically approves the cut-offs.
+- **Patient data:** it reads FHIR from `fhir-service` through `client/clinical` within this phase, not "later" as the handoff had it. Phase 7 M3 also extends `client/clinical`, so whichever lands first defines the shared change.
+- **Agent:** a new `outcome-prediction-agent` built on `agent-platform`. Its tools can't take feature values or thresholds, so it can't re-score a patient or invent a risk band.
+- **Prototype bugs:** these are recorded in `design.md` §11, to be fixed only after the prototype's numbers are reproduced. The main one: the prescription count uses data from after the scoring date. A mandatory test will catch that.
+- **Decisions:** these are numbered O1–O27 in `decisions.md`. `prd.md` §11 maps each change from the handoff (V1–V14) to the decision behind it.
+
+**Checks:** the archived handoff files match your originals exactly, every relative link resolves, and every decision number the docs cite exists. No code changed, so no tests were run.
+
+**Branch:** `docs/phase8-outcome-prediction-planning`. **Commit:** `4efb1d5b`.
+
+**Known limitations**
+- How Synthea's FHIR records map to the model's inputs is a sketch until M5 checks it against real output. For example, office and hospital-outpatient visits may arrive under the same encounter class.
+- The SNOMED code chosen for "hospital admission" also needs confirming in M6.
+- Still open:
+  - whether AHRQ allows commercial use of models trained on MEPS (O23), a legal question that blocks selling, not building;
+  - risk-band thresholds (O24);
+  - what to do with features that don't carry over from MEPS to FHIR or claims data (O25);
+  - whether customers will send FHIR, claims or both (O26);
+  - who approves the clinical code lists (O27).
+
+I also updated the project memory to point at the PR. Once it's merged, I'll ask whether to delete the feature branch, both locally and on `origin`.
+
 <details>
-<summary>Execution details — 34 tool events</summary>
+<summary>Execution details — 43 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1350,6 +1391,27 @@ Archived bodies verified byte-identical. Now writing the working documents, star
 - **Write** `/workspaces/fhir-agent/docs/phase8/milestone-plan.md`
 - **Edit** `/workspaces/fhir-agent/docs/phase8/milestone-plan.md`
 - **Write** `/workspaces/fhir-agent/docs/phase8/README.md`
+- **Write** `/workspaces/fhir-agent/docs/phase8/README.md`
+- **Bash** `python3 - <<'EOF'
+p='docs/README.md'; s=open(p).read()
+def rep(old,new):
+    global s
+    assert s.count(old)==1, old[:60]; s=s.replace(old,new)
+rep("| **Know why Phase 7 (Medication Reconciliation) i…`
+- **Bash** `cd /workspaces/fhir-agent/docs/phase8 && grep -ohE '\]\(\./[^)#]+' README.md prd.md design.md decisions.md milestone-plan.md ../README.md | sed 's/](\.\///' | sort -u | while read f; do [ -e "$f" ] ||…`
+- **Bash** `cd /workspaces/fhir-agent && sed -i 's/(`prd.md` §9\.4)/(`prd.md` §9, criterion 4)/' docs/phase8/milestone-plan.md && grep -n "criterion 4" docs/phase8/milestone-plan.md && git add docs/README.md docs…`
+- **Bash** `git commit -q -F - <<'EOF'
+docs(phase8): Patient Outcome Prediction — PRD, design, decisions, milestone plan
+
+Plan Phase 8: a machine-learned 12-month hospitalization risk model,
+trained on AHRQ MEPS…`
+- **Bash** `git push -u origin docs/phase8-outcome-prediction-planning 2>&1 | tail -3`
+- **Bash** `gh pr create --base main --head docs/phase8-outcome-prediction-planning --title "docs(phase8): Patient Outcome Prediction — PRD, design, decisions, milestone plan" --body-file - <<'EOF'
+## Summary
+
+Pl…`
+- **Write** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase8-ml-outcome-prediction.md`
+- **Bash** `cd /home/vscode/.claude/projects/-workspaces-fhir-agent/memory && sed -i 's#.*phase8-ml-outcome-prediction.md.*#- [Phase 8 ML outcome prediction](phase8-ml-outcome-prediction.md) — planning docs in PR…`
 
 </details>
 
@@ -1360,6 +1422,6 @@ Archived bodies verified byte-identical. Now writing the working documents, star
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 16:15 UTC
+- **Last updated:** 17 October 2026, 16:20 UTC
 - **Turns:** 7
 - **Status:** Complete
