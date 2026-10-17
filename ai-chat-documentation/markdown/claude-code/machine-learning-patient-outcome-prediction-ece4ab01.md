@@ -2033,8 +2033,12 @@ Git: worktree `/workspaces/fhir-agent`, branch `feature/phase8-data-provenance` 
 
 The root-owned directory is gone, but my first text replacement didn't match: the comment wraps differently in the file. Reading the exact lines:
 
+Decisions are in order (O41, O42, O43). Next, the service README: add how to use the emulator, and retitle the bucket steps as the deferred option:
+
+Ranges updated (the remaining `O42` hit is a deliberate cross-reference). Final checks: Terraform `fmt` and `validate`, the full suite with the MEPS cache and emulator, and staging.
+
 <details>
-<summary>Execution details — 235 tool events</summary>
+<summary>Execution details — 238 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2536,6 +2540,20 @@ old='''      - name: Run Phase 8 test suites
         run: pytest outcome-prediction-service/src/outcome_prediction/tests -q -rs'''
 n…`
 - **Bash** `docker run -d --rm --name gcs-ci-sim -p 4444:4443 fsouza/fake-gcs-server:1.56.1 -scheme http -port 4443 -backend memory >/dev/null && ok=0; for i in $(seq 1 30); do curl -sf http://localhost:4444/stor…`
+- **Bash** `python3 - <<'EOF'
+def edit(p,pairs):
+    s=open(p).read()
+    for old,new in pairs:
+        assert s.count(old)==1,(p,old[:80],s.count(old)); s=s.replace(old,new)
+    open(p,'w').write(s)
+
+edit('docs/…`
+- **Bash** `python3 - <<'EOF'
+p='outcome-prediction-service/README.md'; s=open(p).read()
+old_start=s.index("`gs://` mirrors need `pip install")
+old_end=s.index("## Tests")
+new='''`gs://` mirrors need `pip install…`
+- **Bash** `cd /workspaces/fhir-agent/outcome-prediction-service/infra && terraform fmt -check && terraform init -backend=false -input=false >/dev/null 2>&1 && terraform validate -no-color && rm -rf .terraform .t…`
 
 </details>
 
@@ -2546,6 +2564,6 @@ n…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 18:05 UTC
+- **Last updated:** 17 October 2026, 18:06 UTC
 - **Turns:** 20
 - **Status:** Complete
