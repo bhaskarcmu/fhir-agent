@@ -1558,8 +1558,10 @@ Next, the standing protocol document, i.e. the reusable part the milestone build
 
 Now rewriting the milestone plan in full with the new numbering, the research track, and promotion:
 
+Next, the PRD: goals, requirements, acceptance criteria, deviations and provenance.
+
 <details>
-<summary>Execution details — 80 tool events</summary>
+<summary>Execution details — 83 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1745,6 +1747,9 @@ def rep(old,new):
     assert s.count(old)==1,(old[:80],s.count(old)); s=s.replace(old,new)
 rep("""outcome-prediction-agent/…`
 - **Read** `/workspaces/fhir-agent/docs/phase8/milestone-plan.md`
+- **Write** `/workspaces/fhir-agent/docs/phase8/milestone-plan.md`
+- **Bash** `grep -n "| Exposure |\|^- \*\*G8\|No qualitative band\|^| Worklist UI\|^## 7\|^10\. \*\*Additivity\|Resolved in this pass\|any-stay vs unplanned-stay as\|^| V14\|The prototype is the input; this docum…`
+- **Bash** `sed -n 186,193p docs/phase8/prd.md; sed -n 250,262p docs/phase8/prd.md; sed -n 278,290p docs/phase8/prd.md; sed -n 1,20p docs/phase8/prd.md | grep -n "Decision index\|Companion"`
 
 </details>
 
@@ -1755,6 +1760,6 @@ rep("""outcome-prediction-agent/…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 16:49 UTC
+- **Last updated:** 17 October 2026, 16:50 UTC
 - **Turns:** 11
 - **Status:** Complete
