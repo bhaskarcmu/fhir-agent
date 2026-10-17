@@ -1352,8 +1352,41 @@ All the remaining "Phase N" mentions refer to this repo's real phases. Next I'll
 
 Now the local copies. Checking what's in the scratchpad before I delete it:
 
+Local copies are gone. Now I'll update the PR description so it no longer describes the archived files, and the project memory.
+
+The raw handoff files are gone from the repo and from local disk. PR #65 now holds only documentation that follows the repo's conventions.
+
+Deleting them on their own would have broken about 40 references in the Phase 8 docs. Those docs relied on the files for the reproduction numbers, MEPS facts, mapping rules and URLs. So I moved that content into one new document, `docs/phase8/prototype-baseline.md`, which contains none of the prototype's old phase numbers.
+
+**Files changed**
+- **Removed:**
+  - From the repo: `docs/phase8/source-prd.md`, `source-design.md` and `source-developer-notes.md`.
+  - The local copies in my scratchpad folder.
+  - No other copies exist under `/workspaces`.
+- **Added:** `docs/phase8/prototype-baseline.md`. It holds the data-source choices, MEPS and Synthea facts, the prototype's method and settings, the exact numbers to reproduce, the `meps25-v1` field reference, the risks and the URLs.
+- **Edited:** `README.md`, `prd.md`, `design.md`, `decisions.md` and `milestone-plan.md` in `docs/phase8/`, plus `docs/README.md`.
+  - All references now point to the new document.
+  - The prototype's planned stages are described by what they contain rather than by number.
+  - The prototype's script names are gone from the working docs.
+- **Rewritten decisions:**
+  - O4: the prototype's stage numbers aren't used anywhere.
+  - O5: the raw files aren't kept. This records your reason, that they would confuse future searches, and that it departs from Phase 2's habit of archiving its source PRD.
+  - O7: the code is built from the method recorded in `prototype-baseline.md` and checked against its numbers.
+
+**Checks:**
+- All relative links resolve.
+- Every section of `prototype-baseline.md` cited elsewhere exists.
+- No references to the removed files remain. The only mentions left are Phase 2's own archive and O5.
+- No code changed, so no tests were run.
+
+**Branch:** `docs/phase8-outcome-prediction-planning`, new commit `97b46724`, pushed. I've updated the PR description to match, and the project memory too, so a future session won't recreate the files.
+
+**Known limitations**
+- **The files are still in the branch history.** The first commit (`4efb1d5b`) added them and the second removes them. The PR asks for a **squash-merge**, which keeps them out of `main` entirely. If you want them gone from the branch history now as well, I can rewrite the branch and force-push, but only with your OK.
+- **The prototype's source code is no longer in the repo.** Reproducing it now depends on the method and numbers recorded in `prototype-baseline.md`. That should be enough, but your own copies are the only full version of the code now.
+
 <details>
-<summary>Execution details — 60 tool events</summary>
+<summary>Execution details — 62 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1489,6 +1522,11 @@ docs(phase8): drop raw hand-off files; restate content as prototype-baseline.md
 The archived source-prd.m…`
 - **Bash** `ls -la /tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad/phase8-handoff/; find /workspaces -name "01_PRD.md" -o -name "02_Preliminary_Design.md" -o -name "03_Deve…`
 - **Bash** `rm -r /tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad/phase8-handoff && ls /tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchp…`
+- **Bash** `gh pr edit 65 --body-file - <<'EOF' >/dev/null && echo updated
+## Summary
+
+Planning docs for **Phase 8: Patient Outcome Prediction**. The model is a gradient-boosting classifier that estimates an adul…`
+- **Write** `/home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase8-ml-outcome-prediction.md`
 
 </details>
 
