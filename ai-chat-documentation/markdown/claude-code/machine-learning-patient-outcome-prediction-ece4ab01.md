@@ -1344,8 +1344,12 @@ I want you to remove raw handoff files from the repo and locally. I only want to
 
 Plan: delete the three `source-*.md` files and the scratchpad copies. Before that, I'll move what the working docs still rely on from them (the reproduction numbers, MEPS/Synthea facts, the contract table, URLs) into one conformant document, so no reference is left dangling. First, let me find every reference.
 
+Now I'll repoint the references in the working docs. Reading the exact passages first:
+
+README and milestone plan are repointed. Next come `prd.md`, `design.md`, `decisions.md` and the docs index, then I'll delete the raw files.
+
 <details>
-<summary>Execution details — 44 tool events</summary>
+<summary>Execution details — 54 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1426,6 +1430,40 @@ Pl…`
 ### Turn 8 activity
 
 - **Bash** `grep -n "source-\|hand-off\|handoff\|Appendix A\|Phase 0" docs/phase8/README.md docs/phase8/prd.md docs/phase8/design.md docs/phase8/decisions.md docs/phase8/milestone-plan.md docs/README.md`
+- **Write** `/workspaces/fhir-agent/docs/phase8/prototype-baseline.md`
+- **Bash** `sed -n 3,30p docs/phase8/README.md; echo ----; sed -n 62,70p docs/phase8/README.md; echo ----; sed -n 18,32p docs/phase8/milestone-plan.md`
+- **Bash** `python3 - <<'EOF'
+import re
+def edit(p, pairs):
+    s=open(p).read()
+    for old,new in pairs:
+        assert s.count(old)==1, (p, old[:70], s.count(old))
+        s=s.replace(old,new)
+    open(p,'w').…`
+- **Bash** `grep -n -i "source's\|source \|the source\|O7\|scratch" docs/phase8/milestone-plan.md`
+- **Bash** `sed -n 38,62p docs/phase8/milestone-plan.md`
+- **Bash** `python3 - <<'EOF'
+def edit(p, pairs):
+    s=open(p).read()
+    for old,new in pairs:
+        assert s.count(old)==1, (p, old[:70], s.count(old)); s=s.replace(old,new)
+    open(p,'w').write(s)
+edit('do…`
+- **Bash** `python3 - <<'EOF'
+p='docs/phase8/milestone-plan.md'; s=open(p).read()
+old="Port `ehr_to_meps.py` into `etl/extract/synthea_csv.py` +"
+assert s.count(old)==1
+s=s.replace(old,"Implement the prototype's…`
+- **Bash** `python3 - <<'EOF'
+def edit(p, pairs):
+    s=open(p).read()
+    for old,new in pairs:
+        assert s.count(old)==1, (p, old[:70], s.count(old)); s=s.replace(old,new)
+    open(p,'w').write(s)
+
+edit('d…`
+- **Bash** `sed -i 's/within the source tolerances, with tests\./within the prototype'"'"'s tolerances (`prototype-baseline.md` §5), with tests./' docs/phase8/prd.md && sed -n 59,62p docs/phase8/prd.md && python3…`
+- **Bash** `grep -n "\.py\`)\|ehr_to_meps\|train_model\|score\.py\|build_meps" docs/phase8/design.md docs/phase8/decisions.md docs/phase8/prd.md`
 
 </details>
 
@@ -1436,6 +1474,6 @@ Pl…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 16:23 UTC
+- **Last updated:** 17 October 2026, 16:26 UTC
 - **Turns:** 8
 - **Status:** Complete
