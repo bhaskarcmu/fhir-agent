@@ -22,3 +22,12 @@ def meps_cache_dir() -> Path:
 
 def processed_dir() -> Path:
     return data_dir() / "processed"
+
+
+def reports_dir() -> Path:
+    return data_dir() / "reports"
+
+
+def models_dir() -> Path:
+    """Built model artifacts (gitignored, never committed — decisions.md O17)."""
+    return Path(os.environ.get("OUTCOME_PREDICTION_MODELS_DIR", SERVICE_ROOT / "models"))

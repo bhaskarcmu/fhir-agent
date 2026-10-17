@@ -18,9 +18,11 @@ outcome-prediction-service/       # NEW (O2) — training pipeline, ETL, scoring
       build.py                    # FR-D2: modelling table + label(s)
       dictionary.py               # FR-D3: variable dictionary (not inspect.py: would shadow stdlib `inspect`)
     model/
-      train.py                    # FR-M1–M4: validation model (21–25) + release model (all panels)
+      __init__.py                 # contract features/order, split, hyperparameters — one definition
+      fit.py                      # fit_validation (21–25) / fit_release (all panels); importable by the lab
+      train.py                    # FR-M1–M4: evaluate, refit, write artifact + reports
       evaluate.py                 # FR-E1–E6: metrics.json + model_report.md
-      artifact.py                 # write/verify artifact dir + SHA-256 manifest (O17)
+      artifact.py                 # write/verify artifact dir + SHA-256 manifest (O17); percentiles
     contract.py                   # feature contracts (meps25-v1, later v2), Pydantic, feature order
     etl/
       canonical.py                # the five canonical tables (§7)
@@ -209,7 +211,7 @@ one run; the shared `data/synthea/synthea.properties` is not edited.
 ## 8. Model artifacts (O17, O18)
 
 ```
-models/<model_id>/
+models/gbm-meps25-v1-<training-table sha256[:12]>/   # deterministic ID; never overwritten
   model.joblib          # GBM
   comparison.joblib     # logistic regression (O18)
   metadata.json         # features + order, categoricals, contract version, training panels,
