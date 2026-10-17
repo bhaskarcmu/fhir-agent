@@ -102,8 +102,26 @@ I've opened **[PR #64](https://github.com/bhaskarcmu/fhir-agent/pull/64)**. Once
 
 After the merge, I'll ask before deleting the branch.
 
+## Turn 5
+
+### Prompt
+
+PR Merged. Delete merged branches
+
+### Claude response
+
+I'll confirm the merge on GitHub first, then switch this checkout back to `main` and delete the branch locally and on `origin`.
+
+The PR is merged (`ecdf79e4`). Worktree: `/workspaces/fhir-agent`. I'm switching from `chore/ai-archive-watcher-bootstrap` to `main` and pulling.
+
+You said "branches", plural, so I'll check whether any other merged branches are left.
+
+I deleted `chore/ai-archive-watcher-bootstrap` both locally and on `origin`, after confirming PR #64 was merged (`ecdf79e4`). There are no other merged branches left, local or remote. `main` and `ai-chat-history` are still there.
+
+This checkout (`/workspaces/fhir-agent`) is back on `main`, updated to `ecdf79e4`. The archive watcher is still running.
+
 <details>
-<summary>Execution details — 27 tool events</summary>
+<summary>Execution details — 32 tool events</summary>
 
 ### Turn 3 activity
 
@@ -143,6 +161,14 @@ The aiChatArchiveWatcher service had been f…`
 ## Problem
 The `aiChatArchiveW…`
 
+### Turn 5 activity
+
+- **Bash** `gh pr view 64 --json state,mergedAt,mergeCommit --jq '"\(.state) \(.mergedAt) \(.mergeCommit.oid[0:8])"'; git branch --show-current`
+- **Bash** `git switch -q main && git pull -q --ff-only && git log --oneline -1`
+- **Bash** `git branch -d chore/ai-archive-watcher-bootstrap`
+- **Bash** `git push origin --delete chore/ai-archive-watcher-bootstrap 2>&1 | tail -2`
+- **Bash** `git fetch -q --prune origin && echo "local:" && git branch --merged main | grep -vE "^\*|main$|ai-chat-history$"; echo "remote:" && git branch -r --merged origin/main | grep -vE "origin/(main|HEAD|ai-…`
+
 </details>
 
 ---
@@ -152,6 +178,6 @@ The `aiChatArchiveW…`
 - **Source:** Claude Code
 - **Session ID:** `3b59a463-d6e4-4a7f-94ea-7dfea0acdc2b`
 - **Created:** 17 October 2026, 15:43 UTC
-- **Last updated:** 17 October 2026, 15:50 UTC
-- **Turns:** 4
+- **Last updated:** 17 October 2026, 15:53 UTC
+- **Turns:** 5
 - **Status:** Incomplete
