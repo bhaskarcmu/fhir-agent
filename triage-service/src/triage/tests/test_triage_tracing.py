@@ -11,7 +11,7 @@ process, so adding a second span processor to the existing provider is
 the correct way to observe spans in a test without fighting that.
 
 Run:
-  python3 -m pytest triage-service/src/triage/tests/test_tracing.py -v
+  python3 -m pytest triage-service/src/triage/tests/test_triage_tracing.py -v
 """
 
 from __future__ import annotations

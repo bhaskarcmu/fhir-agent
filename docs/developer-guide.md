@@ -325,8 +325,8 @@ non-interactively. If output still doesn't show up, `docker run -d ... && docker
 
 **Identically-named `tests/test_*.py` files collide across packages.** This repo runs pytest
 with `--import-mode=importlib` and every package has its own `tests/__init__.py`. Two files
-with the *same name* in different packages (e.g. `claims-agent/tests/test_tools.py` and an
-originally-identically-named file under `provider-curation-agent/tests/`) resolve to the same
+with the *same name* in different packages (e.g. a `tests/test_tools.py` in both
+`claims-agent/` and `provider-curation-agent/`, as happened in Phase 3 M4) resolve to the same
 dotted module name and silently collide in `sys.modules` — one file's tests run twice, the
 other's never run, **with a passing exit code throughout**. Before adding any new `tests/`
 file, check it's unique repo-wide: `find . -path '*/tests/test_*.py' -printf '%f\n' | sort |
