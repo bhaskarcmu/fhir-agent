@@ -1554,8 +1554,10 @@ Requirement IDs are restored, and the milestone references have shifted correctl
 
 Now the decisions: fixing O1 and O4, and adding the experimentation decisions as a "second pass" section, the way Phase 7 did.
 
+Next, the standing protocol document, i.e. the reusable part the milestone builds toward:
+
 <details>
-<summary>Execution details — 76 tool events</summary>
+<summary>Execution details — 78 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1732,6 +1734,8 @@ def rep(old,new):
     global s
     assert s.count(old)==1,(old[:80],s.count(old)); s=s.replace(old,new)
 rep("the first (and this phase'…`
+- **Write** `/workspaces/fhir-agent/docs/phase8/experimentation-protocol.md`
+- **Bash** `sed -n 1,50p docs/phase8/design.md | grep -n "" | sed -n 9,50p`
 
 </details>
 
@@ -1742,6 +1746,6 @@ rep("the first (and this phase'…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 16:48 UTC
+- **Last updated:** 17 October 2026, 16:49 UTC
 - **Turns:** 11
 - **Status:** Complete
