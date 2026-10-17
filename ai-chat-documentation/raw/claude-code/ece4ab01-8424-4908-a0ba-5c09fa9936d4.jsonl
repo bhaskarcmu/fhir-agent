@@ -948,3 +948,4 @@
 {"type":"mode","mode":"normal","sessionId":"ece4ab01-8424-4908-a0ba-5c09fa9936d4"}
 {"type":"atis-latch","atis":"","sessionId":"ece4ab01-8424-4908-a0ba-5c09fa9936d4"}
 {"type":"pr-link","sessionId":"ece4ab01-8424-4908-a0ba-5c09fa9936d4","prNumber":65,"prUrl":"https://github.com/bhaskarcmu/fhir-agent/pull/65","prRepository":"bhaskarcmu/fhir-agent","timestamp":"2026-10-17T16:47:50.341Z"}
+{"parentUuid":"b414c299-3f92-4035-bcb2-8f82c97dc630","isSidechain":false,"attachment":{"type":"deferred_tools_record","entries":[],"toolInputCopies":[{"id":"toolu_01QfWymeMaNH29XhF1U9Vr2c","copy":"wire"}]},"type":"attachment","uuid":"575e476b-b312-40c8-b14c-7ded6349a6f5","timestamp":"2026-10-17T16:48:12.633Z","userType":"external","entrypoint":"claude-vscode","cwd":"/workspaces/fhir-agent","sessionId":"ece4ab01-8424-4908-a0ba-5c09fa9936d4","version":"2.1.301","gitBranch":"docs/phase8-outcome-prediction-planning"}
