@@ -9,7 +9,7 @@ description = "Real MCP client/host: NL clinical requests -> ranked, explained, 
 requires-python = ">=3.11"
 dependencies = [
     "anthropic>=0.28",
-    "mcp>=1.28",
+    "mcp>=1.28,<2",  # 2.x changed Server.list_tools / Tool.inputSchema; port deliberately, not by drift
 ]
 
 [project.optional-dependencies]
