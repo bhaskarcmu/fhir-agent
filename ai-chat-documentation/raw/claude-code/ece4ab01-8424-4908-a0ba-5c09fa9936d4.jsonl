@@ -3872,3 +3872,4 @@
 {"type":"mode","mode":"normal","sessionId":"ece4ab01-8424-4908-a0ba-5c09fa9936d4"}
 {"type":"atis-latch","atis":"","sessionId":"ece4ab01-8424-4908-a0ba-5c09fa9936d4"}
 {"type":"pr-link","sessionId":"ece4ab01-8424-4908-a0ba-5c09fa9936d4","prNumber":69,"prUrl":"https://github.com/bhaskarcmu/fhir-agent/pull/69","prRepository":"bhaskarcmu/fhir-agent","timestamp":"2026-10-17T23:32:07.949Z"}
+{"parentUuid":"c1a4318b-75ad-4994-9761-bca2c546543d","isSidechain":false,"attachment":{"type":"deferred_tools_record","entries":[],"toolInputCopies":[{"id":"toolu_01Y2R9wrsnPpsMezuJwkndFs","copy":"wire"}]},"type":"attachment","uuid":"ca38e5e9-0fb9-4a1a-a5b3-30d699ff16f2","timestamp":"2026-10-17T23:32:50.043Z","userType":"external","entrypoint":"claude-vscode","cwd":"/workspaces/fhir-agent","sessionId":"ece4ab01-8424-4908-a0ba-5c09fa9936d4","version":"2.1.301","gitBranch":"main"}
