@@ -1938,8 +1938,10 @@ First, the mirror module: one interface with a local-directory backend (for test
 
 Adding the optional `gcs` extra, then taking the real snapshot. That re-downloads the 7 zips plus their docs and codebooks, about 126 MB.
 
+All 24 pass. One clumsy assertion in the corruption test (`"bit rot" not in p` checks nothing useful), so I'm tightening it:
+
 <details>
-<summary>Execution details — 196 tool events</summary>
+<summary>Execution details — 201 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2355,6 +2357,11 @@ import json, glob
 m=json.load(open('outcome-prediction-service/meps-manifest.json'))['files']
 local=json.load(open('outcome-prediction-service/data/raw/meps/checksums.json'))
 art=jso…`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/tests/test_meps_provenance.py`
+- **Bash** `python -m pytest outcome-prediction-service/src/outcome_prediction/tests/test_meps_provenance.py outcome-prediction-service/src/outcome_prediction/tests/test_meps_download.py -q 2>&1 | tail -15`
+- **Edit** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/tests/test_meps_provenance.py`
+- **Bash** `S=/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad && rm -rf $S/mirror-demo $S/fresh-data && OUTCOME_PREDICTION_MEPS_MIRRORS=file://$S/mirror-demo python -m outc…`
+- **Bash** `S=/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad; sha256sum /workspaces/fhir-agent/outcome-prediction-service/data/processed/meps_hosp12.csv $S/fresh-data/proc…`
 
 </details>
 
@@ -2365,6 +2372,6 @@ art=jso…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 17:50 UTC
+- **Last updated:** 17 October 2026, 17:51 UTC
 - **Turns:** 18
 - **Status:** Complete
