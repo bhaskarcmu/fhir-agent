@@ -1780,8 +1780,10 @@ Adding the report and model output locations to the shared settings:
 
 Pinning scikit-learn exactly in `pyproject.toml`, then running the real training on the M1 table. That run is the reproduction check against 0.769 and 0.708.
 
+Running the full Phase 8 suite with the MEPS cache present:
+
 <details>
-<summary>Execution details — 160 tool events</summary>
+<summary>Execution details — 165 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2127,6 +2129,11 @@ s=m['split']; print('split', s['n_train'], s['n_test'], s['events_test'], round(
 - **Bash** `ls -la outcome-prediction-service/models/*/ && cat outcome-prediction-service/models/*/MANIFEST.sha256 && python3 - <<'EOF'
 import glob, shutil, pathlib, tempfile
 from outcome_prediction.model.artifac…`
+- **Edit** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/tests/conftest.py`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/tests/test_model_training.py`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/tests/test_model_artifact.py`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/tests/test_model_reproduction.py`
+- **Bash** `python -m pytest outcome-prediction-service/src/outcome_prediction/tests -q 2>&1 | tail -15`
 
 </details>
 
@@ -2137,6 +2144,6 @@ from outcome_prediction.model.artifac…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 17:30 UTC
+- **Last updated:** 17 October 2026, 17:31 UTC
 - **Turns:** 15
 - **Status:** Complete
