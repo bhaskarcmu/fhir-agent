@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y \
     python3-venv \
     jq \
     unzip \
+    inotify-tools \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 

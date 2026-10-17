@@ -75,7 +75,19 @@ services:
       ai-chat-history branch. Runs a startup catch-up sync, then watches via
       inotify. Ona supervises this service and restarts it if it stops.
     commands:
-      start: bash /workspaces/.ai-chat-history/ai-chat-documentation/scripts/autostart.sh
+      start: |
+        # The watcher lives in the ai-chat-history worktree, which a container
+        # rebuild does not recreate. Restore it (and inotifywait, for images
+        # built before inotify-tools was added) before handing off.
+        if [ ! -e /workspaces/.ai-chat-history/.git ]; then
+          git -C /workspaces/fhir-agent worktree prune
+          git -C /workspaces/fhir-agent fetch origin ai-chat-history
+          git -C /workspaces/fhir-agent worktree add /workspaces/.ai-chat-history ai-chat-history
+        fi
+        if ! command -v inotifywait > /dev/null; then
+          sudo apt-get update -q && sudo apt-get install -y -q inotify-tools
+        fi
+        exec bash /workspaces/.ai-chat-history/ai-chat-documentation/scripts/autostart.sh
       ready: test -f /workspaces/.ai-chat-history/ai-chat-documentation/logs/watcher.lock
     triggeredBy:
       - manual
