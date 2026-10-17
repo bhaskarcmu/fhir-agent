@@ -2134,7 +2134,7 @@ That's only my label change: the error now names the URL tried (`AHRQ (<url>): �
 Now the fixtures themselves, in the shared `conftest.py`, so any test that asks for them gets populated data however the run is started.
 
 <details>
-<summary>Execution details — 267 tool events</summary>
+<summary>Execution details — 270 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2703,6 +2703,13 @@ old='''    from outcome_prediction.meps.download import SourceUnavailable, fetch
     cache…`
 - **Bash** `docker compose --profile phase8 up -d --wait gcs-emulator 2>&1 | tail -1 && H=http://localhost:4443 && list() { curl -s "$H/storage/v1/b/phase8-reference-data/o" | python3 -c "import sys,json; print(l…`
 - **Bash** `S=/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad && rm -rf $S/off && env -u STORAGE_EMULATOR_HOST OUTCOME_PREDICTION_TESTS_OFFLINE=1 OUTCOME_PREDICTION_DATA_DI…`
+- **Bash** `python3 - <<'EOF'
+p='.github/workflows/tests.yml'; s=open(p).read()
+start=s.index("  # ── Phase 8 outcome prediction")
+end=s.index("  # ── Phase 3 Terraform stubs ──")
+new='''  # ── Phase 8 outcome pr…`
+- **Bash** `grep -n "self-skip\|self-skips\|CI starts the same image" docs/phase8/design.md docs/phase8/decisions.md outcome-prediction-service/README.md | cut -c1-170`
+- **Bash** `sed -n 225,232p docs/phase8/design.md; sed -n 120,132p outcome-prediction-service/README.md; grep -n "## Supersession notes" -A4 docs/phase8/decisions.md`
 
 </details>
 
@@ -2713,6 +2720,6 @@ old='''    from outcome_prediction.meps.download import SourceUnavailable, fetch
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 18:20 UTC
+- **Last updated:** 17 October 2026, 18:21 UTC
 - **Turns:** 23
 - **Status:** Complete
