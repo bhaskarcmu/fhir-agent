@@ -2037,8 +2037,37 @@ Decisions are in order (O41, O42, O43). Next, the service README: add how to use
 
 Ranges updated (the remaining `O42` hit is a deliberate cross-reference). Final checks: Terraform `fmt` and `validate`, the full suite with the MEPS cache and emulator, and staging.
 
+With both the MEPS cache and the emulator present, all 89 tests pass with nothing skipped. Committing to PR #69's branch, `feature/phase8-data-provenance`:
+
+Pushed. Now updating PR #69's description to cover the combined scope:
+
+Last, I'll watch the `phase8 (python)` CI job in the background, since it now starts the emulator, and let you know the result when it finishes.
+
+I added this to **PR #69**, since it's the same feature and still unmerged; nothing argued against combining. The local GCS stand-in is built and tested, and the real bucket is now deferred rather than dropped.
+
+**What changed**
+- **Local GCS emulator.** I added `gcs-emulator` (`fsouza/fake-gcs-server:1.56.1`) to docker-compose under the `phase8` profile. The real Google Cloud Storage client talks to it via `STORAGE_EMULATOR_HOST`, so the `gs://` code now runs for real instead of only against a fake inside the tests. A plain `docker compose up` still starts only `fhir mcp-agent triage`.
+- **I checked the one property that matters before relying on it.** The emulator really does refuse a second upload to the same name (HTTP 412). That's what makes mirrored files write-once.
+- **One fix along the way.** My first setup stored the emulator's files in a workspace folder, but the container wrote them as root, so your user couldn't read or delete them. I switched to a Docker-managed volume, and used the container itself to remove the root-owned folder I'd created minutes earlier.
+- **Tests and CI.** The new `test_meps_mirror_emulator.py` runs the real client against the emulator. CI's `phase8` job now starts the emulator, so these tests run on every PR.
+- **Docs.** New decision O43 records the emulator and that it's a test stand-in, not a backup. O41 now says the real bucket is deferred and that you keep an off-workspace copy, without naming its location. The Terraform stays in the repo, marked deferred, and the service README covers both the emulator and the later real-bucket steps.
+
+**Verified on the real data, through the emulator**
+- All 21 original files uploaded; pushing again found them all already present, and verification passed.
+- The files survived an emulator restart.
+- With AHRQ simulated as unreachable, a fresh workspace restored all seven panels from the emulated bucket and rebuilt the training table byte for byte (`950d8be12078`).
+- Locally, with the MEPS data and the emulator, all 89 tests pass with nothing skipped. A local copy of the CI setup (emulator, no MEPS data) gives 73 passed and 16 skipped, all of them tests that need the MEPS data.
+
+**Commit:** `45703832` on `feature/phase8-data-provenance`, after `f74d30a0`. I've updated the PR title and description to cover both commits.
+
+**Limitations**
+- The emulator doesn't enforce any of the real bucket's protections (retention, access control, blocking public access). Those exist only in the Terraform you haven't applied.
+- The emulator's data lives on this workspace's Docker host, so it's for testing only. Your off-workspace copy is the actual backup.
+- I've stopped the emulator but kept its data volume; restart it with `docker compose --profile phase8 up -d gcs-emulator`.
+- CI is running now. I'm watching the `phase8` job and will report its result. The `phase3 (python)` failure caused by the unpinned `mcp` package is still on `main` and will show on this PR too. I can open the small pin PR if you'd like.
+
 <details>
-<summary>Execution details — 238 tool events</summary>
+<summary>Execution details — 241 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2554,6 +2583,16 @@ old_start=s.index("`gs://` mirrors need `pip install")
 old_end=s.index("## Tests")
 new='''`gs://` mirrors need `pip install…`
 - **Bash** `cd /workspaces/fhir-agent/outcome-prediction-service/infra && terraform fmt -check && terraform init -backend=false -input=false >/dev/null 2>&1 && terraform validate -no-color && rm -rf .terraform .t…`
+- **Bash** `git commit -q -F - <<'EOF'
+feat(phase8): local GCS emulator stands in for the deferred private bucket
+
+The repo owner chose to skip creating the GCP bucket for now; the preserved
+copy is their off-wor…`
+- **Bash** `gh pr edit 69 --title "feat(phase8): pin MEPS data in git, preserve originals in private mirrors, local GCS emulator" --body-file - <<'EOF' >/dev/null && echo updated
+## Summary
+
+Implements the data-m…`
+- **Bash** `sleep 20; for i in $(seq 1 90); do s=$(gh pr checks 69 2>/dev/null | awk -F'\t' '$1=="phase8 (python)"{print $2}'); [ -n "$s" ] && [ "$s" != "pending" ] && break; sleep 10; done; gh pr checks 69 2>/de…`
 
 </details>
 
@@ -2564,6 +2603,6 @@ new='''`gs://` mirrors need `pip install…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 18:06 UTC
+- **Last updated:** 17 October 2026, 18:08 UTC
 - **Turns:** 20
 - **Status:** Complete
