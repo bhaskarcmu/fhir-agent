@@ -2134,7 +2134,7 @@ That's only my label change: the error now names the URL tried (`AHRQ (<url>): �
 Now the fixtures themselves, in the shared `conftest.py`, so any test that asks for them gets populated data however the run is started.
 
 <details>
-<summary>Execution details — 270 tool events</summary>
+<summary>Execution details — 272 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2710,6 +2710,15 @@ end=s.index("  # ── Phase 3 Terraform stubs ──")
 new='''  # ── Phase 8 outcome pr…`
 - **Bash** `grep -n "self-skip\|self-skips\|CI starts the same image" docs/phase8/design.md docs/phase8/decisions.md outcome-prediction-service/README.md | cut -c1-170`
 - **Bash** `sed -n 225,232p docs/phase8/design.md; sed -n 120,132p outcome-prediction-service/README.md; grep -n "## Supersession notes" -A4 docs/phase8/decisions.md`
+- **Bash** `python3 - <<'EOF'
+def edit(p,pairs):
+    s=open(p).read()
+    for old,new in pairs:
+        assert s.count(old)==1,(p,old[:80],s.count(old)); s=s.replace(old,new)
+    open(p,'w').write(s)
+
+s=open('doc…`
+- **Bash** `S=/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad && rm -rf $S/ci && echo "=== cold CI run ===" && env -u STORAGE_EMULATOR_HOST -u OUTCOME_PREDICTION_MEPS_MIRRO…`
 
 </details>
 
@@ -2720,6 +2729,6 @@ new='''  # ── Phase 8 outcome pr…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 18:21 UTC
+- **Last updated:** 17 October 2026, 18:22 UTC
 - **Turns:** 23
 - **Status:** Complete
