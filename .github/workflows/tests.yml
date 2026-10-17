@@ -165,6 +165,26 @@ jobs:
                  provider-search-agent/tests \
                  data/scripts/provider_ingest -q
 
+  # ── Phase 8 outcome prediction ─────────────────────────────────────────────
+  # Unit tests use synthetic Stata fixtures. The MEPS reproduction tests self-skip here:
+  # the full MEPS download (~720 MB of .dta) is deliberately not part of required CI
+  # (docs/phase8/decisions.md O17); run them locally after
+  # `python -m outcome_prediction.meps.download`.
+  phase8-python:
+    name: phase8 (python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Phase 8 packages
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e "outcome-prediction-service[dev]"
+      - name: Run Phase 8 test suites
+        run: pytest outcome-prediction-service/src/outcome_prediction/tests -q -rs
+
   # ── Phase 3 Terraform stubs ──────────────────────────────────────────────────
   # `terraform validate` only -- not `plan` or `apply`. Plan needs live GCP provider
   # credentials this project doesn't provision (verified, not assumed: the google provider

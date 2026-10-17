@@ -1,0 +1,5 @@
+# MEPS downloads, Synthea outputs and processed tables — public data, but large and
+# reproducible from the download step; never committed (docs/phase8/decisions.md O17).
+data/
+# Built model artifacts — never committed (O17).
+models/
