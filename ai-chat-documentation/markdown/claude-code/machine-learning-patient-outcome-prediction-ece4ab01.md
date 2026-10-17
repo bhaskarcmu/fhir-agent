@@ -43,6 +43,22 @@ I also saved them to project memory, since no `docs/phase8/` exists yet to recor
 
 Go ahead and upload the handoff. I'll review it against these two decisions and the repo's conventions, and point out any gaps or conflicts before anything goes into `docs/phase8/`.
 
+## Turn 3
+
+### Prompt
+
+I will give you three markdowns as inline prompts. This will also help with my record keeping system. Ask for these three parts one at a time:
+
+1. Draft PRD (WIP)
+2. Preliminary Design (not actual design, needs LOTS more exploration and iterations)
+3. Developer notes
+
+### Claude response
+
+Please paste **Part 1: the draft PRD (WIP)**.
+
+I'll take it in as it is, without reviewing it yet. Once all three parts are in, I'll review them together. After the PRD, I'll ask for the preliminary design.
+
 <details>
 <summary>Execution details — 3 tool events</summary>
 
@@ -64,6 +80,6 @@ Go ahead and upload the handoff. I'll review it against these two decisions and 
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 15:40 UTC
-- **Turns:** 2
+- **Last updated:** 17 October 2026, 15:55 UTC
+- **Turns:** 3
 - **Status:** Complete
