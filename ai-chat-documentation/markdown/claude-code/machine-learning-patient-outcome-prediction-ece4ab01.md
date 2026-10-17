@@ -1776,8 +1776,12 @@ That `risk_percentile` came out convoluted. Simplifying it before going further:
 
 Next, the fitting functions, in their own module so that `train` and `evaluate` can both use them without a circular import:
 
+Adding the report and model output locations to the shared settings:
+
+Pinning scikit-learn exactly in `pyproject.toml`, then running the real training on the M1 table. That run is the reproduction check against 0.769 and 0.708.
+
 <details>
-<summary>Execution details — 155 tool events</summary>
+<summary>Execution details — 158 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2106,6 +2110,16 @@ Phase 8 **M1**: t…`
 - **Edit** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/model/artifact.py`
 - **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/model/fit.py`
 - **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/model/evaluate.py`
+- **Edit** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/settings.py`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/model/train.py`
+- **Bash** `python3 - <<'EOF'
+p='outcome-prediction-service/pyproject.toml'; s=open(p).read()
+old='''    "pandas>=2.2",
+    "numpy>=1.26",
+]'''
+assert s.count(old)==1
+s=s.replace(old,'''    "pandas>=2.2",
+    "nu…`
 
 </details>
 
@@ -2116,6 +2130,6 @@ Phase 8 **M1**: t…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 17:28 UTC
+- **Last updated:** 17 October 2026, 17:29 UTC
 - **Turns:** 15
 - **Status:** Complete
