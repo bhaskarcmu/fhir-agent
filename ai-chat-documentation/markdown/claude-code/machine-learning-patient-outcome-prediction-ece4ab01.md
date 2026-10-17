@@ -1646,8 +1646,93 @@ All seven panels downloaded and checksummed. HC-202 is 415 MB uncompressed, much
 
 The dictionary matches exactly too: 2,648 variables and identical storage counts. Now the tests. First, confirming my planned test filenames don't collide with existing ones anywhere in the repo:
 
+All 27 pass with the real MEPS cache. Now the CI scenario, with no cache: the reproduction tests must skip, not fail.
+
+`.clinerules` has no build or install section, so there's nothing there to keep in sync. Applying the wiring edits:
+
+The workflow parses as valid YAML. Next, registering MEPS in the repo's data-source catalog (decision O13). First I'll check the catalog's format:
+
+Now the service-level README:
+
+Measured: 38 MB zipped, 721 MB extracted. My README guess of "~85 MB of zips" was wrong; fixing it:
+
+Updating the Phase 8 docs to match what M1 actually built and found:
+
+The Phase 8 README headline still says "No code written yet". Fixing that and checking the docs index section:
+
+Docs are consistent. Final verification before committing: full Phase 8 test run, the repo-wide duplicate-test-filename check that CI runs, and a check that no data files are staged.
+
+The duplicate-filename check flags `test_tools.py` and `test_tracing.py`. Neither is mine; checking where they live:
+
+I'll delete the Phase 8 memory, since it said to once PR #65 merged; the repo docs, including O5, now record everything it held. I'll also take a first look at CI on the new PR.
+
+CI is running. I'll watch the new `phase8 (python)` job in the background and let you know the result when it finishes.
+
+I deleted the merged branch from PR #65 on `origin` and locally; `main` and `ai-chat-history` remain. M1 is built and passes locally, with no blockers. It's in **PR #66**: https://github.com/bhaskarcmu/fhir-agent/pull/66
+
+**M1 reproduces the prototype's dataset exactly**, run against real AHRQ downloads:
+
+| Check | Prototype | M1 |
+|---|---|---|
+| Training table | 56,360 adults × 31 columns, 4,820 hospitalized | same |
+| Per-panel persons, adults, hospitalizations (all 7 panels) | listed in `prototype-baseline.md` | all identical |
+| HC-252 variable dictionary | 2,648 variables, given storage-type counts | identical |
+
+**Diagnosis columns:** each diagnosis flag finds exactly one matching column in every panel. The only name change is diabetes, which becomes `DIABDXY1_M18` from Panel 23 onward. A test now fails if a future file adds a second match.
+
+**Files changed**
+- **New package `outcome-prediction-service/`** with three commands:
+  - `download`: fetches the panels and records a SHA-256 checksum for each. Later runs stop if a file changes, and a malicious file name inside a zip can't write outside the cache.
+  - `build`: the prototype's logic, unchanged, plus a per-panel report.
+  - `dictionary`: lists every variable in a MEPS file.
+- **Wiring:** a new `phase8 (python)` CI job, an entry in `pytest.ini`, and the install lines in `CLAUDE.md` and `.ona/automations.yaml`.
+- **Data catalog:** MEPS is now listed in `data/reference/README.md`, with the open question of whether AHRQ allows commercial use.
+- **Phase 8 docs:** the status now reads "M1 built, M2 next", and the milestone plan records the verified numbers.
+
+**Validation**
+- With the MEPS data downloaded: 27 tests pass.
+- Without it, which is how CI runs: 17 pass and the 10 tests that need real MEPS data skip.
+- The download is 38 MB zipped and 721 MB unpacked. It lives in the gitignored `data/` folder, and no data files are committed.
+
+**Branch:** `feature/phase8-m1-meps-dataset`. **Commit:** `81e16b64`.
+
+**Known limitations and deviations**
+- CI just started. The background watch on the `phase8 (python)` job is still running, and I'll report the result when it finishes. I only ran Python 3.12 locally; CI uses Python 3.11.
+- The `phase8` compose profile moves from M1 to M7, because nothing exists for a compose service to run until the API does. This is recorded in the milestone plan.
+- I named two things differently from the design doc and updated the doc to match:
+  - `dictionary.py` instead of `inspect.py`, which would hide Python's own `inspect` module when run as a script.
+  - Tests live in `src/outcome_prediction/tests/`, following the repo's convention.
+- **Pre-existing problem on `main`, not caused by M1:** CI's check for duplicate test file names finds `test_tools.py` and `test_tracing.py` twice each, in `claims-agent`/`mcp-agent` and `mcp-agent`/`triage-service`. Do you want me to fix that in a separate PR?
+- Found while reading the data catalog: Synthea's default FHIR export has no `Coverage` resources. So insurance data will probably have to come from `ExplanationOfBenefit` instead; M6 will confirm. I noted this in `design.md` §7.
+
+After PR #66 merges, I'll ask about deleting its branch.
+
+## Turn 13
+
+### Prompt
+
+<task-notification>
+<task-id>brv46aac3</task-id>
+<tool-use-id>toolu_01EXb8joEccrcfsyTjG84cFu</tool-use-id>
+<output-file>/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/tasks/brv46aac3.output</output-file>
+<status>completed</status>
+<summary>Background command "Wait for phase8 CI job to finish, then list checks" completed (exit code 0)</summary>
+</task-notification>
+
+### Claude response
+
+The `phase8 (python)` job **passed** on CI's Python 3.11, so the Python-version gap I flagged is closed. Confirming its test counts in the log:
+
+CI result for PR #66: the new **`phase8 (python)` job passed** on Python 3.11, closing the version gap I flagged. I couldn't pull its log to confirm the 17 passed / 10 skipped split, so the CI-side counts are unverified; locally that split ran exactly as expected.
+
+Other checks so far:
+- **Passed:** `ci config`, `gitleaks`, `phase2 (python)`, and all four `terraform validate` jobs.
+- **Still running:** `phase1 (independence)`, `phase2 (java)` and `phase3 (python)`.
+
+Keep an eye on `phase3 (python)`. It contains the duplicate-test-filename check, which would flag the duplicates already on `main` (`test_tools.py`, `test_tracing.py`). So if it fails, the cause will be that pre-existing issue, not M1, which adds no duplicates. My earlier question stands: should I fix those in a separate PR?
+
 <details>
-<summary>Execution details — 109 tool events</summary>
+<summary>Execution details — 142 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1885,6 +1970,78 @@ for p,info in r['panels'].items():
     chosen={k:v['column'] for k,v in info['…`
 - **Bash** `python -m outcome_prediction.meps.dictionary 252`
 - **Bash** `find . -name "test_*.py" -not -path "./node_modules/*" | xargs -n1 basename | grep -E "meps|conftest" ; echo "(no collisions above means clear)"`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/tests/__init__.py`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/tests/conftest.py`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/tests/test_meps_build.py`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/tests/test_meps_download.py`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/tests/test_meps_dictionary.py`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/tests/test_meps_reproduction.py`
+- **Bash** `python -m pytest outcome-prediction-service/src/outcome_prediction/tests -q 2>&1 | tail -25`
+- **Bash** `OUTCOME_PREDICTION_DATA_DIR=/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad/empty-data python -m pytest outcome-prediction-service/src/outcome_prediction/tests…`
+- **Bash** `grep -n "pip install" CLAUDE.md .clinerules .ona/automations.yaml 2>/dev/null | cut -c1-200; grep -n "phase3-terraform:\|^  [a-z0-9-]*:$" .github/workflows/tests.yml`
+- **Bash** `grep -n "pip install\|provider-search-agent\[dev\]" .clinerules | head; sed -n 1,20p .ona/automations.yaml; sed -n 175,200p .github/workflows/tests.yml`
+- **Bash** `grep -n -i "install\|pytest\|build" .clinerules | head`
+- **Bash** `python3 - <<'EOF'
+def edit(p,pairs):
+    s=open(p).read()
+    for old,new in pairs:
+        assert s.count(old)==1,(p,old[:60],s.count(old)); s=s.replace(old,new)
+    open(p,'w').write(s)
+edit('pytest…`
+- **Bash** `grep -n "^#\|^| " data/reference/README.md | head -40; wc -l data/reference/README.md`
+- **Bash** `sed -n 48,51p data/reference/README.md; sed -n 73,78p data/reference/README.md`
+- **Bash** `python3 - <<'EOF'
+def edit(p,pairs):
+    s=open(p).read()
+    for old,new in pairs:
+        assert s.count(old)==1,(p,old[:60],s.count(old)); s=s.replace(old,new)
+    open(p,'w').write(s)
+edit('data/r…`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/README.md`
+- **Bash** `du -ch outcome-prediction-service/data/raw/meps/*.dta | tail -1; curl -sSI https://meps.ahrq.gov/data_files/pufs/h{202,210,217,225,234,244,252}/h{202,210,217,225,234,244,252}dta.zip 2>/dev/null | grep…`
+- **Bash** `for n in 202 210 217 225 234 244 252; do curl -sSI https://meps.ahrq.gov/data_files/pufs/h$n/h${n}dta.zip | grep -i content-length | tr -d '\r' | awk '{print $2}'; done | python3 -c "import sys; print…`
+- **Edit** `/workspaces/fhir-agent/outcome-prediction-service/README.md`
+- **Bash** `grep -n "inspect.py\|  tests/\|    fixtures/\|^| \`coverage\`" docs/phase8/design.md; grep -n "inspect.py\|meps/inspect" docs/phase8/*.md; grep -n "compose profile placeholder" docs/phase8/milestone-p…`
+- **Bash** `python3 - <<'EOF'
+def edit(p,pairs):
+    s=open(p).read()
+    for old,new in pairs:
+        assert s.count(old)==1,(p,old[:60],s.count(old)); s=s.replace(old,new)
+    open(p,'w').write(s)
+edit('docs/p…`
+- **Bash** `python3 - <<'EOF'
+def edit(p,pairs):
+    s=open(p).read()
+    for old,new in pairs:
+        assert s.count(old)==1,(p,old[:60],s.count(old)); s=s.replace(old,new)
+    open(p,'w').write(s)
+edit('docs/p…`
+- **Bash** `sed -i 's/(Phase 8, planned, M1 next)/(Phase 8, M1 built, M2 next)/' docs/README.md && python3 - <<'EOF'
+p='docs/README.md'; s=open(p).read()
+old="""forms are worth serving, through a standing protoco…`
+- **Bash** `python3 - <<'EOF'
+p='docs/phase8/README.md'; s=open(p).read()
+old=s[s.index("> **📝 Planning complete (first pass). No code written yet.**"):s.index("> are reserved for **Phase 8b**.")]
+new="""> **🚧 M1…`
+- **Bash** `python -m pytest outcome-prediction-service/src/outcome_prediction/tests -q 2>&1 | tail -1; dupes=$(find . -name "test_*.py" | xargs -n1 basename | sort | uniq -c | awk '$1>1'); [ -z "$dupes" ] && ech…`
+- **Bash** `find . -name "test_tools.py" -o -name "test_tracing.py" | grep -v node_modules; echo; git ls-files | grep -E "test_(tools|tracing)\.py"`
+- **Bash** `git commit -q -F - <<'EOF'
+feat(phase8): M1 — outcome-prediction-service scaffold + MEPS dataset build
+
+New package outcome-prediction-service/ with the first three pipeline stages,
+reproducing the re…`
+- **Bash** `gh pr create --base main --head feature/phase8-m1-meps-dataset --title "feat(phase8): M1 — outcome-prediction-service scaffold + MEPS dataset build" --body-file - <<'EOF'
+## Summary
+
+Phase 8 **M1**: t…`
+- **Bash** `rm /home/vscode/.claude/projects/-workspaces-fhir-agent/memory/phase8-ml-outcome-prediction.md && sed -i '/phase8-ml-outcome-prediction.md/d' /home/vscode/.claude/projects/-workspaces-fhir-agent/memor…`
+- **Bash** `for i in $(seq 1 60); do s=$(gh pr checks 66 2>/dev/null | awk -F'\t' '$1=="phase8 (python)"{print $2}'); [ "$s" != "pending" ] && [ -n "$s" ] && break; sleep 10; done; gh pr checks 66 2>/dev/null | a…`
+
+### Turn 13 activity
+
+- **Bash** `cat /tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/tasks/brv46aac3.output`
+- **Bash** `gh run view --job 117454136460 --log 2>/dev/null | grep -E "passed|skipped" | tail -2 | cut -c1-200`
+- **Bash** `gh api repos/bhaskarcmu/fhir-agent/actions/jobs/117454136460/logs 2>&1 | grep -E "[0-9]+ passed" | tail -1 | cut -c1-200`
 
 </details>
 
@@ -1895,6 +2052,6 @@ for p,info in r['panels'].items():
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 17:07 UTC
-- **Turns:** 12
+- **Last updated:** 17 October 2026, 17:11 UTC
+- **Turns:** 13
 - **Status:** Complete
