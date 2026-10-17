@@ -132,20 +132,21 @@ def configured_mirrors() -> list[Mirror]:
     return [from_uri(u) for u in os.environ.get(ENV, "").split(",") if u.strip()]
 
 
-def _archived_files(manifest: dict) -> list[tuple[str, str]]:
-    """(name, sha256) of every original file the manifest records: data zips and docs."""
+def _archived_files(manifest: dict, include_docs: bool = True) -> list[tuple[str, str]]:
+    """(name, sha256) of every original file the manifest records: data zips, and docs."""
     files = []
     for entry in manifest["files"].values():
         files.append((entry["data"]["zip_name"], entry["data"]["zip_sha256"]))
-        files += [(doc["name"], doc["sha256"]) for doc in entry["documentation"]]
+        if include_docs:
+            files += [(doc["name"], doc["sha256"]) for doc in entry["documentation"]]
     return files
 
 
-def push(manifest: dict, archive: Path, mirrors: list[Mirror]) -> list[str]:
+def push(manifest: dict, archive: Path, mirrors: list[Mirror], *, include_docs: bool = True) -> list[str]:
     """Upload every manifest file from the local archive to every mirror. Each file is
     checked against the manifest first, so a mirror never receives unverified bytes."""
     log = []
-    for name, sha in _archived_files(manifest):
+    for name, sha in _archived_files(manifest, include_docs):
         data = (archive / name).read_bytes()
         if hashlib.sha256(data).hexdigest() != sha:
             raise MirrorError(f"{archive / name} does not match the manifest — not uploading")
@@ -155,10 +156,10 @@ def push(manifest: dict, archive: Path, mirrors: list[Mirror]) -> list[str]:
     return log
 
 
-def verify(manifest: dict, mirrors: list[Mirror]) -> list[str]:
+def verify(manifest: dict, mirrors: list[Mirror], *, include_docs: bool = True) -> list[str]:
     """Re-download and hash every manifest file on every mirror. Returns problems found."""
     problems = []
-    for name, sha in _archived_files(manifest):
+    for name, sha in _archived_files(manifest, include_docs):
         for mirror in mirrors:
             key = object_key(sha, name)
             try:

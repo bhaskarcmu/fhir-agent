@@ -122,10 +122,20 @@ be undone. Flip it deliberately once `mirror verify` passes.
 pytest outcome-prediction-service/src/outcome_prediction/tests -q -rs
 ```
 
-Unit tests use tiny synthetic Stata files and a synthetic modelling table.
-`test_meps_reproduction.py` and `test_model_reproduction.py` — the M1/M2 acceptance checks
-against the prototype's exact numbers — need the real MEPS cache and **self-skip** without it
-(as in CI, where the download is deliberately not run).
+Unit tests use tiny synthetic Stata files and a synthetic modelling table. Tests that need
+real data or the GCS emulator **populate what's missing instead of skipping**
+(`docs/phase8/decisions.md` O44), whether you run one test, a file, or everything:
+
+- the MEPS cache: any missing panel is fetched (local archive → AHRQ → configured mirrors,
+  verified against `meps-manifest.json`); a cached file that doesn't match is moved aside as
+  `*.mismatch-<time>` and re-fetched, with a warning;
+- the GCS emulator: a reachable `STORAGE_EMULATOR_HOST` is reused, otherwise a
+  `fake-gcs-server` container is started for the session (needs Docker) and removed after;
+- the emulator bucket `phase8-reference-data`: created if absent, topped up if incomplete.
+
+If something can't be obtained, the test **fails** with the reason. To work offline, set
+`OUTCOME_PREDICTION_TESTS_OFFLINE=1` — the dependent tests then skip instead. CI runs every
+test and caches the original zips, keyed on the manifest.
 
 ## Data and licence notes
 

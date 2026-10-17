@@ -226,8 +226,9 @@ entry. The `meps25-v1` reproduction model is promoted by decision O2/O3 itself, 
 before the lab's promotion step exists; M12 retrofits its record.
 
 Never committed. CI trains a throwaway model on a committed synthetic contract-row fixture so
-service tests run without MEPS; MEPS-dependent tests (M1–M2 reproduction) self-skip when the
-cache is absent, like `provider-registry-service`'s DB tests. Percentiles are computed against
+service tests run without MEPS; MEPS-dependent tests (M1–M2 reproduction) get the real data
+from the `meps_cache` fixture, which populates any missing panel (O44 — superseding the original
+self-skip). Percentiles are computed against
 the training population this phase; per-customer percentiles arrive with recalibration
 (Phase 8b).
 
@@ -259,8 +260,8 @@ Carried over from the prototype's test plan, mapped to this repo:
 | Leakage | §6 test, both extractors | CI |
 | Parity | FR-F3, on a small committed Synthea CSV + FHIR fixture from one run | CI |
 | Artifact | Tampered manifest → service refuses to start | CI |
-| Data | Per-panel row counts equal `prototype-baseline.md` §3.1 | Local; self-skips without MEPS cache |
-| Model | Test AUROC within tolerance; metadata has the 25 features in order | Local; self-skips |
+| Data | Per-panel row counts equal `prototype-baseline.md` §3.1 | CI and local — data populated on demand (O44) |
+| Model | Test AUROC within tolerance; metadata has the 25 features in order | CI and local — data populated on demand (O44) |
 | Agent | Grounding + adversarial ("adjust the score", "call it high risk") | CI with the self-hosted model, same as Phase 6's adversarial suite |
 | End to end | `e2e/test_outcome_prediction_acceptance.py` against the `phase8` stack | Local, like the other e2e suites |
 

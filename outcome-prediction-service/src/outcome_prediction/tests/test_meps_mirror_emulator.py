@@ -1,39 +1,37 @@
 """gs:// mirrors against a real GCS emulator (fake-gcs-server — decisions.md O43): the actual
-google-cloud-storage client, HTTP and the generation precondition, end to end.
+google-cloud-storage client, HTTP and the generation precondition, end to end — first with
+synthetic bytes, then with the real MEPS originals in the populated emulator bucket.
 
-Self-skips unless STORAGE_EMULATOR_HOST points at a running emulator. Locally:
-    docker compose --profile phase8 up -d --wait gcs-emulator
-    STORAGE_EMULATOR_HOST=http://localhost:4443 pytest <this file>
-CI starts the same image and sets the variable, so this runs on every PR.
+The emulator comes from the `gcs_emulator` fixture (conftest): a running one if
+STORAGE_EMULATOR_HOST answers, otherwise a container started for the session. Nothing to set
+up by hand, locally or in CI (O44).
 """
 from __future__ import annotations
 
-import os
-import urllib.request
+import re
 import uuid
+from pathlib import Path
 
 import pytest
 
 storage = pytest.importorskip("google.cloud.storage", reason="needs the [gcs] extra")
 
+from outcome_prediction.meps import download  # noqa: E402
 from outcome_prediction.meps.download import fetch  # noqa: E402
+from outcome_prediction.meps.manifest import load_manifest  # noqa: E402
 from outcome_prediction.meps.mirror import (  # noqa: E402
     MirrorError, from_uri, object_key, push, put, verify,
 )
 from outcome_prediction.tests.test_meps_provenance import (  # noqa: E402,F401 — `ahrq` is a fixture
     N, ORIGINAL_DTA, ORIGINAL_ZIP, _manifest, _sha, ahrq,
 )
+from outcome_prediction.tests.conftest import GCS_EMULATOR_IMAGE  # noqa: E402
 
 
 @pytest.fixture(scope="module")
-def bucket():
-    host = os.environ.get("STORAGE_EMULATOR_HOST")
-    if not host:
-        pytest.skip("STORAGE_EMULATOR_HOST not set — no GCS emulator to test against")
-    try:
-        urllib.request.urlopen(f"{host}/storage/v1/b", timeout=3)
-    except OSError as exc:
-        pytest.skip(f"GCS emulator not reachable at {host} ({exc.__class__.__name__})")
+def bucket(gcs_emulator):
+    """A fresh, uniquely named bucket per test module — synthetic tests never touch the shared
+    MEPS bucket."""
     name = f"phase8-test-{uuid.uuid4().hex[:12]}"
     storage.Client(project="local").create_bucket(name)
     return name
@@ -83,3 +81,31 @@ def test_fetch_rejects_changed_upstream_and_uses_the_bucket_original(bucket, tmp
         zf.writestr(f"h{N}.dta", b"quiet re-release")
     ahrq["serve"] = buf.getvalue()
     assert fetch(N, cache=tmp_path, manifest=_manifest(), mirrors=[m]).read_bytes() == ORIGINAL_DTA
+
+
+# ── Housekeeping ─────────────────────────────────────────────────────────────────────
+
+
+def test_fixture_image_matches_docker_compose():
+    compose = (Path(__file__).resolve().parents[4] / "docker-compose.yml").read_text()
+    assert re.search(r"image:\s*" + re.escape(GCS_EMULATOR_IMAGE) + r"\s*$", compose, re.M), (
+        f"docker-compose.yml's gcs-emulator image differs from the test fixture's {GCS_EMULATOR_IMAGE}")
+
+
+# ── The real MEPS originals in the populated emulator bucket ─────────────────────────
+
+
+def test_populated_bucket_holds_every_manifest_data_zip(meps_emulator_bucket):
+    from outcome_prediction.meps.mirror import verify as verify_mirror
+    assert verify_mirror(load_manifest(), [meps_emulator_bucket], include_docs=False) == []
+
+
+def test_a_real_panel_restores_from_the_bucket_with_ahrq_down(meps_emulator_bucket, tmp_path, monkeypatch):
+    """Panel 25 (HC-234, the smallest) into an empty cache, with AHRQ unreachable."""
+    def ahrq_down(url):
+        raise OSError("AHRQ unreachable (simulated)")
+    monkeypatch.setattr(download, "_fetch_zip", ahrq_down)
+
+    path = fetch(234, tmp_path, mirrors=[meps_emulator_bucket])
+
+    assert _sha(path.read_bytes()) == load_manifest()["files"]["h234"]["data"]["dta_sha256"]

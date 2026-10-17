@@ -1,9 +1,29 @@
-"""Shared fixtures. Unit tests use tiny synthetic Stata files shaped like MEPS — no real
-MEPS data is needed in CI. Tests that need the real MEPS cache self-skip without it
-(decisions.md O17), same pattern as provider-registry-service's DB-backed tests.
+"""Shared fixtures.
+
+Unit tests use tiny synthetic Stata files shaped like MEPS. Tests that need real data or the
+GCS emulator ask for a session fixture below, which **populates whatever is missing** —
+decisions.md O44 — so a single test, a file, or the whole suite behaves the same, locally or
+in CI:
+
+  meps_cache          all seven panels in the MEPS cache, fetched from the local archive, AHRQ,
+                      or configured mirrors and verified against meps-manifest.json
+  gcs_emulator        a reachable GCS emulator: STORAGE_EMULATOR_HOST if it answers, otherwise
+                      a fake-gcs-server container started for the session and removed after
+  meps_emulator_bucket  the emulator bucket `phase8-reference-data`, created if absent and
+                      topped up with every manifest data zip it lacks
+
+If data can't be obtained the test FAILS, loudly — a silent skip would let CI pass without
+having exercised it. To work offline, set OUTCOME_PREDICTION_TESTS_OFFLINE=1: then these
+fixtures skip instead of fetching or starting anything.
 """
 from __future__ import annotations
 
+import os
+import shutil
+import subprocess
+import time
+import urllib.request
+import warnings
 from pathlib import Path
 
 import pandas as pd
@@ -79,13 +99,118 @@ def synthetic_table(per_panel: int = 300, seed: int = 0) -> pd.DataFrame:
     return t[order]
 
 
+OFFLINE_ENV = "OUTCOME_PREDICTION_TESTS_OFFLINE"
+# Must match the gcs-emulator image in docker-compose.yml (checked by test_meps_mirror_emulator).
+GCS_EMULATOR_IMAGE = "fsouza/fake-gcs-server:1.56.1"
+EMULATOR_BUCKET = "phase8-reference-data"
+
+
+def _offline() -> bool:
+    return os.environ.get(OFFLINE_ENV, "").strip().lower() in ("1", "true", "yes")
+
+
 @pytest.fixture(scope="session")
 def meps_cache() -> Path:
-    """The real MEPS cache, or skip. Never downloads: tests must not hit the network."""
+    """The real MEPS cache with all seven panels, populated on demand (O44)."""
+    from outcome_prediction.meps.download import ChecksumMismatch, SourceUnavailable, fetch
+
     cache = meps_cache_dir()
-    missing = [f"h{n}.dta" for n in LONGITUDINAL_PANELS.values()
-               if not (cache / f"h{n}.dta").exists()]
-    if missing:
-        pytest.skip(f"MEPS cache incomplete at {cache} (missing {', '.join(missing)}); "
-                    f"run `python -m outcome_prediction.meps.download` to enable")
+    missing = [n for n in LONGITUDINAL_PANELS.values() if not (cache / f"h{n}.dta").exists()]
+    if missing and _offline():
+        pytest.skip(f"{OFFLINE_ENV} is set and the MEPS cache at {cache} lacks "
+                    f"{', '.join(f'h{n}.dta' for n in missing)}")
+    try:
+        for n in LONGITUDINAL_PANELS.values():   # verifies present files, fetches missing ones
+            try:
+                fetch(n, cache)
+            except ChecksumMismatch:
+                # A cached file that doesn't match the manifest is wrong data: set it aside
+                # (kept, for investigation) and fetch a verified original. The pipeline CLIs
+                # still refuse in this situation — there, a human should look first.
+                bad = cache / f"h{n}.dta"
+                kept = bad.with_name(f"{bad.name}.mismatch-{int(time.time())}")
+                bad.rename(kept)
+                warnings.warn(f"{bad.name} did not match meps-manifest.json; moved to {kept.name} "
+                              f"and re-fetched a verified original", stacklevel=1)
+                fetch(n, cache)
+    except SourceUnavailable as exc:
+        pytest.fail(f"could not populate the MEPS cache at {cache}:\n{exc}", pytrace=False)
     return cache
+
+
+def _reachable(host: str) -> bool:
+    try:
+        urllib.request.urlopen(f"{host}/storage/v1/b", timeout=3)
+        return True
+    except OSError:
+        return False
+
+
+@pytest.fixture(scope="session")
+def gcs_emulator():
+    """Base URL of a reachable GCS emulator, exported as STORAGE_EMULATOR_HOST for the session.
+    Reuses a running one (docker compose, CI); otherwise starts a throwaway container."""
+    host = os.environ.get("STORAGE_EMULATOR_HOST")
+    if host and _reachable(host):
+        yield host
+        return
+    if _offline():
+        pytest.skip(f"{OFFLINE_ENV} is set and no GCS emulator is reachable")
+    if shutil.which("docker") is None:
+        pytest.fail("no GCS emulator is reachable and Docker isn't available to start one; "
+                    f"start one (docker compose --profile phase8 up -d gcs-emulator) or set {OFFLINE_ENV}=1",
+                    pytrace=False)
+
+    name = f"phase8-test-gcs-{os.getpid()}"
+    started = subprocess.run(
+        ["docker", "run", "-d", "--rm", "--name", name, "-p", "127.0.0.1::4443", GCS_EMULATOR_IMAGE,
+         "-scheme", "http", "-port", "4443", "-backend", "memory"],
+        capture_output=True, text=True)
+    if started.returncode != 0:
+        pytest.fail(f"could not start the GCS emulator container: {started.stderr.strip()}", pytrace=False)
+    try:
+        port = subprocess.run(["docker", "port", name, "4443/tcp"], capture_output=True,
+                              text=True, check=True).stdout.split(":")[-1].strip()
+        host = f"http://127.0.0.1:{port}"
+        for _ in range(60):
+            if _reachable(host):
+                break
+            time.sleep(0.5)
+        else:
+            pytest.fail(f"GCS emulator container {name} never became reachable at {host}", pytrace=False)
+        previous = os.environ.get("STORAGE_EMULATOR_HOST")
+        os.environ["STORAGE_EMULATOR_HOST"] = host
+        yield host
+        if previous is None:
+            os.environ.pop("STORAGE_EMULATOR_HOST", None)
+        else:
+            os.environ["STORAGE_EMULATOR_HOST"] = previous
+    finally:
+        subprocess.run(["docker", "stop", name], capture_output=True)
+
+
+@pytest.fixture(scope="session")
+def meps_emulator_bucket(gcs_emulator, meps_cache):
+    """`gs://phase8-reference-data` on the emulator, holding every manifest data zip — created
+    if absent, topped up if incomplete, then verified (O44). Documentation is left out: AHRQ
+    may edit its HTML pages, and a cosmetic edit shouldn't fail a data test."""
+    from google.api_core.exceptions import Conflict
+    from google.cloud import storage
+
+    from outcome_prediction.meps.download import ensure_archive
+    from outcome_prediction.meps.manifest import load_manifest
+    from outcome_prediction.meps.mirror import from_uri, push, verify
+
+    try:
+        storage.Client(project="local").create_bucket(EMULATOR_BUCKET)
+    except Conflict:
+        pass                                            # already exists: top it up below
+    manifest = load_manifest()
+    archive = meps_cache / "archive"
+    ensure_archive(manifest, archive, include_docs=False)
+    mirror = from_uri(f"gs://{EMULATOR_BUCKET}")
+    push(manifest, archive, [mirror], include_docs=False)
+    problems = verify(manifest, [mirror], include_docs=False)
+    if problems:
+        pytest.fail("emulator bucket failed verification:\n" + "\n".join(problems), pytrace=False)
+    return mirror

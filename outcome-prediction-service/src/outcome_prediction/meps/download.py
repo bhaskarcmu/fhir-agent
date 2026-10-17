@@ -74,14 +74,15 @@ def _write_atomic(path: Path, data: bytes) -> None:
     tmp.replace(path)
 
 
-def _obtain_zip(entry: dict, archive: Path, mirrors: list[Mirror]) -> bytes:
-    """The original zip, verified against the manifest, from the first source that has it."""
-    name, expected = entry["data"]["zip_name"], entry["data"]["zip_sha256"]
+def obtain_original(name: str, expected: str, url: str, archive: Path, mirrors: list[Mirror]) -> bytes:
+    """One original file (data zip or documentation), verified against its manifest SHA-256,
+    from the first source that has it: the local archive, its source URL, then each mirror.
+    Matching bytes are written to the archive; mismatches are rejected and never cached."""
     cached = archive / name
     if cached.exists() and _sha256(cached.read_bytes()) == expected:
         return cached.read_bytes()
 
-    sources = [("AHRQ", lambda: _fetch_zip(entry["data"]["url"]))]
+    sources = [(f"AHRQ ({url})", lambda: _fetch_zip(url))]
     sources += [(m.uri, lambda m=m: m.get(object_key(expected, name))) for m in mirrors]
     attempts = []
     for label, get in sources:
@@ -99,6 +100,31 @@ def _obtain_zip(entry: dict, archive: Path, mirrors: list[Mirror]) -> bytes:
     hint = "" if mirrors else f"\n  (no private mirrors configured — set {MIRRORS_ENV})"
     raise SourceUnavailable(f"no source could supply {name} matching the manifest:\n"
                             + "\n".join(attempts) + hint)
+
+
+def _obtain_zip(entry: dict, archive: Path, mirrors: list[Mirror]) -> bytes:
+    d = entry["data"]
+    return obtain_original(d["zip_name"], d["zip_sha256"], d["url"], archive, mirrors)
+
+
+def ensure_archive(manifest: dict, archive: Path, mirrors: list[Mirror] | None = None,
+                   *, include_docs: bool = True) -> list[str]:
+    """Make the local archive hold every original the manifest lists (data zips, and the doc
+    pages + codebooks if `include_docs`), fetching only what's missing or wrong. Returns the
+    names it had to fetch."""
+    mirrors = configured_mirrors() if mirrors is None else mirrors
+    fetched = []
+    for entry in manifest["files"].values():
+        wanted = [(entry["data"]["zip_name"], entry["data"]["zip_sha256"], entry["data"]["url"])]
+        if include_docs:
+            wanted += [(d["name"], d["sha256"], d["url"]) for d in entry["documentation"]]
+        for name, sha, url in wanted:
+            path = archive / name
+            if path.exists() and _sha256(path.read_bytes()) == sha:
+                continue
+            obtain_original(name, sha, url, archive, mirrors)
+            fetched.append(name)
+    return fetched
 
 
 def _fetch_manifested(file_number: int, entry: dict, cache: Path, mirrors: list[Mirror]) -> Path:

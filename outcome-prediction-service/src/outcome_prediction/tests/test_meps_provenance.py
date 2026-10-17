@@ -122,7 +122,7 @@ def test_no_matching_source_fails_loudly_and_caches_nothing(tmp_path, ahrq):
     with pytest.raises(SourceUnavailable) as exc:
         fetch(N, cache=tmp_path, manifest=_manifest(), mirrors=[LocalMirror(tmp_path / "empty")])
     message = str(exc.value)
-    assert "AHRQ: served sha256" in message and "rejected" in message
+    assert "AHRQ (https://example.invalid/h999dta.zip): served sha256" in message and "rejected" in message
     assert "empty" in message                                   # the mirror attempt is reported
     assert not (tmp_path / f"h{N}.dta").exists()
     assert not (tmp_path / "archive" / f"h{N}dta.zip").exists()
