@@ -2476,6 +2476,23 @@ Each step pairs a concept with real MEPS work.
 1. **Depth of maths.** Intuition and practical judgement, or derivations too (why log-loss, how boosting fits residuals, the Shapley formula)?
 2. **Merging milestones.** Confirm that M10 and M11 fold into M3. Your answer suggests yes, but I'd like it explicit, since it changes the milestone plan and two decisions.
 
+## Turn 30
+
+### Prompt
+
+Answers:
+
+1. Intuition, practical judgement, and conceptual coaching. No derivations or equations
+2. YEs, merge milestones as you feel like. We can always change milestones again later this does not frighten me
+
+=================
+
+What other information can be used to improve predictions? For example, is there free and open source reports from NHS of UK that can be used, or any university or research publications available? How can this type of domain related knowledge help us in this work?
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 294 tool events</summary>
 
@@ -3129,6 +3146,6 @@ X = np.array([[1.0],[…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 23:33 UTC
-- **Turns:** 29
-- **Status:** Complete
+- **Last updated:** 17 October 2026, 23:47 UTC
+- **Turns:** 30
+- **Status:** Incomplete
