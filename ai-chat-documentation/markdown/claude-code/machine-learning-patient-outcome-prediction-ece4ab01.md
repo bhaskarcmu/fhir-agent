@@ -2129,8 +2129,12 @@ Locally `mcp` 2.3.0 is installed, the same major version CI picks up. So I can r
 
 Against real Postgres, all 64 tests in those three Phase 3 suites pass with nothing skipped, including the 7 handshake tests that failed in CI. Committing and opening the PR:
 
+That's only my label change: the error now names the URL tried (`AHRQ (<url>): …`), which is more useful. Updating the test's expected text:
+
+Now the fixtures themselves, in the shared `conftest.py`, so any test that asks for them gets populated data however the run is started.
+
 <details>
-<summary>Execution details — 253 tool events</summary>
+<summary>Execution details — 258 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2675,6 +2679,13 @@ Implements the data-m…`
 - **Bash** `docker run -d --rm --name mcp-pin-pg -p 5432:5432 -e POSTGRES_USER=provider_registry -e POSTGRES_PASSWORD=provider_registry -e POSTGRES_DB=provider_registry_test postgres:16-alpine >/dev/null && for i…`
 - **Bash** `git add provider-mcp-server/pyproject.toml provider-search-agent/pyproject.toml && git status --short && git commit -q -F - <<'EOF'
 fix(deps): pin mcp below 2 for provider-mcp-server and provider-sear…`
+- **Bash** `git status --porcelain | wc -l && git checkout -q feature/phase8-data-provenance && git pull -q --ff-only && git branch --show-current && git log --oneline -2 && python -m pip install -q -e "outcome-p…`
+- **Bash** `python3 - <<'EOF'
+p='outcome-prediction-service/src/outcome_prediction/meps/download.py'; s=open(p).read()
+old_start=s.index("def _obtain_zip(entry: dict, archive: Path, mirrors: list[Mirror]) -> byte…`
+- **Bash** `python -m pytest outcome-prediction-service/src/outcome_prediction/tests/test_meps_provenance.py -q 2>&1 | grep -E "^E |FAILED" | head -6`
+- **Bash** `sed -i 's/    assert "AHRQ: served sha256" in message and "rejected" in message/    assert "AHRQ (https:\/\/example.invalid\/h999dta.zip): served sha256" in message and "rejected" in message/' outcome…`
+- **Bash** `grep -n "def meps_cache" -B2 -A15 outcome-prediction-service/src/outcome_prediction/tests/conftest.py; sed -n 1,20p outcome-prediction-service/src/outcome_prediction/tests/conftest.py`
 
 </details>
 
@@ -2685,6 +2696,6 @@ fix(deps): pin mcp below 2 for provider-mcp-server and provider-sear…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 18:16 UTC
+- **Last updated:** 17 October 2026, 18:17 UTC
 - **Turns:** 23
 - **Status:** Complete
