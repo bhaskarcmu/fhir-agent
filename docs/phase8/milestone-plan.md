@@ -1,6 +1,6 @@
 # Phase 8 Milestone Plan — Patient Outcome Prediction
 
-M1–M13. All **planned, none started**. Expanded from M1–M11 after a second scope pass added a
+M1–M13. **M1 built** (verified results below); M2–M13 planned. Expanded from M1–M11 after a second scope pass added a
 dedicated experimentation track (`decisions.md` O28–O40): M3 (workbench) and M12 (promotion)
 are new, and the former model-improvement milestones are now rounds of the
 [experimentation protocol](./experimentation-protocol.md).
@@ -50,10 +50,10 @@ without a new milestone.
 exactly.
 
 **Long story:** Package skeleton per `design.md` §1 (`pyproject.toml`, `README.md`,
-gitignored `data/` and `models/`), `phase8` compose profile placeholder, `phase8` CI job,
-`pytest.ini` entry. Implement, from the method in `prototype-baseline.md` §4.1 (O7),
+gitignored `data/` and `models/`), `phase8` CI job, `pytest.ini` entry. (The `phase8` compose
+profile moves to M7: until the API exists there is nothing for a compose service to run.) Implement, from the method in `prototype-baseline.md` §4.1 (O7),
 `meps/download.py` (zipfile extraction, SHA-256 record), `meps/build.py` (with per-panel
-diagnosis-column resolution logged — `design.md` §11 defect 6) and `meps/inspect.py`. Register
+diagnosis-column resolution logged — `design.md` §11 defect 6) and `meps/dictionary.py`. Register
 MEPS in `data/reference/README.md` with its use terms and the open AHRQ question (O13, O23).
 
 **Deliverable:** 56,360 rows, 4,820 events, per-panel counts matching
@@ -61,6 +61,13 @@ MEPS in `data/reference/README.md` with its use terms and the open AHRQ question
 counts. Phase 1 independence job still green.
 
 **Depends on:** nothing new.
+
+**Verified (M1 built):** reproduced **exactly** against real AHRQ downloads with pandas 3.0.6 /
+Python 3.12 — `(56360, 31)`, 4,820 events, and every per-panel persons / adults / events figure
+in `prototype-baseline.md` §3.1; HC-252 dictionary 2,648 variables with identical storage
+counts. Diagnosis-column resolution unambiguous in every panel (`design.md` §11 defect 6).
+Downloads: 38 MB zipped, 721 MB extracted. Tests: 27 pass with the MEPS cache; 17 pass and 10
+self-skip without it (the CI configuration).
 
 ---
 
@@ -90,7 +97,7 @@ prediction targets without eroding the test set.
 **Long story:** New top-level package `outcome-prediction-lab/` (O29) per `design.md` §12:
 local MLflow tracking and model registry (O30); config-driven runs with panel-grouped
 cross-validation on training panels only; `targets.py` for label definitions across outcome ×
-form (O34), with every MEPS variable confirmed by `inspect.py` before use; the holdout ledger
+form (O34), with every MEPS variable confirmed by `dictionary.py` before use; the holdout ledger
 and a CLI that refuses unlogged test-panel evaluation (O32); the target scorecard (O36) and
 model-card generator (O39); output-stripped notebooks checked in CI (O38). Write
 [`experimentation-protocol.md`](./experimentation-protocol.md) into its final form against the

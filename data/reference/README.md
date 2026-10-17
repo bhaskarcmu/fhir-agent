@@ -46,6 +46,7 @@
 | **HL7 Da Vinci PAS** | ⏳ referenced | `build.fhir.org/ig/HL7/davinci-pas/` · `github.com/HL7/davinci-pas` | none | HL7 CC0 | Canonical request/response `Claim`↔`ClaimResponse` (PA number in `ClaimResponse.preAuthRef`) |
 | **CMS DE-SynPUF** | ⏳ referenced | `www.cms.gov/.../de-synpuf`; OMOP on AWS Open Data `registry.opendata.aws/cmsdesynpuf-omop/` | none (CMS pages 403 bots) | Public domain | Real Part D pharmacy-claim field distributions (CSV → map to FHIR) |
 | **CMS BCDA sandbox** | ⏳ referenced | `sandbox.bcda.cms.gov/`, `bcda.cms.gov/bcda-data.html` | generic token | US Gov | Synthetic FHIR EOB/Coverage NDJSON reference |
+| **AHRQ MEPS longitudinal panels 21–27** *(Phase 8)* | ✅ downloaded (7 × `.dta`, ~720 MB, gitignored, SHA-256 recorded) | `outcome-prediction-service/data/raw/meps/` · `meps.ahrq.gov/data_files/pufs/h{n}/h{n}dta.zip` for HC-202/210/217/225/234/244/252 | none | AHRQ public-use file terms — **commercial use unconfirmed** (see note) | Training/testing data for the 12-month hospitalization model (`docs/phase8/`) |
 
 Legend: ✅ obtained locally · ⏳ verified + documented, pull on demand.
 
@@ -71,6 +72,14 @@ java -jar data/synthea/synthea-with-dependencies.jar \
 ```
 
 ## Notes & caveats
+
+- **MEPS use terms (Phase 8).** The data-use wording on MEPS public-use files says data "may not
+  be used for any purpose other than for the purpose for which they were supplied". Whether
+  that permits commercial use of models trained on them is **unconfirmed** — the repo owner is
+  seeking AHRQ's written answer (`docs/phase8/decisions.md` O23). Building and research are
+  unaffected; selling MEPS-trained weights is not decided. Download with
+  `python -m outcome_prediction.meps.download`; never use the HC-245 three-year file
+  (duplicates Panel 24 people).
 
 - **Coverage not in default Synthea R4 export.** The p=3 run emitted Claim/EOB/Provenance/Organization
   but **no `Coverage`**. Synthea models payers internally; Coverage appears via the payer/US-Core

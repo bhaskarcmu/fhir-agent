@@ -16,7 +16,7 @@ outcome-prediction-service/       # NEW (O2) — training pipeline, ETL, scoring
     meps/
       download.py                 # FR-D1: fetch h{n}dta.zip, extract with zipfile, record SHA-256
       build.py                    # FR-D2: modelling table + label(s)
-      inspect.py                  # FR-D3: variable dictionary
+      dictionary.py               # FR-D3: variable dictionary (not inspect.py: would shadow stdlib `inspect`)
     model/
       train.py                    # FR-M1–M4: validation model (21–25) + release model (all panels)
       evaluate.py                 # FR-E1–E6: metrics.json + model_report.md
@@ -32,8 +32,8 @@ outcome-prediction-service/       # NEW (O2) — training pipeline, ETL, scoring
       risk_assessment.py          # Phase 8's own RiskAssessment/Bundle models + builder (O3, §4)
     api.py                        # FastAPI app (§5)
     tools.py                      # the tool surface outcome-prediction-agent may call (§9)
-  tests/
-    fixtures/                     # tiny committed Synthea sample + synthetic contract rows (no MEPS)
+    tests/                        # repo convention (src/<pkg>/tests); synthetic Stata fixtures built in conftest
+      fixtures/                   # tiny committed Synthea sample + synthetic contract rows (no MEPS)
   models/                         # gitignored — built artifacts
   data/                           # gitignored — MEPS cache, Synthea CSV/FHIR outputs
 
@@ -199,7 +199,7 @@ M6**, recording what was found, as Phase 7 does for RxNav (R11):
 | `encounter` | `Encounter.class` + `period` | Synthea maps several CSV classes to `AMB`; office vs hospital-outpatient (`obtotvy1` vs `optotvy1`) may need `Encounter.type`/`serviceType`, or a documented merge |
 | `condition` | `Condition` code (SNOMED) + onset | Description regex (prototype) until M13's code lists |
 | `medication_fill` | `MedicationDispense` if present; else `MedicationRequest` + `dispenseRequest`, truncated at `as_of` | Synthea's FHIR may not carry a dispense count; the fallback rule is decided and documented in M6 |
-| `coverage` | `Coverage`, or `ExplanationOfBenefit.insurance` | Which one Synthea v4.0.0 populates is unverified |
+| `coverage` | `Coverage`, or `ExplanationOfBenefit.insurance` | Early evidence: Synthea's default R4 export emitted **no `Coverage`** in Phase 2's run (`data/reference/README.md`), so `ExplanationOfBenefit.insurance` is the likely source — confirm in M6 |
 | cost (`totexpy1`) | `ExplanationOfBenefit` payment/total, else `Claim.total` | Charges vs MEPS payments (O25) |
 
 Synthea runs for Phase 8 (O11) override `exporter.csv.export=true` and
@@ -283,7 +283,10 @@ Recorded here so M4–M7 fix them **after** the reproduction (O6), each with a t
    carries the validation model's metrics labelled as such.
 6. **Diagnosis-column resolution by prefix** (prototype dataset build, `prototype-baseline.md` §4.1): "first column starting
    with the prefix and containing `Y1`" is fragile across panels. M1 logs the resolved column
-   per panel per flag into the build report, so a silent mismatch is visible.
+   per panel per flag into the build report, so a silent mismatch is visible. **M1 finding:**
+   every flag resolves to exactly one candidate in all seven panels; the only drift is diabetes,
+   `DIABDXY1` in panels 21–22 and `DIABDXY1_M18` from panel 23 (the 2018 question change). A
+   test fails if a future file introduces a second candidate.
 
 ## 12. The experimentation workbench — `outcome-prediction-lab` (O28–O39)
 
@@ -313,7 +316,7 @@ The lab trains *many* candidates across outcome × form (O34) — label definiti
 | Cost | next-year spending | MAE on log scale, top-decile capture | Needs an O35 decision |
 | Ordinal tier | none / one / repeated stays | Ordinal-aware metrics | Needs an O35 decision |
 
-Label candidates are read from MEPS year-2 variables only after `inspect.py` confirms their
+Label candidates are read from MEPS year-2 variables only after `dictionary.py` confirms their
 names and codes in each panel's file (`prototype-baseline.md` §3, "never guess").
 
 **What the lab deliberately is not.** No feature store, pipeline orchestrator, or hosted

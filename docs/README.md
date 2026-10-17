@@ -24,7 +24,7 @@ Start with what you're trying to do.
 | **Run or resume a Phase 8 research round** (model / prediction-target exploration) | [`phase8/experimentation-protocol.md`](./phase8/experimentation-protocol.md) | 10 min |
 | **Check what Phase 5 and Phase 6 are actually reserved for** | [`phase5/README.md`](./phase5/README.md) | 5 min |
 | **Know exactly what was agreed** (normative) | [`phase2/requirements.md`](./phase2/requirements.md) | reference |
-| **Know what to build next** | [`phase2/plan.md` §16](./phase2/plan.md#16-future-work) (Phase 2) / [`phase3/README.md`](./phase3/README.md) (Phase 3b) / [`phase5/README.md`](./phase5/README.md) (Phase 5) / [`phase6/milestone-plan.md`](./phase6/milestone-plan.md) (Phase 6, M6 next, M1-M5 built) / [`phase7/milestone-plan.md`](./phase7/milestone-plan.md) (Phase 7, planned, M1 next) / [`phase8/milestone-plan.md`](./phase8/milestone-plan.md) (Phase 8, planned, M1 next) | 5 min |
+| **Know what to build next** | [`phase2/plan.md` §16](./phase2/plan.md#16-future-work) (Phase 2) / [`phase3/README.md`](./phase3/README.md) (Phase 3b) / [`phase5/README.md`](./phase5/README.md) (Phase 5) / [`phase6/milestone-plan.md`](./phase6/milestone-plan.md) (Phase 6, M6 next, M1-M5 built) / [`phase7/milestone-plan.md`](./phase7/milestone-plan.md) (Phase 7, planned, M1 next) / [`phase8/milestone-plan.md`](./phase8/milestone-plan.md) (Phase 8, M1 built, M2 next) | 5 min |
 
 ## The guides
 
@@ -145,14 +145,14 @@ capable of touching the fail-closed gate**; the alternative is a formal, immutab
 - **[`decisions.md`](./phase7/decisions.md)** — the ADR-style index (R1–R23), same convention.
 
 **[`phase8/`](./phase8/README.md)** — Patient Outcome Prediction (12-month hospitalization
-risk). **Planning complete (first pass), no code yet.** The platform's first machine-learned
+risk). **M1 built; M2–M13 planned.** The platform's first machine-learned
 capability: a model trained on free, open US data (AHRQ MEPS) estimates an adult's probability
 of an inpatient stay in the next 12 months and returns it as a FHIR `RiskAssessment`, beside a
 hand-checkable comparison score. Seeded by a research prototype from an earlier session,
 whose planned work became milestones M1–M13 plus a deferred Phase 8b. A permanent
 experimentation workbench (`outcome-prediction-lab`) explores which outcomes and prediction
-forms are worth serving, through a standing protocol that outlives the phase. M1 (service
-scaffold + MEPS dataset reproduction) is next.
+forms are worth serving, through a standing protocol that outlives the phase. **M1 built**
+(MEPS dataset reproduced exactly); M2 (training, evaluation, artifact) is next.
 
 - **[`README.md`](./phase8/README.md)** — the canonical status statement for Phase 8.
 - **[`prd.md`](./phase8/prd.md)** — problem, goals/non-goals, functional requirements (the

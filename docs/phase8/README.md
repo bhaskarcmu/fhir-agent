@@ -2,13 +2,13 @@
 
 > ## Canonical status
 >
-> **📝 Planning complete (first pass). No code written yet.** A research prototype from an
-> earlier session was handed over and reconciled with this repo's conventions; what it
-> established is restated in `prototype-baseline.md`, and the raw hand-off documents are not
-> kept in the repo (O5). A second pass added a permanent **experimentation track**
-> (`outcome-prediction-lab`, O28–O40). `prd.md`, `design.md`, `decisions.md` (`O1`–`O40`),
-> `milestone-plan.md` (M1–M13) and `experimentation-protocol.md` reflect both passes. M1 (service scaffold + MEPS
-> dataset reproduction) is next, not started. Cloud deployment, recalibration and monitoring
+> **🚧 M1 built (PR open) — the MEPS dataset reproduces the prototype exactly. M2 (training,
+> evaluation, artifact) is next; M3–M13 planned.** A research prototype from an earlier session
+> was handed over and reconciled with this repo's conventions; what it established is restated
+> in `prototype-baseline.md`, and the raw hand-off documents are not kept in the repo (O5). A
+> second pass added a permanent **experimentation track** (`outcome-prediction-lab`, O28–O40).
+> `prd.md`, `design.md`, `decisions.md` (`O1`–`O40`), `milestone-plan.md` (M1–M13) and
+> `experimentation-protocol.md` reflect both passes. Cloud deployment, recalibration and monitoring
 > are reserved for **Phase 8b**.
 >
 > *This is the one canonical status statement. Other documents link here rather than restate it.*
