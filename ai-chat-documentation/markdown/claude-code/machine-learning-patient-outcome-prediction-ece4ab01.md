@@ -2031,8 +2031,10 @@ Combining with PR #69 is fine: it's the same feature (mirror support), still unm
 
 Git: worktree `/workspaces/fhir-agent`, branch `feature/phase8-data-provenance` (PR #69, target `main`). First I'll confirm the PR is open and the branch is current, and look up a pinned `fake-gcs-server` image version:
 
+The root-owned directory is gone, but my first text replacement didn't match: the comment wraps differently in the file. Reading the exact lines:
+
 <details>
-<summary>Execution details — 221 tool events</summary>
+<summary>Execution details — 235 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2510,6 +2512,30 @@ Implements the data…`
 
 - **Bash** `gh pr view 69 --json state --jq .state && git branch --show-current && git status -sb | head -1 && curl -s "https://hub.docker.com/v2/repositories/fsouza/fake-gcs-server/tags?page_size=8&ordering=last…`
 - **Bash** `docker run -d --rm --name phase8-gcs-probe -p 4443:4443 fsouza/fake-gcs-server:1.56.1 -scheme http -port 4443 -backend memory >/dev/null && for i in $(seq 1 30); do curl -sf http://localhost:4443/stor…`
+- **Bash** `docker run -d --rm --name phase8-gcs-probe -p 4443:4443 fsouza/fake-gcs-server:1.56.1 -scheme http -port 4443 -backend memory >/dev/null && for i in $(seq 1 30); do curl -sf http://localhost:4443/stor…`
+- **Bash** `sed -n 194,240p docker-compose.yml; grep -n "^volumes:" -A12 docker-compose.yml`
+- **Bash** `for t in sh wget curl; do docker run --rm --entrypoint $t fsouza/fake-gcs-server:1.56.1 --help >/dev/null 2>&1 && echo "$t: present" || echo "$t: absent"; done; docker image inspect fsouza/fake-gcs-se…`
+- **Bash** `tail -25 docker-compose.yml`
+- **Bash** `cat >> docker-compose.yml <<'EOF'
+
+  # ── Phase 8: local GCS emulator for the private MEPS mirror ─────────────────
+  # Stands in for the real private bucket (outcome-prediction-service/infra/, not ap…`
+- **Bash** `docker compose --profile phase8 up -d --wait gcs-emulator 2>&1 | tail -2 && curl -s -o /dev/null -w "create bucket: %{http_code}\n" -X POST "http://localhost:4443/storage/v1/b?project=local" -H 'Conte…`
+- **Bash** `S=/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad && rm -rf $S/fresh-gcs && STORAGE_EMULATOR_HOST=http://localhost:4443 OUTCOME_PREDICTION_MEPS_MIRRORS=gs://pha…`
+- **Bash** `docker compose --profile phase8 down 2>&1 | tail -1 && docker run --rm --entrypoint sh -v "$PWD/outcome-prediction-service/data:/d" fsouza/fake-gcs-server:1.56.1 -c 'rm -rf /d/gcs-emulator' && ls outc…`
+- **Bash** `grep -n "Phase 8: local GCS" -A20 docker-compose.yml`
+- **Bash** `python3 - <<'EOF'
+p='docker-compose.yml'; s=open(p).read()
+pairs=[('''  # (docs/phase8/decisions.md O41, O43). A TEST STAND-IN, NOT A BACKUP: its storage lives
+  # in this workspace (gitignored outcom…`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/tests/test_meps_mirror_emulator.py`
+- **Bash** `STORAGE_EMULATOR_HOST=http://localhost:4443 python -m pytest outcome-prediction-service/src/outcome_prediction/tests/test_meps_mirror_emulator.py -q -rs 2>&1 | tail -3; echo "--- without emulator:"; p…`
+- **Bash** `python3 - <<'EOF'
+p='.github/workflows/tests.yml'; s=open(p).read()
+old='''      - name: Run Phase 8 test suites
+        run: pytest outcome-prediction-service/src/outcome_prediction/tests -q -rs'''
+n…`
+- **Bash** `docker run -d --rm --name gcs-ci-sim -p 4444:4443 fsouza/fake-gcs-server:1.56.1 -scheme http -port 4443 -backend memory >/dev/null && ok=0; for i in $(seq 1 30); do curl -sf http://localhost:4444/stor…`
 
 </details>
 
@@ -2520,6 +2546,6 @@ Implements the data…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 18:03 UTC
+- **Last updated:** 17 October 2026, 18:05 UTC
 - **Turns:** 20
 - **Status:** Complete
