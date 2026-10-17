@@ -345,6 +345,301 @@ I've got Part 1 and saved it word for word to `/tmp/claude-1000/-workspaces-fhir
 
 Please paste **Part 2: the preliminary design**.
 
+## Turn 5
+
+### Prompt
+
+<pasted_content id="62de">
+# Preliminary Design: 12-Month Hospitalization Risk Service
+
+Version: 0.1
+Date: October 16, 2026
+Read after: `01_PRD.md`. Implementation details and code: `03_Developer_Notes.md`.
+
+---
+
+## 1. Design principles
+
+1. **One feature contract.** Every data source (MEPS for training, Synthea for testing, FHIR or claims in production) is converted into the same versioned feature schema. The model only ever sees that schema.
+2. **Deterministic services decide, AI explains.** The risk score comes from a deterministic, versioned model. Any LLM use is limited to explaining results or helping development, never computing the score, and never with real patient data.
+3. **Training and scoring are separate modes.** Training mode may look at year 2 to build the label. Scoring mode must never read data after the scoring date.
+4. **Portable features first.** The core model uses features that also exist in claims or medical records. Survey-only features are an optional add-on group.
+5. **Reproducible by one command per stage.** Fixed seeds, pinned versions, cached downloads, recorded checksums.
+6. **No PHI in the repository.** Real data stays in the customer's environment. Development uses MEPS public files and Synthea only.
+
+## 2. System context
+
+```
+                 +-------------------------+
+ AHRQ MEPS  ---> |  Training pipeline      |  (offline, in repo, public data only)
+ (public files)  |  build -> train -> eval |
+                 +-----------+-------------+
+                             | model artifact (versioned)
+                             v
+ Customer        +-------------------------+        +----------------------+
+ FHIR / claims ->|  ETL adapters           |  --->  |  Scoring service     |
+ (or Synthea)    |  extract -> transform   | rows   |  REST API + batch    |
+                 |  -> MEPS feature schema |        |  model + baseline    |
+                 +-------------------------+        +----------+-----------+
+                                                               |
+                                            risk, percentile, reasons, version
+                                                               v
+                                               Care management worklist / EHR
+```
+
+## 3. Components
+
+### 3.1 Data acquisition (`meps/download`)
+
+- Downloads `https://meps.ahrq.gov/data_files/pufs/h{n}/h{n}dta.zip` for each needed file.
+- Extracts `h{n}.dta` with Python `zipfile` (do not assume an `unzip` binary).
+- Caches under `data/raw/meps/` (git-ignored). Records SHA-256 of each file in `data/raw/meps/checksums.json`.
+- Files needed now: HC-202, 210, 217, 225, 234, 244, 252 (longitudinal). Later: yearly Medical Conditions, Prescribed Medicines, Hospital Inpatient Stays, Office-Based Visits, and the condition-event link files for each year 1 from 2016 to 2022.
+
+### 3.2 Dataset builder (`meps/build`)
+
+- Reads each longitudinal file, selects core variables and diagnosis flags, filters to adults with valid year 1 and year 2 hospital counts, builds the label.
+- Diagnosis variable names drift across years (for example `DIABDXY1_M18`). Resolve each flag by prefix: first column whose name starts with the prefix and contains `Y1`.
+- Diagnosis flags are recoded from MEPS 1 = yes, 2 = no, negatives = missing, to 1 = yes, 0 = everything else.
+- Output: `data/processed/meps_hosp12.csv` (CSV, because pyarrow may be missing in some environments; Parquet is acceptable if available).
+
+### 3.3 Variable dictionary (`meps/inspect`)
+
+- Dumps every variable of a MEPS Stata file: name, label, storage type, range of non-negative values, negative missing codes, value labels, string lengths.
+- Used to regenerate `MEPS_feature_inventory.md` and the data-types reference.
+
+### 3.4 Training (`model/train`)
+
+- Gradient boosting: scikit-learn `HistGradientBoostingClassifier(max_iter=300, learning_rate=0.05, random_state=0, categorical_features=[sex, racethx, regiony1, inscovy1, povcaty1])`.
+- Categorical columns are clipped at 0 (MEPS negative codes become category 0) and cast to int.
+- Comparison model: `LogisticRegression(max_iter=1000)` on `[agey1x, ipdisy1 > 0]`.
+- Validation model: trained on panels 21 to 25. Release model: retrained on all panels.
+- Artifact: a directory `models/<model_id>/` with `model.pkl` (or `model.joblib`), `baseline.pkl`, `metadata.json` (feature list, categorical list, training panels, row count, event count, data checksum, library versions, git commit, metrics).
+
+### 3.5 Evaluation (`model/evaluate`)
+
+- Temporal test on panels 26 to 27.
+- Metrics: AUROC, AUPRC, Brier, mean predicted vs actual, PPV and sensitivity at top 5, 10 and 20 percent, bootstrap 95% CIs (500 resamples, seed 0), calibration deciles, subgroup AUROC, permutation importance (5 repeats, scoring AUROC), survey-weighted AUROC with `LONGWT`.
+- Outputs: `reports/metrics.json` and `reports/model_report.md`.
+
+### 3.6 ETL adapters (`etl/`)
+
+```
+etl/
+  extract/synthea_csv.py      # reads Synthea CSV export
+  extract/fhir_r4.py          # later: FHIR R4 US Core bulk NDJSON
+  extract/claims.py           # later: claims files (for example CMS RIF-like)
+  canonical.py                # shared intermediate tables (see 3.6.1)
+  transform/to_meps.py        # canonical -> MEPS feature schema
+  codelists/                  # versioned code lists (ICD-10 3-char -> flag)
+```
+
+#### 3.6.1 Canonical intermediate model
+
+Each extractor produces these tables. The transform step only reads these.
+
+| Table | Columns |
+|---|---|
+| person | person_id, birth_date, death_date, sex, race, ethnicity, state, income (optional), household_size (optional) |
+| coverage | person_id, start_date, end_date, payer_type (private, medicare, medicaid, dual, other_public, none) |
+| encounter | person_id, encounter_id, start, stop, class (inpatient, emergency, office, outpatient, home, virtual, other), cost_paid (optional), cost_charged (optional), reason (optional) |
+| condition | person_id, onset_date, code_system (snomed, icd10cm), code, description |
+| medication_fill | person_id, fill_date or (start, stop, dispenses), rxnorm or ndc, cost (optional) |
+
+#### 3.6.2 Mapping rules (current prototype)
+
+| Feature | Rule |
+|---|---|
+| agey1x | Age in whole years on 12/31 of year 1, capped at 85. Adults only. |
+| sex | M = 1, F = 2 |
+| racethx | Hispanic ethnicity = 1; else white 2, black 3, asian 4, other 5 |
+| regiony1 | State to census region: Northeast 1, Midwest 2, South 3, West 4 |
+| povcaty1 | Income as percent of HHS poverty guideline (1-person household assumed): under 100 = 1, 100 to 124 = 2, 125 to 199 = 3, 200 to 399 = 4, 400 and up = 5 |
+| inscovy1 | Any private coverage in year 1 = 1; else any public = 2; else 3 |
+| ipdisy1 | Count of inpatient encounters starting in year 1 |
+| ipngtdy1 | Sum of nights of those stays, from start to stop |
+| ertoty1 | Count of emergency encounters |
+| obtotvy1 | Count of ambulatory, wellness, urgent care and virtual encounters |
+| optotvy1 | Count of hospital outpatient encounters |
+| hhtotdy1 | Count of home encounters (one per day) |
+| rxtoty1 | Fills in year 1. Synthea: each prescription's dispenses spread evenly over its active period |
+| totexpy1 | Sum of year-1 encounter cost plus prorated medication cost, whole dollars |
+| 11 diagnosis flags | Any matching condition recorded on or before 12/31 of year 1 |
+| label_hosp_12m (training mode only) | Any inpatient encounter starting in year 2 |
+
+Prototype diagnosis rules use SNOMED description patterns. Phase 3 replaces them with code lists: SNOMED CT to ICD-10-CM via the NLM map, truncate to 3 characters, then a reviewed list of 3-character codes per flag.
+
+### 3.7 Scoring service (`service/`)
+
+- Python FastAPI app, served by uvicorn, packaged as a container.
+- Loads one model artifact at startup by `MODEL_ID`. Read-only.
+- Validates inputs against the feature contract (section 4) with pydantic.
+
+#### Endpoints
+
+| Method and path | Purpose |
+|---|---|
+| `GET /v1/health` | Liveness and readiness |
+| `GET /v1/model` | Model id, version, training data summary, metrics, feature contract version |
+| `POST /v1/score` | Score 1 to 1,000 patients given in the feature schema |
+| `POST /v1/batch` | Later: submit a job referencing a file in object storage; returns a job id |
+| `GET /v1/batch/{id}` | Later: job status and result location |
+
+#### `POST /v1/score` request
+
+```json
+{
+  "contract_version": "meps25-v1",
+  "patients": [
+    {"patient_ref": "abc-123", "features": {
+      "agey1x": 72, "sex": 2, "racethx": 2, "regiony1": 4, "inscovy1": 2, "povcaty1": 3,
+      "ipdisy1": 1, "ipngtdy1": 4, "ertoty1": 2, "obtotvy1": 9, "optotvy1": 1, "hhtotdy1": 0,
+      "rxtoty1": 38, "totexpy1": 21000,
+      "hibpdx": 1, "chddx": 0, "angidx": 0, "midx": 0, "ohrtdx": 1, "strkdx": 0,
+      "emphdx": 0, "diabdx": 1, "arthdx": 1, "asthdx": 0, "choldx": 1}}
+  ]
+}
+```
+
+#### Response
+
+```json
+{
+  "model_id": "gbm-meps25-2026-10-16",
+  "contract_version": "meps25-v1",
+  "results": [
+    {"patient_ref": "abc-123", "risk_12m": 0.31, "risk_percentile": 94,
+     "baseline_risk_12m": 0.29, "top_reasons": ["agey1x", "ipdisy1", "rxtoty1"],
+     "warnings": []}
+  ]
+}
+```
+
+- `risk_percentile` is computed against the training population or, after recalibration, against the customer's population.
+- `warnings` flags out-of-range inputs (for example spending far outside the training range).
+
+### 3.8 Recalibration (Phase 4)
+
+- Input: one customer year with known outcomes.
+- Fit isotonic regression (or Platt scaling if under about 300 events) mapping raw score to observed rate.
+- Store as a separate calibrator artifact per customer. Never overwrite the base model.
+
+### 3.9 Monitoring (Phase 4)
+
+- Input drift: compare each feature's distribution with the training data (population stability index).
+- Output drift: distribution of scores over time.
+- Performance: when year-2 outcomes arrive, recompute AUROC and calibration per customer.
+
+## 4. Feature contract `meps25-v1`
+
+All fields are required integers. Codes follow MEPS. Negative values are not allowed at the API; the ETL must convert missing to a documented default and add a warning.
+
+| Feature | MEPS source | Kind | Allowed values | Notes |
+|---|---|---|---|---|
+| agey1x | AGEY1X | integer | 18 to 85 | Top-coded at 85 |
+| sex | SEX | category | 1 male, 2 female | |
+| racethx | RACETHX | category | 1 Hispanic, 2 NH white, 3 NH black, 4 NH Asian, 5 NH other or multiple | |
+| regiony1 | REGIONY1 | category | 1 Northeast, 2 Midwest, 3 South, 4 West | 0 if unknown |
+| inscovy1 | INSCOVY1 | category | 1 any private, 2 public only, 3 uninsured | |
+| povcaty1 | POVCATY1 | ordered category | 1 poor, 2 near poor, 3 low, 4 middle, 5 high income | |
+| ipdisy1 | IPDISY1 | count | 0 and up | Hospital discharges |
+| ipngtdy1 | IPNGTDY1 | count | 0 and up | Nights in hospital |
+| ertoty1 | ERTOTY1 | count | 0 and up | ER visits |
+| obtotvy1 | OBTOTVY1 | count | 0 and up | Office-based visits incl. telehealth |
+| optotvy1 | OPTOTVY1 | count | 0 and up | Hospital outpatient visits |
+| hhtotdy1 | HHTOTDY1 | count | 0 and up | Home health days |
+| rxtoty1 | RXTOTY1 | count | 0 and up | Prescription fills incl. refills |
+| totexpy1 | TOTEXPY1 | integer dollars | 0 and up | MEPS = payments, not charges |
+| hibpdx | HIBPDXY1 | flag | 0, 1 | High blood pressure |
+| chddx | CHDDXY1 | flag | 0, 1 | Coronary heart disease |
+| angidx | ANGIDXY1 | flag | 0, 1 | Angina |
+| midx | MIDXY1 | flag | 0, 1 | Heart attack |
+| ohrtdx | OHRTDXY1 | flag | 0, 1 | Other heart disease |
+| strkdx | STRKDXY1 | flag | 0, 1 | Stroke |
+| emphdx | EMPHDXY1 | flag | 0, 1 | Emphysema |
+| diabdx | DIABDXY1 or DIABDXY1_M18 | flag | 0, 1 | Diabetes |
+| arthdx | ARTHDXY1 | flag | 0, 1 | Arthritis |
+| asthdx | ASTHDXY1 | flag | 0, 1 | Asthma |
+| choldx | CHOLDXY1 | flag | 0, 1 | High cholesterol |
+
+Feature order in the model matrix (must match exactly): sex, racethx, regiony1, agey1x, inscovy1, povcaty1, ipdisy1, ipngtdy1, ertoty1, obtotvy1, optotvy1, hhtotdy1, rxtoty1, totexpy1, hibpdx, chddx, angidx, midx, ohrtdx, strkdx, emphdx, diabdx, arthdx, asthdx, choldx.
+
+## 5. Repository layout
+
+```
+hosp-risk/
+  README.md
+  LICENSES.md                 # data and dependency licenses
+  pyproject.toml              # pinned dependencies
+  Makefile                    # make data, make train, make eval, make etl-test, make serve
+  .devcontainer/              # Ona (Gitpod) environment: Python 3.12+, Java 17 JRE for Synthea
+  .gitignore                  # data/, models/*.pkl, synthea outputs
+  docs/
+    01_PRD.md
+    02_Preliminary_Design.md
+    03_Developer_Notes.md
+    MEPS_feature_inventory.md
+    EHR_to_MEPS_mapping.md
+  data/                       # git-ignored
+    raw/meps/  raw/synthea/  processed/
+  src/hosprisk/
+    meps/download.py  meps/build.py  meps/inspect.py
+    model/train.py  model/evaluate.py  model/artifact.py
+    etl/extract/synthea_csv.py  etl/transform/to_meps.py  etl/codelists/
+    service/app.py  service/schemas.py
+  tests/
+    test_build.py  test_transform_rules.py  test_contract.py  test_service.py
+    fixtures/synthea_tiny/    # a few synthetic patients, committed
+  reports/                    # generated metrics and reports
+  models/                     # generated artifacts (git-ignored except metadata)
+```
+
+The prototype scripts in `03_Developer_Notes.md` use a flat `meps/` and `synthea/` layout. Phase 1 may first run them as-is to confirm the numbers, then refactor into `src/hosprisk/` without changing logic.
+
+## 6. Technology choices
+
+| Need | Choice | Reason |
+|---|---|---|
+| Language | Python 3.12 or later | Data and ML ecosystem |
+| Data frames | pandas | Reads Stata files directly |
+| Models | scikit-learn | Prototype uses it; stable, free |
+| API | FastAPI + pydantic + uvicorn | Typed validation, OpenAPI docs |
+| Synthetic data | Synthea jar, Java 17 JRE | Apache 2.0, public-domain outputs |
+| Container | Docker | Cloud-agnostic |
+| CI | GitHub Actions | Repo host |
+| Dev environment | Ona (Gitpod) dev container | User's plan |
+
+## 7. Testing strategy
+
+| Level | What |
+|---|---|
+| Unit | Each mapping rule (age cap, race codes, region map, poverty bands, insurance precedence, encounter class counts, diagnosis patterns). Include the regression case: "Abnormal findings diagnostic imaging heart+coronary circulat" must not set `chddx`. |
+| Data | Build output row counts per panel equal the PRD table. No negative values in feature columns except where documented. |
+| Model | Test AUROC inside the PRD tolerance. Metadata contains the 25 features in the exact order. |
+| Contract | Pydantic schema rejects missing fields, wrong types, out-of-range codes. |
+| End to end | Tiny Synthea fixture runs through ETL and the API and returns 25-feature rows and valid probabilities. |
+| Leakage | Scoring mode with a cutoff date returns identical features when records after the cutoff are added or removed. |
+
+## 8. Security and compliance outline
+
+- Development uses only MEPS public files and Synthea. Both are allowed to be processed with AI tools.
+- Production runs in the customer's or a HIPAA-eligible cloud account under a BAA.
+- Encryption in transit (TLS) and at rest. No PHI in logs; log patient references as opaque IDs.
+- Access controlled by service accounts; audit log of every scoring request.
+- Model artifacts are signed or checksummed; the service refuses unknown artifacts.
+
+## 9. Known design gaps to resolve
+
+1. Spending (`totexpy1`) is not portable: MEPS has payments, medical records have charges. Options: drop it, or convert to a within-population rank.
+2. Household size is rarely in medical records, so `povcaty1` is weak outside MEPS. Consider area-level income from ZIP code in a later contract version.
+3. Medical records from one health system miss outside care. Claims capture it better. The ETL should accept both and prefer claims for counts and labels.
+4. The label includes childbirth and planned stays. Contract `meps25-v2` should pair with the unplanned-stay label.
+</pasted_content id="62de">
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 5 tool events</summary>
 
@@ -371,6 +666,6 @@ Please paste **Part 2: the preliminary design**.
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 15:57 UTC
-- **Turns:** 4
-- **Status:** Complete
+- **Last updated:** 17 October 2026, 15:59 UTC
+- **Turns:** 5
+- **Status:** Incomplete
