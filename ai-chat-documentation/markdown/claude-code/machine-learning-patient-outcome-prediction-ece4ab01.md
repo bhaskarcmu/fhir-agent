@@ -1774,8 +1774,10 @@ The "NO" for Python 3.12 is suspicious, since 1.9.1 installs fine here. Newer wh
 
 That `risk_percentile` came out convoluted. Simplifying it before going further:
 
+Next, the fitting functions, in their own module so that `train` and `evaluate` can both use them without a circular import:
+
 <details>
-<summary>Execution details — 153 tool events</summary>
+<summary>Execution details — 155 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2102,6 +2104,8 @@ Phase 8 **M1**: t…`
 - **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/model/__init__.py`
 - **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/model/artifact.py`
 - **Edit** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/model/artifact.py`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/model/fit.py`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/model/evaluate.py`
 
 </details>
 
