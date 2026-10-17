@@ -1560,8 +1560,70 @@ Now rewriting the milestone plan in full with the new numbering, the research tr
 
 Next, the PRD: goals, requirements, acceptance criteria, deviations and provenance.
 
+The PRD is done. Now the phase README and docs index:
+
+Links resolve and the ID ranges are consistent. Two "M1–M4" references still need fixing, because reproduction is now M1, M2 and M4:
+
+Committing on `docs/phase8-outcome-prediction-planning` (worktree `/workspaces/fhir-agent`, PR #65 into `main`):
+
+I've added both answers to PR #65 as commit `9dc7b84b` on `docs/phase8-outcome-prediction-planning`. The package is `outcome-prediction-lab`, and the exploration covers both what to predict and in what form. Phase 8 now has 13 milestones in three tracks.
+
+## Phase 8 milestones
+
+**Baseline track: reproduce the prototype exactly**
+
+- **M1. Service scaffold and MEPS dataset.** Create `outcome-prediction-service/` with its CI job, compose profile and test entry. Download and checksum the seven MEPS panels and rebuild the training table. It must produce exactly 56,360 adults and 4,820 hospitalizations, matching the prototype panel by panel.
+- **M2. Training, evaluation, model files.** Rebuild the main model and the simple comparison model. They must score within the prototype's tolerances (0.769 and 0.708 AUROC). Write the evaluation reports and save both models with a checksum list that the service verifies before loading.
+
+**Research track: the lab, then its first rounds**
+
+- **M3. Experimentation workbench (`outcome-prediction-lab`).** Built once, used forever. It provides:
+  - experiment tracking and a model registry with MLflow, running locally;
+  - runs defined by config files, scored only by cross-validation on the training panels;
+  - a holdout ledger, and a command-line tool that refuses to test on the test panels without a ledger entry;
+  - a target scorecard and model cards.
+
+  A first "round 000" re-runs M2's model through the lab and must match its numbers, proving the tools work.
+- **M10. Round 001: what to predict, and in what form.** Compares outcomes (any stay, unplanned stay without childbirth, ED visits, hospital nights, high cost) across forms (probability, expected count, cost estimate, tiers). Every serious candidate is judged on the scorecard, not just on metrics. Ends with a recorded decision on what to take forward.
+- **M11. Round 002: improve the chosen target(s).** Adds condition and drug features, tunes the model, looks closely at adults 65+, and checks fairness. Also decides whether to keep the spending, prescription and home-health features, which don't carry over well to customer data.
+- **M12. First promotion into the service.** Runs the full path from research to production once, so it's proven before anyone relies on it. The improved model is served alongside the original. From then on, the service refuses any model that has no promotion record tied to a recorded decision.
+
+**Service track: runs in parallel with research after M2**
+
+- **M4. Synthea harness, scoring mode, leakage test.** First reproduce the prototype's Synthea conversion as it is. Then add scoring "as of" a date, and fix the bug where future prescription data leaked into the features. The new test must fail on the old code and pass on the fixed code.
+- **M5. Extend the shared FHIR client.** Add encounters, medication history and cost data to `client/clinical` without changing anything existing code sees. Coordinated with Phase 7's planned change to the same client.
+- **M6. FHIR extractor, parity check, data-quality report.** Build the model's inputs from `fhir-service`. Confirm the rough FHIR-to-input mapping against real Synthea output, and prove the FHIR path and the CSV path produce the same inputs for the same patients.
+- **M7. Scoring service returning `RiskAssessment`.** The API: score a patient by ID or score pre-built input rows. Each result includes the probability, the comparison score, a percentile, the main reasons, and links to the source records.
+- **M8. `outcome-prediction-agent`.** Lets a clinician ask about risk in plain language. It can only fetch and explain results. Tests check that it refuses attempts to "adjust" a score or label it "high risk".
+- **M9. End-to-end acceptance test and demo.** Everything runs live under the `phase8` profile. One demo step shows that adding a record dated after the as-of date doesn't change the score.
+
+**Close-out**
+
+- **M13. Versioned clinical code lists.** Replace the text matching on diagnosis descriptions with reviewed ICD-10-CM code lists.
+
+**Deferred to Phase 8b, not milestones:** cloud deployment, recalibration on customer data, monitoring, batch scoring of a whole population, a shared experiment-tracking server, and first customer validation. Research after M12 continues as new rounds, not new milestones.
+
+## What changed in the docs
+
+- **New:** `experimentation-protocol.md`, the permanent guide for running or resuming a research round. It covers the rules, steps, scorecard, holdout ledger, promotion, and how to resume after a long gap.
+- **`decisions.md`:** new decisions O28–O40. Among them:
+  - MLflow over DVC and hosted trackers;
+  - the test-set access rule;
+  - the promotion path;
+  - serving a count or cost needs its own decision, because `RiskAssessment` only carries probabilities;
+  - uplift (who benefits from outreach) recorded as out of reach with MEPS.
+
+  O40, which outcome and form to promote first, stays open until M10.
+- **`prd.md`:** two new goals, a new set of experimentation requirements, two new acceptance criteria, and a note on how the critique shaped this.
+- **`design.md`:** a new section describing the lab.
+- **Milestone references** were renumbered across all Phase 8 docs. The renumbering also changed some requirement IDs by mistake (for example `FR-M3` became `FR-M4`); I caught and fixed that before committing.
+
+**Checks:** all relative links resolve, decision IDs run continuously O1–O40, and no stale milestone ranges remain. No code changed, so no tests were run.
+
+I also removed the PR's "please squash-merge" note. It's no longer needed, since the branch history no longer contains the raw files.
+
 <details>
-<summary>Execution details — 83 tool events</summary>
+<summary>Execution details — 89 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1750,6 +1812,28 @@ rep("""outcome-prediction-agent/…`
 - **Write** `/workspaces/fhir-agent/docs/phase8/milestone-plan.md`
 - **Bash** `grep -n "| Exposure |\|^- \*\*G8\|No qualitative band\|^| Worklist UI\|^## 7\|^10\. \*\*Additivity\|Resolved in this pass\|any-stay vs unplanned-stay as\|^| V14\|The prototype is the input; this docum…`
 - **Bash** `sed -n 186,193p docs/phase8/prd.md; sed -n 250,262p docs/phase8/prd.md; sed -n 278,290p docs/phase8/prd.md; sed -n 1,20p docs/phase8/prd.md | grep -n "Decision index\|Companion"`
+- **Bash** `python3 - <<'EOF'
+p='docs/phase8/prd.md'; s=open(p).read()
+def rep(old,new):
+    global s
+    assert s.count(old)==1,(old[:80],s.count(old)); s=s.replace(old,new)
+rep("**Decision index:** [`decisions.…`
+- **Bash** `python3 - <<'EOF'
+def edit(p,pairs):
+    s=open(p).read()
+    for old,new in pairs:
+        assert s.count(old)==1,(p,old[:80],s.count(old)); s=s.replace(old,new)
+    open(p,'w').write(s)
+edit('docs/p…`
+- **Bash** `cd /workspaces/fhir-agent && sed -i 's/numbers M1–M4 must reproduce/numbers M1, M2 and M4 must reproduce/' docs/phase8/README.md && sed -i 's/reproduction target\*\* for M1–M4/reproduction target** fo…`
+- **Bash** `sed -i '169s/  M1–M3 must reproduce\./  M1, M2 and M4 must reproduce./' docs/README.md && sed -n 167,170p docs/README.md && git add docs/README.md docs/phase8 && git status --short`
+- **Bash** `git commit -q -F - <<'EOF'
+docs(phase8): add experimentation track — outcome-prediction-lab, protocol, M3/M12
+
+Second scope pass: a dedicated, revisitable way to explore models and decide
+which predic…`
+- **Bash** `gh pr view 65 --json body --jq .body > /tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad/pr65.md && python3 - <<'EOF'
+p='/tmp/claude-1000/-workspaces-fhir-agent/e…`
 
 </details>
 
@@ -1760,6 +1844,6 @@ rep("""outcome-prediction-agent/…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 16:50 UTC
+- **Last updated:** 17 October 2026, 16:51 UTC
 - **Turns:** 11
 - **Status:** Complete
