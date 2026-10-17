@@ -1348,8 +1348,12 @@ Now I'll repoint the references in the working docs. Reading the exact passages 
 
 README and milestone plan are repointed. Next come `prd.md`, `design.md`, `decisions.md` and the docs index, then I'll delete the raw files.
 
+All the remaining "Phase N" mentions refer to this repo's real phases. Next I'll update the docs index, then delete the raw files from the branch and the scratchpad.
+
+Now the local copies. Checking what's in the scratchpad before I delete it:
+
 <details>
-<summary>Execution details — 54 tool events</summary>
+<summary>Execution details — 60 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1464,6 +1468,27 @@ def edit(p, pairs):
 edit('d…`
 - **Bash** `sed -i 's/within the source tolerances, with tests\./within the prototype'"'"'s tolerances (`prototype-baseline.md` §5), with tests./' docs/phase8/prd.md && sed -n 59,62p docs/phase8/prd.md && python3…`
 - **Bash** `grep -n "\.py\`)\|ehr_to_meps\|train_model\|score\.py\|build_meps" docs/phase8/design.md docs/phase8/decisions.md docs/phase8/prd.md`
+- **Bash** `python3 - <<'EOF'
+def edit(p, pairs):
+    s=open(p).read()
+    for old,new in pairs:
+        assert s.count(old)==1, (p, old[:70], s.count(old)); s=s.replace(old,new)
+    open(p,'w').write(s)
+edit('do…`
+- **Bash** `python3 - <<'EOF'
+def edit(p, pairs):
+    s=open(p).read()
+    for old,new in pairs:
+        assert s.count(old)==1, (p, old[:70], s.count(old)); s=s.replace(old,new)
+    open(p,'w').write(s)
+edit('do…`
+- **Bash** `grep -rn "source-prd\|source-design\|source-developer\|phase8/source" --include=*.md . | grep -v "phase2/source-prd\|./docs/phase2/" ; echo "--- links:"; cd docs/phase8 && grep -ohE '\]\(\./[^)#]+' *.…`
+- **Bash** `cd /workspaces/fhir-agent && git add docs/README.md docs/phase8 && git commit -q -F - <<'EOF'
+docs(phase8): drop raw hand-off files; restate content as prototype-baseline.md
+
+The archived source-prd.m…`
+- **Bash** `ls -la /tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad/phase8-handoff/; find /workspaces -name "01_PRD.md" -o -name "02_Preliminary_Design.md" -o -name "03_Deve…`
+- **Bash** `rm -r /tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad/phase8-handoff && ls /tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchp…`
 
 </details>
 
@@ -1474,6 +1499,6 @@ edit('d…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 16:26 UTC
+- **Last updated:** 17 October 2026, 16:27 UTC
 - **Turns:** 8
 - **Status:** Complete
