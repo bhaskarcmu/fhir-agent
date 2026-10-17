@@ -1540,10 +1540,20 @@ Incorporate the above, then list the milestones and explanations of milestones f
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Recording your answers: the package is named `outcome-prediction-lab`, and "types of prediction" covers both what outcome to predict and the form of the prediction.
+
+That second choice creates one tension I'll resolve in the docs. O3 commits to FHIR `RiskAssessment`, and that resource only expresses probabilities. A count ("expected ED visits") or a cost estimate has no native field. So such forms can be explored freely, but serving one would need its own decision first.
+
+Updating the PR branch (worktree `/workspaces/fhir-agent`, branch `docs/phase8-outcome-prediction-planning`, PR into `main`). First, renumbering milestone references in the existing docs:
+
+Ranges need a manual look, because the "reproduce" set is no longer contiguous: it's M1, M2 and M4.
+
+The renumbering script also hit the requirement IDs `FR-M3`–`FR-M8`, because those contain "M" followed by a number. For example, `FR-M1–M4` became `FR-M1–M5`. Reverting those:
+
+Requirement IDs are restored, and the milestone references have shifted correctly. Next, the content changes themselves. Reading the passages that need edits:
 
 <details>
-<summary>Execution details — 71 tool events</summary>
+<summary>Execution details — 75 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1701,6 +1711,20 @@ trained on AHRQ MEPS…`
 - **Bash** `git reflog expire --expire-unreachable=now --all && git gc -q --prune=now && for c in 4efb1d5b 97b46724; do git cat-file -t $c 2>&1 | head -1; done`
 - **Bash** `cd /workspaces/.ai-chat-history 2>/dev/null && git status -sb | head -1 && grep -rlI "Preliminary Design: 12-Month Hospitalization Risk Service\|Reproducing and Extending the Hospitalization Risk Prot…`
 
+### Turn 11 activity
+
+- **Bash** `git status -sb | head -1 && python3 - <<'EOF'
+import re
+# old -> new milestone numbers (workbench inserted as M3, promotion added as M12)
+MAP={3:4,4:5,5:6,6:7,7:8,8:9,9:10,10:11,11:13}
+pat=re.compile(…`
+- **Bash** `grep -nE 'M1–M4|M1–M5|M4–M7|M5–M6|M5–M7|M8–M9|M10–M11|M10–M13|M1–M2|M1–M13' docs/phase8/README.md docs/phase8/prd.md docs/phase8/design.md docs/phase8/decisions.md docs/phase8/prototype-baseline.md |…`
+- **Bash** `python3 - <<'EOF'
+import re
+INV={4:3,5:4,6:5,7:6,8:7,9:8}
+for p in ['docs/phase8/README.md','docs/phase8/prd.md','docs/phase8/design.md','docs/phase8/decisions.md','docs/phase8/prototype-baseline.md']…`
+- **Bash** `grep -n "O4 \|O1 \|O25\|O27" docs/phase8/decisions.md | cut -c1-700; echo; sed -n 76,84p docs/phase8/prd.md; echo ...; sed -n 228,262p docs/phase8/prd.md; grep -n "V12" docs/phase8/prd.md`
+
 </details>
 
 ---
@@ -1710,6 +1734,6 @@ trained on AHRQ MEPS…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 16:46 UTC
+- **Last updated:** 17 October 2026, 16:47 UTC
 - **Turns:** 11
-- **Status:** Incomplete
+- **Status:** Complete
