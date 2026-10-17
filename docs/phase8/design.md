@@ -25,9 +25,9 @@ outcome-prediction-service/       # NEW (O2) — training pipeline, ETL, scoring
     etl/
       canonical.py                # the five canonical tables (§7)
       extract/synthea_csv.py      # reproduction/parity harness (O8)
-      extract/fhir.py             # NEW vs. the prototype: canonical tables from client/clinical (M5)
+      extract/fhir.py             # NEW vs. the prototype: canonical tables from client/clinical (M6)
       transform/to_contract.py    # canonical → contract rows; training vs scoring mode (§6)
-      codelists/                  # M11: versioned ICD-10-CM 3-char lists per flag
+      codelists/                  # M13: versioned ICD-10-CM 3-char lists per flag
     fhir/
       risk_assessment.py          # Phase 8's own RiskAssessment/Bundle models + builder (O3, §4)
     api.py                        # FastAPI app (§5)
@@ -37,13 +37,28 @@ outcome-prediction-service/       # NEW (O2) — training pipeline, ETL, scoring
   models/                         # gitignored — built artifacts
   data/                           # gitignored — MEPS cache, Synthea CSV/FHIR outputs
 
+outcome-prediction-lab/           # NEW (O28, O29) — experimentation workbench; research-only deps
+  pyproject.toml                  # depends on outcome-prediction-service; MLflow pinned (O30)
+  src/outcome_prediction_lab/
+    cli.py                        # run / compare / confirm / card / promote (§12)
+    targets.py                    # label definitions: outcome × form (O34)
+    search.py                     # panel-grouped CV + hyperparameter search on training panels only
+    holdout.py                    # ledger check — refuses unlogged test-panel evaluation (O32)
+    scorecard.py                  # target scorecard template + ML-criteria fill (O36)
+    modelcard.py                  # model card from tracked metadata (O39)
+    promote.py                    # writes the promotion record the service requires (O33)
+  rounds/NNN-<slug>/              # COMMITTED: README (pre-registration), configs/, report.md, metrics.json, scorecards
+  holdout-ledger.md               # COMMITTED, append-only
+  notebooks/                      # optional; committed with outputs stripped (O38)
+  mlruns/                         # gitignored — local MLflow store (O30)
+
 outcome-prediction-agent/         # NEW (O15) — conversational layer, own top-level package
   src/outcome_prediction_agent/
     agent.py                      # tool-use loop on agent-platform (Phase 6)
     explain.py                    # grounded narration of a RiskAssessment (FR-A2, FR-A3)
 
 client/clinical/                  # extended additively (O9, FR-F1)
-e2e/test_outcome_prediction_acceptance.py   # M8
+e2e/test_outcome_prediction_acceptance.py   # M9
 ```
 
 Not created: a separate `hosp-risk/` repo, a Makefile, a second devcontainer, a second CI
@@ -53,7 +68,9 @@ workflow, `LICENSES.md` (`prd.md` §11 V2, V7). `mcp-agent/`, `triage-service/` 
 **Dependency direction.** `outcome-prediction-agent` → `outcome-prediction-service` (HTTP, via
 `tools.py`'s contract) and → `agent-platform`. It does **not** import `client/clinical`,
 `triage-service`, or any model code. `outcome-prediction-service` → `client/clinical` → the
-FHIR server. Nothing in earlier phases depends on anything in Phase 8.
+FHIR server. `outcome-prediction-lab` → `outcome-prediction-service` (imports its `meps`,
+`model` and `contract` modules — one implementation, not a fork); the service never imports
+the lab (O29). Nothing in earlier phases depends on anything in Phase 8.
 
 ## 2. Component responsibilities
 
@@ -92,7 +109,7 @@ Two interpretation changes, both from review (§11):
 - `regiony1 = 0` for an unknown or non-US state, as the contract always said; the prototype's
   default to South (3) is not carried over.
 
-`meps25-v2` (M9) pairs the contract with `label_unplanned_12m`; feature changes from O25/FR-D5
+`meps25-v2` (M10) pairs the contract with `label_unplanned_12m`; feature changes from O25/FR-D5
 arrive as a new contract version, never as an edit to an existing one. The service serves one
 contract version per loaded artifact and rejects requests that name another.
 
@@ -109,7 +126,7 @@ RiskAssessment
   method: CodeableConcept                     # model id, e.g. gbm-meps25-<date>; system http://fhir-agent.local/outcome-prediction/model
   basis: [Encounter/…, Condition/…, MedicationRequest/…, ExplanationOfBenefit/…]   # FR-F4; empty for contract rows
   prediction[0]:
-    outcome: SNOMED CT 32485007 "Hospital admission (procedure)"                 # O22, verify in M6
+    outcome: SNOMED CT 32485007 "Hospital admission (procedure)"                 # O22, verify in M7
     probabilityDecimal: 0.31
     whenPeriod: { start: as_of, end: as_of + 12 months }
     rationale: "Top factors: age, prior inpatient stay, prescription fills."      # templated from top_reasons
@@ -145,7 +162,7 @@ Matches `triage-service`'s route style (no `/v1` prefix; `/health` at root):
 | `POST /risk/hospitalization-12m` | Trigger A: `{patient_id, as_of?}` → fetch via `client/clinical`, transform, score → `RiskAssessment` |
 | `POST /risk/hospitalization-12m/contract-rows` | Trigger B: `{contract_version, rows: [{patient_ref, features}]}` (1–1,000) → `Bundle` |
 
-Internal-only, no Kong route (O14). Port: the next free one in the `800x` range, assigned in M6.
+Internal-only, no Kong route (O14). Port: the next free one in the `800x` range, assigned in M7.
 Compose: a `phase8` profile service that depends on `fhir`, plus a read-only volume for the
 artifact directory.
 
@@ -174,14 +191,14 @@ Canonical tables carried over from the prototype's design (`person`, `coverage`,
 FHIR `Type/id`, or the CSV row ID) — what makes FR-F4's `basis` possible.
 
 The FHIR extractor's sketch — **every row to be confirmed against real Synthea v4.0.0 output in
-M5**, recording what was found, as Phase 7 does for RxNav (R11):
+M6**, recording what was found, as Phase 7 does for RxNav (R11):
 
 | Canonical | FHIR source (via `client/clinical`) | Known risk |
 |---|---|---|
 | `person` | `Patient` (gender, birthDate, deceased, address.state; race/ethnicity from US Core extensions) | Income and household size absent → `povcaty1` defaulted with a warning; ZIP-level income is a later contract version |
 | `encounter` | `Encounter.class` + `period` | Synthea maps several CSV classes to `AMB`; office vs hospital-outpatient (`obtotvy1` vs `optotvy1`) may need `Encounter.type`/`serviceType`, or a documented merge |
-| `condition` | `Condition` code (SNOMED) + onset | Description regex (prototype) until M11's code lists |
-| `medication_fill` | `MedicationDispense` if present; else `MedicationRequest` + `dispenseRequest`, truncated at `as_of` | Synthea's FHIR may not carry a dispense count; the fallback rule is decided and documented in M5 |
+| `condition` | `Condition` code (SNOMED) + onset | Description regex (prototype) until M13's code lists |
+| `medication_fill` | `MedicationDispense` if present; else `MedicationRequest` + `dispenseRequest`, truncated at `as_of` | Synthea's FHIR may not carry a dispense count; the fallback rule is decided and documented in M6 |
 | `coverage` | `Coverage`, or `ExplanationOfBenefit.insurance` | Which one Synthea v4.0.0 populates is unverified |
 | cost (`totexpy1`) | `ExplanationOfBenefit` payment/total, else `Claim.total` | Charges vs MEPS payments (O25) |
 
@@ -199,7 +216,12 @@ models/<model_id>/
                         # row/event counts, data checksums, library versions, git commit, metrics,
                         # training-population score distribution (for percentiles)
   MANIFEST.sha256       # verified before any deserialisation; mismatch → refuse to start
+  PROMOTION.json        # from M12: round, decision ID, target/form, contract version, model card hash (O33)
 ```
+
+From M12, the service also refuses an artifact with no `PROMOTION.json` naming a `decisions.md`
+entry. The `meps25-v1` reproduction model is promoted by decision O2/O3 itself, so M7 can run
+before the lab's promotion step exists; M12 retrofits its record.
 
 Never committed. CI trains a throwaway model on a committed synthetic contract-row fixture so
 service tests run without MEPS; MEPS-dependent tests (M1–M2 reproduction) self-skip when the
@@ -244,7 +266,7 @@ The root `pytest.ini` gains the new test paths; the Phase 1 independence job is 
 
 ## 11. Prototype defects found in review
 
-Recorded here so M3–M6 fix them **after** the reproduction (O6), each with a test:
+Recorded here so M4–M7 fix them **after** the reproduction (O6), each with a test:
 
 1. **Prescription-fill leakage** (prototype Synthea ETL, `prototype-baseline.md` §6.3): a missing medication `STOP` is filled with
    the end of year 2, and `DISPENSES` (a lifetime total known only later) is prorated across
@@ -262,3 +284,39 @@ Recorded here so M3–M6 fix them **after** the reproduction (O6), each with a t
 6. **Diagnosis-column resolution by prefix** (prototype dataset build, `prototype-baseline.md` §4.1): "first column starting
    with the prefix and containing `Y1`" is fragile across panels. M1 logs the resolved column
    per panel per flag into the build report, so a silent mismatch is visible.
+
+## 12. The experimentation workbench — `outcome-prediction-lab` (O28–O39)
+
+Built once in M3; used by every round under [`experimentation-protocol.md`](./experimentation-protocol.md).
+
+**What it adds over the service's own training code.** The service trains *the* served model.
+The lab trains *many* candidates across outcome × form (O34) — label definitions in
+`targets.py`, feature sets as contract versions, model families and search spaces from configs
+— and compares them under one evaluation discipline.
+
+**CLI surface** (`cli.py`):
+
+| Command | Does | Guard |
+|---|---|---|
+| `run <config>` | Train + panel-grouped CV on training panels; log to MLflow | Refuses configs that name test panels |
+| `compare <round>` | Cross-validated comparison report across a round's runs, incl. subgroups and calibration | — |
+| `confirm <round> <candidate>` | Evaluate one candidate on the test panels | Refuses without a matching `holdout-ledger.md` entry (O32) |
+| `card <run>` | Generate a model card (O39) | — |
+| `promote <run> --decision O<n>` | Write `PROMOTION.json` into a service artifact | Refuses unless the decision ID exists in `decisions.md` and a model card is present (O33) |
+
+**Prediction forms and evaluation** (O34):
+
+| Form | Example | Primary metrics | Served as |
+|---|---|---|---|
+| Event probability | any stay, unplanned stay, any ED visit, high-cost member | AUROC, AUPRC, Brier, calibration, top-k PPV | `RiskAssessment.prediction.probabilityDecimal` |
+| Expected count | ED visits, hospital nights | Poisson deviance, MAE, calibration of means by decile | Needs an O35 decision |
+| Cost | next-year spending | MAE on log scale, top-decile capture | Needs an O35 decision |
+| Ordinal tier | none / one / repeated stays | Ordinal-aware metrics | Needs an O35 decision |
+
+Label candidates are read from MEPS year-2 variables only after `inspect.py` confirms their
+names and codes in each panel's file (`prototype-baseline.md` §3, "never guess").
+
+**What the lab deliberately is not.** No feature store, pipeline orchestrator, or hosted
+tracking server — a shared MLflow server is a Phase 8b question. No customer data. No
+automatic promotion.
+

@@ -7,9 +7,11 @@ yet.
 **Companion doc:** [`design.md`](./design.md) — repo layout, components, the feature contract,
 the `RiskAssessment` shape, scoring-mode semantics, the FHIR mapping sketch, artifacts, the
 agent's tool contract, testing, and the prototype defects found in review.
-**Milestone plan:** [`milestone-plan.md`](./milestone-plan.md) — M1–M11, kept as its own
+**Milestone plan:** [`milestone-plan.md`](./milestone-plan.md) — M1–M13, kept as its own
 document, same convention as Phase 6 (`phase6/decisions.md` H23) and Phase 7.
-**Decision index:** [`decisions.md`](./decisions.md) — `O1`–`O27`.
+**Decision index:** [`decisions.md`](./decisions.md) — `O1`–`O40`.
+**Experimentation protocol:** [`experimentation-protocol.md`](./experimentation-protocol.md) —
+the standing runbook for research rounds in `outcome-prediction-lab` (second pass, §12).
 **Prototype baseline:** [`prototype-baseline.md`](./prototype-baseline.md) — data choices,
 MEPS/Synthea facts, the prototype's method and the numbers to reproduce. §11 below lists every
 deviation from the prototype's plan.
@@ -46,13 +48,16 @@ hand-checkable comparison score** and its top reasons, and every reported metric
 | What is predicted | Any inpatient stay in the 12 months after the as-of date, adults 18+ (O1). |
 | Where the model runs | One new service, `outcome-prediction-service/` (O2). |
 | What it returns | FHIR `RiskAssessment` with `probabilityDecimal`; Phase 8's own models, `triage-service` untouched (O3). |
-| Phase numbering | The prototype's planned stages → milestones M1–M11 + Phase 8b (O4). |
+| Phase numbering | The prototype's planned stages → milestones M1–M13 + Phase 8b (O4). |
 | Hand-off documents | Not kept; their content restated in `prototype-baseline.md` and here (O5). |
 | Order of work | Reproduce the prototype's numbers before changing any logic (O6). |
 | Training data | MEPS longitudinal panels 21–27 (2016–2023), carried over from the prototype; commercial use still unconfirmed (O23). |
 | Input path | FHIR from `fhir-service` via `client/clinical`, this phase (O8, O9). |
 | Agent | New `outcome-prediction-agent/` on `agent-platform`; `mcp-agent` untouched; self-hosted LLM by default (O15, O16). |
 | Exposure | Internal-only; no Kong route (O14). |
+| **Experimentation track** | **Second pass** — a dedicated workbench, `outcome-prediction-lab/`, built once (M3) and used by every later research round under a standing protocol; milestones are never reopened (O28–O31). |
+| **Holdout and promotion** | **Second pass** — test panels only for logged confirmation (O32); nothing reaches the service without a promotion record and a decision entry (O33). |
+| **Prediction space** | **Second pass** — explore outcome × form: which outcomes, and as probability, count, cost or tier (O34); serving a non-probability form needs a decision revisiting O3 (O35); judged on a scorecard with non-ML criteria (O36). |
 
 ## 3. Goals
 
@@ -75,9 +80,16 @@ hand-checkable comparison score** and its top reasons, and every reported metric
 - **G7 — Grounded conversational access.** A clinician can ask, in natural language, for a
   patient's hospitalization risk and its reasons; the agent relays the service's output and
   introduces no fact of its own.
-- **G8 — A better label and model (second half of the phase).** An unplanned-stay label that
+- **G8 — A better label and model, as research rounds.** An unplanned-stay label that
   excludes childbirth/pregnancy stays, richer condition and drug features, panel-grouped
-  tuning, and specific attention to adults 65+.
+  tuning, and specific attention to adults 65+ — delivered as rounds of the experimentation
+  protocol (M10–M11), not one-off code.
+- **G9 — A permanent, resumable experimentation workbench.** Anyone, at any time, can resume
+  exploration from committed configs and round reports, with every run tracked, every
+  test-set look logged, and nothing reaching production except through promotion.
+- **G10 — Decide which predictions are advisable.** Compare outcomes and prediction forms on a
+  scorecard that weighs measurability in customer data, actionability, representability and
+  fairness alongside model metrics — and record the decision.
 
 ## 4. Non-goals
 
@@ -93,6 +105,8 @@ hand-checkable comparison score** and its top reasons, and every reported metric
 - **No CPT codes** (AMA licence).
 - **Synthea results are never evidence of accuracy.** Every report that includes them says so.
 - **No qualitative band (high/moderate/low)** until thresholds are clinically signed off (O24).
+- **No uplift / impactability modelling** — MEPS has no intervention data (O37).
+- **Exploration never changes production directly** — only promotion does (O33).
 - **No changes to `triage-service`, `mcp-agent`, or the Kong gateway.**
 
 ## 5. Users and triggers
@@ -124,10 +138,10 @@ milestone shown), **Changed** (in, but altered — see §11), **8b** (deferred t
 | FR-D1 | Download MEPS longitudinal panels 21–27 from AHRQ, cache locally, record SHA-256s; never commit raw data | In — M1 |
 | FR-D2 | Build the modelling table: 25 features, label, panel, person ID, survey design variables | In — M1 |
 | FR-D3 | Variable dictionary for any MEPS Stata file | In — M1 |
-| FR-D4 | Unplanned-stay label `label_unplanned_12m` excluding childbirth/pregnancy (`RSNINHOS` 4/5/6), optionally planned stays | In — M9 |
-| FR-D5 | Condition and drug features (Medical Conditions, Prescribed Medicines files) | In — M10 |
-| FR-D6 | Optional survey-only feature group (function, PHQ-2, K6, VR-12, BMI) | In — M10, as a separately reported experiment; never in the FHIR contract |
-| FR-D7 | Exclude or separately test round-3 items (leakage risk) | In — M9 |
+| FR-D4 | Unplanned-stay label `label_unplanned_12m` excluding childbirth/pregnancy (`RSNINHOS` 4/5/6), optionally planned stays | In — M10 |
+| FR-D5 | Condition and drug features (Medical Conditions, Prescribed Medicines files) | In — M11 |
+| FR-D6 | Optional survey-only feature group (function, PHQ-2, K6, VR-12, BMI) | In — M11, as a separately reported experiment; never in the FHIR contract |
+| FR-D7 | Exclude or separately test round-3 items (leakage risk) | In — M10 |
 
 ### Model
 
@@ -137,10 +151,10 @@ milestone shown), **Changed** (in, but altered — see §11), **8b** (deferred t
 | FR-M2 | Comparison model: logistic regression on age + any year-1 stay | Changed — M2: also persisted in the artifact (O18) |
 | FR-M3 | Temporal validation: train panels 21–25, test 26–27 | In — M2 |
 | FR-M4 | Release model on all panels, with feature list, categories, library versions, data hash | Changed — M2: plus SHA-256 manifest verified before load (O17) |
-| FR-M5 | Panel-grouped CV tuning on training panels only | In — M10 |
-| FR-M6 | Separate or specially tuned model for 65+ | In — M10 |
+| FR-M5 | Panel-grouped CV tuning on training panels only | In — M11 |
+| FR-M6 | Separate or specially tuned model for 65+ | In — M11 |
 | FR-M7 | Recalibration on a customer's own data | 8b — needs customer outcomes |
-| FR-M8 | Per-patient explanations (top contributing features) | In — M6 |
+| FR-M8 | Per-patient explanations (top contributing features) | In — M7 |
 
 ### Evaluation
 
@@ -151,35 +165,35 @@ milestone shown), **Changed** (in, but altered — see §11), **8b** (deferred t
 | FR-E3 | Subgroup AUROC by age band, sex, prior hospitalization | In — M2 |
 | FR-E4 | Permutation importance on test panels | In — M2 |
 | FR-E5 | Survey-weighted AUROC (`LONGWT`) | In — M2 |
-| FR-E6 | Fairness metrics by race/ethnicity and insurance type | In — M10 |
+| FR-E6 | Fairness metrics by race/ethnicity and insurance type | In — M11 |
 
 ### ETL
 
 | ID | Requirement | Status |
 |---|---|---|
-| FR-T1 | Synthea CSV → 25-feature schema for a chosen year 1, plus year-2 label in training mode | In — M3 (reproduction harness, O8) |
-| FR-T2 | Score converted rows with the saved model | In — M3 |
-| FR-T3 | Training mode (builds label) separate from scoring mode (no label, no future data) | Changed — M3: scoring mode defined by `as_of`, with a mandatory leakage test (O10) |
-| FR-T4 | Versioned code lists from the NLM SNOMED CT → ICD-10-CM map, 3-character | In — M11 |
-| FR-T5 | FHIR R4 US Core and claims-file adapters into one transform | Changed — FHIR via `fhir-service` in M5 (FR-F1–F4); claims-file adapter deferred (§8) |
-| FR-T6 | Data-quality report: missing/impossible values, unknown codes, drift vs MEPS | In — M5 |
+| FR-T1 | Synthea CSV → 25-feature schema for a chosen year 1, plus year-2 label in training mode | In — M4 (reproduction harness, O8) |
+| FR-T2 | Score converted rows with the saved model | In — M4 |
+| FR-T3 | Training mode (builds label) separate from scoring mode (no label, no future data) | Changed — M4: scoring mode defined by `as_of`, with a mandatory leakage test (O10) |
+| FR-T4 | Versioned code lists from the NLM SNOMED CT → ICD-10-CM map, 3-character | In — M13 |
+| FR-T5 | FHIR R4 US Core and claims-file adapters into one transform | Changed — FHIR via `fhir-service` in M6 (FR-F1–F4); claims-file adapter deferred (§8) |
+| FR-T6 | Data-quality report: missing/impossible values, unknown codes, drift vs MEPS | In — M6 |
 
 ### FHIR path (new)
 
 | ID | Requirement | Status |
 |---|---|---|
-| FR-F1 | `client/clinical` gains domain methods for encounters, medication history and claim/EOB cost, additively; every existing test passes unmodified | In — M4 |
-| FR-F2 | A FHIR extractor builds the canonical tables (`design.md` §7) from `client/clinical` for one patient and an `as_of` date | In — M5 |
-| FR-F3 | For patients generated in one Synthea run, the FHIR path and the CSV path produce identical contract rows, or every difference is listed and explained | In — M5 |
-| FR-F4 | Every derived feature records which FHIR resources contributed, so the `RiskAssessment.basis` can cite them | In — M5 |
+| FR-F1 | `client/clinical` gains domain methods for encounters, medication history and claim/EOB cost, additively; every existing test passes unmodified | In — M5 |
+| FR-F2 | A FHIR extractor builds the canonical tables (`design.md` §7) from `client/clinical` for one patient and an `as_of` date | In — M6 |
+| FR-F3 | For patients generated in one Synthea run, the FHIR path and the CSV path produce identical contract rows, or every difference is listed and explained | In — M6 |
+| FR-F4 | Every derived feature records which FHIR resources contributed, so the `RiskAssessment.basis` can cite them | In — M6 |
 
 ### Service
 
 | ID | Requirement | Status |
 |---|---|---|
-| FR-S1 | REST API: score one patient or a batch of contract rows | Changed — M6: patient-by-ID endpoint added; responses are `RiskAssessment` / `Bundle` (O3) |
-| FR-S2 | Return main risk, comparison risk, percentile, model version, top reasons | Changed — M6: carried inside the `RiskAssessment` (`design.md` §4) |
-| FR-S3 | Health and model-metadata endpoints | In — M6 |
+| FR-S1 | REST API: score one patient or a batch of contract rows | Changed — M7: patient-by-ID endpoint added; responses are `RiskAssessment` / `Bundle` (O3) |
+| FR-S2 | Return main risk, comparison risk, percentile, model version, top reasons | Changed — M7: carried inside the `RiskAssessment` (`design.md` §4) |
+| FR-S3 | Health and model-metadata endpoints | In — M7 |
 | FR-S4 | Batch job scoring a whole population from object storage | 8b |
 | FR-S5 | Input-drift and performance monitoring | 8b |
 
@@ -187,9 +201,22 @@ milestone shown), **Changed** (in, but altered — see §11), **8b** (deferred t
 
 | ID | Requirement | Status |
 |---|---|---|
-| FR-A1 | `outcome-prediction-agent` resolves a patient by name (via the service's tools), calls the risk tool, and narrates the result | In — M7 |
-| FR-A2 | Every number or reason the agent states is present in the tool output; it never computes, rounds into a band, or compares against thresholds of its own | In — M7 |
-| FR-A3 | Every narration states that the score is a planning aid, not a diagnosis, and names the model version | In — M7 |
+| FR-A1 | `outcome-prediction-agent` resolves a patient by name (via the service's tools), calls the risk tool, and narrates the result | In — M8 |
+| FR-A2 | Every number or reason the agent states is present in the tool output; it never computes, rounds into a band, or compares against thresholds of its own | In — M8 |
+| FR-A3 | Every narration states that the score is a planning aid, not a diagnosis, and names the model version | In — M8 |
+
+### Experimentation (new, second pass)
+
+| ID | Requirement | Status |
+|---|---|---|
+| FR-X1 | `outcome-prediction-lab` runs candidates from committed configs (label, form, contract version, model family, search space, seeds) and tracks every run locally with data checksums, code commit and metrics | In — M3 |
+| FR-X2 | Exploration evaluates only by panel-grouped CV on training panels; the CLI refuses configs that name test panels | In — M3 |
+| FR-X3 | Test-panel confirmation requires a holdout-ledger entry; the CLI refuses otherwise | In — M3 |
+| FR-X4 | Each round leaves a committed directory: pre-registration, configs, report, summary metrics, scorecards | In — M3 (round 000), then every round |
+| FR-X5 | Target scorecard covering the O36 criteria, ML criteria filled automatically, non-ML criteria with written rationale | In — M3 |
+| FR-X6 | Model card for every candidate and promoted model | In — M3 |
+| FR-X7 | Outcome × form study with a recorded decision on what to take forward | In — M10 |
+| FR-X8 | The service refuses artifacts without a promotion record naming a decision | In — M12 |
 
 ## 7. Non-functional requirements
 
@@ -217,6 +244,7 @@ milestone shown), **Changed** (in, but altered — see §11), **8b** (deferred t
 | Persisting `RiskAssessment` to `fhir-service` | Not scheduled | O20. |
 | Kong edge route | Phase 8b | Infra change (O14). |
 | Worklist UI | Not scheduled | Same posture as other phases' UI deferrals. |
+| Shared / hosted experiment-tracking server | Phase 8b | Local MLflow is enough for one team; hosting brings access control and data-handling questions (O30). |
 | Qualitative risk bands | Not scheduled | O24. |
 
 ## 9. Acceptance criteria
@@ -227,45 +255,49 @@ milestone shown), **Changed** (in, but altered — see §11), **8b** (deferred t
    [0.700, 0.716]. FR-E1–E5 written to `metrics.json` and a Markdown report.
 3. **Dictionary (M1):** HC-252 lists 2,648 variables (1,603 int8, 611 int16, 383 int32,
    25 float64, 26 strings).
-4. **Synthea CSV (M3):** the 25 features with correct types and codes; schema and sanity checks
+4. **Synthea CSV (M4):** the 25 features with correct types and codes; schema and sanity checks
    only, never exact counts.
-5. **Leakage (M3, M5):** adding or removing records dated after `as_of` changes no feature.
-6. **Parity (M5):** FR-F3 holds for a Synthea run exported as CSV and FHIR.
-7. **Service (M6):** a patient in `fhir-service` returns a valid FHIR R4 `RiskAssessment` with
+5. **Leakage (M4, M6):** adding or removing records dated after `as_of` changes no feature.
+6. **Parity (M6):** FR-F3 holds for a Synthea run exported as CSV and FHIR.
+7. **Service (M7):** a patient in `fhir-service` returns a valid FHIR R4 `RiskAssessment` with
    `probabilityDecimal`, the comparison score, percentile, model and contract versions, top
    reasons, and `basis` references that resolve.
-8. **Agent (M7):** a natural-language request returns a narration in which every number and
+8. **Agent (M8):** a natural-language request returns a narration in which every number and
    reason traces to the tool output; adversarial prompts asking it to "adjust" or "band" the
    score fail closed.
-9. **End to end (M8):** `e2e/test_outcome_prediction_acceptance.py` passes against real running
+9. **End to end (M9):** `e2e/test_outcome_prediction_acceptance.py` passes against real running
    services under the `phase8` profile.
 10. **Additivity (all):** Phase 1 independence job still passes unmodified.
+11. **Workbench (M3):** round 000 reproduces M2's model through the lab; the CLI provably
+    refuses test-panel evaluation without a ledger entry and configs that name test panels.
+12. **Promotion (M12):** an unpromoted artifact is refused; the promoted candidate is served
+    beside `meps25-v1` and passes the end-to-end suite.
 
-Later-milestone targets (M9–M10), carried over from the prototype's plan: MEPS test AUROC ≥ 0.78
+Later-milestone targets (M10–M11), carried over from the prototype's plan: MEPS test AUROC ≥ 0.78
 (all adults) and ≥ 0.73 (65+); mean predicted within 1 percentage point of actual; top-decile
 PPV on the unplanned label reported against QAdmissions' 42% with the outcome difference stated.
 
 ## 10. Open questions
 
-Resolved in this pass: see `decisions.md` O1–O22.
+Resolved: see `decisions.md` O1–O22 (first pass) and O28–O39 (second pass, experimentation).
 
 Still open: O23 (MEPS commercial use, a legal question), O24 (qualitative bands), O25
 (non-portable features), O26 (FHIR vs claims as primary customer input), O27 (code-list
-sign-off). Carried over unchanged from the prototype's plan: which cloud hosts production
-(Phase 8b), and any-stay vs unplanned-stay as the product's headline label (decided after M9's
-numbers exist).
+sign-off), O40 (which outcome(s) and form(s) to promote first — decided by M10's scorecards,
+which also settles any-stay vs unplanned-stay as the headline label). Carried over unchanged
+from the prototype's plan: which cloud hosts production (Phase 8b).
 
 **Risks carried over from the prototype's plan** (`prototype-baseline.md` §9) — AHRQ declining commercial use, an employer
 IP claim, survey-vs-records mismatch, Synthea mistaken for accuracy evidence, weak 65+
 performance, childbirth in the label, regulatory change — all stand; their mitigations map to
-O23, M5/M10, FR-A3 and M9–M10 respectively. The FDA clinical-decision-support position (a
+O23, M6/M11, FR-A3 and M10–M11 respectively. The FDA clinical-decision-support position (a
 non-time-critical score with its basis visible) still needs counsel's review before any launch.
 
 ## 11. Deviations from the prototype's plan
 
 | # | Prototype's plan | This phase does | Why |
 |---|---|---|---|
-| V1 | Its own stage numbering | Milestones M1–M11 + Phase 8b | O4 |
+| V1 | Its own stage numbering | Milestones M1–M13 + Phase 8b | O4 |
 | V2 | Standalone repo `hosp-risk/`, own `docs/`, Makefile, `.devcontainer`, CI | `outcome-prediction-service/` in this monorepo; existing devcontainer, CI workflow, compose; module CLIs | O2, O12 |
 | V3 | `/v1/score` returns custom JSON | `RiskAssessment` (and `Bundle` for batches) | O3 |
 | V4 | FHIR and claims adapters "later" | FHIR via `fhir-service` this phase; claims deferred | O8, O26 |
@@ -276,9 +308,11 @@ non-time-critical score with its basis visible) still needs counsel's review bef
 | V9 | Release artifact saves the GBM only | Comparison model persisted too | O18 |
 | V10 | Prescription fills prorate over a stop date defaulted to the end of year 2 | Scoring mode reads nothing after `as_of` | O10, `design.md` §11 |
 | V11 | Unknown state → South (3) | Unknown → 0, as the contract specifies | `design.md` §11 |
-| V12 | Model-improvement work before the service | Service and agent first (on `meps25-v1`), then the model | `milestone-plan.md` sequencing |
+| V12 | Model-improvement work before the service | Service and research tracks in parallel after M2; improvements land through promotion (M12) | `milestone-plan.md` sequencing |
 | V13 | Docs: no em dashes, no emojis | Repo house style | O19 |
 | V14 | "Year 1" is a calendar year | An explicit `as_of`, trailing 12 months (calendar year only for reproduction) | O10 |
+| V15 | Model improvement as a one-off planned stage | A permanent workbench and protocol; improvements are research rounds | O28 |
+| V16 | One outcome (any inpatient stay), one form (probability) | Outcome × form explored; first outcome unchanged until promotion | O34, O40 |
 
 ## 12. Provenance
 
@@ -286,3 +320,13 @@ This PRD synthesises the research prototype's hand-off (restated in `prototype-b
 with the repo owner's two scoping decisions — a new service, and
 FHIR `RiskAssessment` output — and a direct audit of this repo's code and earlier phases'
 documents. The prototype is the input; this document is the contract.
+
+**Second pass.** The repo owner asked for a dedicated, revisitable milestone for model
+exploration and for deciding which predictions are advisable, with tools posterity can resume.
+The request was critiqued before anything was written: a milestone that reopens breaks this
+repo's milestone convention; repeated exploration against a fixed test set erodes every number
+it produces; "advisable" needs non-ML criteria; "exploration tools" is better expressed in the
+industry's terms (experiment tracking, model registry, model cards); and a promotion path is
+needed so exploration can't change production by accident. The result is O28–O40, M3, M12 and
+`experimentation-protocol.md`. The repo owner chose the package name `outcome-prediction-lab`
+and the broader scope (outcome × form).

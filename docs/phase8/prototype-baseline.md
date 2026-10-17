@@ -1,7 +1,7 @@
 # Phase 8 Prototype Baseline — What the Research Prototype Established
 
 The facts, method and numbers from the research prototype that seeded Phase 8, restated in
-this repo's terms. This is the **reproduction target** for M1–M3 (`decisions.md` O6) and the
+this repo's terms. This is the **reproduction target** for M1, M2 and M4 (`decisions.md` O6) and the
 reference for MEPS and Synthea details. Where it describes the prototype's behaviour, it
 describes what was built, not what to build: the contract is [`prd.md`](./prd.md) and
 [`design.md`](./design.md), and known prototype defects are listed in `design.md` §11.
@@ -240,7 +240,7 @@ Comparison model coefficients (panels 21–25): intercept -4.047, age 0.0280 per
 stay: age 30 3.9%/13.0%; 50 6.6%/20.7%; 70 11.0%/31.4%; 85 15.9%/41.0%.
 
 **Childbirth in the label** (all panels): ages 18–44, men 2.2% vs women 7.4%; 45–64, 7.4% vs
-7.6%; 65+, 16.0% vs 16.0%. The motivation for M9.
+7.6%; 65+, 16.0% vs 16.0%. The motivation for M10.
 
 ## 6. Synthea harness (prototype run)
 
@@ -284,7 +284,7 @@ Massachusetts CSV sample is a usable quick fixture.
 | Diagnosis flags | Any condition with `START` ≤ 12/31/Y whose lower-cased description matches the pattern below |
 | `label_hosp_12m` | Any inpatient encounter starting in year Y+1 |
 
-Description patterns (stand-ins until M11's code lists): `hibpdx` `hypertension`; `chddx`
+Description patterns (stand-ins until M13's code lists): `hibpdx` `hypertension`; `chddx`
 `ischemic heart disease|coronary artery`; `angidx` `angina`; `midx` `myocardial infarction`;
 `ohrtdx` `heart failure|atrial fibrillation|cardiomyopathy|valve|arrhythmia`; `strkdx`
 `stroke|cerebrovascular accident|cerebral infarction`; `emphdx` `emphysema|chronic
@@ -339,23 +339,23 @@ documented default and adds a warning). Column order is in `design.md` §3.
 | `asthdx` | ASTHDXY1 | 0/1 | Asthma |
 | `choldx` | CHOLDXY1 | 0/1 | High cholesterol |
 
-## 8. Pointers for M9–M11
+## 8. Pointers for M10–M13
 
-- **Unplanned-stay label (M9):** yearly Hospital Inpatient Stays files (HC-239D for 2022 and
+- **Unplanned-stay label (M10):** yearly Hospital Inpatient Stays files (HC-239D for 2022 and
   equivalents), using the year-2 calendar year's file per panel. `RSNINHOS`: 1 surgery, 2
   treatment/therapy, 3 diagnostic tests only, 4 give birth (mother), 5 to be born (baby), 6
   pregnancy complications, 91 other. `EMERROOM` 1 = began in ER. Dates month/year only
   (`IPBEGMM`, `IPBEGYR`). Link on `DUPERSID`.
-- **Condition features (M10):** Medical Conditions `ICD10CDX` (3 characters) and
+- **Condition features (M11):** Medical Conditions `ICD10CDX` (3 characters) and
   `CCSR1X`–`CCSR4X`; ~10% of codes suppressed as `-15`; only conditions linked to an event that
   year are present.
-- **Drug features (M10):** Prescribed Medicines `RXNDC`, `TC1`, `TC1S1`, `TC1S1_1`, `RXDAYSUP`
+- **Drug features (M11):** Prescribed Medicines `RXNDC`, `TC1`, `TC1S1`, `TC1S1_1`, `RXDAYSUP`
   (999 = as needed; missing not imputed). Multum classes changed across years — check when
   pooling.
 - **Event files are yearly:** for panel P with year 1 = Y, use year-Y files filtered to
   `PANEL == P`.
-- **Tuning (M10):** panel-grouped CV within 21–25; 26–27 never touched.
-- **Code lists (M11):** NLM SNOMED CT → ICD-10-CM map (UMLS licence). For a later claims
+- **Tuning (M11):** panel-grouped CV within 21–25; 26–27 never touched.
+- **Code lists (M13):** NLM SNOMED CT → ICD-10-CM map (UMLS licence). For a later claims
   adapter, CMS Synthetic RIF files carry ICD-10-CM, HCPCS and NDC.
 - Area-level enrichment candidates (later contract versions): AHRQ Community-Level Health
   Database; CDC PLACES.
@@ -368,8 +368,8 @@ documented default and adds a warning). Column order is in `design.md` §3.
 | Employer IP agreement claims the work | Repo owner reviews their employment agreement before building on work time or equipment |
 | Survey (MEPS) vs records (customer) mismatch | Portable features first (O25); recalibrate per customer (Phase 8b); validate on customer history |
 | Synthea mistaken for accuracy evidence | Every report says Synthea results are pipeline tests only |
-| Weak 65+ performance | M10 |
-| Childbirth and planned stays in the label | M9 |
+| Weak 65+ performance | M11 |
+| Childbirth and planned stays in the label | M10 |
 | Regulatory change | Counsel reviews the FDA CDS position before launch |
 
 ## 10. Reference URLs

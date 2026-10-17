@@ -5,8 +5,9 @@
 > **📝 Planning complete (first pass). No code written yet.** A research prototype from an
 > earlier session was handed over and reconciled with this repo's conventions; what it
 > established is restated in `prototype-baseline.md`, and the raw hand-off documents are not
-> kept in the repo (O5). `prd.md`, `design.md`, `decisions.md` (`O1`–`O27`)
-> and `milestone-plan.md` (M1–M11) reflect that reconciliation. M1 (service scaffold + MEPS
+> kept in the repo (O5). A second pass added a permanent **experimentation track**
+> (`outcome-prediction-lab`, O28–O40). `prd.md`, `design.md`, `decisions.md` (`O1`–`O40`),
+> `milestone-plan.md` (M1–M13) and `experimentation-protocol.md` reflect both passes. M1 (service scaffold + MEPS
 > dataset reproduction) is next, not started. Cloud deployment, recalibration and monitoring
 > are reserved for **Phase 8b**.
 >
@@ -17,14 +18,18 @@
 >   every deviation from the prototype's plan.
 > - [`design.md`](./design.md) — repo layout, components, the `meps25-v1` feature contract, the
 >   `RiskAssessment` shape, training vs scoring mode, the FHIR mapping sketch, model artifacts,
->   the agent's tool contract, testing, and the prototype defects found in review.
-> - [`decisions.md`](./decisions.md) — the ADR-style index (`O1`–`O27`), same convention as
+>   the agent's tool contract, testing, the prototype defects found in review, and the
+>   experimentation workbench (§12).
+> - [`decisions.md`](./decisions.md) — the ADR-style index (`O1`–`O40`), same convention as
 >   Phase 2/3/4/6/7.
-> - [`milestone-plan.md`](./milestone-plan.md) — M1–M11, short and long story for each, with the
+> - [`milestone-plan.md`](./milestone-plan.md) — M1–M13, short and long story for each, with the
 >   mapping from the prototype's planned stages.
+> - [`experimentation-protocol.md`](./experimentation-protocol.md) — the standing runbook for
+>   research rounds: rules, steps, the target scorecard, the holdout ledger, promotion, and how
+>   to resume after a long gap. Outlives the phase.
 > - [`prototype-baseline.md`](./prototype-baseline.md) — what the research prototype
 >   established: data-source choices, MEPS and Synthea facts, the prototype's method, the exact
->   numbers M1–M3 must reproduce, and reference URLs.
+>   numbers M1, M2 and M4 must reproduce, and reference URLs.
 
 ## What Phase 8 is
 
@@ -51,11 +56,22 @@ can only look a patient up, fetch their `RiskAssessment`, and read the model car
 accepts feature values, thresholds or a model choice**, so the agent cannot re-score, adjust,
 or band a result (`design.md` §9).
 
+## Research that outlives the phase
+
+Which outcomes are worth predicting — and as a probability, a count, a cost or a tier — is a
+question this phase starts answering, not one it closes. `outcome-prediction-lab/` (built in
+M3) is the permanent workbench: config-driven runs tracked in a local MLflow store, committed
+round reports, a target scorecard that weighs measurability in customer data and actionability
+alongside model metrics, and model cards. Two rules keep it honest: the test panels are opened
+only for logged confirmation (O32), and nothing reaches the service without a promotion record
+tied to a decision (O33). Later explorations are new **rounds** under
+`experimentation-protocol.md`, never reopened milestones (O28).
+
 ## Relationship to Phase 1, 6, and 7
 
 Additive. `fhir-service`, `triage-service`, `mcp-agent` and the Kong gateway are unmodified;
 the new service is internal-only (O14) and runs under its own `phase8` compose profile.
-`client/clinical` is extended additively (M4), coordinated with Phase 7 M3, which widens the
+`client/clinical` is extended additively (M5), coordinated with Phase 7 M3, which widens the
 same client (O9). `outcome-prediction-agent` reuses Phase 6's session, observability,
 provider seam and output-gate pattern, with the self-hosted model as default (O15, O16).
 The `RiskAssessment` follows `triage-service`'s resource type but adds a numeric probability,
@@ -63,6 +79,6 @@ using Phase 8's own models (O3).
 
 ## Terminology
 
-Internal work is tracked as **milestones** (M1–M11, in `milestone-plan.md`) — never
+Internal work is tracked as **milestones** (M1–M13, in `milestone-plan.md`) — never
 "Phase 8.x", same convention as every prior phase. The prototype's own planned stages are mapped onto
 these milestones in `milestone-plan.md` (O4); its stage numbering is not used anywhere.
