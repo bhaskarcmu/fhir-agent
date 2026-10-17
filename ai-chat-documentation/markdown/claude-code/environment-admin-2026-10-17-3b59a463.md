@@ -73,8 +73,37 @@ I didn't change any files in `main`.
 
 That changes infra config, so I'll wait for your go-ahead. If you approve, I'll do it on a feature branch with a PR.
 
+## Turn 4
+
+### Prompt
+
+go ahead with these infra config changes!
+
+### Claude response
+
+Current worktree: `/workspaces/fhir-agent`, on branch `main`. I'll make the changes on a new feature branch, `chore/ai-archive-watcher-bootstrap`, and open a PR into `main`.
+
+A comment line inside a multi-line `RUN` is legal Docker syntax but fragile, so I'll drop it and keep just the package name.
+
+The restore logic worked: it pruned the stale worktree and recreated it on `ai-chat-history` with `autostart.sh` present. Committing and pushing:
+
+I've opened **[PR #64](https://github.com/bhaskarcmu/fhir-agent/pull/64)**. Once it's merged, a container rebuild should no longer knock out the chat archiver.
+
+**Files changed:**
+- **[.devcontainer/Dockerfile](.devcontainer/Dockerfile):** installs `inotify-tools`, so `inotifywait` is part of the image.
+- **[.ona/automations.yaml](.ona/automations.yaml):** before launching `autostart.sh`, the watcher's start command now recreates the `.ai-chat-history` worktree if it's missing. It also installs `inotify-tools` if absent, which covers environments still running the old image.
+
+**Validation:**
+- The YAML parses, and the start command passes a shell syntax check.
+- On a scratch clone, I deleted the worktree folder to simulate a rebuild. The start command recreated it on `ai-chat-history`, with `autostart.sh` in place.
+- I haven't tested the new start command through Ona itself; that will happen on the next environment start after merge. The Dockerfile change only takes effect when the image is next rebuilt.
+
+**Branch:** `chore/ai-archive-watcher-bootstrap`; commit `ce1bf8e6`. This `fhir-agent` checkout is still on that branch, and the watcher in this environment is still running and archiving.
+
+After the merge, I'll ask before deleting the branch.
+
 <details>
-<summary>Execution details — 15 tool events</summary>
+<summary>Execution details — 27 tool events</summary>
 
 ### Turn 3 activity
 
@@ -94,6 +123,26 @@ That changes infra config, so I'll wait for your go-ahead. If you approve, I'll 
 - **Bash** `ps -ef | grep -E "archive_ai|inotifywait" | grep -v grep; echo ---; ls -la /workspaces/.ai-chat-history/ai-chat-documentation/logs/; gitpod automations service list 2>&1 | grep -A1 aiChat; echo ---; g…`
 - **Bash** `cd /workspaces/.ai-chat-history; cat ai-chat-documentation/logs/sync.log; echo ---; git show --stat --format="%h %s" HEAD | head -12; echo ---; git status -sb | head -3; echo ---; grep -n "inotify\|wo…`
 
+### Turn 4 activity
+
+- **Bash** `cd /workspaces/fhir-agent; cat .devcontainer/Dockerfile; echo ---; cat .devcontainer/devcontainer.json; echo ---; git status -sb | head -2`
+- **Bash** `git switch -c chore/ai-archive-watcher-bootstrap`
+- **Read** `/workspaces/fhir-agent/.ona/automations.yaml`
+- **Edit** `/workspaces/fhir-agent/.devcontainer/Dockerfile`
+- **Edit** `/workspaces/fhir-agent/.ona/automations.yaml`
+- **Edit** `/workspaces/fhir-agent/.devcontainer/Dockerfile`
+- **Bash** `cd /workspaces/fhir-agent; python3 -c "import yaml,sys; d=yaml.safe_load(open('.ona/automations.yaml')); print(d['services']['aiChatArchiveWatcher']['commands']['start'])" > /tmp/claude-1000/-workspac…`
+- **Bash** `S=/tmp/claude-1000/-workspaces-fhir-agent/3b59a463-d6e4-4a7f-94ea-7dfea0acdc2b/scratchpad; rm -rf $S/t && mkdir -p $S/t && cd $S/t && git clone -q --no-checkout https://github.com/bhaskarcmu/fhir-agen…`
+- **Bash** `git add .devcontainer/Dockerfile .ona/automations.yaml && git commit -q -F - <<'EOF'
+chore(devenv): make AI chat archive watcher survive container rebuilds
+
+The aiChatArchiveWatcher service had been f…`
+- **Bash** `rm -rf /tmp/claude-1000/-workspaces-fhir-agent/3b59a463-d6e4-4a7f-94ea-7dfea0acdc2b/scratchpad/t`
+- **Bash** `git push -q -u origin chore/ai-archive-watcher-bootstrap 2>&1 | tail -3`
+- **Bash** `gh pr create --base main --head chore/ai-archive-watcher-bootstrap --title "chore(devenv): make AI chat archive watcher survive container rebuilds" --body-file - <<'EOF'
+## Problem
+The `aiChatArchiveW…`
+
 </details>
 
 ---
@@ -103,6 +152,6 @@ That changes infra config, so I'll wait for your go-ahead. If you approve, I'll 
 - **Source:** Claude Code
 - **Session ID:** `3b59a463-d6e4-4a7f-94ea-7dfea0acdc2b`
 - **Created:** 17 October 2026, 15:43 UTC
-- **Last updated:** 17 October 2026, 15:46 UTC
-- **Turns:** 3
+- **Last updated:** 17 October 2026, 15:50 UTC
+- **Turns:** 4
 - **Status:** Incomplete
