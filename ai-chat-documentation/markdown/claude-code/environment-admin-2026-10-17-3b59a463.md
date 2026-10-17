@@ -49,7 +49,7 @@ Now I'll start it. Ona should supervise it, so I'll try the Ona CLI first.
 That confirms it: the service is in the `FAILED` phase. Restarting it under Ona:
 
 <details>
-<summary>Execution details — 11 tool events</summary>
+<summary>Execution details — 12 tool events</summary>
 
 ### Turn 3 activity
 
@@ -64,6 +64,7 @@ That confirms it: the service is in the `FAILED` phase. Restarting it under Ona:
 - **Bash** `sudo apt-get update -q >/dev/null 2>&1; sudo apt-get install -y -q inotify-tools 2>&1 | tail -2; which inotifywait`
 - **Bash** `which gitpod ona 2>&1; gitpod automations service list 2>&1 | head -10`
 - **Bash** `gitpod automations service start aiChatArchiveWatcher 2>&1 | tail -5`
+- **Bash** `gitpod automations service logs aiChatArchiveWatcher 2>&1 | tail -20; echo ---; ls -la /workspaces/.ai-chat-history/ai-chat-documentation/logs/; tail -5 /workspaces/.ai-chat-history/ai-chat-documentat…`
 
 </details>
 
