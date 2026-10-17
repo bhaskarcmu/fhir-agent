@@ -1936,8 +1936,10 @@ The doc page names its codebook as `H252CB.PDF`, a separate file. Checking wheth
 
 First, the mirror module: one interface with a local-directory backend (for tests, and for an extra offline copy) and a GCS backend. Objects are content-addressed and never overwritten.
 
+Adding the optional `gcs` extra, then taking the real snapshot. That re-downloads the 7 zips plus their docs and codebooks, about 126 MB.
+
 <details>
-<summary>Execution details — 193 tool events</summary>
+<summary>Execution details — 196 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2342,6 +2344,17 @@ Phase 8 **M2**: train, evaluate…`
 - **Bash** `git checkout -q -b feature/phase8-data-provenance && git branch --show-current && cat outcome-prediction-service/data/raw/meps/checksums.json | head -12`
 - **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/meps/mirror.py`
 - **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/meps/manifest.py`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/meps/download.py`
+- **Bash** `python3 - <<'EOF'
+p='outcome-prediction-service/pyproject.toml'; s=open(p).read()
+old='dev = ["pytest>=8"]'
+assert s.count(old)==1
+s=s.replace(old,'dev = ["pytest>=8"]\n# Only needed to push to / read…`
+- **Bash** `python3 - <<'EOF'
+import json, glob
+m=json.load(open('outcome-prediction-service/meps-manifest.json'))['files']
+local=json.load(open('outcome-prediction-service/data/raw/meps/checksums.json'))
+art=jso…`
 
 </details>
 
@@ -2352,6 +2365,6 @@ Phase 8 **M2**: train, evaluate…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 17:49 UTC
+- **Last updated:** 17 October 2026, 17:50 UTC
 - **Turns:** 18
 - **Status:** Complete
