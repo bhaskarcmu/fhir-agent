@@ -1875,3 +1875,4 @@
 {"type":"mode","mode":"normal","sessionId":"ece4ab01-8424-4908-a0ba-5c09fa9936d4"}
 {"type":"atis-latch","atis":"","sessionId":"ece4ab01-8424-4908-a0ba-5c09fa9936d4"}
 {"type":"pr-link","sessionId":"ece4ab01-8424-4908-a0ba-5c09fa9936d4","prNumber":66,"prUrl":"https://github.com/bhaskarcmu/fhir-agent/pull/66","prRepository":"bhaskarcmu/fhir-agent","timestamp":"2026-10-17T17:27:18.608Z"}
+{"parentUuid":"82d51539-81a9-4979-a4ef-df294ed6313a","isSidechain":false,"attachment":{"type":"deferred_tools_record","entries":[],"toolInputCopies":[{"id":"toolu_01YZsDaRMv3YjMzxpTf1cgN4","copy":"wire"}]},"type":"attachment","uuid":"0db67d7f-1273-485c-83cc-a88936d7e944","timestamp":"2026-10-17T17:27:41.211Z","userType":"external","entrypoint":"claude-vscode","cwd":"/workspaces/fhir-agent","sessionId":"ece4ab01-8424-4908-a0ba-5c09fa9936d4","version":"2.1.301","gitBranch":"feature/phase8-m2-training"}
