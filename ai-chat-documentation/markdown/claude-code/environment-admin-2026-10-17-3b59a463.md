@@ -48,8 +48,33 @@ Now I'll start it. Ona should supervise it, so I'll try the Ona CLI first.
 
 That confirms it: the service is in the `FAILED` phase. Restarting it under Ona:
 
+Exit code 127 means "command not found". I'll look at what the script actually logged and run its two steps by hand.
+
+It actually worked: the catch-up sync and the watcher each pushed a commit (`4741e37e`, `25d62869`). The error came from somewhere else. I'll check whether the process is still alive.
+
+I've activated the watcher, and it's already archiving this session to `markdown/claude-code/environment-admin-2026-10-17-3b59a463.md` on `origin/ai-chat-history`.
+
+**Why it wasn't running:** this container was rebuilt today, and two things the watcher needs were missing:
+1. **The `/workspaces/.ai-chat-history` worktree wasn't there.** The Ona service `aiChatArchiveWatcher` starts a script inside that worktree, so it was stuck in `FAILED`. The last archive commit was from 2026-09-02.
+2. **The `inotifywait` program wasn't installed.** The watcher needs it to notice new messages; it comes from the `inotify-tools` package.
+
+**What I did:**
+- **Worktree:** recreated it at `/workspaces/.ai-chat-history` on the `ai-chat-history` branch, which tracks `origin/ai-chat-history` (starting from `561e2fb4`).
+- **Dependency:** installed `inotify-tools`.
+- **Tests:** ran the tool's own tests; all 50 passed.
+- **Service:** restarted it under Ona. The start command printed an error ("exit code 127"), but that was a premature readiness check, not a real failure: Ona now shows the service as `RUNNING`.
+- **Catch-up:** the startup sync committed and pushed `4741e37e`, then the watcher pushed `25d62869`.
+
+I didn't change any files in `main`.
+
+**This will break again on the next rebuild.** Neither fix is part of the container setup in `.devcontainer/` or [.ona/automations.yaml](.ona/automations.yaml). To make it stick, I'd:
+- add `inotify-tools` to the devcontainer Dockerfile;
+- make the `aiChatArchiveWatcher` start command (or a setup task) run `git worktree add /workspaces/.ai-chat-history ai-chat-history` if the worktree is missing.
+
+That changes infra config, so I'll wait for your go-ahead. If you approve, I'll do it on a feature branch with a PR.
+
 <details>
-<summary>Execution details — 12 tool events</summary>
+<summary>Execution details — 15 tool events</summary>
 
 ### Turn 3 activity
 
@@ -65,6 +90,9 @@ That confirms it: the service is in the `FAILED` phase. Restarting it under Ona:
 - **Bash** `which gitpod ona 2>&1; gitpod automations service list 2>&1 | head -10`
 - **Bash** `gitpod automations service start aiChatArchiveWatcher 2>&1 | tail -5`
 - **Bash** `gitpod automations service logs aiChatArchiveWatcher 2>&1 | tail -20; echo ---; ls -la /workspaces/.ai-chat-history/ai-chat-documentation/logs/; tail -5 /workspaces/.ai-chat-history/ai-chat-documentat…`
+- **Bash** `cd /workspaces/.ai-chat-history/ai-chat-documentation; cat logs/watcher.log; echo ---; git status --short | head; git log --oneline -3`
+- **Bash** `ps -ef | grep -E "archive_ai|inotifywait" | grep -v grep; echo ---; ls -la /workspaces/.ai-chat-history/ai-chat-documentation/logs/; gitpod automations service list 2>&1 | grep -A1 aiChat; echo ---; g…`
+- **Bash** `cd /workspaces/.ai-chat-history; cat ai-chat-documentation/logs/sync.log; echo ---; git show --stat --format="%h %s" HEAD | head -12; echo ---; git status -sb | head -3; echo ---; grep -n "inotify\|wo…`
 
 </details>
 
