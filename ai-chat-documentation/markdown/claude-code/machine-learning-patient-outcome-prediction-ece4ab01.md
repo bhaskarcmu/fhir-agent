@@ -2279,6 +2279,18 @@ Local `main` is current at `f5164401` (the PR #69 merge). It now includes M1, M2
 
 I'll wait for your go-ahead before starting M3, the `outcome-prediction-lab` experimentation workbench.
 
+## Turn 28
+
+### Prompt
+
+I first want to make sure we have a very basic common understanding of M3.
+
+I want M3 to be multi-step in terms of needing several prompts. I want to explore what to predict, and how to predict. I am also a very curious learner so I want to use this milestone as an opportunity to brush up and enhance my knowledge of Machine Learning
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 290 tool events</summary>
 
@@ -2911,6 +2923,6 @@ p=sys.argv[1]; s=ope…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 19:03 UTC
-- **Turns:** 27
-- **Status:** Complete
+- **Last updated:** 17 October 2026, 23:22 UTC
+- **Turns:** 28
+- **Status:** Incomplete
