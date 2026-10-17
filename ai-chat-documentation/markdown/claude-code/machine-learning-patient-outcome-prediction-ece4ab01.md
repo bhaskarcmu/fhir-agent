@@ -2133,8 +2133,49 @@ That's only my label change: the error now names the URL tried (`AHRQ (<url>): �
 
 Now the fixtures themselves, in the shared `conftest.py`, so any test that asks for them gets populated data however the run is started.
 
+Committing to PR #69's branch, `feature/phase8-data-provenance`:
+
+Pushed. Now updating PR #69's description, whose "Tests and CI" section described the old skip behaviour:
+
+**1. The `mcp` pin PR is open as PR #70:** https://github.com/bhaskarcmu/fhir-agent/pull/70
+- It caps `mcp` below version 2 in `provider-mcp-server` and `provider-search-agent`.
+- I reproduced the failures locally with `mcp` 2.3.0. With the pin (1.30.0), the three affected Phase 3 suites pass against a real Postgres: **64 passed, 0 skipped**, including the 7 handshake tests that were failing in CI.
+
+**2. Data population for tests: I hadn't done it, and it's now built.** Before this, tests that needed the MEPS data or the emulator simply skipped when they were missing, so a green CI run proved nothing about them. Now they populate whatever is missing, whether you run one test, a file, or the whole suite, by hand or in CI:
+- **MEPS cache:** any missing panel is fetched and checked against the manifest. A cached file that doesn't match is moved aside, kept for inspection, and re-downloaded, with a warning.
+- **Emulator:** the tests reuse one that's already running, or start their own Docker container and remove it afterwards.
+- **Emulator bucket:** created if it doesn't exist, topped up if files are missing.
+- **If data can't be obtained, the test fails** rather than skipping. Skipping only happens if you set `OUTCOME_PREDICTION_TESTS_OFFLINE=1`.
+- **CI** caches the original 38 MB of zips, so after its first run it no longer depends on AHRQ being up.
+
+I checked each case locally:
+
+| Scenario | Result |
+|---|---|
+| Fresh workspace: no data, no emulator | **92 passed, 0 skipped** |
+| A single test on its own, from a fresh workspace | passed; fetched only what that test needed |
+| Some data files deleted | re-downloaded; passed |
+| A data file tampered with | moved aside, re-downloaded, warning shown; passed |
+| 2 of 21 files deleted from the emulator bucket | topped back up to 21; passed |
+| CI with cached zips and **AHRQ blocked** | **92 passed** |
+| Offline switch set | 69 passed, 23 skipped with reasons; nothing downloaded |
+
+**Recorded as decision O44**, which replaces the earlier "self-skip" part of O17. The decisions file has a supersession note, and the design doc, service README and PR description are updated. The commit is `a40db705` on PR #69's branch.
+
+**Limitations:**
+- **AHRQ-down runs with a cold cache.** With the cache empty and AHRQ unreachable, CI fails with an explanation rather than skipping. That's intended: it surfaces the problem instead of hiding it. Once one CI run has succeeded, the cached zips make CI independent of AHRQ.
+- **The emulator tests need Docker.** CI has it, and so does this workspace.
+
+**Before you approve, there's GitHub activity to watch:**
+- **PR #69:** the `phase8` job now runs every test against real data in CI for the first time.
+- **PR #70:** `phase3` should go green with the pin.
+
+I'm watching both in the background and will report the results.
+- **`phase1` on PR #69 still needs a clean run.** The earlier failure was the Ollama download cut off mid-way, and the push I just made starts a fresh run.
+- **PR #69's `phase3` will stay red until PR #70 merges.** It's the same `mcp` issue, already on `main`.
+
 <details>
-<summary>Execution details — 273 tool events</summary>
+<summary>Execution details — 276 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2720,6 +2761,15 @@ def edit(p,pairs):
 s=open('doc…`
 - **Bash** `S=/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad && rm -rf $S/ci && echo "=== cold CI run ===" && env -u STORAGE_EMULATOR_HOST -u OUTCOME_PREDICTION_MEPS_MIRRO…`
 - **Bash** `STORAGE_EMULATOR_HOST=http://localhost:4443 python -m pytest outcome-prediction-service/src/outcome_prediction/tests -q 2>&1 | tail -1; docker compose --profile phase8 stop gcs-emulator 2>&1 | tail -1…`
+- **Bash** `git commit -q -F - <<'EOF'
+test(phase8): data-dependent tests populate their data instead of skipping
+
+Repo owner's requirement: a green run must mean every test executed. O44,
+superseding O17's self-…`
+- **Bash** `P=/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad/pr69.md && gh pr view 69 --json body --jq .body > $P && python3 - "$P" <<'EOF'
+import sys
+p=sys.argv[1]; s=ope…`
+- **Bash** `sleep 30; st() { gh pr checks $1 2>/dev/null | awk -F'\t' -v j="$2" '$1==j{print $2}'; }; for i in $(seq 1 120); do a=$(st 69 "phase8 (python)"); b=$(st 70 "phase3 (python)"); [ -n "$a" ] && [ "$a" !=…`
 
 </details>
 
@@ -2730,6 +2780,6 @@ s=open('doc…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 18:24 UTC
+- **Last updated:** 17 October 2026, 18:26 UTC
 - **Turns:** 23
 - **Status:** Complete
