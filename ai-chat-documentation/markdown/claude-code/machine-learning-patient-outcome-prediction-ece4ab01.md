@@ -1989,8 +1989,38 @@ PR #68's branch, `feature/phase8-m2-training`, is deleted on `origin` and locall
 
 Still open from before: the `phase3 (python)` CI failure on `main`, caused by the unpinned `mcp` package, will also show on this PR. Do you want me to open the `mcp<2` pin PR?
 
+## Turn 19
+
+### Prompt
+
+Can we skip creating the GCP bucket and use a local mimic instead?
+
+### Claude response
+
+Before answering, I'll check two facts the answer depends on: whether Docker is available here, and whether the installed GCS client supports a local emulator.
+
+Yes, and both pieces are available: Docker and Compose work here, and the installed GCS client honours `STORAGE_EMULATOR_HOST`. The thing to decide first is what the mimic is for, because it can deliver one of two things.
+
+**1. Running the real GCS code path, without a GCP account: yes.**
+- `fake-gcs-server` is a widely used open-source GCS emulator. It would run in Docker under the `phase8` compose profile, the same way this repo already runs Epic, Athena and RxClaim emulators.
+- With `STORAGE_EMULATOR_HOST` set, `mirror push`, `verify` and the download fallback would use the real `google-cloud-storage` client against it. That closes the gap I flagged: the `gs://` code has so far only been tested against a fake bucket inside the tests.
+- Two caveats:
+  - The emulator doesn't enforce retention policies, access rules or public-access prevention. Those exist only in the Terraform, which would stay in the repo, unapplied, for whenever you want the real bucket.
+  - I haven't confirmed it honours the "create only if absent" condition that write-once uploads rely on. I'd check that first, and if it doesn't, say so rather than claim it's covered.
+
+**2. Keeping the data safe if AHRQ disappears: no.**
+- A mimic stores its files inside this workspace, so it disappears with the workspace. It's a test stand-in, not a backup.
+- If you want a real copy without GCP, the cheapest option already works: the `file://` mirror pointed at a directory outside this workspace (an external disk, a NAS, another machine). No new code is needed. Without one of those, the only copies are AHRQ and this workspace.
+
+**My recommendation:** do both, since they solve different problems.
+- Add the `fake-gcs-server` mimic for testing, with a CI-runnable check that pushes and verifies through it.
+- Record in O41 that the real bucket is deferred, not dropped. The status becomes "local GCS emulator in place; the real bucket is ready to apply when wanted".
+- Separately, decide where your off-workspace copy will live, even if it's just a `file://` path on a disk you own.
+
+This would go on PR #69's branch. Should I go ahead with the emulator? And do you have an off-workspace location for a `file://` copy, or should that stay an open item?
+
 <details>
-<summary>Execution details — 218 tool events</summary>
+<summary>Execution details — 219 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2460,6 +2490,10 @@ in storage you contr…`
 
 Implements the data…`
 
+### Turn 19 activity
+
+- **Bash** `docker version --format '{{.Server.Version}}' 2>&1 | head -1; docker compose version 2>&1 | head -1; grep -rn "STORAGE_EMULATOR_HOST" $(python -c "import google.cloud.storage, os; print(os.path.dirnam…`
+
 </details>
 
 ---
@@ -2469,6 +2503,6 @@ Implements the data…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 17:57 UTC
-- **Turns:** 18
+- **Last updated:** 17 October 2026, 17:59 UTC
+- **Turns:** 19
 - **Status:** Complete
