@@ -226,8 +226,9 @@ entry. The `meps25-v1` reproduction model is promoted by decision O2/O3 itself, 
 before the lab's promotion step exists; M12 retrofits its record.
 
 Never committed. CI trains a throwaway model on a committed synthetic contract-row fixture so
-service tests run without MEPS; MEPS-dependent tests (M1–M2 reproduction) self-skip when the
-cache is absent, like `provider-registry-service`'s DB tests. Percentiles are computed against
+service tests run without MEPS; MEPS-dependent tests (M1–M2 reproduction) get the real data
+from the `meps_cache` fixture, which populates any missing panel (O44 — superseding the original
+self-skip). Percentiles are computed against
 the training population this phase; per-customer percentiles arrive with recalibration
 (Phase 8b).
 
@@ -259,8 +260,8 @@ Carried over from the prototype's test plan, mapped to this repo:
 | Leakage | §6 test, both extractors | CI |
 | Parity | FR-F3, on a small committed Synthea CSV + FHIR fixture from one run | CI |
 | Artifact | Tampered manifest → service refuses to start | CI |
-| Data | Per-panel row counts equal `prototype-baseline.md` §3.1 | Local; self-skips without MEPS cache |
-| Model | Test AUROC within tolerance; metadata has the 25 features in order | Local; self-skips |
+| Data | Per-panel row counts equal `prototype-baseline.md` §3.1 | CI and local — data populated on demand (O44) |
+| Model | Test AUROC within tolerance; metadata has the 25 features in order | CI and local — data populated on demand (O44) |
 | Agent | Grounding + adversarial ("adjust the score", "call it high risk") | CI with the self-hosted model, same as Phase 6's adversarial suite |
 | End to end | `e2e/test_outcome_prediction_acceptance.py` against the `phase8` stack | Local, like the other e2e suites |
 
@@ -324,4 +325,40 @@ names and codes in each panel's file (`prototype-baseline.md` §3, "never guess"
 **What the lab deliberately is not.** No feature store, pipeline orchestrator, or hosted
 tracking server — a shared MLflow server is a Phase 8b question. No customer data. No
 automatic promotion.
+
+## 13. Data provenance and preservation (O41, O42)
+
+```
+outcome-prediction-service/
+  meps-manifest.json          # COMMITTED: per file — URLs, SHA-256 of zip, .dta, doc page, codebook
+  infra/main.tf               # private GCS archive bucket (standalone root module; deferred, not applied)
+  src/outcome_prediction/meps/
+    manifest.py               # `snapshot`: record originals; `--accept-change` to adopt a re-release
+    mirror.py                 # write-once, content-addressed mirrors: gs:// and file://; push / verify
+    download.py               # fetch: archive -> AHRQ -> mirrors, manifest-verified
+  data/raw/meps/archive/      # gitignored: original zips + docs, the source for `mirror push`
+```
+
+**Fetch order** for a manifested file: the original zip in the local archive → AHRQ → each mirror
+in `OUTCOME_PREDICTION_MEPS_MIRRORS`. Every candidate is hashed against the manifest; a mismatch
+is rejected and recorded in the error, never cached. Unmanifested files (future event files
+before they're added) keep the M1 behaviour.
+
+**Mirror layout:** `meps/sha256/<sha256>/<original name>`. Content-addressed keys mean a
+re-release lands beside the original rather than replacing it, and `put` refuses to overwrite.
+
+**The bucket** (`infra/main.tf`): private (uniform access, public access prevention enforced),
+retention policy (default 10 years, lock is a separate irreversible step), 90-day soft delete,
+multi-region `US` by default, `prevent_destroy`, writers create-only. **Deferred** (O41, O43):
+until it's wanted, the compose service `gcs-emulator` (fake-gcs-server, profile `phase8`) stands
+in for testing — the real client reaches it via `STORAGE_EMULATOR_HOST`, it honours the write-once
+precondition (412 on a second create), and CI runs the `gs://` tests against it. It is not a
+backup and enforces none of the bucket's protections; preservation is the repo owner's
+off-workspace `file://` copy. Verified so far: Terraform
+`validate`/`fmt` clean; a `file://` mirror of all 21 originals (121 MB) pushed and verified, and
+— with AHRQ simulated as unreachable in a fresh workspace — all seven panels restored from it
+and the M1 table rebuilt byte-identical (sha256 `950d8be12078…`, the M2 model ID). The same
+end-to-end run through `gs://phase8-reference-data` on the emulator: 21 uploaded, a second push
+all "present" (write-once), verify clean, persistence across an emulator restart, AHRQ-down
+restore and byte-identical rebuild.
 

@@ -54,16 +54,88 @@ worktrees at one cache with `OUTCOME_PREDICTION_DATA_DIR=/path/to/data`.
 `data/raw/meps/checksums.json`; every later run verifies it and stops with `ChecksumMismatch`
 if a file changed. Delete the file to re-download deliberately.
 
+## Data manifest and private mirror
+
+Data is never committed, but **`meps-manifest.json` is**: the URL and SHA-256 of every original
+zip, extracted `.dta`, documentation page and codebook. `download` accepts only bytes that match
+it, trying the local archive, then AHRQ, then each private mirror. If AHRQ republishes a file,
+the original still comes from a mirror until the manifest is deliberately updated.
+(`docs/phase8/decisions.md` O41, O42; `design.md` §13.)
+
+```bash
+# Record the originals (zips + doc pages + codebooks) — first time, or to re-check
+python -m outcome_prediction.meps.manifest snapshot
+# AHRQ changed a file? Adopting it is a deliberate, reviewed manifest change:
+python -m outcome_prediction.meps.manifest snapshot --accept-change
+
+# Copy the originals to every configured mirror (write-once), and audit them
+export OUTCOME_PREDICTION_MEPS_MIRRORS=gs://<bucket>,file:///mnt/backup/meps   # tried in order
+python -m outcome_prediction.meps.mirror push
+python -m outcome_prediction.meps.mirror verify
+```
+
+`gs://` mirrors need `pip install -e "outcome-prediction-service[gcs]"`. `file://` is any
+directory — e.g. an off-workspace disk, which is where the preserved copy lives today.
+
+### Local GCS emulator (stands in for the real bucket)
+
+The real bucket is deferred (`docs/phase8/decisions.md` O43). To exercise the `gs://` path with
+the real `google-cloud-storage` client, run the emulator from docker-compose:
+
+```bash
+docker compose --profile phase8 up -d --wait gcs-emulator
+curl -X POST "http://localhost:4443/storage/v1/b?project=local" \
+  -H 'Content-Type: application/json' -d '{"name":"phase8-reference-data"}'   # once per volume
+
+export STORAGE_EMULATOR_HOST=http://localhost:4443
+export OUTCOME_PREDICTION_MEPS_MIRRORS=gs://phase8-reference-data
+python -m outcome_prediction.meps.mirror push && python -m outcome_prediction.meps.mirror verify
+```
+
+It is a **test stand-in, not a backup**: its data is a Docker volume on this workspace's host
+(`docker compose --profile phase8 down -v` deletes it), and it enforces none of the real
+bucket's protections (retention, IAM, public-access prevention). The emulator tests
+(`test_meps_mirror_emulator.py`) run whenever `STORAGE_EMULATOR_HOST` is set; CI sets it.
+
+### Later: the real private bucket
+
+`infra/main.tf` is a standalone Terraform root module — private, retention-protected,
+multi-region — ready to apply when wanted. It needs GCP credentials, which this repo doesn't
+provision.
+
+```bash
+cd outcome-prediction-service/infra
+terraform init
+terraform apply -var project_id=<gcp-project> \
+  -var 'writer_members=["user:<you>@<domain>"]' -var 'reader_members=["user:<you>@<domain>"]'
+gcloud auth application-default login     # credentials for the Python client
+export OUTCOME_PREDICTION_MEPS_MIRRORS=$(terraform output -raw mirror_uri)
+python -m outcome_prediction.meps.mirror push && python -m outcome_prediction.meps.mirror verify
+```
+
+`lock_retention` stays `false` at first: locking makes the retention policy permanent and can't
+be undone. Flip it deliberately once `mirror verify` passes.
+
 ## Tests
 
 ```bash
 pytest outcome-prediction-service/src/outcome_prediction/tests -q -rs
 ```
 
-Unit tests use tiny synthetic Stata files and a synthetic modelling table.
-`test_meps_reproduction.py` and `test_model_reproduction.py` — the M1/M2 acceptance checks
-against the prototype's exact numbers — need the real MEPS cache and **self-skip** without it
-(as in CI, where the download is deliberately not run).
+Unit tests use tiny synthetic Stata files and a synthetic modelling table. Tests that need
+real data or the GCS emulator **populate what's missing instead of skipping**
+(`docs/phase8/decisions.md` O44), whether you run one test, a file, or everything:
+
+- the MEPS cache: any missing panel is fetched (local archive → AHRQ → configured mirrors,
+  verified against `meps-manifest.json`); a cached file that doesn't match is moved aside as
+  `*.mismatch-<time>` and re-fetched, with a warning;
+- the GCS emulator: a reachable `STORAGE_EMULATOR_HOST` is reused, otherwise a
+  `fake-gcs-server` container is started for the session (needs Docker) and removed after;
+- the emulator bucket `phase8-reference-data`: created if absent, topped up if incomplete.
+
+If something can't be obtained, the test **fails** with the reason. To work offline, set
+`OUTCOME_PREDICTION_TESTS_OFFLINE=1` — the dependent tests then skip instead. CI runs every
+test and caches the original zips, keyed on the manifest.
 
 ## Data and licence notes
 

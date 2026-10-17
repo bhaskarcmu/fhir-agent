@@ -46,7 +46,7 @@
 | **HL7 Da Vinci PAS** | ⏳ referenced | `build.fhir.org/ig/HL7/davinci-pas/` · `github.com/HL7/davinci-pas` | none | HL7 CC0 | Canonical request/response `Claim`↔`ClaimResponse` (PA number in `ClaimResponse.preAuthRef`) |
 | **CMS DE-SynPUF** | ⏳ referenced | `www.cms.gov/.../de-synpuf`; OMOP on AWS Open Data `registry.opendata.aws/cmsdesynpuf-omop/` | none (CMS pages 403 bots) | Public domain | Real Part D pharmacy-claim field distributions (CSV → map to FHIR) |
 | **CMS BCDA sandbox** | ⏳ referenced | `sandbox.bcda.cms.gov/`, `bcda.cms.gov/bcda-data.html` | generic token | US Gov | Synthetic FHIR EOB/Coverage NDJSON reference |
-| **AHRQ MEPS longitudinal panels 21–27** *(Phase 8)* | ✅ downloaded (7 × `.dta`, ~720 MB, gitignored, SHA-256 recorded) | `outcome-prediction-service/data/raw/meps/` · `meps.ahrq.gov/data_files/pufs/h{n}/h{n}dta.zip` for HC-202/210/217/225/234/244/252 | none | AHRQ public-use file terms — **commercial use unconfirmed** (see note) | Training/testing data for the 12-month hospitalization model (`docs/phase8/`) |
+| **AHRQ MEPS longitudinal panels 21–27** *(Phase 8)* | ✅ downloaded (7 × `.dta`, ~720 MB, gitignored, SHA-256 recorded) | `outcome-prediction-service/data/raw/meps/` · `meps.ahrq.gov/data_files/pufs/h{n}/h{n}dta.zip` for HC-202/210/217/225/234/244/252 · pinned by the committed `outcome-prediction-service/meps-manifest.json`; originals + codebooks mirrored to a private bucket | none | AHRQ public-use file terms — **commercial use unconfirmed** (see note) | Training/testing data for the 12-month hospitalization model (`docs/phase8/`) |
 
 Legend: ✅ obtained locally · ⏳ verified + documented, pull on demand.
 

@@ -18,6 +18,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
+# Only needed to push to / read from gs:// private mirrors (meps.mirror).
+gcs = ["google-cloud-storage>=2.10"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -1,9 +1,18 @@
-"""FR-D1: download MEPS Stata files from AHRQ, cache them, and record checksums.
+"""FR-D1: download MEPS Stata files, verify them, and cache them.
 
 Each file arrives as https://meps.ahrq.gov/data_files/pufs/h{n}/h{n}dta.zip containing
-h{n}.dta (the folder-less URL form returns 404). The extracted .dta's SHA-256 is recorded
-in <cache>/checksums.json on first download and verified on every later use, so a
-silently changed or corrupted file fails loudly instead of shifting the numbers.
+h{n}.dta (the folder-less URL form returns 404).
+
+**Files in the committed manifest** (meps-manifest.json — decisions.md O41, O42) are verified
+against it: the original zip must have the recorded SHA-256 wherever it came from, and so must
+the extracted .dta. Sources are tried in order — the local archive, AHRQ, then each configured
+private mirror (OUTCOME_PREDICTION_MEPS_MIRRORS, see meps.mirror). Bytes that don't match are
+rejected, never cached: if AHRQ republishes a file, the original comes from a mirror until the
+manifest is deliberately updated (meps.manifest snapshot --accept-change).
+
+**Files not in the manifest** (e.g. event files before they're added) keep the simpler
+behaviour: the first download's SHA-256 is recorded in <cache>/checksums.json and verified on
+every later use.
 
 Usage:
     python -m outcome_prediction.meps.download            # all longitudinal panels
@@ -21,6 +30,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from outcome_prediction.meps import LONGITUDINAL_PANELS
+from outcome_prediction.meps.manifest import entry_for, load_manifest
+from outcome_prediction.meps.mirror import ENV as MIRRORS_ENV
+from outcome_prediction.meps.mirror import Mirror, configured_mirrors, object_key
 from outcome_prediction.settings import meps_cache_dir
 
 URL = "https://meps.ahrq.gov/data_files/pufs/h{n}/h{n}dta.zip"
@@ -29,20 +41,15 @@ TIMEOUT_S = 120
 
 
 class ChecksumMismatch(RuntimeError):
-    """A cached file no longer matches the checksum recorded when it was downloaded."""
+    """A cached file doesn't match the manifest, or the checksum recorded at download time."""
+
+
+class SourceUnavailable(RuntimeError):
+    """No source (archive, AHRQ, mirrors) could supply bytes matching the manifest."""
 
 
 def _sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
-
-
-def _load_checksums(cache: Path) -> dict:
-    path = cache / CHECKSUMS
-    return json.loads(path.read_text()) if path.exists() else {}
-
-
-def _save_checksums(cache: Path, checksums: dict) -> None:
-    (cache / CHECKSUMS).write_text(json.dumps(checksums, indent=2, sort_keys=True) + "\n")
 
 
 def _fetch_zip(url: str) -> bytes:
@@ -60,10 +67,96 @@ def _extract_dta(zip_bytes: bytes, member: str) -> bytes:
         return zf.read(names[member.lower()])
 
 
-def fetch(file_number: int, cache: Path | None = None) -> Path:
-    """Return the path to h{n}.dta, downloading it if absent; verify its checksum either way."""
-    cache = cache or meps_cache_dir()
-    cache.mkdir(parents=True, exist_ok=True)
+def _write_atomic(path: Path, data: bytes) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".part")
+    tmp.write_bytes(data)
+    tmp.replace(path)
+
+
+def obtain_original(name: str, expected: str, url: str, archive: Path, mirrors: list[Mirror]) -> bytes:
+    """One original file (data zip or documentation), verified against its manifest SHA-256,
+    from the first source that has it: the local archive, its source URL, then each mirror.
+    Matching bytes are written to the archive; mismatches are rejected and never cached."""
+    cached = archive / name
+    if cached.exists() and _sha256(cached.read_bytes()) == expected:
+        return cached.read_bytes()
+
+    sources = [(f"AHRQ ({url})", lambda: _fetch_zip(url))]
+    sources += [(m.uri, lambda m=m: m.get(object_key(expected, name))) for m in mirrors]
+    attempts = []
+    for label, get in sources:
+        try:
+            data = get()
+        except Exception as exc:  # noqa: BLE001 — any failure means "try the next source"
+            attempts.append(f"  {label}: {exc.__class__.__name__}: {exc}")
+            continue
+        if _sha256(data) != expected:
+            attempts.append(f"  {label}: served sha256 {_sha256(data)[:12]}…, manifest expects "
+                            f"{expected[:12]}… — rejected")
+            continue
+        _write_atomic(cached, data)
+        return data
+    hint = "" if mirrors else f"\n  (no private mirrors configured — set {MIRRORS_ENV})"
+    raise SourceUnavailable(f"no source could supply {name} matching the manifest:\n"
+                            + "\n".join(attempts) + hint)
+
+
+def _obtain_zip(entry: dict, archive: Path, mirrors: list[Mirror]) -> bytes:
+    d = entry["data"]
+    return obtain_original(d["zip_name"], d["zip_sha256"], d["url"], archive, mirrors)
+
+
+def ensure_archive(manifest: dict, archive: Path, mirrors: list[Mirror] | None = None,
+                   *, include_docs: bool = True) -> list[str]:
+    """Make the local archive hold every original the manifest lists (data zips, and the doc
+    pages + codebooks if `include_docs`), fetching only what's missing or wrong. Returns the
+    names it had to fetch."""
+    mirrors = configured_mirrors() if mirrors is None else mirrors
+    fetched = []
+    for entry in manifest["files"].values():
+        wanted = [(entry["data"]["zip_name"], entry["data"]["zip_sha256"], entry["data"]["url"])]
+        if include_docs:
+            wanted += [(d["name"], d["sha256"], d["url"]) for d in entry["documentation"]]
+        for name, sha, url in wanted:
+            path = archive / name
+            if path.exists() and _sha256(path.read_bytes()) == sha:
+                continue
+            obtain_original(name, sha, url, archive, mirrors)
+            fetched.append(name)
+    return fetched
+
+
+def _fetch_manifested(file_number: int, entry: dict, cache: Path, mirrors: list[Mirror]) -> Path:
+    name = f"h{file_number}.dta"
+    path, expected = cache / name, entry["data"]["dta_sha256"]
+    if path.exists():
+        if _sha256(path.read_bytes()) != expected:
+            raise ChecksumMismatch(f"{path} does not match meps-manifest.json ({expected[:12]}…). "
+                                   f"Delete it to re-fetch, or investigate the change.")
+        return path
+    data = _extract_dta(_obtain_zip(entry, cache / "archive", mirrors), name)
+    if _sha256(data) != expected:
+        raise ChecksumMismatch(f"{name} extracted from a verified zip does not match the manifest "
+                               f"— the manifest itself is inconsistent")
+    _write_atomic(path, data)
+    return path
+
+
+def _load_checksums(cache: Path) -> dict:
+    path = cache / CHECKSUMS
+    return json.loads(path.read_text()) if path.exists() else {}
+
+
+def _save_checksums(cache: Path, checksums: dict) -> None:
+    (cache / CHECKSUMS).write_text(json.dumps(checksums, indent=2, sort_keys=True) + "\n")
+
+
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+def _fetch_unmanifested(file_number: int, cache: Path) -> Path:
     name = f"h{file_number}.dta"
     path = cache / name
     checksums = _load_checksums(cache)
@@ -84,16 +177,22 @@ def fetch(file_number: int, cache: Path | None = None) -> Path:
 
     url = URL.format(n=file_number)
     data = _extract_dta(_fetch_zip(url), name)
-    tmp = path.with_suffix(".dta.part")
-    tmp.write_bytes(data)
-    tmp.replace(path)
+    _write_atomic(path, data)
     checksums[name] = {"sha256": _sha256(data), "source_url": url, "recorded_at": _now()}
     _save_checksums(cache, checksums)
     return path
 
 
-def _now() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+def fetch(file_number: int, cache: Path | None = None, *, manifest: dict | None = None,
+          mirrors: list[Mirror] | None = None) -> Path:
+    """Return the path to a verified h{n}.dta, obtaining it if absent."""
+    cache = cache or meps_cache_dir()
+    cache.mkdir(parents=True, exist_ok=True)
+    entry = entry_for(load_manifest() if manifest is None else manifest, file_number)
+    if entry is None:
+        return _fetch_unmanifested(file_number, cache)
+    return _fetch_manifested(file_number, entry, cache,
+                             configured_mirrors() if mirrors is None else mirrors)
 
 
 def main(argv: list[str] | None = None) -> None:

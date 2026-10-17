@@ -166,10 +166,12 @@ jobs:
                  data/scripts/provider_ingest -q
 
   # ── Phase 8 outcome prediction ─────────────────────────────────────────────
-  # Unit tests use synthetic Stata fixtures. The MEPS reproduction tests self-skip here:
-  # the full MEPS download (~720 MB of .dta) is deliberately not part of required CI
-  # (docs/phase8/decisions.md O17); run them locally after
-  # `python -m outcome_prediction.meps.download`.
+  # Every Phase 8 test runs here — none self-skip (docs/phase8/decisions.md O44). Tests that
+  # need real data or the GCS emulator get them from session fixtures that populate whatever
+  # is missing: the MEPS cache from the original zips (verified against the committed
+  # meps-manifest.json), and a fake-gcs-server container the fixture starts itself.
+  # The original zips (~38 MB) are cached, keyed on the manifest, so after the first run CI
+  # rebuilds the data locally without depending on AHRQ being up.
   phase8-python:
     name: phase8 (python)
     runs-on: ubuntu-latest
@@ -178,10 +180,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - name: Cache MEPS original files (keyed on the committed manifest)
+        uses: actions/cache@v4
+        with:
+          path: outcome-prediction-service/data/raw/meps/archive
+          key: meps-archive-${{ hashFiles('outcome-prediction-service/meps-manifest.json') }}
       - name: Install Phase 8 packages
         run: |
           python -m pip install --upgrade pip
-          pip install -e "outcome-prediction-service[dev]"
+          pip install -e "outcome-prediction-service[dev,gcs]"
       - name: Run Phase 8 test suites
         run: pytest outcome-prediction-service/src/outcome_prediction/tests -q -rs
 
@@ -202,6 +209,7 @@ jobs:
           - provider-registry-service/infra
           - provider-mcp-server/infra
           - data/scripts/provider_ingest/infra
+          - outcome-prediction-service/infra
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3

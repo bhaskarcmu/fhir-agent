@@ -7,7 +7,7 @@
 > was handed over and reconciled with this repo's conventions; what it established is restated
 > in `prototype-baseline.md`, and the raw hand-off documents are not kept in the repo (O5). A
 > second pass added a permanent **experimentation track** (`outcome-prediction-lab`, O28–O40).
-> `prd.md`, `design.md`, `decisions.md` (`O1`–`O40`), `milestone-plan.md` (M1–M13) and
+> `prd.md`, `design.md`, `decisions.md` (`O1`–`O44`), `milestone-plan.md` (M1–M13) and
 > `experimentation-protocol.md` reflect both passes. Cloud deployment, recalibration and monitoring
 > are reserved for **Phase 8b**.
 >
@@ -20,7 +20,7 @@
 >   `RiskAssessment` shape, training vs scoring mode, the FHIR mapping sketch, model artifacts,
 >   the agent's tool contract, testing, the prototype defects found in review, and the
 >   experimentation workbench (§12).
-> - [`decisions.md`](./decisions.md) — the ADR-style index (`O1`–`O40`), same convention as
+> - [`decisions.md`](./decisions.md) — the ADR-style index (`O1`–`O44`), same convention as
 >   Phase 2/3/4/6/7.
 > - [`milestone-plan.md`](./milestone-plan.md) — M1–M13, short and long story for each, with the
 >   mapping from the prototype's planned stages.
@@ -66,6 +66,18 @@ alongside model metrics, and model cards. Two rules keep it honest: the test pan
 only for logged confirmation (O32), and nothing reaches the service without a promotion record
 tied to a decision (O33). Later explorations are new **rounds** under
 `experimentation-protocol.md`, never reopened milestones (O28).
+
+## Data that outlives its source
+
+The MEPS files are public and re-downloadable, but a source can go down, move, or quietly
+republish different bytes. So the data is **pinned in git** — the committed
+`outcome-prediction-service/meps-manifest.json` records the SHA-256 of every original file,
+documentation page and codebook — and **preserved outside it**, in write-once,
+content-addressed private mirrors. Downloads accept only bytes that match the manifest, and
+fall back to a mirror when AHRQ can't supply them (O41, O42; `design.md` §13). Today the
+preserved copy is the repo owner's off-workspace `file://` mirror; the retention-protected GCS
+bucket (`outcome-prediction-service/infra/`) is ready but deferred, with a local GCS emulator
+standing in for testing (O43).
 
 ## Relationship to Phase 1, 6, and 7
 

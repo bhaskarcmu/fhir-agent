@@ -373,3 +373,31 @@ services:
         condition: service_healthy
       agent-db:
         condition: service_healthy
+
+  # ── Phase 8: local GCS emulator for the private MEPS mirror ─────────────────
+  # Stands in for the real private bucket (outcome-prediction-service/infra/, not applied)
+  # so the gs:// mirror code runs for real against the google-cloud-storage client
+  # (docs/phase8/decisions.md O41, O43). A TEST STAND-IN, NOT A BACKUP: its storage is a
+  # Docker volume on this workspace's Docker host (`docker compose down -v` deletes it), and
+  # it does not enforce the real bucket's retention policy, IAM or public-access prevention.
+  # Point the client at it with STORAGE_EMULATOR_HOST=http://localhost:4443.
+  gcs-emulator:
+    image: fsouza/fake-gcs-server:1.56.1
+    container_name: fhir-agent-gcs-emulator
+    profiles: ["phase8"]
+    command: ["-scheme", "http", "-port", "4443", "-backend", "filesystem",
+              "-filesystem-root", "/storage", "-public-host", "localhost:4443"]
+    ports:
+      - "4443:4443"
+    volumes:
+      # A named volume, not a bind mount: the server writes as root, which would leave
+      # root-owned files in the workspace that the dev user can't read or delete.
+      - phase8-gcs-emulator:/storage
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:4443/storage/v1/b"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  phase8-gcs-emulator:
