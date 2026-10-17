@@ -1236,7 +1236,50 @@ Paste this as the first message in Claude Code, after placing the three document
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+I have all three parts, saved word for word in `/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad/phase8-handoff/`. Below is my review against your two decisions and this repo. Nothing has been written to the repo yet.
+
+## Where the handoff conflicts with this repo
+
+1. **Phase numbers clash.** The handoff calls its own stages Phase 0 to 4, while this repo already uses phase numbers up to 7. I'd turn them into milestones inside Phase 8 (M1 reproduce the prototype, M2 improve the model, M3 service and adapters, M4 deploy and recalibrate), the way Phases 6 and 7 do.
+2. **It assumes its own standalone repo.** It plans a separate `hosp-risk/` repo with its own docs, dev container, Makefile and CI. Here that becomes:
+   - one new top-level service folder (say `risk-model-service/`, name to be decided), laid out like `triage-service/`;
+   - docs in `docs/phase8/`;
+   - the existing dev container and `.github/workflows/tests.yml`, rather than new ones.
+3. **The output format conflicts with your decision.** The handoff's `/v1/score` returns custom JSON. You chose FHIR `RiskAssessment`, like the one [triage-service/src/triage/main.py](triage-service/src/triage/main.py) returns. A possible mapping:
+   - the risk goes in `prediction.probabilityDecimal`;
+   - "hospital admission" is the predicted outcome, over a 12-month window;
+   - the model ID goes in `method`;
+   - `basis` points to the patient records used.
+
+   The comparison-model risk, the percentile and the top reasons would need extensions or a second prediction entry. That is a design item to settle.
+4. **The ETL ignores what the repo already has.** The handoff starts from Synthea CSV and leaves FHIR "for later." This repo already generates Synthea patients as FHIR records ([data/scripts/generate.sh](data/scripts/generate.sh)), stores them in `fhir-service`, and reads them through `client/clinical`. Converting FHIR records into the model's input should come first, not later. `claims-service` may be able to feed the claims adapter.
+5. **The agent's role isn't covered.** The handoff never mentions the agent. Under the repo rule, the model and all transforms live in the new service, and `mcp-agent` only gets a tool that calls it. Adding a gateway route means changing infrastructure config, so I'll ask before doing that.
+
+## Problems in the prototype
+
+These need fixing when the prototype is turned into the service:
+
+- **Future data leaks into the prescription count.** `ehr_to_meps.py` fills a missing medication stop date with the end of year 2, and it spreads `DISPENSES` over a period that runs past the cutoff. The prescription count therefore uses future data, which breaks the handoff's own rule that scoring must never see future data. This one matters most.
+- **The comparison model is never saved.** `train_model.py` saves only the gradient boosting model, but the API must return the comparison-model score too (requirement FR-S2).
+- **Unknown states default to the wrong region.** Unknown or non-US states map to South (3), but the feature contract says 0.
+- **"Year 1" doesn't fit live scoring.** The model is built on calendar years. Scoring a patient on any given date needs a definition such as "the 12 months before the as-of date," and it isn't specified yet.
+- **The reported metrics aren't the shipped model's.** The released model is retrained on all panels, so the reported numbers come from a different model object. The model's metadata should say so.
+
+## What to settle before production (these don't block M1)
+
+- **MEPS commercial use:** AHRQ still has to confirm this in writing. It's a legal question, not an engineering one.
+- **Spending feature:** `totexpy1` can't be compared across sources, because MEPS records payments and medical records hold charges.
+- **Clinical sign-off:** someone has to approve the clinical code lists.
+- **Writing style:** the handoff bans em dashes in docs, but this repo's docs use them. I'll follow the repo unless you say otherwise.
+
+## Proposed next step
+
+On a feature branch, with a PR:
+
+- Put the three files, unchanged, in `docs/phase8/handoff/` as your record. They contain no patient data.
+- Write repo-format `docs/phase8/` documents (`README`, `prd`, `design`, `decisions`, `milestone-plan`) that pull in the handoff, your two decisions and the points above.
+
+Should I go ahead?
 
 <details>
 <summary>Execution details — 9 tool events</summary>
@@ -1276,4 +1319,4 @@ Paste this as the first message in Claude Code, after placing the three document
 - **Created:** 17 October 2026, 15:37 UTC
 - **Last updated:** 17 October 2026, 16:02 UTC
 - **Turns:** 6
-- **Status:** Incomplete
+- **Status:** Complete
