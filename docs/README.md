@@ -14,14 +14,16 @@ Start with what you're trying to do.
 | **⚠️ Check the open Phase 4 safety finding before demoing it** | [`phase5/phase4-testing-and-analysis.md`](./phase5/phase4-testing-and-analysis.md) §0 | 5 min |
 | **Know why Phase 6 (Agent Hardening + Observability) is planned this way** | [`phase6/design.md`](./phase6/design.md) | 20 min |
 | **Know why Phase 7 (Medication Reconciliation) is planned this way** | [`phase7/design.md`](./phase7/design.md) | 20 min |
+| **Know why Phase 8 (Patient Outcome Prediction) is planned this way** | [`phase8/design.md`](./phase8/design.md) | 20 min |
 | **Audit Phase 2 decisions** (status + supersession) | [`phase2/decisions.md`](./phase2/decisions.md) | 5 min |
 | **Audit Phase 3 decisions** (status + supersession) | [`phase3/decisions.md`](./phase3/decisions.md) | 5 min |
 | **Audit Phase 4 decisions** (status + supersession) | [`phase4/decisions.md`](./phase4/decisions.md) | 5 min |
 | **Audit Phase 6 decisions** (status + supersession) | [`phase6/decisions.md`](./phase6/decisions.md) | 5 min |
 | **Audit Phase 7 decisions** (status + supersession) | [`phase7/decisions.md`](./phase7/decisions.md) | 5 min |
+| **Audit Phase 8 decisions** (status + supersession) | [`phase8/decisions.md`](./phase8/decisions.md) | 5 min |
 | **Check what Phase 5 and Phase 6 are actually reserved for** | [`phase5/README.md`](./phase5/README.md) | 5 min |
 | **Know exactly what was agreed** (normative) | [`phase2/requirements.md`](./phase2/requirements.md) | reference |
-| **Know what to build next** | [`phase2/plan.md` §16](./phase2/plan.md#16-future-work) (Phase 2) / [`phase3/README.md`](./phase3/README.md) (Phase 3b) / [`phase5/README.md`](./phase5/README.md) (Phase 5) / [`phase6/milestone-plan.md`](./phase6/milestone-plan.md) (Phase 6, M6 next, M1-M5 built) / [`phase7/milestone-plan.md`](./phase7/milestone-plan.md) (Phase 7, planned, M1 next) | 5 min |
+| **Know what to build next** | [`phase2/plan.md` §16](./phase2/plan.md#16-future-work) (Phase 2) / [`phase3/README.md`](./phase3/README.md) (Phase 3b) / [`phase5/README.md`](./phase5/README.md) (Phase 5) / [`phase6/milestone-plan.md`](./phase6/milestone-plan.md) (Phase 6, M6 next, M1-M5 built) / [`phase7/milestone-plan.md`](./phase7/milestone-plan.md) (Phase 7, planned, M1 next) / [`phase8/milestone-plan.md`](./phase8/milestone-plan.md) (Phase 8, planned, M1 next) | 5 min |
 
 ## The guides
 
@@ -140,6 +142,27 @@ capable of touching the fail-closed gate**; the alternative is a formal, immutab
 - **[`milestone-plan.md`](./phase7/milestone-plan.md)** — M1–M12, short and long story for each,
   none started.
 - **[`decisions.md`](./phase7/decisions.md)** — the ADR-style index (R1–R23), same convention.
+
+**[`phase8/`](./phase8/README.md)** — Patient Outcome Prediction (12-month hospitalization
+risk). **Planning complete (first pass), no code yet.** The platform's first machine-learned
+capability: a model trained on free, open US data (AHRQ MEPS) estimates an adult's probability
+of an inpatient stay in the next 12 months and returns it as a FHIR `RiskAssessment`, beside a
+hand-checkable comparison score. Seeded by a research prototype from an earlier session,
+whose planned work became milestones M1–M11 plus a deferred Phase 8b. M1 (service scaffold +
+MEPS dataset reproduction) is next.
+
+- **[`README.md`](./phase8/README.md)** — the canonical status statement for Phase 8.
+- **[`prd.md`](./phase8/prd.md)** — problem, goals/non-goals, functional requirements (the
+  prototype's IDs kept, with status), acceptance criteria, and every deviation from its plan.
+- **[`design.md`](./phase8/design.md)** — `outcome-prediction-service/` layout, the feature
+  contract, the `RiskAssessment` shape, training vs scoring mode, the FHIR mapping sketch, the
+  agent's tool contract, and prototype defects found in review.
+- **[`milestone-plan.md`](./phase8/milestone-plan.md)** — M1–M11, none started.
+- **[`decisions.md`](./phase8/decisions.md)** — the ADR-style index (O1–O27), same convention.
+- **[`prototype-baseline.md`](./phase8/prototype-baseline.md)** — what the research prototype
+  established: data-source choices, MEPS and Synthea facts, its method, and the exact numbers
+  M1–M3 must reproduce. The raw hand-off documents are deliberately not kept
+  (`decisions.md` O5).
 
 ## Conventions for this folder
 
