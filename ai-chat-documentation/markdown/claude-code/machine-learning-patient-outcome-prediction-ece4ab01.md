@@ -2289,7 +2289,38 @@ I want M3 to be multi-step in terms of needing several prompts. I want to explor
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Here's how I understand your M3, and how it compares with the plan we wrote.
+
+**What you're describing**
+- **Several prompts, not one build.** M3 is worked through in steps, each one a prompt or a few.
+- **Two questions:** *what* to predict (which outcome, in what form) and *how* to predict it (which model, and how to evaluate it).
+- **Learning as a goal in its own right.** Each step should leave you understanding the ML concept behind it, not just holding the code.
+
+**Where that differs from the written plan.** `milestone-plan.md` splits this across milestones:
+- **M3** builds the workbench only: tracking, the scorecard and holdout rules, and "round 000", which just re-runs the M2 model.
+- **M10** (round 001) decides *what* to predict.
+- **M11** (round 002) improves *how*.
+
+Your M3 covers M3, M10 and M11 together. I'd go with your framing. The plan already lets the research track run straight after M2, alongside the service work. Building the tools in the course of real exploration is also a better way to learn than building them first in the abstract. When we start, I'd fold M10 and M11 into M3 and update the plan and decisions to match.
+
+**A possible step outline, to adjust:**
+
+| Step | ML concepts you'd brush up on | What we'd do on real MEPS data |
+|---|---|---|
+| 1. Framing the problem | labels, base rates, leakage, what makes a target "advisable" | Survey the year-2 outcomes MEPS can label; check how often each occurs |
+| 2. Honest evaluation | cross-validation, AUROC vs AUPRC vs calibration vs Brier, why repeated looks at a test set mislead | Build the lab's run/compare tools with panel-grouped cross-validation; set up the holdout ledger |
+| 3. Model families | logistic regression vs gradient boosting, regularisation, the bias–variance trade-off | Compare models on the any-stay and unplanned-stay labels |
+| 4. Forms of prediction | yes/no probability vs count vs cost; matching loss functions and metrics | ED-visit counts, nights in hospital, high-cost members |
+| 5. Trust | calibration, explanations (permutation importance vs SHAP), subgroup fairness | Check the shortlisted candidates on each |
+| 6. Deciding | scorecards, model cards, a single confirmation look at the test set | Write up the round and record what to predict |
+
+Each step would follow the same pattern: the concept briefly, the code, a look at real results, and what they mean.
+
+**Two questions before we start:**
+1. **Depth.** How much maths do you want: intuition and practical judgement, or derivations too (e.g. why log-loss, how gradient boosting fits residuals)?
+2. **Merging.** Should I fold M10 and M11 into M3 as above, or keep M3 to tooling only, with exploration as separate milestones?
+
+Also, `docs/phase8/README.md` still says "M2 PR open", which is now stale. I'll fix it in M3's first PR.
 
 <details>
 <summary>Execution details — 290 tool events</summary>
@@ -2923,6 +2954,6 @@ p=sys.argv[1]; s=ope…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 23:22 UTC
+- **Last updated:** 17 October 2026, 23:23 UTC
 - **Turns:** 28
-- **Status:** Incomplete
+- **Status:** Complete
