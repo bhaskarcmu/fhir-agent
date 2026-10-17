@@ -1932,8 +1932,10 @@ On the data management question above, implement all your recommendations now. S
 
 Git: worktree `/workspaces/fhir-agent`. First the branch cleanup: I'll confirm PR #68 merged, then update `main` and delete the branch.
 
+The doc page names its codebook as `H252CB.PDF`, a separate file. Checking whether it lives at the predictable URL for all seven panels, alongside each documentation page:
+
 <details>
-<summary>Execution details — 184 tool events</summary>
+<summary>Execution details — 190 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2329,6 +2331,12 @@ Phase 8 **M2**: train, evaluate…`
 - **Bash** `git push -q origin --delete feature/phase8-m2-training && git branch -d feature/phase8-m2-training && git fetch -q --prune origin && git branch -a`
 - **Bash** `which gcloud gsutil terraform 2>&1 | grep -v "no "; gcloud --version 2>/dev/null | head -1; gcloud auth list 2>&1 | head -5; gcloud config get-value project 2>&1 | tail -1; env | grep -iE "^(GOOGLE|GC…`
 - **Bash** `cat provider-registry-service/infra/main.tf | head -80; echo ...; grep -n "project\|region\|variable" infra/terraform/main.tf | head -20; ls provider-registry-service/infra infra/terraform`
+- **Bash** `sed -n 1,95p infra/terraform/main.tf`
+- **Bash** `curl -sS https://meps.ahrq.gov/data_stats/download_data/pufs/h252/h252doc.shtml -o /tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad/h252doc.html -w "%{http_code}…`
+- **Bash** `F=/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad/h252doc.html; grep -oiE 'href="[^"]+\.(pdf|shtml|htm|zip|txt)"' $F | sort -u | grep -viE "privacy|accessib|foi…`
+- **Bash** `F=/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad/h252doc.html; grep -oiE "href=['\"][^'\"]+['\"]" $F | sed -E "s/href=['\"]//; s/['\"]$//" | grep -iE "252|pdf|…`
+- **Bash** `F=/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad/h252doc.html; grep -iE -B2 -A2 "codebook" $F | sed -E 's/<[^>]+>/ /g; s/ +/ /g' | head -20; echo ---; grep -oi…`
+- **Bash** `for n in 202 210 217 225 234 244 252; do d=$(curl -sS -o /dev/null -w "%{http_code} %{size_download}" https://meps.ahrq.gov/data_stats/download_data/pufs/h$n/h${n}doc.shtml); c=$(curl -sS -o /dev/null…`
 
 </details>
 
@@ -2339,6 +2347,6 @@ Phase 8 **M2**: train, evaluate…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 17:46 UTC
+- **Last updated:** 17 October 2026, 17:47 UTC
 - **Turns:** 18
 - **Status:** Complete
