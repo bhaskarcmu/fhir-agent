@@ -1638,8 +1638,10 @@ The only merged branch is PR #65's `docs/phase8-outcome-prediction-planning`, bo
 
 pandas 3.0.6 is the same version the prototype used, which helps reproduction. Writing the package: the build config and a package-local `.gitignore` first.
 
+Now the MEPS modules. The panel-to-file map lives in one place, since download and build both need it:
+
 <details>
-<summary>Execution details — 100 tool events</summary>
+<summary>Execution details — 102 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1864,6 +1866,8 @@ p='/tmp/claude-1000/-workspaces-fhir-agent/e…`
 - **Write** `/workspaces/fhir-agent/outcome-prediction-service/.gitignore`
 - **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/__init__.py`
 - **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/settings.py`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/meps/__init__.py`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/meps/download.py`
 
 </details>
 
