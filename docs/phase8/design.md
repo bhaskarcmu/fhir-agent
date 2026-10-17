@@ -330,7 +330,7 @@ automatic promotion.
 ```
 outcome-prediction-service/
   meps-manifest.json          # COMMITTED: per file — URLs, SHA-256 of zip, .dta, doc page, codebook
-  infra/main.tf               # private GCS archive bucket (standalone root module; not yet applied)
+  infra/main.tf               # private GCS archive bucket (standalone root module; deferred, not applied)
   src/outcome_prediction/meps/
     manifest.py               # `snapshot`: record originals; `--accept-change` to adopt a re-release
     mirror.py                 # write-once, content-addressed mirrors: gs:// and file://; push / verify
@@ -348,8 +348,16 @@ re-release lands beside the original rather than replacing it, and `put` refuses
 
 **The bucket** (`infra/main.tf`): private (uniform access, public access prevention enforced),
 retention policy (default 10 years, lock is a separate irreversible step), 90-day soft delete,
-multi-region `US` by default, `prevent_destroy`, writers create-only. Verified so far: Terraform
+multi-region `US` by default, `prevent_destroy`, writers create-only. **Deferred** (O41, O43):
+until it's wanted, the compose service `gcs-emulator` (fake-gcs-server, profile `phase8`) stands
+in for testing — the real client reaches it via `STORAGE_EMULATOR_HOST`, it honours the write-once
+precondition (412 on a second create), and CI runs the `gs://` tests against it. It is not a
+backup and enforces none of the bucket's protections; preservation is the repo owner's
+off-workspace `file://` copy. Verified so far: Terraform
 `validate`/`fmt` clean; a `file://` mirror of all 21 originals (121 MB) pushed and verified, and
 — with AHRQ simulated as unreachable in a fresh workspace — all seven panels restored from it
-and the M1 table rebuilt byte-identical (sha256 `950d8be12078…`, the M2 model ID).
+and the M1 table rebuilt byte-identical (sha256 `950d8be12078…`, the M2 model ID). The same
+end-to-end run through `gs://phase8-reference-data` on the emulator: 21 uploaded, a second push
+all "present" (write-once), verify clean, persistence across an emulator restart, AHRQ-down
+restore and byte-identical rebuild.
 

@@ -182,7 +182,22 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e "outcome-prediction-service[dev,gcs]"
+      # The local GCS emulator from docker-compose (profile phase8), so the gs:// mirror code
+      # runs against the real google-cloud-storage client (docs/phase8/decisions.md O43).
+      # Started with `docker run`, not a service container: services can't pass the
+      # server's command-line flags.
+      - name: Start GCS emulator
+        run: |
+          docker run -d --name gcs-emulator -p 4443:4443 fsouza/fake-gcs-server:1.56.1 \
+            -scheme http -port 4443 -backend memory
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:4443/storage/v1/b > /dev/null && exit 0
+            sleep 1
+          done
+          echo "GCS emulator did not become ready"; docker logs gcs-emulator; exit 1
       - name: Run Phase 8 test suites
+        env:
+          STORAGE_EMULATOR_HOST: http://localhost:4443
         run: pytest outcome-prediction-service/src/outcome_prediction/tests -q -rs
 
   # ── Phase 3 Terraform stubs ──────────────────────────────────────────────────

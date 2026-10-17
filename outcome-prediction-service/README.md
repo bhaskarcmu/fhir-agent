@@ -74,21 +74,43 @@ python -m outcome_prediction.meps.mirror push
 python -m outcome_prediction.meps.mirror verify
 ```
 
-`gs://` mirrors need `pip install -e "outcome-prediction-service[gcs]"` and Application Default
-Credentials (`gcloud auth application-default login`). `file://` is any directory — an extra
-offline copy (e.g. an external disk).
+`gs://` mirrors need `pip install -e "outcome-prediction-service[gcs]"`. `file://` is any
+directory — e.g. an off-workspace disk, which is where the preserved copy lives today.
 
-### Creating the private bucket (once)
+### Local GCS emulator (stands in for the real bucket)
+
+The real bucket is deferred (`docs/phase8/decisions.md` O43). To exercise the `gs://` path with
+the real `google-cloud-storage` client, run the emulator from docker-compose:
+
+```bash
+docker compose --profile phase8 up -d --wait gcs-emulator
+curl -X POST "http://localhost:4443/storage/v1/b?project=local" \
+  -H 'Content-Type: application/json' -d '{"name":"phase8-reference-data"}'   # once per volume
+
+export STORAGE_EMULATOR_HOST=http://localhost:4443
+export OUTCOME_PREDICTION_MEPS_MIRRORS=gs://phase8-reference-data
+python -m outcome_prediction.meps.mirror push && python -m outcome_prediction.meps.mirror verify
+```
+
+It is a **test stand-in, not a backup**: its data is a Docker volume on this workspace's host
+(`docker compose --profile phase8 down -v` deletes it), and it enforces none of the real
+bucket's protections (retention, IAM, public-access prevention). The emulator tests
+(`test_meps_mirror_emulator.py`) run whenever `STORAGE_EMULATOR_HOST` is set; CI sets it.
+
+### Later: the real private bucket
 
 `infra/main.tf` is a standalone Terraform root module — private, retention-protected,
-multi-region. It hasn't been applied: this repo provisions no GCP credentials.
+multi-region — ready to apply when wanted. It needs GCP credentials, which this repo doesn't
+provision.
 
 ```bash
 cd outcome-prediction-service/infra
 terraform init
 terraform apply -var project_id=<gcp-project> \
   -var 'writer_members=["user:<you>@<domain>"]' -var 'reader_members=["user:<you>@<domain>"]'
-# then: OUTCOME_PREDICTION_MEPS_MIRRORS=$(terraform output -raw mirror_uri) ... mirror push / verify
+gcloud auth application-default login     # credentials for the Python client
+export OUTCOME_PREDICTION_MEPS_MIRRORS=$(terraform output -raw mirror_uri)
+python -m outcome_prediction.meps.mirror push && python -m outcome_prediction.meps.mirror verify
 ```
 
 `lock_retention` stays `false` at first: locking makes the retention policy permanent and can't

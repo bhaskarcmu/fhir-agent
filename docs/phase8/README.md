@@ -7,7 +7,7 @@
 > was handed over and reconciled with this repo's conventions; what it established is restated
 > in `prototype-baseline.md`, and the raw hand-off documents are not kept in the repo (O5). A
 > second pass added a permanent **experimentation track** (`outcome-prediction-lab`, O28–O40).
-> `prd.md`, `design.md`, `decisions.md` (`O1`–`O42`), `milestone-plan.md` (M1–M13) and
+> `prd.md`, `design.md`, `decisions.md` (`O1`–`O43`), `milestone-plan.md` (M1–M13) and
 > `experimentation-protocol.md` reflect both passes. Cloud deployment, recalibration and monitoring
 > are reserved for **Phase 8b**.
 >
@@ -20,7 +20,7 @@
 >   `RiskAssessment` shape, training vs scoring mode, the FHIR mapping sketch, model artifacts,
 >   the agent's tool contract, testing, the prototype defects found in review, and the
 >   experimentation workbench (§12).
-> - [`decisions.md`](./decisions.md) — the ADR-style index (`O1`–`O42`), same convention as
+> - [`decisions.md`](./decisions.md) — the ADR-style index (`O1`–`O43`), same convention as
 >   Phase 2/3/4/6/7.
 > - [`milestone-plan.md`](./milestone-plan.md) — M1–M13, short and long story for each, with the
 >   mapping from the prototype's planned stages.
@@ -73,9 +73,11 @@ The MEPS files are public and re-downloadable, but a source can go down, move, o
 republish different bytes. So the data is **pinned in git** — the committed
 `outcome-prediction-service/meps-manifest.json` records the SHA-256 of every original file,
 documentation page and codebook — and **preserved outside it**, in write-once,
-content-addressed private mirrors (a retention-protected GCS bucket defined in
-`outcome-prediction-service/infra/`). Downloads accept only bytes that match the manifest, and
-fall back to a mirror when AHRQ can't supply them (O41, O42; `design.md` §13).
+content-addressed private mirrors. Downloads accept only bytes that match the manifest, and
+fall back to a mirror when AHRQ can't supply them (O41, O42; `design.md` §13). Today the
+preserved copy is the repo owner's off-workspace `file://` mirror; the retention-protected GCS
+bucket (`outcome-prediction-service/infra/`) is ready but deferred, with a local GCS emulator
+standing in for testing (O43).
 
 ## Relationship to Phase 1, 6, and 7
 

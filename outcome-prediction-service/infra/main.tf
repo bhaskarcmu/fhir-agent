@@ -1,7 +1,8 @@
 # Phase 8 reference-data archive — a private GCS bucket that mirrors the original MEPS files
-# (docs/phase8/decisions.md O41). NOT YET APPLIED: this repo provisions no GCP credentials;
-# CI runs `terraform validate` only, like every other module here. Apply steps:
-# outcome-prediction-service/README.md, "Private mirror".
+# (docs/phase8/decisions.md O41). DEFERRED, NOT APPLIED — kept ready for when it's wanted. Until
+# then the compose service `gcs-emulator` stands in for testing (O43); it enforces none of the
+# protections below. CI runs `terraform validate` only, like every other module here. Apply
+# steps: outcome-prediction-service/README.md, "Later: the real private bucket".
 #
 # A standalone root module (it declares its own provider), unlike the Phase 3 per-service
 # stubs composed by infra/terraform: this archive is independent of any Phase 3b/8b
