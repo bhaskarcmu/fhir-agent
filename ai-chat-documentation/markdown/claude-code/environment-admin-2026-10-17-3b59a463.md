@@ -139,8 +139,10 @@ I'll start with the CI check and the duplicate files themselves.
 
 The renames and doc edit are in. Now I'll run the exact CI check, then the affected test suites with the same commands CI uses.
 
+That `OTEL_SDK_DISABLED` was a mistake on my part: it turns tracing off, so the tracing tests fail. I'll rerun without it and capture just the summary line.
+
 <details>
-<summary>Execution details — 41 tool events</summary>
+<summary>Execution details — 43 tool events</summary>
 
 ### Turn 3 activity
 
@@ -199,6 +201,8 @@ The `aiChatArchiveW…`
 - **Edit** `/workspaces/fhir-agent/docs/developer-guide.md`
 - **Bash** `cd /workspaces/fhir-agent; dupes=$(find . -name "test_*.py" | xargs -n1 basename | sort | uniq -c | awk '$1>1'); if [ -n "$dupes" ]; then echo "Duplicate test filenames found:"; echo "$dupes"; else ec…`
 - **Bash** `cd /workspaces/fhir-agent; pip install -q -e "claims-agent[dev]" 2>&1 | tail -1; pytest claims-agent/tests -q 2>&1 | tail -3; echo ---; pytest client/clinical/tests triage-service/src/triage/tests mcp…`
+- **Bash** `cd /workspaces/fhir-agent; OTEL_SDK_DISABLED=true pytest client/clinical/tests triage-service/src/triage/tests mcp-agent/tests -q 2>&1 | grep -E "passed|failed|error" | grep -v "export traces" | tail…`
+- **Bash** `cd /workspaces/fhir-agent; pytest client/clinical/tests triage-service/src/triage/tests mcp-agent/tests -q -p no:cacheprovider 2>/dev/null | grep -E "^[0-9]+ (passed|failed)|^FAILED|^ERROR" | tail -10`
 
 </details>
 
