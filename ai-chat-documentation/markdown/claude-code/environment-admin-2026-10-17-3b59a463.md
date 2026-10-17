@@ -141,8 +141,31 @@ The renames and doc edit are in. Now I'll run the exact CI check, then the affec
 
 That `OTEL_SDK_DISABLED` was a mistake on my part: it turns tracing off, so the tracing tests fail. I'll rerun without it and capture just the summary line.
 
+181 passed. The 4 errors are all live-model integration tests, so I'll confirm they fail for an environment reason that has nothing to do with the rename:
+
+The PR is open. I'm switching this checkout back to `feature/phase8-m1-meps-dataset`, where you were working.
+
+I renamed one file in each colliding pair, and the filename check now passes. The fix is in **[PR #67](https://github.com/bhaskarcmu/fhir-agent/pull/67)**.
+
+**Files changed:**
+- `claims-agent/tests/test_tools.py` → [test_claims_tools.py](claims-agent/tests/test_claims_tools.py)
+- `triage-service/src/triage/tests/test_tracing.py` → [test_triage_tracing.py](triage-service/src/triage/tests/test_triage_tracing.py), with the run path in its docstring updated.
+- [docs/developer-guide.md](docs/developer-guide.md): reworded the example that named the old claims-agent path.
+
+Decision P15 says to rename colliding files rather than loosen the check, so I did that. The `mcp-agent` files kept their names because decision H44 refers to its `test_tools.py`.
+
+**Validation:**
+- The CI duplicate check, run exactly as CI runs it, finds no duplicates.
+- `claims-agent` tests: 8 passed.
+- `client/clinical`, `triage-service` and `mcp-agent` tests: 181 passed and 4 errored. The 4 are live tests that need a local Ollama model, which this container doesn't have, so they fail by design (decision H45). CI installs Ollama, so they should run there.
+- All four affected files are still picked up by pytest.
+
+**Branch:** `fix/test-filename-collisions`, based on `origin/main`; commit `842ae332`.
+
+**Your phase-8 branch:** this checkout was on `feature/phase8-m1-meps-dataset` when you asked, so I branched the fix off `main` and switched back afterwards. That branch has no open PR. It also contains both duplicate pairs, so it will fail the same check until it picks up `main` after #67 merges.
+
 <details>
-<summary>Execution details — 43 tool events</summary>
+<summary>Execution details — 48 tool events</summary>
 
 ### Turn 3 activity
 
@@ -203,6 +226,14 @@ The `aiChatArchiveW…`
 - **Bash** `cd /workspaces/fhir-agent; pip install -q -e "claims-agent[dev]" 2>&1 | tail -1; pytest claims-agent/tests -q 2>&1 | tail -3; echo ---; pytest client/clinical/tests triage-service/src/triage/tests mcp…`
 - **Bash** `cd /workspaces/fhir-agent; OTEL_SDK_DISABLED=true pytest client/clinical/tests triage-service/src/triage/tests mcp-agent/tests -q 2>&1 | grep -E "passed|failed|error" | grep -v "export traces" | tail…`
 - **Bash** `cd /workspaces/fhir-agent; pytest client/clinical/tests triage-service/src/triage/tests mcp-agent/tests -q -p no:cacheprovider 2>/dev/null | grep -E "^[0-9]+ (passed|failed)|^FAILED|^ERROR" | tail -10`
+- **Bash** `cd /workspaces/fhir-agent; pytest mcp-agent/tests/test_provider_integration.py -q -p no:cacheprovider 2>/dev/null | grep -E "^E " | sort -u | head -4; echo ---; git show origin/main:.github/workflows/…`
+- **Bash** `git add -A claims-agent/tests triage-service/src/triage/tests docs/developer-guide.md && git status --short && git commit -q -F - <<'EOF'
+fix(tests): rename colliding test files so the repo-wide filen…`
+- **Bash** `git push -q -u origin fix/test-filename-collisions 2>&1 | grep -v "^remote:\s*$" | tail -2`
+- **Bash** `gh pr create --base main --head fix/test-filename-collisions --title "fix(tests): rename colliding test files so the repo-wide filename check passes" --body-file - <<'EOF'
+## Problem
+The phase3 job's…`
+- **Bash** `git switch -q feature/phase8-m1-meps-dataset && git status -sb | head -1`
 
 </details>
 
@@ -213,6 +244,6 @@ The `aiChatArchiveW…`
 - **Source:** Claude Code
 - **Session ID:** `3b59a463-d6e4-4a7f-94ea-7dfea0acdc2b`
 - **Created:** 17 October 2026, 15:43 UTC
-- **Last updated:** 17 October 2026, 17:18 UTC
+- **Last updated:** 17 October 2026, 17:19 UTC
 - **Turns:** 6
 - **Status:** Incomplete
