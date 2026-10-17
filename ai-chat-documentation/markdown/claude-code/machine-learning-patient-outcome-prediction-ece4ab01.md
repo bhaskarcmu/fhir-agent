@@ -2216,8 +2216,26 @@ Now do what you have to do to make PR #69 ready to merge
 
 Git: worktree `/workspaces/fhir-agent`, currently on `feature/phase8-data-provenance`. PR #70 is merged; its branch `fix/pin-mcp-below-2` is the only merged one. Deleting it on `origin` and locally:
 
+PR #70's branch is deleted, and PR #69 now has `main`'s `mcp` fix. CI is running on it.
+
+**Branch cleanup:** I deleted `fix/pin-mcp-below-2` on `origin`. Locally, `git branch -d` refused because git compares against the branch you're on, not `main`. I confirmed the branch's last commit (`c53accb5`) is in `origin/main`, then force-deleted it. The only other branches left are `main`, `ai-chat-history`, and PR #69's own branch.
+
+**PR #69:**
+- I merged `origin/main` into the branch instead of rebasing, so the PR's existing history wasn't rewritten. The merge was clean and only brought in the two `mcp` pins. Commit `ac8e0e91`, pushed.
+- Checked locally first:
+
+| CI job | Local result |
+|---|---|
+| `phase3 (python)`, the one that was failing | **89 passed** against a real Postgres, with `mcp` 1.30.0 |
+| `phase8 (python)` | **92 passed** |
+| `phase1`'s check that the default services are unchanged | `fhir mcp-agent triage`, as expected |
+
+- Not run locally: `phase1`'s own test suites, which need the Ollama model. This PR doesn't touch them, and CI will run them.
+
+**Still to come:** I'm waiting in the background for every check on PR #69 to finish and will report the final state, including whether GitHub marks it mergeable. The checks to watch are `phase3` (should now pass) and `phase1` (the job that hit the Ollama download failure earlier). Once those are green, the only thing left is your review and approval.
+
 <details>
-<summary>Execution details — 284 tool events</summary>
+<summary>Execution details — 286 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2826,6 +2844,8 @@ p=sys.argv[1]; s=ope…`
 - **Bash** `git status --porcelain | wc -l && git log --oneline HEAD..origin/main && gh pr view 69 --json mergeable,mergeStateStatus --jq '.mergeable+" "+.mergeStateStatus'`
 - **Bash** `git merge --no-edit origin/main 2>&1 | tail -3 && git log --oneline -3 && git diff --stat HEAD~1 HEAD | tail -2`
 - **Bash** `python -m pip install -q -e "provider-mcp-server[dev]" -e "provider-search-agent[dev]" -e "provider-registry-service[dev]" -e "provider-curation-agent[dev]" 2>&1 | tail -1; python -m pip show mcp | gr…`
+- **Bash** `git push -q 2>&1 | grep -v "^remote:" | tail -1; git status -sb | head -1`
+- **Bash** `sleep 40; for i in $(seq 1 150); do p=$(gh pr checks 69 2>/dev/null | awk -F'\t' '$2=="pending"' | wc -l); t=$(gh pr checks 69 2>/dev/null | wc -l); [ "$t" -gt 0 ] && [ "$p" -eq 0 ] && break; sleep 10…`
 
 </details>
 
@@ -2836,6 +2856,6 @@ p=sys.argv[1]; s=ope…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 18:30 UTC
+- **Last updated:** 17 October 2026, 18:32 UTC
 - **Turns:** 25
 - **Status:** Complete
