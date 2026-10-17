@@ -54,6 +54,46 @@ worktrees at one cache with `OUTCOME_PREDICTION_DATA_DIR=/path/to/data`.
 `data/raw/meps/checksums.json`; every later run verifies it and stops with `ChecksumMismatch`
 if a file changed. Delete the file to re-download deliberately.
 
+## Data manifest and private mirror
+
+Data is never committed, but **`meps-manifest.json` is**: the URL and SHA-256 of every original
+zip, extracted `.dta`, documentation page and codebook. `download` accepts only bytes that match
+it, trying the local archive, then AHRQ, then each private mirror. If AHRQ republishes a file,
+the original still comes from a mirror until the manifest is deliberately updated.
+(`docs/phase8/decisions.md` O41, O42; `design.md` §13.)
+
+```bash
+# Record the originals (zips + doc pages + codebooks) — first time, or to re-check
+python -m outcome_prediction.meps.manifest snapshot
+# AHRQ changed a file? Adopting it is a deliberate, reviewed manifest change:
+python -m outcome_prediction.meps.manifest snapshot --accept-change
+
+# Copy the originals to every configured mirror (write-once), and audit them
+export OUTCOME_PREDICTION_MEPS_MIRRORS=gs://<bucket>,file:///mnt/backup/meps   # tried in order
+python -m outcome_prediction.meps.mirror push
+python -m outcome_prediction.meps.mirror verify
+```
+
+`gs://` mirrors need `pip install -e "outcome-prediction-service[gcs]"` and Application Default
+Credentials (`gcloud auth application-default login`). `file://` is any directory — an extra
+offline copy (e.g. an external disk).
+
+### Creating the private bucket (once)
+
+`infra/main.tf` is a standalone Terraform root module — private, retention-protected,
+multi-region. It hasn't been applied: this repo provisions no GCP credentials.
+
+```bash
+cd outcome-prediction-service/infra
+terraform init
+terraform apply -var project_id=<gcp-project> \
+  -var 'writer_members=["user:<you>@<domain>"]' -var 'reader_members=["user:<you>@<domain>"]'
+# then: OUTCOME_PREDICTION_MEPS_MIRRORS=$(terraform output -raw mirror_uri) ... mirror push / verify
+```
+
+`lock_retention` stays `false` at first: locking makes the retention policy permanent and can't
+be undone. Flip it deliberately once `mirror verify` passes.
+
 ## Tests
 
 ```bash

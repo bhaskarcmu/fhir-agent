@@ -1,0 +1,201 @@
+{
+  "description": "MEPS public-use files used by Phase 8, by SHA-256. Data is never committed; download.fetch refuses bytes that don't match. See docs/phase8/decisions.md O41-O42.",
+  "files": {
+    "h202": {
+      "data": {
+        "dta_bytes": 415260016,
+        "dta_name": "h202.dta",
+        "dta_sha256": "f0571f03aca3a3b5247d4322ec5e4ab14503451c6e0cdb4b88235ff03900f671",
+        "url": "https://meps.ahrq.gov/data_files/pufs/h202/h202dta.zip",
+        "zip_bytes": 11015505,
+        "zip_name": "h202dta.zip",
+        "zip_sha256": "758f709ae435fda7288f5e91fdd23b8c42c9108bb2c406fe0a3e80f8b9eaf1ea"
+      },
+      "documentation": [
+        {
+          "bytes": 72664,
+          "name": "h202doc.shtml",
+          "sha256": "fa38a06d1fe394e3ba2ae67580980322d01ff36c040a5cea4668d696c4c94376",
+          "url": "https://meps.ahrq.gov/data_stats/download_data/pufs/h202/h202doc.shtml"
+        },
+        {
+          "bytes": 39492257,
+          "name": "h202cb.pdf",
+          "sha256": "d69baaf860cc98bcb53e35048e537b892de0097d9825e421ca2e936685fb5480",
+          "url": "https://meps.ahrq.gov/data_stats/download_data/pufs/h202/h202cb.pdf"
+        }
+      ],
+      "kind": "longitudinal",
+      "panel": 21,
+      "retrieved_at": "2026-10-17T17:49:55+00:00"
+    },
+    "h210": {
+      "data": {
+        "dta_bytes": 76238531,
+        "dta_name": "h210.dta",
+        "dta_sha256": "b47403a360aea073b7832842f8a33d029dc46b01d326eae9c619659d0c85cb76",
+        "url": "https://meps.ahrq.gov/data_files/pufs/h210/h210dta.zip",
+        "zip_bytes": 6663583,
+        "zip_name": "h210dta.zip",
+        "zip_sha256": "d626bc7212a671206ef2d6879786780dec399b3031936155511e405880ac1cf6"
+      },
+      "documentation": [
+        {
+          "bytes": 97647,
+          "name": "h210doc.shtml",
+          "sha256": "df3f25072f43b86d2c7c88ced95f1318a014f9fb8b13e64a7fa741167705d769",
+          "url": "https://meps.ahrq.gov/data_stats/download_data/pufs/h210/h210doc.shtml"
+        },
+        {
+          "bytes": 9005052,
+          "name": "h210cb.pdf",
+          "sha256": "582b9c298689203ea4b1d90e6e438bee3ca1befb361429747c8708531333eb8e",
+          "url": "https://meps.ahrq.gov/data_stats/download_data/pufs/h210/h210cb.pdf"
+        }
+      ],
+      "kind": "longitudinal",
+      "panel": 22,
+      "retrieved_at": "2026-10-17T17:49:56+00:00"
+    },
+    "h217": {
+      "data": {
+        "dta_bytes": 71989753,
+        "dta_name": "h217.dta",
+        "dta_sha256": "dd5e60de82ef6bda24afc5e536229cf68a673dd2dbf427d94628b0434a3ac1e2",
+        "url": "https://meps.ahrq.gov/data_files/pufs/h217/h217dta.zip",
+        "zip_bytes": 6429746,
+        "zip_name": "h217dta.zip",
+        "zip_sha256": "895b38edf595adad0ddc25a471302e4c3ee7a4bdb26dd671b0ae0c742313c735"
+      },
+      "documentation": [
+        {
+          "bytes": 83333,
+          "name": "h217doc.shtml",
+          "sha256": "94302d1e58ceeaf4360c7b7670a2c67325d6a3c14d89b880ea964070c8bf8586",
+          "url": "https://meps.ahrq.gov/data_stats/download_data/pufs/h217/h217doc.shtml"
+        },
+        {
+          "bytes": 8428624,
+          "name": "h217cb.pdf",
+          "sha256": "dae01b932eb51f9caa2daa6354093c93376bfec15e0e7e605244e22b2197c731",
+          "url": "https://meps.ahrq.gov/data_stats/download_data/pufs/h217/h217cb.pdf"
+        }
+      ],
+      "kind": "longitudinal",
+      "panel": 23,
+      "retrieved_at": "2026-10-17T17:49:56+00:00"
+    },
+    "h225": {
+      "data": {
+        "dta_bytes": 50225505,
+        "dta_name": "h225.dta",
+        "dta_sha256": "b03a7f8f6bf48e192760bc4928c5a896dccbf2102caf0420dce4de82ee0e44eb",
+        "url": "https://meps.ahrq.gov/data_files/pufs/h225/h225dta.zip",
+        "zip_bytes": 4275197,
+        "zip_name": "h225dta.zip",
+        "zip_sha256": "ba631f332f096dc1f36213be15101814a1e035fbdac0ff89086b147187b4bc9f"
+      },
+      "documentation": [
+        {
+          "bytes": 82264,
+          "name": "h225doc.shtml",
+          "sha256": "c0d4b011cb99247e5c62d8e0c2d0359a51bc822e3067a31baaee33051558f720",
+          "url": "https://meps.ahrq.gov/data_stats/download_data/pufs/h225/h225doc.shtml"
+        },
+        {
+          "bytes": 6550574,
+          "name": "h225cb.pdf",
+          "sha256": "81c62b5dab149f36b65233ef93a5474a3bb0b2b7c6d1fe0a462092fab8f7b845",
+          "url": "https://meps.ahrq.gov/data_stats/download_data/pufs/h225/h225cb.pdf"
+        }
+      ],
+      "kind": "longitudinal",
+      "panel": 24,
+      "retrieved_at": "2026-10-17T17:49:57+00:00"
+    },
+    "h234": {
+      "data": {
+        "dta_bytes": 31152491,
+        "dta_name": "h234.dta",
+        "dta_sha256": "3365e05eedb2d6e6b2863e5dcb78611947056ca536ea1e0e79e9c78b6aaebb44",
+        "url": "https://meps.ahrq.gov/data_files/pufs/h234/h234dta.zip",
+        "zip_bytes": 2814206,
+        "zip_name": "h234dta.zip",
+        "zip_sha256": "0ed815e98cb6cdfc44820795399d1c5cf88a2c67388e5d8a6f944bed493cd8bf"
+      },
+      "documentation": [
+        {
+          "bytes": 80748,
+          "name": "h234doc.shtml",
+          "sha256": "aaabefe5f9bc4c93b1af7324f655acc9d4711388cf663b812737fe2dab84f36b",
+          "url": "https://meps.ahrq.gov/data_stats/download_data/pufs/h234/h234doc.shtml"
+        },
+        {
+          "bytes": 6435778,
+          "name": "h234cb.pdf",
+          "sha256": "d49cd3563df9d59ba8c3573d9cad0c3fb2290c6e28e2d00ebdea4641d97e3327",
+          "url": "https://meps.ahrq.gov/data_stats/download_data/pufs/h234/h234cb.pdf"
+        }
+      ],
+      "kind": "longitudinal",
+      "panel": 25,
+      "retrieved_at": "2026-10-17T17:49:57+00:00"
+    },
+    "h244": {
+      "data": {
+        "dta_bytes": 34994211,
+        "dta_name": "h244.dta",
+        "dta_sha256": "5cf983c94fd9ed8d8377c9ad27bebd905c545327eca823a8c8412bf4e66eaa70",
+        "url": "https://meps.ahrq.gov/data_files/pufs/h244/h244dta.zip",
+        "zip_bytes": 3215061,
+        "zip_name": "h244dta.zip",
+        "zip_sha256": "4aa97e3f1544c45861dad689ff5c5979baf9ba501577d62330875dde9e6ddf6e"
+      },
+      "documentation": [
+        {
+          "bytes": 79853,
+          "name": "h244doc.shtml",
+          "sha256": "f959a5e121ae1adcaae7e9a1674b684d1d8d17cf9d62330375e86054a7b047ec",
+          "url": "https://meps.ahrq.gov/data_stats/download_data/pufs/h244/h244doc.shtml"
+        },
+        {
+          "bytes": 6804911,
+          "name": "h244cb.pdf",
+          "sha256": "4b5818ca63875321eb6b535595c5be02ac084e6fab5937305694c6833ee2e83a",
+          "url": "https://meps.ahrq.gov/data_stats/download_data/pufs/h244/h244cb.pdf"
+        }
+      ],
+      "kind": "longitudinal",
+      "panel": 26,
+      "retrieved_at": "2026-10-17T17:49:58+00:00"
+    },
+    "h252": {
+      "data": {
+        "dta_bytes": 41030588,
+        "dta_name": "h252.dta",
+        "dta_sha256": "1c94c7bed6a8daa1808f623316a5b15ef7a3b577cbe605bf618dfedc229eb3f9",
+        "url": "https://meps.ahrq.gov/data_files/pufs/h252/h252dta.zip",
+        "zip_bytes": 3661395,
+        "zip_name": "h252dta.zip",
+        "zip_sha256": "19eb8557487bb4e443c4139fe6f0384d4eb03ed5f39fedd9244723793ff9810c"
+      },
+      "documentation": [
+        {
+          "bytes": 78504,
+          "name": "h252doc.shtml",
+          "sha256": "156121e1ee8fc2ab2475f0f93855c24c5a81b55f4dfc898a5e1dee59f48d588c",
+          "url": "https://meps.ahrq.gov/data_stats/download_data/pufs/h252/h252doc.shtml"
+        },
+        {
+          "bytes": 11368575,
+          "name": "h252cb.pdf",
+          "sha256": "b72afefab2811c0a19f3654e19bc4494f16bad26af1f8e276b5c5260915a0b2e",
+          "url": "https://meps.ahrq.gov/data_stats/download_data/pufs/h252/h252cb.pdf"
+        }
+      ],
+      "kind": "longitudinal",
+      "panel": 27,
+      "retrieved_at": "2026-10-17T17:49:58+00:00"
+    }
+  }
+}

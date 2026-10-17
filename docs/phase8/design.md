@@ -325,3 +325,31 @@ names and codes in each panel's file (`prototype-baseline.md` §3, "never guess"
 tracking server — a shared MLflow server is a Phase 8b question. No customer data. No
 automatic promotion.
 
+## 13. Data provenance and preservation (O41, O42)
+
+```
+outcome-prediction-service/
+  meps-manifest.json          # COMMITTED: per file — URLs, SHA-256 of zip, .dta, doc page, codebook
+  infra/main.tf               # private GCS archive bucket (standalone root module; not yet applied)
+  src/outcome_prediction/meps/
+    manifest.py               # `snapshot`: record originals; `--accept-change` to adopt a re-release
+    mirror.py                 # write-once, content-addressed mirrors: gs:// and file://; push / verify
+    download.py               # fetch: archive -> AHRQ -> mirrors, manifest-verified
+  data/raw/meps/archive/      # gitignored: original zips + docs, the source for `mirror push`
+```
+
+**Fetch order** for a manifested file: the original zip in the local archive → AHRQ → each mirror
+in `OUTCOME_PREDICTION_MEPS_MIRRORS`. Every candidate is hashed against the manifest; a mismatch
+is rejected and recorded in the error, never cached. Unmanifested files (future event files
+before they're added) keep the M1 behaviour.
+
+**Mirror layout:** `meps/sha256/<sha256>/<original name>`. Content-addressed keys mean a
+re-release lands beside the original rather than replacing it, and `put` refuses to overwrite.
+
+**The bucket** (`infra/main.tf`): private (uniform access, public access prevention enforced),
+retention policy (default 10 years, lock is a separate irreversible step), 90-day soft delete,
+multi-region `US` by default, `prevent_destroy`, writers create-only. Verified so far: Terraform
+`validate`/`fmt` clean; a `file://` mirror of all 21 originals (121 MB) pushed and verified, and
+— with AHRQ simulated as unreachable in a fresh workspace — all seven panels restored from it
+and the M1 table rebuilt byte-identical (sha256 `950d8be12078…`, the M2 model ID).
+

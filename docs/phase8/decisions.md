@@ -79,6 +79,18 @@ exploration covers *what* to predict and *in what form*.
 | O39 | Every candidate and every promoted model ships a **model card** generated from tracked metadata (intended use, training data, metrics by subgroup, limitations, the O37 gap) | Accepted | The standard way to state what a model is for and where it fails; also what a customer's reviewer or counsel (the FDA CDS question) will ask for. |
 | O40 | Which outcome(s) and form(s) to promote first | Open — decided at the end of M10, by scorecard | Includes the earlier any-stay vs unplanned-stay question. |
 
+## Data provenance and preservation
+
+Added after the repo owner asked what the industry practice is for keeping data that the code
+doesn't store — given that a public source can go down, move, or change. Code in git; data in
+versioned object storage under your own control; small pointers to the data in git. The repo
+owner chose to implement all of it now, with private bucket(s) and without DVC.
+
+| ID | Decision | Status | Rationale / where it lives |
+|---|---|---|---|
+| O41 | **Data is pinned in git and preserved outside it.** A committed manifest, `outcome-prediction-service/meps-manifest.json`, records the URL and SHA-256 of every original MEPS zip, extracted `.dta`, documentation page and codebook. The originals are mirrored, write-once and content-addressed (`meps/sha256/<sha>/<name>`), to **private** GCS bucket(s) with public access prevention enforced and a retention policy; the bucket's Terraform is `outcome-prediction-service/infra/`. `download.fetch` tries the local archive, then AHRQ, then each mirror in `OUTCOME_PREDICTION_MEPS_MIRRORS`, accepting only bytes that match the manifest. **DVC not adopted**, per the repo owner — the manifest plus mirrors cover what it would add here | Accepted (bucket not yet applied — needs GCP credentials this repo doesn't provision) | Before this, nothing in git pinned the data: `checksums.json` lived in the gitignored cache. AHRQ stays the primary source, so the mirror is a backstop, not a redistribution. Private, not a public archive (Zenodo etc.), because redistribution rights are part of the open O23 question. Retention policy instead of object versioning: under retention an object can't be overwritten or deleted at all, which is stronger. `design.md` §13. |
+| O42 | **A changed upstream file is rejected, not adopted.** If AHRQ republishes different bytes, `fetch` refuses them and uses a mirror's original; adopting the new release is a deliberate, reviewed change (`manifest snapshot --accept-change`, a git diff of the manifest), followed by re-running the reproduction tests | Accepted | Statistical agencies do re-release corrected files. Silently training on them would move every number with no trace in the repo. |
+
 ## Supersession notes
 
 None yet. Future entries that revise one of the above will say so explicitly here, same

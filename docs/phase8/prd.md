@@ -9,7 +9,7 @@ the `RiskAssessment` shape, scoring-mode semantics, the FHIR mapping sketch, art
 agent's tool contract, testing, and the prototype defects found in review.
 **Milestone plan:** [`milestone-plan.md`](./milestone-plan.md) — M1–M13, kept as its own
 document, same convention as Phase 6 (`phase6/decisions.md` H23) and Phase 7.
-**Decision index:** [`decisions.md`](./decisions.md) — `O1`–`O40`.
+**Decision index:** [`decisions.md`](./decisions.md) — `O1`–`O42`.
 **Experimentation protocol:** [`experimentation-protocol.md`](./experimentation-protocol.md) —
 the standing runbook for research rounds in `outcome-prediction-lab` (second pass, §12).
 **Prototype baseline:** [`prototype-baseline.md`](./prototype-baseline.md) — data choices,
@@ -279,7 +279,7 @@ PPV on the unplanned label reported against QAdmissions' 42% with the outcome di
 
 ## 10. Open questions
 
-Resolved: see `decisions.md` O1–O22 (first pass) and O28–O39 (second pass, experimentation).
+Resolved: see `decisions.md` O1–O22 (first pass), O28–O39 (second pass, experimentation) and O41–O42 (data provenance).
 
 Still open: O23 (MEPS commercial use, a legal question), O24 (qualitative bands), O25
 (non-portable features), O26 (FHIR vs claims as primary customer input), O27 (code-list
