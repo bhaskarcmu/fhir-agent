@@ -1860,6 +1860,16 @@ The other checks:
 
 Should I open the pin PR, or will you handle it the way you did the duplicate filenames? PR #68 is ready for review either way; this failure will show on it until `main` is fixed.
 
+## Turn 17
+
+### Prompt
+
+I understand that data is not usually saved with code. What is the indistry standard practice for saving data? For example, the source from which the data was downloaded may be down or even disappear in the future
+
+### Claude response
+
+*[Claude has not completed this turn yet.]*
+
 <details>
 <summary>Execution details — 180 tool events</summary>
 
@@ -2260,6 +2270,6 @@ Phase 8 **M2**: train, evaluate…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 17:37 UTC
-- **Turns:** 16
-- **Status:** Complete
+- **Last updated:** 17 October 2026, 17:39 UTC
+- **Turns:** 17
+- **Status:** Incomplete
