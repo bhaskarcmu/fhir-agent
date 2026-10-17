@@ -1940,8 +1940,12 @@ Adding the optional `gcs` extra, then taking the real snapshot. That re-download
 
 All 24 pass. One clumsy assertion in the corruption test (`"bit rot" not in p` checks nothing useful), so I'm tightening it:
 
+The module is valid and already formatted. `terraform init` also created `.terraform/` (gitignored) and a `.terraform.lock.hcl`, so I'll check whether the other modules commit their lock files:
+
+No module in the repo commits its lock file (CI runs `init` every time), so I'm removing the generated files to match:
+
 <details>
-<summary>Execution details — 201 tool events</summary>
+<summary>Execution details — 205 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2362,6 +2366,10 @@ art=jso…`
 - **Edit** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/tests/test_meps_provenance.py`
 - **Bash** `S=/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad && rm -rf $S/mirror-demo $S/fresh-data && OUTCOME_PREDICTION_MEPS_MIRRORS=file://$S/mirror-demo python -m outc…`
 - **Bash** `S=/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad; sha256sum /workspaces/fhir-agent/outcome-prediction-service/data/processed/meps_hosp12.csv $S/fresh-data/proc…`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/infra/main.tf`
+- **Bash** `cd /workspaces/fhir-agent/outcome-prediction-service/infra && terraform init -backend=false -input=false 2>&1 | tail -2 && terraform validate && terraform fmt -check -diff; echo "fmt exit: $?"`
+- **Bash** `cd /workspaces/fhir-agent && git ls-files | grep -c "terraform.lock.hcl"; git status --short outcome-prediction-service/infra`
+- **Bash** `cd /workspaces/fhir-agent/outcome-prediction-service/infra && rm -rf .terraform .terraform.lock.hcl && ls -a`
 
 </details>
 
