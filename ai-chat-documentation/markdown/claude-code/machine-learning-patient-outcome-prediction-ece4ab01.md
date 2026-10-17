@@ -1952,8 +1952,45 @@ Next I'll check that the google-cloud-storage calls I use actually exist with th
 
 Both files pass. Next I'll prove the split works: block the `google.cloud.storage` import, as when the extra isn't installed, and confirm only the GCS module skips:
 
+PR #68's branch, `feature/phase8-m2-training`, is deleted on `origin` and locally; only `main` and `ai-chat-history` remain. The data-management work is in **PR #69**: https://github.com/bhaskarcmu/fhir-agent/pull/69. It's all built and tested, except one step that needs your GCP access: the bucket isn't created yet.
+
+**What's in it**
+- **`meps-manifest.json`, committed to git.** It records the URL and checksum of every original MEPS zip, data file, documentation page and codebook, like a package lock file but for data. Its checksums match the M1 data and the checksums stored with the M2 model, so it pins exactly the data the reproduced model was trained on.
+- **Downloads verify against it.** The download step tries the local archive, then AHRQ, then each private mirror in turn. It accepts only bytes matching the manifest. If AHRQ quietly republishes a file, the new bytes are rejected and the original comes from a mirror.
+- **Adopting a re-release has to be deliberate.** `manifest snapshot` records the originals, and `--accept-change` adopts new bytes as a reviewed change in git.
+- **Mirrors are write-once.** Each file is stored under its own checksum, so a new release sits beside the original instead of replacing it. Both `gs://` buckets and plain `file://` directories (e.g. an external disk) work, and `mirror verify` re-checks every stored copy.
+- **The private bucket is defined in Terraform** (`outcome-prediction-service/infra/`):
+  - public access blocked;
+  - files can't be deleted or overwritten for 10 years;
+  - deleted files recoverable for 90 days;
+  - stored across several US regions;
+  - uploaders can only add files, not read, change or delete them.
+
+  Since locked files can't be overwritten at all, I left object versioning off. I also left the permanent retention lock off by default, because it can't be undone.
+
+**Tested end to end on the real data**
+- All 21 original files (121 MB) went to a local test mirror and passed verification.
+- I then simulated AHRQ being unreachable. A fresh workspace restored all seven panels from the mirror and rebuilt the training table byte for byte. Its checksum starts `950d8be12078`, matching the M2 model ID.
+- With the MEPS data: 84 tests pass. Without it, as in CI: 68 pass and 16 skip.
+- `terraform validate` and `fmt` are clean, and the module is now in CI's validation list.
+
+**Branch:** `feature/phase8-data-provenance`. **Commit:** `f74d30a0`. The decisions are recorded as O41 and O42, with design §13 and the READMEs updated.
+
+**Two limitations:**
+- **The bucket hasn't been created, because this environment has no GCP access** (no `gcloud`, no credentials), the same as all the repo's other Terraform. To create and fill it:
+  ```bash
+  cd outcome-prediction-service/infra && terraform init
+  terraform apply -var project_id=<your-project> -var 'writer_members=["user:<you>"]' -var 'reader_members=["user:<you>"]'
+  export OUTCOME_PREDICTION_MEPS_MIRRORS=$(terraform output -raw mirror_uri)
+  python -m outcome_prediction.meps.mirror push && python -m outcome_prediction.meps.mirror verify
+  ```
+  I can do this for you if you give me a GCP project ID and credentials (for example by running `gcloud auth application-default login` in this workspace). Or you can run it yourself.
+- **The real `gs://` upload hasn't run against Google.** It's tested against a fake bucket that uses the library's real error types, and I confirmed the API calls exist in the installed `google-cloud-storage` 3.17.1. The first real `mirror push` and `verify` will be its live test.
+
+Still open from before: the `phase3 (python)` CI failure on `main`, caused by the unpinned `mcp` package, will also show on this PR. Do you want me to open the `mcp<2` pin PR?
+
 <details>
-<summary>Execution details — 217 tool events</summary>
+<summary>Execution details — 218 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2418,6 +2455,10 @@ feat(phase8): pin MEPS data in git, preserve originals in private mirrors
 
 Industry practice for data the code doesn't store: pointers in git, originals
 in storage you contr…`
+- **Bash** `gh pr create --base main --head feature/phase8-data-provenance --title "feat(phase8): pin MEPS data in git, preserve originals in private mirrors" --body-file - <<'EOF'
+## Summary
+
+Implements the data…`
 
 </details>
 
@@ -2428,6 +2469,6 @@ in storage you contr…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 17:56 UTC
+- **Last updated:** 17 October 2026, 17:57 UTC
 - **Turns:** 18
 - **Status:** Complete
