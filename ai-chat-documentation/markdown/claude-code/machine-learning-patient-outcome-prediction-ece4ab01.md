@@ -1948,8 +1948,12 @@ Next, wiring and docs: the CI `terraform validate` matrix, two new decisions, a 
 
 Now the service README, with the commands and the steps to apply the bucket:
 
+Next I'll check that the google-cloud-storage calls I use actually exist with those parameters in the installed library, rather than assuming the API:
+
+Both files pass. Next I'll prove the split works: block the `google.cloud.storage` import, as when the extra isn't installed, and confirm only the GCS module skips:
+
 <details>
-<summary>Execution details — 210 tool events</summary>
+<summary>Execution details — 216 tool events</summary>
 
 ### Turn 1 activity
 
@@ -2384,6 +2388,31 @@ def edit(p,pairs):
 - **Bash** `grep -rn "O1\`–\`O40\|O1–O40\|O28–O39\|O1`–`O40" docs/README.md docs/phase8/*.md | cut -c1-160`
 - **Bash** `sed -i 's/(O1–O40), same convention/(O1–O42), same convention/' docs/README.md && sed -i 's/— `O1`–`O40`\./— `O1`–`O42`./; s/and O28–O39 (second pass, experimentation)\./O28–O39 (second pass, experime…`
 - **Bash** `sed -i 's/O1–O22 (first pass) O28–O39 (second pass, experimentation) and O41–O42 (data provenance)\./O1–O22 (first pass), O28–O39 (second pass, experimentation) and O41–O42 (data provenance)./' docs/p…`
+- **Bash** `python3 - <<'EOF'
+p='outcome-prediction-service/src/outcome_prediction/meps/mirror.py'; s=open(p).read()
+old='''class GcsMirror:
+    def __init__(self, bucket: str, prefix: str = ""):
+        try:…`
+- **Bash** `python3 - <<'EOF'
+import inspect
+from google.cloud.storage import Blob
+from google.api_core.exceptions import PreconditionFailed
+for name in ("upload_from_string","download_as_bytes","exists"):
+    si…`
+- **Bash** `cat >> outcome-prediction-service/src/outcome_prediction/tests/test_meps_provenance.py <<'EOF'
+
+
+# ── gs:// mirrors (google-cloud-storage, with an in-memory fake bucket) ──────────────
+
+storage = pyte…`
+- **Bash** `python3 - <<'EOF'
+src='outcome-prediction-service/src/outcome_prediction/tests/test_meps_provenance.py'
+s=open(src).read()
+marker="\n\n# ── gs:// mirrors (google-cloud-storage, with an in-memory fake…`
+- **Bash** `S=/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad/nogcs && mkdir -p $S && cat > $S/conftest_block.py <<'EOF'
+import sys
+sys.modules["google.cloud.storage"] = No…`
+- **Bash** `python -m pytest outcome-prediction-service/src/outcome_prediction/tests -q 2>&1 | tail -1; S=/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad; OUTCOME_PREDICTIO…`
 
 </details>
 
@@ -2394,6 +2423,6 @@ def edit(p,pairs):
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 17 October 2026, 17:52 UTC
+- **Last updated:** 17 October 2026, 17:55 UTC
 - **Turns:** 18
 - **Status:** Complete
