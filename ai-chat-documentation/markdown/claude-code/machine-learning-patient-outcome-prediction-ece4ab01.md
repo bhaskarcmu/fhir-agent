@@ -3650,8 +3650,10 @@ M2 recorded test-panel numbers only, with no CV figures. Checking how round 001 
 
 The runs engine always applies the honest encoding. M2's model uses the prototype's own encoding, so round 000 needs a way to select it. Reading the engine and the service's fit code:
 
+M2's numbers are on disk. Implementing the reference model kinds:
+
 <details>
-<summary>Execution details — 511 tool events</summary>
+<summary>Execution details — 515 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4954,6 +4956,13 @@ p = Path(sys.argv[1]); s = p.read_text(…`
 - **Bash** `sed -n 45,70p outcome-prediction-lab/src/outcome_prediction_lab/round_001.py; sed -n 355,372p outcome-prediction-lab/src/outcome_prediction_lab/round_001.py; grep -n "def \|params\|\"default\"\|tuned\…`
 - **Bash** `sed -n 36,200p outcome-prediction-lab/src/outcome_prediction_lab/runs.py; cat outcome-prediction-service/src/outcome_prediction/model/fit.py | head -80`
 - **Bash** `sed -n 1,80p outcome-prediction-service/src/outcome_prediction/model/__init__.py; sed -n 30,58p outcome-prediction-lab/src/outcome_prediction_lab/features.py; grep -n "def make_model" -A30 outcome-pre…`
+- **Bash** `sed -n 241,480p outcome-prediction-lab/src/outcome_prediction_lab/runs.py; grep -n "lab_frame\|_factory\|make_model" outcome-prediction-lab/src/outcome_prediction_lab/*.py | grep -v "^.*runs.py:9[0-9]…`
+- **Bash** `find / -name "metrics.json" -path "*outcome*" 2>/dev/null | grep -v rounds | head; grep -n "0.769\|0.708\|AUPRC\|Brier" docs/phase8/prototype-baseline.md | head -20`
+- **Bash** `python3 -c "
+import json; d=json.load(open('outcome-prediction-service/data/reports/metrics.json')); print(list(d)); 
+for k,v in d.items():
+  if isinstance(v,dict): print(k, {a:(b if not isinstance(b,…`
+- **Bash** `grep -n "^from\|^import\|^class \|^GBM_DEFAULT" outcome-prediction-lab/src/outcome_prediction_lab/features.py | head -30; grep -n "def cv_predict" -A22 outcome-prediction-lab/src/outcome_prediction_la…`
 
 </details>
 
@@ -4964,6 +4973,6 @@ p = Path(sys.argv[1]); s = p.read_text(…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 14:45 UTC
+- **Last updated:** 18 October 2026, 14:46 UTC
 - **Turns:** 48
 - **Status:** Complete
