@@ -208,8 +208,12 @@ You chose the squash. First I'll stop the watcher, so it doesn't commit in the m
 
 The reset worked. The old tip `b8454cc8` stays recoverable through the reflog. Next I'll commit the tool fix on its own, separate from the archive output:
 
+Now one sync with the fixed code. It regenerates the raw copies without the request logs, commits them as a single archive commit, and pushes both commits:
+
+That push went through. I'll confirm what landed on `origin`, then restart the watcher under Ona.
+
 <details>
-<summary>Execution details — 89 tool events</summary>
+<summary>Execution details — 92 tool events</summary>
 
 ### Turn 3 activity
 
@@ -331,6 +335,9 @@ from archive…`
 - **Bash** `gitpod automations service list 2>&1 | grep -A1 aiChat | tail -1; ps -ef | grep -E "archive_ai|inotifywait" | grep -v grep || echo "no watcher process"; ls /workspaces/.ai-chat-history/ai-chat-documen…`
 - **Bash** `cd /workspaces/.ai-chat-history && git rev-parse --short HEAD && git reset -q --mixed origin/ai-chat-history && git status -sb | head -1 && git status --short | wc -l`
 - **Bash** `cd /workspaces/.ai-chat-history && git add ai-chat-documentation/scripts/archive_ai/cli.py ai-chat-documentation/scripts/archive_ai/pipeline.py ai-chat-documentation/scripts/tests/test_e2e.py && git d…`
+- **Bash** `cd /workspaces/.ai-chat-history/ai-chat-documentation/scripts && PYTHONPATH=. python3 -m archive_ai sync 2>&1 | sed -E 's/(gh[pousr]_|github_pat_)[A-Za-z0-9_]{6,}/\1***/g' | tail -8`
+- **Bash** `cd /workspaces/.ai-chat-history && git fetch -q origin && git status -sb | head -1 && git log --oneline -3 origin/ai-chat-history && ls -la ai-chat-documentation/raw/claude-code/ece4ab01*.jsonl | awk…`
+- **Bash** `gitpod automations service start aiChatArchiveWatcher 2>&1 | tail -2`
 
 </details>
 
