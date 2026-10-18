@@ -4464,8 +4464,50 @@ Now the service README (both routes and the promotion commands) and the client R
 
 M12 is done and up for review as PR #79. I'm now waiting for CI to finish, and will report the results when it does.
 
+## Turn 64
+
+### Prompt
+
+<task-notification>
+<task-id>bnk5kvxnl</task-id>
+<tool-use-id>toolu_01LrN4xKef9yhorPC9ttB2p5</tool-use-id>
+<output-file>/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/tasks/bnk5kvxnl.output</output-file>
+<status>completed</status>
+<summary>Background command "Watch PR #79 CI checks until done" completed (exit code 0)</summary>
+</task-notification>
+
+### Claude response
+
+M12 is done and up for review as **PR #79**, with all 14 CI checks passing (including the agent's live tests on the self-hosted model). I also deleted the merged M13 branch on GitHub and locally. **This was the last Phase 8 milestone**; what's left is Phase 8b: cloud deployment, recalibration and monitoring.
+
+**What M12 delivers**
+- **The promoted model is live.** The non-obstetric hospital-stay model (O59) is served at `/risk/nonobstetric-admission-12m`, next to the reproduced prototype at `/risk/hospitalization-12m`. The agent answers with the promoted model, as you chose.
+- **Unpromoted models are refused.** Each served model needs a `PROMOTION.json` that names the decision and records the checksums of its files. If the record is missing, or was made for different files, the service won't start. The prototype got a retrofitted record citing O2.
+- **The served file is exactly the one that was tested**, as you chose, so its test AUROC of 0.795 is its own. Before writing the record, `outcome-prediction-lab promote` checks that the packaged file scores identically on all 11,863 test rows and loads without the lab. To make that possible, two pieces of lab code the model depends on moved into the service.
+- **Patient records feed the new model honestly.** Information a record doesn't carry, like income, is left missing rather than filled with a default. Medicare/Medicaid come from the payer name, and diagnosis inputs come from conditions active in the past year. Prescription fills and spending, the weakest FHIR data, aren't used.
+
+**Bugs found by the live test run, and fixed**
+- **Stale reads.** The FHIR server re-served cached search results for about a minute, so a record written just before scoring could be missed. The clinical client's history searches now ask for fresh results. Existing methods behave exactly as before, and a test confirms it.
+- **A crash on empty input.** The new model's input step crashed when no adult qualified.
+
+**Demo patient** (simulated data, so a pipeline check rather than evidence of accuracy): 23.34%, 93rd percentile on the promoted model, against 12.27%, 79th percentile on the prototype. The demo guide's §5b now shows this run's real output.
+
+**Tests:**
+- **Service, client and lab:** 325 pass, including 18 new promotion and v2 tests.
+- **Agent:** 39 pass.
+- **`triage-service` and `mcp-agent`:** 146 pass, with the same 4 errors as on `main` (tests that need a local Ollama model).
+- **End-to-end:** all 9 tests pass, covering both models, starting with nothing running and leaving nothing behind.
+
+**Files changed:** 44 in total. The main new or moved code is `model/promotion.py`, `model/portable.py`, `knowledge.py` (moved from the lab), `api.py` (two targets), `scoring.py`, `to_contract.py` (`portable_rows`), and the lab's `runs.py` (`promote`). The decisions log gained O75–O78, plus updates to the design, PRD, milestone plan, demo guide and READMEs.
+
+**Branch and commit:** `feature/phase8-m12-first-promotion`, commit `84877ba3`.
+
+**Known limitations:** everything has only been checked on MEPS and Synthea data. The promoted model needs recalibrating on a real customer's outcomes before use (Phase 8b). Its diagnosis inputs rely on Synthea's own SNOMED map and on code lists nobody has clinically reviewed yet (O27).
+
+**Next:** I haven't merged anything. Once you merge PR #79, I'll ask before deleting the branch.
+
 <details>
-<summary>Execution details — 968 tool events</summary>
+<summary>Execution details — 969 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6914,6 +6956,10 @@ feat(phase8): M12…`
 M12…`
 - **Bash** `timeout 2400 gh pr checks 79 --watch --interval 30 >/dev/null 2>&1; gh pr checks 79 2>&1 | awk -F'\t' '{print $2" — "$1}' | sort | uniq -c`
 
+### Turn 64 activity
+
+- **Bash** `cat /tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/tasks/bnk5kvxnl.output`
+
 </details>
 
 ---
@@ -6923,6 +6969,6 @@ M12…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 22:02 UTC
-- **Turns:** 63
+- **Last updated:** 18 October 2026, 22:06 UTC
+- **Turns:** 64
 - **Status:** Complete
