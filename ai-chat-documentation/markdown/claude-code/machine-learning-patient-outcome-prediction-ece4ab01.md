@@ -3638,8 +3638,20 @@ The test panels were used five times this round (one confirmation and four fairn
 
 **Still open in M3:** the scorecard criteria that a person has to fill in, and choosing which of the four models to promote first (O40).
 
+## Turn 48
+
+### Prompt
+
+Finish whatever is left open for M3. Ask if you have blockers
+
+### Claude response
+
+M2 recorded test-panel numbers only, with no CV figures. Checking how round 001 handled the prototype's model and which label column the lab uses for it:
+
+The runs engine always applies the honest encoding. M2's model uses the prototype's own encoding, so round 000 needs a way to select it. Reading the engine and the service's fit code:
+
 <details>
-<summary>Execution details — 504 tool events</summary>
+<summary>Execution details — 511 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4933,6 +4945,16 @@ import sys; from pathlib import Path
 p = Path(sys.argv[1]); s = p.read_text(…`
 - **Bash** `timeout 1500 gh pr checks 71 --watch --interval 30 >/dev/null 2>&1; gh pr checks 71 2>&1 | awk -F'\t' '{print $1" — "$2}'`
 
+### Turn 48 activity
+
+- **Bash** `grep -n "^### M3" -A40 docs/phase8/milestone-plan.md | head -80; grep -n "round 000\|Round 000" -r docs/phase8 outcome-prediction-lab --include=*.md | head; grep -n "O36\|O40" docs/phase8/decisions.md…`
+- **Bash** `grep -n "M2" -A25 docs/phase8/milestone-plan.md | sed -n 1,60p | grep -n "CV\|cross\|AUROC\|0\.7" ; grep -n "meps25\|prototype\|any_stay\|admit_y2\|\"prototype" outcome-prediction-lab/src/outcome_pred…`
+- **Bash** `sed -n 60,103p docs/phase8/milestone-plan.md; ls outcome-prediction-service/src/outcome_prediction/model; grep -n "def \|panel\|CV\|cv" outcome-prediction-service/src/outcome_prediction/model/train.py…`
+- **Bash** `grep -n "0.769\|prototype" outcome-prediction-lab/rounds/001-what-and-how/report.md | head -15; grep -n "prototype\|0.769\|reproduc" outcome-prediction-lab/src/outcome_prediction_lab/round_001.py | he…`
+- **Bash** `sed -n 45,70p outcome-prediction-lab/src/outcome_prediction_lab/round_001.py; sed -n 355,372p outcome-prediction-lab/src/outcome_prediction_lab/round_001.py; grep -n "def \|params\|\"default\"\|tuned\…`
+- **Bash** `sed -n 36,200p outcome-prediction-lab/src/outcome_prediction_lab/runs.py; cat outcome-prediction-service/src/outcome_prediction/model/fit.py | head -80`
+- **Bash** `sed -n 1,80p outcome-prediction-service/src/outcome_prediction/model/__init__.py; sed -n 30,58p outcome-prediction-lab/src/outcome_prediction_lab/features.py; grep -n "def make_model" -A30 outcome-pre…`
+
 </details>
 
 ---
@@ -4942,6 +4964,6 @@ p = Path(sys.argv[1]); s = p.read_text(…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 14:39 UTC
-- **Turns:** 47
+- **Last updated:** 18 October 2026, 14:45 UTC
+- **Turns:** 48
 - **Status:** Complete
