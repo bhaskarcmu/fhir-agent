@@ -70,8 +70,8 @@ class RecordingClient(FHIRClient):
         super().__init__(*args, **kwargs)
         self.recorded = {}
 
-    def _request(self, path, method="GET", body=None):
-        status, response = super()._request(path, method, body)
+    def _request(self, path, method="GET", body=None, headers=None):
+        status, response = super()._request(path, method, body, headers)
         self.recorded[path] = trim_bundle(response)
         return status, response
 

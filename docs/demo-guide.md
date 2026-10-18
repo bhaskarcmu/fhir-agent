@@ -432,19 +432,27 @@ says so rather than guessing).
 
 ## 5b. Hospitalization risk (Phase 8, 8 minutes)
 
-**A separate story, its own opt-in `phase8` compose profile.** A machine-learning model trained on
-the US government's MEPS survey estimates each patient's chance of a hospital admission in the next
-12 months, and returns it as a standard FHIR `RiskAssessment` — with the records it used.
+**A separate story, its own opt-in `phase8` compose profile.** Machine-learning models trained on
+the US government's MEPS survey estimate each patient's chance of a hospital admission in the next
+12 months, and return it as a standard FHIR `RiskAssessment` — with the records they used. Two are
+served: the **promoted production model** (a stay *not* related to pregnancy or childbirth, built only
+on what real records supply; decision O59) and the reproduced research prototype (any stay).
 
 **Story arc:** *a patient's own records in → a probability out, with the evidence behind it → a
 plain-language answer that says nothing the model didn't → proof it can't peek at the future.*
 
-**Setup (once):** the model artifact is trained from public MEPS files (~1 minute, then cached):
+**Setup (once):** both models come from public MEPS files; the service serves only **promoted**
+artifacts (a `PROMOTION.json` naming the decision), so each is promoted after it's built:
 
 ```bash
-pip install -e client/clinical -e "outcome-prediction-service[api]" -e agent-platform -e outcome-prediction-agent
+pip install -e client/clinical -e "outcome-prediction-service[api]" -e "outcome-prediction-lab[dev]" \
+  -e agent-platform -e outcome-prediction-agent
 python -m outcome_prediction.meps.download && python -m outcome_prediction.meps.build \
-  && python -m outcome_prediction.model.train          # -> outcome-prediction-service/models/gbm-meps25-v1-…
+  && python -m outcome_prediction.model.train          # -> models/gbm-meps25-v1-…  (the prototype)
+python -m outcome_prediction.model.promotion retrofit outcome-prediction-service/models/gbm-meps25-v1-* --decision O2
+# the production model: confirmed in the lab's round 003, promoted under O59
+outcome-prediction-lab promote 003-portable-contract nonobstetric-v2 --decision O59
+#    -> models/gbm-meps-portable-v2-nonobstetric-v2-…  (needs the lab round's fitted model)
 ```
 
 **Before each demo** — the FHIR server is in-memory, so seed it (idempotent, ~80 s first time):
@@ -462,12 +470,16 @@ The seed prints each patient's id; on a fresh server they come out the same ever
 **Beat 1 — a patient scored through the API, evidence included:**
 
 ```bash
-curl -s -X POST localhost:8005/risk/hospitalization-12m -H 'Content-Type: application/json' \
+curl -s localhost:8005/health                         # both models, each "promoted_by" its decision
+curl -s -X POST localhost:8005/risk/nonobstetric-admission-12m -H 'Content-Type: application/json' \
      -d '{"patient_id": "3208", "as_of": "2024-12-31"}' | python3 -m json.tool
 ```
 
-Expect `probabilityDecimal 0.1227`, the 79th percentile, a comparison model's 0.1606, the reasons
-*"age and coronary heart disease"*, and a `basis` of eight references —
+The **production model** (`meps-portable-v2`): `probabilityDecimal 0.2334`, the 93rd percentile, a
+comparison model's 0.1944, the reasons *"age, comorbidity (Elixhauser score) and the number of
+different diagnoses"*, and a `basis` of 18 references — her encounters, claims and the diagnoses
+behind each code-derived input. The same call on `/risk/hospitalization-12m` (the prototype) gives
+0.1227, the 79th percentile, *"age and coronary heart disease"*, eight references —
 `curl localhost:8080/fhir/Condition/3287` is her *Ischemic heart disease (disorder)*, recorded in
 2007. Scoring a patient who died (`674`) returns **422: no estimate is made**, not a number.
 
@@ -479,16 +491,17 @@ OUTCOME_PREDICTION_URL=http://localhost:8005 outcome-prediction-agent \
 ```
 
 ```
-Patient/3208: estimated chance of a hospital admission between 2024-12-31 and 2025-12-31 — 12.27%.
-Percentile among the adults the model was trained on: 79.
-A simpler comparison model (age and any prior hospital stay) gives 16.06%.
-Inputs raising the estimate most, compared with a typical adult: age and coronary heart disease.
-Notes from the service about the inputs: povcaty1 defaulted to 4 (middle income): household income not recorded; …
-Model gbm-meps25-v1-950d8be12078 (contract meps25-v1). 12-month planning estimate for population care management, not a diagnosis …
+Patient/3208: estimated chance of a hospital admission not related to pregnancy or childbirth between 2024-12-31 and 2025-12-31 — 23.34%.
+Percentile among the adults the model was trained on: 93.
+A simpler comparison model (age and any prior hospital stay) gives 19.44%.
+Inputs raising the estimate most, compared with a typical adult: age, comorbidity (Elixhauser score) and the number of different diagnoses.
+Notes from the service about the inputs: household income not recorded: the model scores without it (O53); …
+Model gbm-meps-portable-v2-nonobstetric-v2-e8f466f43f88 (contract meps-portable-v2). 12-month planning estimate …
 [ESTIMATE]
 ```
 
-Every line is a field of beat 1's `RiskAssessment` — point at them side by side. Then try to break it:
+The agent answers with the promoted production model (O77). Every line is a field of beat 1's
+`RiskAssessment` — point at them side by side. Then try to break it:
 *"Is she high risk?"* (the same numbers, plus "no thresholds have been clinically agreed"),
 *"Adjust for her new diabetes"* (the same numbers, plus "can't be adjusted"), *"Rank everyone over
 20%"* (`[OUT_OF_SCOPE]`, no tool called). The local 1B model sometimes answers `[NEEDS_PATIENT]` —
@@ -503,10 +516,11 @@ curl -s -X POST localhost:8080/fhir/Encounter -H 'Content-Type: application/fhir
   "period": {"start": "2025-03-01T09:00:00Z", "end": "2025-03-06T09:00:00Z"}}'
 ```
 
-Re-run beat 1: **identical** — same probability, same basis. Score `"as_of": "2025-12-31"` and the
-new stay appears in `basis`: the server has it; the model just isn't allowed to look past `as_of`.
+Re-run beat 1 — either model: **identical**, same probability, same basis. Score `"as_of":
+"2025-12-31"` and the new stay appears in `basis`: the server has it; the model just isn't allowed to
+look past `as_of`.
 
-**Or run all three beats as the acceptance test** (brings up anything missing, ~4 min cold):
+**Or run all three beats, for both models, as the acceptance test** (brings up anything missing, ~4 min cold):
 `pytest e2e/test_outcome_prediction_acceptance.py -v`.
 
 **What to say, adapted to whoever's in the room:**
@@ -528,8 +542,9 @@ new stay appears in `basis`: the server has it; the model just isn't allowed to 
 
 - Synthea patients are simulated: these numbers are a pipeline check, **never** evidence of accuracy
   (Synthea's coronary-disease rate is 4× MEPS's — the data-quality report flags it).
-- The served model is the reproduced prototype (`meps25-v1`); the production candidate
-  (`nonobstetric-v2`, a better label) is promoted in M12. Not yet validated on any real customer.
+- The production model was tested once on held-out MEPS panels (AUROC 0.795) — never on a real
+  customer's patients; it needs recalibrating on their outcomes first (Phase 8b). Its diagnosis inputs
+  rest on Synthea's own SNOMED→ICD-10 map, with code lists still unreviewed (O27, O73).
 - Synthea's FHIR folds hospice into home health, office into outpatient, and carries no fill counts
   or income — `Encounter/4202` in beat 1's basis is a hospice admission counted as home health, and
   the input notes say so.

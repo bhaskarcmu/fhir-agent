@@ -107,7 +107,8 @@ Version:   0.5.0
 Licence:   MIT License — Copyright (c) 2021, vvcb
            https://opensource.org/licenses/MIT
 
-outcome-prediction-lab/src/outcome_prediction_lab/knowledge.py reproduces this package's
+outcome-prediction-service/src/outcome_prediction/knowledge.py (moved from the lab in Phase 8 M12;
+the lab re-exports it) reproduces this package's
 Hospital Frailty Risk Score, Charlson and Elixhauser (ICD-10, Quan) mapping and weight
 tables verbatim, with the full MIT licence text in the module docstring.
 

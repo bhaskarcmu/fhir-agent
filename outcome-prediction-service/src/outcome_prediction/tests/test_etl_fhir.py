@@ -31,7 +31,7 @@ class Replay(FHIRClient):
         super().__init__("http://gateway.test:8000")
         self.extra = extra or {}
 
-    def _request(self, path, method="GET", body=None):
+    def _request(self, path, method="GET", body=None, headers=None):
         if path not in RECORDING["responses"]:
             raise AssertionError(f"unrecorded request: {path}")
         response = copy.deepcopy(RECORDING["responses"][path])

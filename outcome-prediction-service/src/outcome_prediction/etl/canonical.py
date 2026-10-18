@@ -16,7 +16,7 @@ import pandas as pd
 COLUMNS = {
     "person": ["person_id", "birth_date", "death_date", "sex", "race", "ethnicity", "state", "income",
                "source_ref"],
-    "coverage": ["person_id", "start", "stop", "ownership", "source_ref"],
+    "coverage": ["person_id", "start", "stop", "ownership", "payer", "source_ref"],   # payer: e.g. "Medicare"
     "encounter": ["person_id", "start", "stop", "encounter_class", "cost", "source_ref"],
     "condition": ["person_id", "start", "stop", "code", "description", "source_ref"],
     "medication_fill": ["person_id", "start", "stop", "code", "description", "dispenses", "unit_cost",

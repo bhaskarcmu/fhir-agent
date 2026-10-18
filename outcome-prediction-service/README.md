@@ -80,7 +80,20 @@ can show it catches them (`docs/phase8/design.md` §6, §11; decisions O61, O62)
 ## The scoring API (M7)
 
 12-month hospitalization risk as a FHIR R4 `RiskAssessment` (design `docs/phase8/design.md` §4–§5).
-Internal only — no Kong route (O14).
+Internal only — no Kong route (O14). Two targets (M12, O77):
+
+| Route | Model | Predicts |
+|---|---|---|
+| `/risk/nonobstetric-admission-12m` | `gbm-meps-portable-v2-nonobstetric-v2-…` — the first promotion (O59); **the agent's** | a hospital stay not related to pregnancy or childbirth |
+| `/risk/hospitalization-12m` | `gbm-meps25-v1-…` — the reproduced prototype | any hospital stay |
+
+The service serves only **promoted** artifacts: each needs a `PROMOTION.json` naming the decision and
+recording its files' checksums, or the service won't start (O75):
+
+```bash
+python -m outcome_prediction.model.promotion retrofit outcome-prediction-service/models/gbm-meps25-v1-<id> --decision O2
+outcome-prediction-lab promote 003-portable-contract nonobstetric-v2 --decision O59   # packages the confirmed model
+```
 
 ```bash
 pip install -e client/clinical -e "outcome-prediction-service[api]"
@@ -89,15 +102,15 @@ FHIR_GATEWAY_URL=http://localhost:8080/fhir uvicorn outcome_prediction.api:app -
 
 curl localhost:8005/health                                       # artifact loaded and verified
 curl localhost:8005/model                                        # model card facts, labelled metrics
-curl -X POST localhost:8005/risk/hospitalization-12m \
+curl -X POST localhost:8005/risk/nonobstetric-admission-12m \
      -H 'Content-Type: application/json' -d '{"patient_id": "3208", "as_of": "2024-12-31"}'
 curl -X POST localhost:8005/risk/hospitalization-12m/contract-rows \
      -H 'Content-Type: application/json' -d '{"contract_version": "meps25-v1", "rows": [...]}'   # -> Bundle
 curl localhost:8005/agent-tools                                  # the agent's only tools (tools.py, O70)
 ```
 
-The artifact is `OUTCOME_PREDICTION_ARTIFACT`, else the newest `models/gbm-meps25-v1-*`; it is
-verified against its manifest at startup and the service won't start on a mismatch. Each
+Artifacts: `OUTCOME_PREDICTION_ARTIFACTS` (comma-separated), else the newest of each contract under
+`models/`; each is verified against its manifest and its promotion record at startup. Each
 assessment carries the probability, the comparison model's probability, the training-population
 percentile, up to three plain-language reasons (O67), the records used (`basis`) and any input
 warnings. No high / moderate / low band until thresholds are signed off (O24).

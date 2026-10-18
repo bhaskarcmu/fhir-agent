@@ -22,6 +22,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from outcome_prediction.model import FEATURES as PROTO_FEATURES
+from outcome_prediction.model.portable import MissingnessAugmenter  # noqa: F401  (re-exported)
 
 CATEGORICAL = ["sex", "racethx", "regiony1", "inscovy1", "povcaty1"]
 NUMERIC_BASE = [f for f in PROTO_FEATURES if f not in CATEGORICAL]
@@ -93,27 +94,7 @@ class ServiceReference(BaseEstimator):
         return self.model_.predict_proba(self._matrix(X))
 
 
-class MissingnessAugmenter(BaseEstimator, TransformerMixin):
-    """Missingness augmentation (O53) as a pipeline step: while FITTING, hide each listed column
-    for a random share of training rows, so the model learns to predict without it; when
-    predicting, pass rows through untouched. sklearn calls fit_transform on training data and
-    transform at prediction time, so the masking can never touch a row being scored."""
-
-    def __init__(self, rates: dict | None = None, random_state: int = 0):
-        self.rates, self.random_state = rates, random_state
-
-    def fit(self, X, y=None):
-        return self
-
-    def fit_transform(self, X, y=None, **_):
-        X = X.copy()
-        rng = np.random.default_rng(self.random_state)
-        for col, rate in (self.rates or {}).items():
-            X.loc[rng.random(len(X)) < rate, col] = np.nan
-        return X
-
-    def transform(self, X):
-        return X
+# MissingnessAugmenter lives in the service: served models are unpickled there (M12, O29).
 
 
 class ToDense(BaseEstimator, TransformerMixin):

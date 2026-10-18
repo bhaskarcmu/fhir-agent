@@ -1,7 +1,7 @@
 # Phase 8 Milestone Plan — Patient Outcome Prediction
 
-M1–M13. **M1–M9 and M13 built** (verified results below; M3 closed 2026-10-18, O60); M12 planned
-(M10, M11 folded into M3). M10 and M11 are folded into M3 (O45). Expanded from M1–M11 after a second scope pass added a
+M1–M13. **All built** (verified results below; M3 closed 2026-10-18, O60; M10, M11 folded into M3).
+Cloud deployment, recalibration and monitoring are Phase 8b. M10 and M11 are folded into M3 (O45). Expanded from M1–M11 after a second scope pass added a
 dedicated experimentation track (`decisions.md` O28–O40): M3 (workbench) and M12 (promotion)
 are new, and the former model-improvement milestones are now rounds of the
 [experimentation protocol](./experimentation-protocol.md).
@@ -392,6 +392,17 @@ chose a non-probability form, implement the representation O35 decided.
 suite passes for the new version.
 
 **Depends on:** M7 (service), M11 (candidate).
+
+**Verified (M12 built):** promotion records (O75): the service refuses an unpromoted or mismatched
+artifact (tested); `meps25-v1` retrofitted under O2. `outcome-prediction-lab promote 003-portable-contract
+nonobstetric-v2 --decision O59` packaged the confirmed model — scores identical on all 11,863 test rows,
+loads with the lab unimportable (O76). Served beside `meps25-v1` at `/risk/nonobstetric-admission-12m`;
+the agent uses it (O77). Records → `meps-portable-v2` rows (O78): honest missing values, Medicare/Medicaid
+from payers, code features from conditions active in the window via M13's map; leakage test passes for
+v2. The acceptance suite runs both targets: **9 tests pass from cold** (both models promoted, valid R4,
+basis resolves, no estimate for the dead, the agent narrates the promoted model, a later record moves
+neither). That run found HAPI's search-result cache hiding a just-written record — fixed in
+`client/clinical`. Demo patient: 23.34% (93rd percentile) on the promoted model vs 12.27% on the prototype.
 
 ---
 

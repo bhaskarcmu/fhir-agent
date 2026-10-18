@@ -5,7 +5,7 @@
     outcome-prediction-lab confirm    <round> <config-name> [--record "why"]      ONE logged test look
     outcome-prediction-lab card       <round> <config-name>                       model card
     outcome-prediction-lab scorecard  <round> <config-name> [--criteria f.json]   target scorecard
-    outcome-prediction-lab promote    <round> <config-name> --decision O<n>       promotion record
+    outcome-prediction-lab promote    <round> <config-name> --decision O<n>       service artifact + PROMOTION.json
     outcome-prediction-lab explain    <round> <config-name> (--patient ID | --sample N)
     outcome-prediction-lab drug-names <round>                                     drug-name text experiment
     outcome-prediction-lab fairness   <round> <config-name> [--record "why"]       subgroup fairness (test)

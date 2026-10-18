@@ -117,15 +117,17 @@ def _ordinal(n: int) -> str:
 
 
 def build(score: Score, *, model_id: str, contract_version: str, as_of: date, subject: Reference,
-          basis: list[str] = (), warnings: list[str] = ()) -> RiskAssessment:
-    """One RiskAssessment. `basis` are FHIR `Type/id` references to the records used (FR-F4)."""
+          basis: list[str] = (), warnings: list[str] = (), outcome_text: str = "Hospital admission") -> RiskAssessment:
+    """One RiskAssessment. `basis` are FHIR `Type/id` references to the records used (FR-F4).
+    `outcome_text` names the target (M12): SNOMED has no concept for "a hospital admission not related
+    to pregnancy or childbirth", so the code stays 32485007 and the text says what is predicted (O77)."""
     extensions = [
         Extension(url=EXT + "comparison-probability", valueDecimal=round(score.comparison, 4)),
         Extension(url=EXT + "risk-percentile", valueInteger=score.percentile),
         Extension(url=EXT + "contract-version", valueString=contract_version),
         *[Extension(url=EXT + "top-reasons", valueString=r) for r in score.reasons],
     ]
-    summary = (f"Estimated chance of a hospital admission in the 12 months from {as_of.isoformat()}: "
+    summary = (f"Estimated chance of a {outcome_text[0].lower() + outcome_text[1:]} in the 12 months from {as_of.isoformat()}: "
                f"{score.probability:.1%} ({_ordinal(score.percentile)} percentile of the training population). "
                f"{rationale(score.reasons)}")
     return RiskAssessment(
@@ -137,7 +139,7 @@ def build(score: Score, *, model_id: str, contract_version: str, as_of: date, su
         method=CodeableConcept(coding=[Coding(system=MODEL_SYSTEM, code=model_id)], text=model_id),
         basis=[Reference(reference=ref) for ref in basis],
         prediction=[Prediction(
-            outcome=CodeableConcept(coding=[Coding(**OUTCOME)], text="Hospital admission"),
+            outcome=CodeableConcept(coding=[Coding(**OUTCOME)], text=outcome_text),
             probabilityDecimal=round(score.probability, 4),
             whenPeriod=Period(start=as_of.isoformat(), end=(pd.Timestamp(as_of) + pd.DateOffset(months=12)).date().isoformat()),
             rationale=rationale(score.reasons),

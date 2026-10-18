@@ -31,11 +31,13 @@ def read(csv_dir: Path | str) -> Canonical:
         "sex": p.GENDER, "race": p.RACE, "ethnicity": p.ETHNICITY, "state": p.STATE,
         "income": pd.to_numeric(p.INCOME), "source_ref": "patients.csv/" + p.Id})
 
-    payers = _read(csv_dir, "payers", ["Id", "OWNERSHIP"]).set_index("Id").OWNERSHIP
+    payer_table = _read(csv_dir, "payers", ["Id", "NAME", "OWNERSHIP"]).set_index("Id")
+    payers, payer_names = payer_table.OWNERSHIP, payer_table.NAME
     t = _read(csv_dir, "payer_transitions", ["PATIENT", "START_DATE", "END_DATE", "PAYER"])
     coverage = pd.DataFrame({
         "person_id": t.PATIENT, "start": _dates(t.START_DATE), "stop": _dates(t.END_DATE),
-        "ownership": t.PAYER.map(payers), "source_ref": "payer_transitions.csv#" + (t.index + 2).astype(str)})
+        "ownership": t.PAYER.map(payers), "payer": t.PAYER.map(payer_names),
+        "source_ref": "payer_transitions.csv#" + (t.index + 2).astype(str)})
 
     e = _read(csv_dir, "encounters", ["Id", "START", "STOP", "PATIENT", "ENCOUNTERCLASS", "TOTAL_CLAIM_COST"])
     encounter = pd.DataFrame({

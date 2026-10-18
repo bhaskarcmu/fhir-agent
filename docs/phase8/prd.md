@@ -9,7 +9,7 @@ the `RiskAssessment` shape, scoring-mode semantics, the FHIR mapping sketch, art
 agent's tool contract, testing, and the prototype defects found in review.
 **Milestone plan:** [`milestone-plan.md`](./milestone-plan.md) — M1–M13, kept as its own
 document, same convention as Phase 6 (`phase6/decisions.md` H23) and Phase 7.
-**Decision index:** [`decisions.md`](./decisions.md) — `O1`–`O74`.
+**Decision index:** [`decisions.md`](./decisions.md) — `O1`–`O78`.
 **Experimentation protocol:** [`experimentation-protocol.md`](./experimentation-protocol.md) —
 the standing runbook for research rounds in `outcome-prediction-lab` (second pass, §12).
 **Prototype baseline:** [`prototype-baseline.md`](./prototype-baseline.md) — data choices,
@@ -217,7 +217,7 @@ milestone shown), **Changed** (in, but altered — see §11), **8b** (deferred t
 | FR-X5 | Target scorecard covering the O36 criteria, ML criteria filled automatically, non-ML criteria with written rationale | In — M3 |
 | FR-X6 | Model card for every candidate and promoted model | In — M3 |
 | FR-X7 | Outcome × form study with a recorded decision on what to take forward | In — M10 |
-| FR-X8 | The service refuses artifacts without a promotion record naming a decision | In — M12 |
+| FR-X8 | The service refuses artifacts without a promotion record naming a decision | Done — M12 (O75) |
 
 ## 7. Non-functional requirements
 

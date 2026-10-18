@@ -174,6 +174,7 @@ Matches `triage-service`'s route style (no `/v1` prefix; `/health` at root):
 | `GET /model` | Model ID, contract version, training summary, headline metrics, library versions |
 | `POST /risk/hospitalization-12m` | Trigger A: `{patient_id, as_of?}` → fetch via `client/clinical`, transform, score → `RiskAssessment` |
 | `POST /risk/hospitalization-12m/contract-rows` | Trigger B: `{contract_version, rows: [{patient_ref, features}]}` (1–1,000) → `Bundle` |
+| `POST /risk/nonobstetric-admission-12m` (+ `/contract-rows`) | The promoted `meps-portable-v2` model (M12, O77): same shapes; v2 rows allow null for inputs a record may not carry (income, region) |
 
 Internal-only, no Kong route (O14). **Port 8005** (8000–8004 are taken; O68). Compose: the
 `outcome-prediction` service in the `phase8` profile, depending on `fhir`, with
@@ -257,9 +258,13 @@ models/gbm-meps25-v1-<training-table sha256[:12]>/   # deterministic ID; never o
   PROMOTION.json        # from M12: round, decision ID, target/form, contract version, model card hash (O33)
 ```
 
-From M12, the service also refuses an artifact with no `PROMOTION.json` naming a `decisions.md`
-entry. The `meps25-v1` reproduction model is promoted by decision O2/O3 itself, so M7 can run
-before the lab's promotion step exists; M12 retrofits its record.
+**Built in M12 (O75, O76):** the service refuses an artifact with no valid `PROMOTION.json` — one
+naming a decision and recording the manifest's checksums (`model/promotion.py`). It serves
+`gbm-meps25-v1-…` (retrofitted under O2) and `gbm-meps-portable-v2-nonobstetric-v2-…`, the round-003
+confirmed model packaged by the lab's `promote` (same fit, verified identical scores; metadata adds
+the typical adult for reasons, the inputs blanked at scoring and the comparison inputs). The `meps25-v1`
+reproduction model is promoted by decision O2/O3 itself, so M7 ran before the lab's promotion step
+existed; M12 retrofitted its record.
 
 Never committed. CI trains a throwaway model on a committed synthetic contract-row fixture so
 service tests run without MEPS; MEPS-dependent tests (M1–M2 reproduction) get the real data
@@ -355,7 +360,7 @@ The lab trains *many* candidates across outcome × form (O34) — label definiti
 | `scorecard <round> <config>` | Target scorecard (O36): ML criteria filled, person-scored criteria marked as owed | — |
 | `explain <round> <config>` | Self-explanatory per-patient narratives (O50) | Never shows outcomes |
 | `fairness <round> <config>` | Subgroup report on the test panels (race/ethnicity, insurance, sex, age band), added to the model card (O57) | Refuses without a `<config>:fairness` ledger entry and a confirmed model |
-| `promote <run> --decision O<n>` | Write `PROMOTION.json` into a service artifact | Refuses unless the decision ID exists in `decisions.md` and a model card is present (O33) |
+| `promote <round> <config> --decision O<n>` | Package the confirmed model as a service artifact with its `PROMOTION.json` (M12, O75–O76) | Refuses unless confirmed, carded, on the production contract, binary, not learning-only, the decision exists in `decisions.md`, and the packaged file scores exactly as confirmed |
 
 **Prediction forms and evaluation** (O34):
 

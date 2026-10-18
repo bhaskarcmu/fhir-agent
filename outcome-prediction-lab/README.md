@@ -33,7 +33,7 @@ outcome-prediction-lab compare    <round>                         # table of a r
 outcome-prediction-lab confirm    <round> <config> --record "why" # ONE logged look at test panels 26–27
 outcome-prediction-lab card       <round> <config>                # model card
 outcome-prediction-lab scorecard  <round> <config> [--criteria person.json]
-outcome-prediction-lab promote    <round> <config> --decision O<n>
+outcome-prediction-lab promote    <round> <config> --decision O<n>   # service artifact + PROMOTION.json (M12)
 outcome-prediction-lab explain    <round> <config> --patient ID | --sample N [--write] | --all
 outcome-prediction-lab fairness   <round> <config> --record "why" # subgroup report (a logged look)
 outcome-prediction-lab drug-names <round>                         # drug-name text experiment

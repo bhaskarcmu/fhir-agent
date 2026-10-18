@@ -142,12 +142,14 @@ def read(client: CareHistoryClient, patient_ids: list[str], since: date | None =
             for c in coverage:
                 rows["coverage"].append({
                     "person_id": pid, "start": _ts(c.start), "stop": _ts(c.end),
-                    "ownership": ownership(c.payer or c.plan_type), "source_ref": f"Coverage/{c.id}"})
+                    "ownership": ownership(c.payer or c.plan_type), "payer": c.payer or c.plan_type,
+                    "source_ref": f"Coverage/{c.id}"})
         else:
             for c in costs:
                 rows["coverage"].append({
                     "person_id": pid, "start": _ts(c.service_start), "stop": _ts(c.service_end),
-                    "ownership": ownership(c.payer), "source_ref": f"ExplanationOfBenefit/{c.id}"})
+                    "ownership": ownership(c.payer), "payer": c.payer,
+                    "source_ref": f"ExplanationOfBenefit/{c.id}"})
             notes.append((pid, NOTE_COVERAGE_FROM_CLAIMS))
 
     tables = {}
