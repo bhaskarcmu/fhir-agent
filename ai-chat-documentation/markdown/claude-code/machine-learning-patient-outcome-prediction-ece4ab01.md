@@ -3594,8 +3594,14 @@ Getting the test-panel 65+ figures, then regenerating cards and scorecards for t
 
 Cards now carry the fairness sections. Next, the decisions log. Checking where O56+ go:
 
+Now the round 004 report and the decisions O56–O58:
+
+Checked the report's numbers against the JSON. One row lumps ranges across targets too loosely, so I'm tightening it:
+
+Now the docs updates: prediction targets, lab README, milestone plan, protocol and design CLI tables, and the Phase README status.
+
 <details>
-<summary>Execution details — 486 tool events</summary>
+<summary>Execution details — 492 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4853,6 +4859,18 @@ import json
 for r,n in [('003-portable-contract','nonobstetric-v2'),('003-portable-contract','any-ed…`
 - **Bash** `cat outcome-prediction-lab/rounds/004-focus-four-readiness/cards/er-admit-v2.md; git diff --stat outcome-prediction-lab/rounds/003-portable-contract; grep -n "^| O5[0-9]\|^### O5\|^## O5\|O55" docs/ph…`
 - **Bash** `sed -n 119,160p docs/phase8/decisions.md; grep -n "FR-E6\|FR-M6" docs/phase8/*.md | head`
+- **Bash** `cat > outcome-prediction-lab/rounds/004-focus-four-readiness/report.md <<'EOF'
+# Round 004 report — readiness of the four focus predictions
+
+**Status:** complete. **Pre-registration:** [`README.md`](.…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-lab/rounds/004-focus-four-readiness/report.md"); s = p.read_text()
+old = "| **Calibration bends toward the average by age and in…`
+- **Bash** `grep -n "round 003\|Round 003\|003-portable\|fairness\|FR-E6\|FR-M6\|65+" docs/phase8/milestone-plan.md docs/phase8/README.md docs/phase8/experimentation-protocol.md docs/phase8/design.md docs/README.…`
+- **Bash** `sed -n 135,160p docs/phase8/milestone-plan.md; sed -n 285,305p docs/phase8/milestone-plan.md; grep -n "Status\|status\|round 00\|O55" docs/phase8/README.md | head; grep -n "outcome-prediction-lab \(ex…`
+- **Bash** `sed -n 1,16p docs/phase8/README.md; sed -n 48,64p docs/phase8/experimentation-protocol.md; grep -n "drug-names\|notebooks-check\|explain " docs/phase8/design.md | head`
+- **Bash** `sed -n 305,322p docs/phase8/design.md`
 
 </details>
 
@@ -4863,6 +4881,6 @@ for r,n in [('003-portable-contract','nonobstetric-v2'),('003-portable-contract'
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 14:32 UTC
+- **Last updated:** 18 October 2026, 14:33 UTC
 - **Turns:** 47
 - **Status:** Complete
