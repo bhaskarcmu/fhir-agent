@@ -4359,10 +4359,10 @@ Proceed to the next milestone that makes logical sense after this one
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Cleaned up. The remaining milestones are M12 (first promotion into the service) and M13 (versioned code lists). Which comes first depends on their dependencies, so I'm reading both:
 
 <details>
-<summary>Execution details — 862 tool events</summary>
+<summary>Execution details — 865 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6550,6 +6550,12 @@ M9 runs the whole Phase 8 path…`
 
 - **Bash** `cat /tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/tasks/bi8eglogq.output`
 
+### Turn 61 activity
+
+- **Bash** `gh pr view 77 --json state,mergedAt -q '"\(.state) \(.mergedAt)"' && git switch -q main && git pull -q --ff-only origin main && git fetch -q --prune && git branch -a --merged origin/main | grep m9; gi…`
+- **Bash** `git push -q origin --delete feature/phase8-m9-acceptance && git branch -d feature/phase8-m9-acceptance && git branch -a`
+- **Bash** `sed -n '/^### M12/,/^### M13/p' docs/phase8/milestone-plan.md; sed -n '/^### M13/,/^---/p' docs/phase8/milestone-plan.md; grep -n "^| FR-T4\|^| O27 " docs/phase8/prd.md docs/phase8/decisions.md | cut…`
+
 </details>
 
 ---
@@ -6559,6 +6565,6 @@ M9 runs the whole Phase 8 path…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 20:42 UTC
+- **Last updated:** 18 October 2026, 20:43 UTC
 - **Turns:** 61
-- **Status:** Incomplete
+- **Status:** Complete
