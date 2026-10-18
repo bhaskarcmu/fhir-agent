@@ -4450,8 +4450,10 @@ A second promotion is refused, but with a raw "File exists" error. Better to ref
 
 All 31 lab tests pass. Now the real promotion, under decision O59. Then I'll prove the service can load the artifact **with the lab made unimportable**:
 
+I'll put the synthetic v2 builder in a small test-support module, so both the API tests and the promotion tests can use it:
+
 <details>
-<summary>Execution details — 942 tool events</summary>
+<summary>Execution details — 944 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6836,6 +6838,12 @@ p = Path("outcome-prediction-service/src/outcome_prediction/fhir/risk_assessment
 def sub(old, new):
     global s; assert s.count(old)…`
 - **Bash** `sed -n 1,75p outcome-prediction-service/src/outcome_prediction/tests/test_scoring_api.py`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/tests/synthetic_portable.py`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-service/src/outcome_prediction/tests/test_scoring_api.py"); s = p.read_text()
+def sub(old, new):
+    global s; assert s.count(ol…`
 
 </details>
 
