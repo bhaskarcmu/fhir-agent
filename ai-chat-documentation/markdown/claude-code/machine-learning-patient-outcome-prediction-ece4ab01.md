@@ -3602,8 +3602,18 @@ Now the docs updates: prediction targets, lab README, milestone plan, protocol a
 
 The PRD still indexes O1–O55 and lists FR-M6 and FR-E6 as planned. Updating both:
 
+No binaries, and the fairness JSON holds aggregates only (no patient rows). Running the linter CI uses, then checking for duplicate filenames:
+
+CI runs no linter. The duplicate-name hits are all pre-existing; checking that the new module name doesn't clash:
+
+Unique name, tests green. **Git:** worktree `/workspaces/fhir-agent`, branch `feature/phase8-m3-round-001`, target `origin/feature/phase8-m3-round-001` (PR #71 → `main`). Staging:
+
+Pushed. Updating the PR #71 description:
+
+PR updated. Watching CI:
+
 <details>
-<summary>Execution details — 495 tool events</summary>
+<summary>Execution details — 504 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4881,6 +4891,21 @@ def sub(path, old, new):
 # design §12 CLI tab…`
 - **Bash** `sed -i 's/`O1`–`O55`\./`O1`–`O58`./' docs/phase8/prd.md && sed -i 's/^| FR-M6 | Separate or specially tuned model for 65+ | In — M11 |/| FR-M6 | Separate or specially tuned model for 65+ | Done — M3 r…`
 - **Bash** `sed -i '167s/(O1–O55)/(O1–O58)/' docs/README.md && sed -n 167p docs/README.md && export MLFLOW_DISABLE_AGENT_HINT=1 PYTHONWARNINGS=ignore && python -m pytest outcome-prediction-lab/src/outcome_predict…`
+- **Bash** `outcome-prediction-lab notebooks-check; ruff check outcome-prediction-lab 2>&1 | tail -2; git ls-files --others --exclude-standard; git status --short | grep -vE "\.md$|\.json$|\.py$"; find outcome-pr…`
+- **Bash** `grep -n "ruff\|flake8\|lint" .github/workflows/*.yml | grep -i phase8 -A0 | head -5; grep -n "ruff\|flake8" .github/workflows/*.yml | head -5; (python -m ruff --version || pipx run ruff --version) 2>&…`
+- **Bash** `git ls-files | grep -c "/fairness.py$"; python -m pyflakes outcome-prediction-lab/src/outcome_prediction_lab/fairness.py outcome-prediction-lab/src/outcome_prediction_lab/runs.py outcome-prediction-la…`
+- **Bash** `git add outcome-prediction-lab docs/README.md docs/phase8 && git status --short | head -50`
+- **Bash** `git commit -q -F - <<'EOF'
+feat(phase8): round 004 — ER-admission production model, fairness, 65+ check (O56–O58)
+
+- er-admit-v2 on meps-portable-v2 (records only): test AUROC 0.785, calibrated;
+  all…`
+- **Bash** `git push -q origin feature/phase8-m3-round-001 2>&1 | tail -2; git status -sb | head -1`
+- **Bash** `gh pr view 71 --json body -q .body > /tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad/pr71.md && cat /tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a…`
+- **Bash** `S=/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad && python3 - "$S/pr71.md" <<'EOF'
+import sys; from pathlib import Path
+p = Path(sys.argv[1]); s = p.read_text(…`
+- **Bash** `timeout 1500 gh pr checks 71 --watch --interval 30 >/dev/null 2>&1; gh pr checks 71 2>&1 | awk -F'\t' '{print $1" — "$2}'`
 
 </details>
 
@@ -4891,6 +4916,6 @@ def sub(path, old, new):
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 14:34 UTC
+- **Last updated:** 18 October 2026, 14:36 UTC
 - **Turns:** 47
 - **Status:** Complete
