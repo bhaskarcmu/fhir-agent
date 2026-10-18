@@ -4452,8 +4452,10 @@ All 31 lab tests pass. Now the real promotion, under decision O59. Then I'll pro
 
 I'll put the synthetic v2 builder in a small test-support module, so both the API tests and the promotion tests can use it:
 
+A real bug in `portable_rows`. When no adult qualifies (as of 1950 here), the scores frame is built from an empty list and has no columns. Giving it explicit columns:
+
 <details>
-<summary>Execution details — 945 tool events</summary>
+<summary>Execution details — 946 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6845,6 +6847,10 @@ p = Path("outcome-prediction-service/src/outcome_prediction/tests/test_scoring_a
 def sub(old, new):
     global s; assert s.count(ol…`
 - **Bash** `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:1 PYTHONWARNINGS=ignore python -m pytest outcome-prediction-service/src/outcome_prediction/tests/test_scoring_api.py -q -p no:cacheprovider -k outcomes_are…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-service/src/outcome_prediction/etl/transform/to_contract.py"); s = p.read_text()
+old = '''    scores = pd.DataFrame([knowledge.s…`
 
 </details>
 
