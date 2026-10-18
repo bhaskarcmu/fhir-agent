@@ -213,7 +213,7 @@ Now one sync with the fixed code. It regenerates the raw copies without the requ
 That push went through. I'll confirm what landed on `origin`, then restart the watcher under Ona.
 
 <details>
-<summary>Execution details — 92 tool events</summary>
+<summary>Execution details — 93 tool events</summary>
 
 ### Turn 3 activity
 
@@ -338,6 +338,7 @@ from archive…`
 - **Bash** `cd /workspaces/.ai-chat-history/ai-chat-documentation/scripts && PYTHONPATH=. python3 -m archive_ai sync 2>&1 | sed -E 's/(gh[pousr]_|github_pat_)[A-Za-z0-9_]{6,}/\1***/g' | tail -8`
 - **Bash** `cd /workspaces/.ai-chat-history && git fetch -q origin && git status -sb | head -1 && git log --oneline -3 origin/ai-chat-history && ls -la ai-chat-documentation/raw/claude-code/ece4ab01*.jsonl | awk…`
 - **Bash** `gitpod automations service start aiChatArchiveWatcher 2>&1 | tail -2`
+- **Bash** `gitpod automations service list 2>&1 | grep -A1 aiChat | tail -1; ps -ef | grep "archive_ai" | grep -v grep | awk '{print $2, $5, $8, $9, $10, $11}'; tail -4 /workspaces/.ai-chat-history/ai-chat-docum…`
 
 </details>
 
