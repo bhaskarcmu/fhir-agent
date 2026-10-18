@@ -4284,8 +4284,10 @@ Right after a patient is posted, the identifier search finds nothing, so the sec
 
 The server holds the patient twice, and the identifier is there, so it's the search that's failing. Testing the exact request the seeder sends:
 
+By patient ID the agent succeeds 5 of 5 on the real stack. By name it never does: 3 not-found, 2 asking which patient. Checking whether the model mangles the name or the search itself fails:
+
 <details>
-<summary>Execution details — 842 tool events</summary>
+<summary>Execution details — 843 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6417,6 +6419,9 @@ p = Path("outcome-prediction-service/src/outcome_prediction/etl/synthea.py"); s 
 old = '''        # By value, then the system checked here: HA…`
 - **Bash** `curl -s -X POST localhost:11434/api/pull -d '{"name":"llama3.2:1b"}' | tail -1; OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:1 python3 - 2>&1 <<'EOF' | grep -vE "export|Transient|UNAVAILABLE"
 import c…`
+- **Bash** `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:1 python3 - 2>&1 <<'EOF' | grep -vE "export|Transient|UNAVAILABLE"
+from fhir_clinical_client import FHIRClient
+c = FHIRClient("http://localhost:8080/fhir")…`
 
 </details>
 
@@ -6427,6 +6432,6 @@ import c…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 18:59 UTC
+- **Last updated:** 18 October 2026, 19:02 UTC
 - **Turns:** 59
 - **Status:** Complete
