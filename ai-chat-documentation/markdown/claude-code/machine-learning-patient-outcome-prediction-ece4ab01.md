@@ -3190,7 +3190,7 @@ Git: worktree `/workspaces/fhir-agent`. PR #71 isn't merged yet, so this continu
 Branch `feature/phase8-m3-round-001`, PR #71 still open (target `main`), working tree clean. First, the contract, in the service, since production will consume it:
 
 <details>
-<summary>Execution details — 445 tool events</summary>
+<summary>Execution details — 446 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4304,6 +4304,13 @@ from outcome_prediction_lab.features import FEATUR…`
 
 - **Bash** `git branch --show-current && git status --short | head -3 && gh pr view 71 --json state --jq .state && git log --oneline -1`
 - **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/contract.py`
+- **Bash** `python3 - <<'EOF'
+def edit(p,pairs):
+    s=open(p).read()
+    for o,n in pairs:
+        assert s.count(o)==1,(p,o[:60],s.count(o)); s=s.replace(o,n)
+    open(p,'w').write(s)
+edit('outcome-prediction-s…`
 
 </details>
 
