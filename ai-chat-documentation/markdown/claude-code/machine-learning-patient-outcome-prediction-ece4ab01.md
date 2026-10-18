@@ -3815,7 +3815,7 @@ The checksum matches GitHub's published digest, so I'll pin it. Checking v4.0.0'
 Running a 20-patient trial with both exports, to check the v4.0.0 CSV schema, timing and output size before the full run:
 
 <details>
-<summary>Execution details — 553 tool events</summary>
+<summary>Execution details — 554 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5210,6 +5210,7 @@ p = Path(sys.argv[1]); s = p.read_text(…`
 - **Bash** `timeout 60 java -jar synthea-4.0.0.jar -h 2>&1 | head -40`
 - **Bash** `rm -rf trial && /usr/bin/time -f "%e s, %M KB" timeout 600 java -Xmx4g -jar synthea-4.0.0.jar -s 42 -cs 42 -p 20 -a 18-90 -e 20241231 --exporter.baseDirectory=./trial/ --exporter.csv.export=true --exp…`
 - **Bash** `rm -rf trial && SECONDS=0; timeout 600 java -Xmx4g -jar synthea-4.0.0.jar -s 42 -cs 42 -p 20 -a 18-90 -e 20241231 --exporter.baseDirectory=./trial/ --exporter.csv.export=true --exporter.fhir.export=tr…`
+- **Bash** `unzip -p synthea-4.0.0.jar synthea.properties | grep -nE "years_of_history|exporter.csv|split_records|^generate.default_population|exporter.fhir.export|exporter.fhir.use_us_core|csv.included|append" |…`
 
 </details>
 
@@ -5220,6 +5221,6 @@ p = Path(sys.argv[1]); s = p.read_text(…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 15:37 UTC
+- **Last updated:** 18 October 2026, 15:39 UTC
 - **Turns:** 50
 - **Status:** Complete
