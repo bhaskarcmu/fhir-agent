@@ -3949,8 +3949,12 @@ Confirmed: Ollama isn't running locally (CI provides it). Now the docs. Here's h
 
 The existing method table is broken: a blank line splits it, and the second half has no header row. Since I'm editing that section anyway, I'll repair it (docs only) and add a care-history section:
 
+Now the Phase 8 decision log, design §7 (marking what's confirmed for O21), milestone plan, PRD and status, plus the cross-phase note O9 calls for:
+
+Now the coordination note in Phase 7's plan (O9 asks the second phase to reuse what the first lands):
+
 <details>
-<summary>Execution details — 646 tool events</summary>
+<summary>Execution details — 648 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5552,6 +5556,16 @@ from pathlib import Path
 p = Path("client/clinical/README.md"); s = p.read_text()
 old = "| `requirements.txt` | Python dependencies (stdlib only for now) |\n"
 new = old + ("| `tests/…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+def sub(path, old, new):
+    p = Path(path); s = p.read_text(); assert s.count(old) == 1, (path, old[:70]); p.write_text(s.replace(old, new))
+D = "docs/phase…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("docs/phase7/milestone-plan.md"); s = p.read_text()
+old = """**Deliverable:** `client/clinical` supports both emulators' full resource surface;
+`tri…`
 
 </details>
 
@@ -5562,6 +5576,6 @@ new = old + ("| `tests/…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 16:24 UTC
+- **Last updated:** 18 October 2026, 16:25 UTC
 - **Turns:** 52
 - **Status:** Complete
