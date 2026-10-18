@@ -4292,8 +4292,14 @@ The section landed without the `---` separator the other sections have. Adding i
 
 Before trusting the guide, I'm running its beat 3 commands exactly as written (with the `Z` timestamps), then cleaning up:
 
+The seeder's two subtle behaviours, the cache bypass and the system check, are only covered by the e2e run right now. I'm adding a fast unit test so CI guards them as well:
+
+It passes, but I wrote it messily: there's a dead `if False` expression and unused variables. Rewriting it plainly:
+
+All 19 pass. I'm stopping the containers I started, then running the final full suites:
+
 <details>
-<summary>Execution details — 853 tool events</summary>
+<summary>Execution details — 858 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6452,6 +6458,23 @@ old = "\n## 5b. Hospitalization risk (Phase 8, 8 minutes)"
 assert s.count(old) == 1
 i = s.index(old); befor…`
 - **Bash** `score() { curl -s -X POST localhost:8005/risk/hospitalization-12m -H 'Content-Type: application/json' -d "{\"patient_id\": \"3208\", \"as_of\": \"$1\"}" | python3 -c "import json,sys; ra=json.load(sys…`
+- **Bash** `grep -n "M9" docs/phase8/prd.md docs/phase8/design.md | cut -c1-220`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+def sub(path, old, new):
+    p = Path(path); s = p.read_text(); assert s.count(old) == 1, (path, old[:70]); p.write_text(s.replace(old, new))
+D = Path("docs/…`
+- **Bash** `cat >> outcome-prediction-service/src/outcome_prediction/tests/test_etl_synthea.py <<'EOF'
+
+
+# ── the demo seeder (M9) ─────────────────────────────────────────────────────────────
+
+def test_seed_load…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-service/src/outcome_prediction/tests/test_etl_synthea.py"); s = p.read_text()
+start = s.index("def test_seed_loads_reference_bun…`
+- **Bash** `docker stop phase8-m9-ollama >/dev/null 2>&1; docker compose --profile phase8 rm -sf fhir outcome-prediction 2>&1 | tail -1; docker ps --format '{{.Names}}' | grep -E "fhir-agent|ollama" || echo "noth…`
 
 </details>
 
@@ -6462,6 +6485,6 @@ i = s.index(old); befor…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 19:22 UTC
+- **Last updated:** 18 October 2026, 19:23 UTC
 - **Turns:** 59
 - **Status:** Complete
