@@ -2825,7 +2825,7 @@ The notebook check is wired into CI. Round 002's nine cross-validation runs are 
 *[Claude has not completed this turn yet.]*
 
 <details>
-<summary>Execution details — 420 tool events</summary>
+<summary>Execution details — 429 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3848,6 +3848,35 @@ def rep(o,n):
     global s
     assert s.count(o)==1,o[:70]; s=s.replace(o,n)
 rep('''CONDITION = {''…`
+- **Bash** `sed -i 's/    "admit_nonobstetric_y2": "were hospitalised (not for childbirth)",/    "admit_nonobstetric_y2": "were hospitalised for reasons other than childbirth",/' outcome-prediction-lab/src/outcom…`
+- **Bash** `python3 -c "
+import json, collections
+v = json.load(open('outcome-prediction-service/data/processed/vocabulary.json'))
+for k in ('ccsr','icd'):
+    L = collections.Counter(len(x) for x in v[k].values(…`
+- **Read** `/workspaces/fhir-agent/outcome-prediction-lab/src/outcome_prediction_lab/narrate.py`
+- **Bash** `grep -n "def parse_conditions_doc" -A16 outcome-prediction-lab/src/outcome_prediction_lab/vocabulary.py | grep -n "ccsr, v" ; grep -n "_merge(ccsr, v, sentence_case(lab))" outcome-prediction-lab/src/o…`
+- **Bash** `python3 - <<'EOF'
+def edit(p,pairs):
+    s=open(p).read()
+    for o,n in pairs:
+        assert s.count(o)==1,(p,o[:70],s.count(o)); s=s.replace(o,n)
+    open(p,'w').write(s)
+L='outcome-prediction-lab/…`
+- **Bash** `python3 - <<'EOF'
+p='outcome-prediction-lab/src/outcome_prediction_lab/cli.py'; s=open(p).read()
+def rep(o,n):
+    global s
+    assert s.count(o)==1,o[:60]; s=s.replace(o,n)
+rep('''    if a.patient:…`
+- **Bash** `time MLFLOW_DISABLE_AGENT_HINT=1 PYTHONWARNINGS=ignore outcome-prediction-lab explain 002-text-and-explanations ref-codes-lsa --all 2>&1 | grep -v Warning`
+- **Bash** `R=002-text-and-explanations && PYTHONWARNINGS=ignore outcome-prediction-lab card $R ref-codes-lsa 2>&1 | grep -v Warning && PYTHONWARNINGS=ignore outcome-prediction-lab scorecard $R ref-codes-lsa 2>&1…`
+- **Bash** `python3 - <<'EOF'
+p='outcome-prediction-lab/src/outcome_prediction_lab/runs.py'; s=open(p).read()
+def rep(o,n):
+    global s
+    assert s.count(o)==1,o[:60]; s=s.replace(o,n)
+rep('''HUMAN_CRITERIA = {…`
 
 </details>
 
@@ -3858,6 +3887,6 @@ rep('''CONDITION = {''…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 01:28 UTC
+- **Last updated:** 18 October 2026, 01:30 UTC
 - **Turns:** 36
 - **Status:** Incomplete
