@@ -4362,7 +4362,7 @@ Proceed to the next milestone that makes logical sense after this one
 Cleaned up. The remaining milestones are M12 (first promotion into the service) and M13 (versioned code lists). Which comes first depends on their dependencies, so I'm reading both:
 
 <details>
-<summary>Execution details — 865 tool events</summary>
+<summary>Execution details — 868 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6555,6 +6555,11 @@ M9 runs the whole Phase 8 path…`
 - **Bash** `gh pr view 77 --json state,mergedAt -q '"\(.state) \(.mergedAt)"' && git switch -q main && git pull -q --ff-only origin main && git fetch -q --prune && git branch -a --merged origin/main | grep m9; gi…`
 - **Bash** `git push -q origin --delete feature/phase8-m9-acceptance && git branch -d feature/phase8-m9-acceptance && git branch -a`
 - **Bash** `sed -n '/^### M12/,/^### M13/p' docs/phase8/milestone-plan.md; sed -n '/^### M13/,/^---/p' docs/phase8/milestone-plan.md; grep -n "^| FR-T4\|^| O27 " docs/phase8/prd.md docs/phase8/decisions.md | cut…`
+- **Bash** `cd /workspaces/fhir-agent/outcome-prediction-service/data/raw/synthea && unzip -l synthea-4.0.0.jar | grep -iE "icd|snomed|code_map|condition_code|mapping" | head -20`
+- **Bash** `unzip -p synthea-4.0.0.jar export/condition_code_map.json | python3 -c "
+import json,sys; d=json.load(sys.stdin); print(type(d).__name__, len(d)); k=list(d)[:3]
+for key in k: print(key, json.dumps(d[k…`
+- **AskUserQuestion** `{"questions": [{"question": "Which SNOMED CT → ICD-10-CM mapping should M13 use? (M13 must come before M12: the promoted nonobstetric-v2 model needs ICD-10 codes, and FHIR/Synthea record SNOMED.)", "h…`
 
 </details>
 
@@ -6565,6 +6570,6 @@ M9 runs the whole Phase 8 path…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 20:43 UTC
+- **Last updated:** 18 October 2026, 20:44 UTC
 - **Turns:** 61
 - **Status:** Complete
