@@ -4033,7 +4033,7 @@ The heading is restored, and this time the script asserts it exists exactly once
 All four PRD requirements are marked done and the status is updated. Stopping the throwaway HAPI container, then a final run of the changed suites:
 
 <details>
-<summary>Execution details — 716 tool events</summary>
+<summary>Execution details — 718 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5849,6 +5849,11 @@ for f in ("docs…`
 feat(phase8): M6 FHIR extractor, CSV<->FHIR parity, data-quality report (O65, O66)
 
 -…`
+- **Bash** `gh pr create --base main --head feature/phase8-m6-fhir-extractor --title "Phase 8 M6: FHIR extractor, CSV↔FHIR parity, data-quality report" --body-file - <<'EOF' 2>&1 | tail -1
+## Summary
+
+M6 builds t…`
+- **Bash** `sleep 20; timeout 1500 gh pr checks 74 --watch --interval 30 >/dev/null 2>&1; gh pr checks 74 2>&1 | awk -F'\t' '{print $2" — "$1}' | sort | uniq -c`
 
 </details>
 
@@ -5859,6 +5864,6 @@ feat(phase8): M6 FHIR extractor, CSV<->FHIR parity, data-quality report (O65, O6
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 17:07 UTC
+- **Last updated:** 18 October 2026, 17:08 UTC
 - **Turns:** 53
 - **Status:** Complete
