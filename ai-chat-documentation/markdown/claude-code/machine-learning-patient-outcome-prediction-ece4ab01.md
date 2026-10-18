@@ -2603,7 +2603,7 @@ Too slow, and the cause is mine: `_code_documents` loops over people and filters
 The `KNOWN_GAPS` edit had already applied before the slow build started. Rewriting `_code_documents` as grouped operations instead of a per-person loop:
 
 <details>
-<summary>Execution details — 326 tool events</summary>
+<summary>Execution details — 329 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3325,6 +3325,21 @@ rep('''SURVEY = ["RTHLTH1…`
 - **Bash** `grep -c "KNOWN_GAPS" outcome-prediction-lab/src/outcome_prediction_lab/data.py && python3 - <<'EOF'
 p='outcome-prediction-lab/src/outcome_prediction_lab/data.py'; s=open(p).read()
 old=s[s.index("    p…`
+- **Bash** `python3 - <<'EOF'
+import joblib, pandas as pd
+t = joblib.load('outcome-prediction-service/data/processed/lab_table.joblib')
+g = t.groupby('panel').agg(n=('dupersid','size'), empty=('tokens', lambda s:…`
+- **Bash** `python3 - <<'EOF'
+from outcome_prediction_lab.data import read_meps
+for fid in ('210','199','197a','206d'):
+    d = read_meps(fid); d22 = d[d.PANEL==22]
+    print(fid, "rows p22:", len(d22), "| id len…`
+- **Bash** `python3 - <<'EOF'
+p='outcome-prediction-lab/src/outcome_prediction_lab/data.py'; s=open(p).read()
+def rep(o,n):
+    global s
+    assert s.count(o)==1,o[:60]; s=s.replace(o,n)
+rep('''    df["DUPERSID"]…`
 
 </details>
 
@@ -3335,6 +3350,6 @@ old=s[s.index("    p…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 00:17 UTC
+- **Last updated:** 18 October 2026, 00:18 UTC
 - **Turns:** 31
 - **Status:** Complete
