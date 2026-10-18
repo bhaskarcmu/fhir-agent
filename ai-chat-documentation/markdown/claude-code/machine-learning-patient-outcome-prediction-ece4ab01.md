@@ -3588,8 +3588,14 @@ The messages after this summary are the most recent messages from before compact
 
 CV is done. To apply the 65+ rule I need each general model's CV AUROC on 65+. Checking whether the run records hold it:
 
+All five looks are logged. Pulling the group-level detail and the 65+ rows for the report:
+
+Getting the test-panel 65+ figures, then regenerating cards and scorecards for the four:
+
+Cards now carry the fairness sections. Next, the decisions log. Checking where O56+ go:
+
 <details>
-<summary>Execution details — 482 tool events</summary>
+<summary>Execution details — 486 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4839,6 +4845,14 @@ L=lambda r,n: json.load(open(f'rounds/{r}/runs/{n}.json'))['cv']
 for gr,g,s in [('003-portable-contract','nonobstetric-v2','nonobstetric-v2-65plus'),('003-portable-contract','…`
 - **Bash** `cd /workspaces/fhir-agent && set -o pipefail && MLFLOW_DISABLE_AGENT_HINT=1 PYTHONWARNINGS=ignore outcome-prediction-lab confirm 004-focus-four-readiness er-admit-v2 --record "Round 004 pre-registered…`
 - **Bash** `export MLFLOW_DISABLE_AGENT_HINT=1 PYTHONWARNINGS=ignore; for rn in "003-portable-contract nonobstetric-v2" "003-portable-contract any-ed-v2" "003-portable-contract high-cost-v2-claims" "004-focus-fou…`
+- **Bash** `cd /workspaces/fhir-agent/outcome-prediction-lab && python3 -c "
+import json
+for r,n in [('003-portable-contract','nonobstetric-v2'),('003-portable-contract','any-ed-v2'),('003-portable-contract','hig…`
+- **Bash** `cd /workspaces/fhir-agent && export MLFLOW_DISABLE_AGENT_HINT=1 PYTHONWARNINGS=ignore; python3 -c "
+import json
+for r,n in [('003-portable-contract','nonobstetric-v2'),('003-portable-contract','any-ed…`
+- **Bash** `cat outcome-prediction-lab/rounds/004-focus-four-readiness/cards/er-admit-v2.md; git diff --stat outcome-prediction-lab/rounds/003-portable-contract; grep -n "^| O5[0-9]\|^### O5\|^## O5\|O55" docs/ph…`
+- **Bash** `sed -n 119,160p docs/phase8/decisions.md; grep -n "FR-E6\|FR-M6" docs/phase8/*.md | head`
 
 </details>
 
@@ -4849,6 +4863,6 @@ for gr,g,s in [('003-portable-contract','nonobstetric-v2','nonobstetric-v2-65plu
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 14:31 UTC
+- **Last updated:** 18 October 2026, 14:32 UTC
 - **Turns:** 47
 - **Status:** Complete
