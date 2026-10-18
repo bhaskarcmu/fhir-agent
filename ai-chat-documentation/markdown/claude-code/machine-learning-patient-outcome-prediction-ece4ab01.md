@@ -4289,7 +4289,7 @@ By patient ID the agent succeeds 5 of 5 on the real stack. By name it never does
 Re-measuring by name on the real stack:
 
 <details>
-<summary>Execution details — 847 tool events</summary>
+<summary>Execution details — 848 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6434,6 +6434,7 @@ from agent_platform.providers import OpenAICompatibleProvider
 from ou…`
 - **Write** `/workspaces/fhir-agent/e2e/test_outcome_prediction_acceptance.py`
 - **Bash** `SECONDS=0; OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:1 python -m pytest e2e/test_outcome_prediction_acceptance.py -v -p no:cacheprovider 2>&1 | grep -E "PASS|FAIL|ERROR|^E |passed|failed" | head -3…`
+- **Bash** `docker stop phase8-m9-ollama >/dev/null 2>&1; docker compose --profile phase8 rm -sf fhir outcome-prediction 2>&1 | tail -1; docker ps --format '{{.Names}}' | grep -cE "fhir-agent|ollama" || true; SEC…`
 
 </details>
 
