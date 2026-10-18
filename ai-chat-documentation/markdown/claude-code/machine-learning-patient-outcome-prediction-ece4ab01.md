@@ -4298,8 +4298,10 @@ It passes, but I wrote it messily: there's a dead `if False` expression and unus
 
 All 19 pass. I'm stopping the containers I started, then running the final full suites:
 
+M9's work is done and up for review as PR #77. I'm now waiting for CI to finish, and will report the results when it does.
+
 <details>
-<summary>Execution details — 858 tool events</summary>
+<summary>Execution details — 861 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6475,6 +6477,13 @@ from pathlib import Path
 p = Path("outcome-prediction-service/src/outcome_prediction/tests/test_etl_synthea.py"); s = p.read_text()
 start = s.index("def test_seed_loads_reference_bun…`
 - **Bash** `docker stop phase8-m9-ollama >/dev/null 2>&1; docker compose --profile phase8 rm -sf fhir outcome-prediction 2>&1 | tail -1; docker ps --format '{{.Names}}' | grep -E "fhir-agent|ollama" || echo "noth…`
+- **Bash** `git add docs e2e/test_outcome_prediction_acceptance.py outcome-prediction-agent outcome-prediction-service && git commit -q -F - <<'EOF'
+feat(phase8): M9 end-to-end acceptance suite and demo (O71, O72…`
+- **Bash** `gh pr create --base main --head feature/phase8-m9-acceptance --title "Phase 8 M9: end-to-end acceptance suite and demo" --body-file - <<'EOF' 2>&1 | tail -1
+## Summary
+
+M9 runs the whole Phase 8 path…`
+- **Bash** `timeout 2400 gh pr checks 77 --watch --interval 30 >/dev/null 2>&1; gh pr checks 77 2>&1 | awk -F'\t' '{print $2" — "$1}' | sort | uniq -c`
 
 </details>
 
@@ -6485,6 +6494,6 @@ start = s.index("def test_seed_loads_reference_bun…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 19:23 UTC
+- **Last updated:** 18 October 2026, 19:25 UTC
 - **Turns:** 59
 - **Status:** Complete
