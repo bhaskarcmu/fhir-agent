@@ -4086,8 +4086,10 @@ Reading the requirements M7 implements (FR-S*, FR-M8, FR-A*), decisions O14, O18
 
 Checking what the M2 artifact carries (`metadata.json`), since explanations and percentiles have to come from it:
 
+First, add the "typical adult" row to the MEPS aggregates (median for numbers, most common value for categories and flags) and regenerate the file:
+
 <details>
-<summary>Execution details — 725 tool events</summary>
+<summary>Execution details — 729 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5919,6 +5921,14 @@ M6 builds t…`
 - **Bash** `cat triage-service/src/triage/observability.py; sed -n 1,120p triage-service/src/triage/main.py`
 - **Bash** `A=$(ls -d outcome-prediction-service/models/gbm-meps25-v1-* | tail -1); ls $A; python3 -c "
 import json,sys; m=json.load(open('$A/metadata.json')); print(list(m)); print({k:(v if not isinstance(v,(dic…`
+- **Bash** `grep -rnoE "\b80(0[2-9])\b" --include=*.yml --include=*.yaml --include=*.md --include=*.py --include=Dockerfile . 2>/dev/null | grep -v node_modules | sort -u | head; echo ---; curl -s --max-time 20 "…`
+- **Bash** `grep -rhoE "\b80[0-9]{2}\b" docker-compose.yml gateway/kong/kong-values.yaml docs/developer-guide.md 2>/dev/null | sort -u | tr '\n' ' '; echo; grep -rnE "\b800[3-9]\b" --include=*.yml --include=*.yam…`
+- **Bash** `git switch -q -c feature/phase8-m7-scoring-service && git branch --show-current && grep -n "def build_reference" -A8 outcome-prediction-service/src/outcome_prediction/etl/quality.py && python -c "impo…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-service/src/outcome_prediction/etl/quality.py"); s = p.read_text()
+old = '''    ref = summarise(t)
+    ref["source"] = "MEPS lon…`
 
 </details>
 
@@ -5929,6 +5939,6 @@ import json,sys; m=json.load(open('$A/metadata.json')); print(list(m)); print({k
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 17:20 UTC
+- **Last updated:** 18 October 2026, 17:21 UTC
 - **Turns:** 54
 - **Status:** Complete
