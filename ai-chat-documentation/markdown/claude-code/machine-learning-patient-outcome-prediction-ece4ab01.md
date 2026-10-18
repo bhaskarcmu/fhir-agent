@@ -3187,8 +3187,10 @@ Here's what I'll implement:
 
 Git: worktree `/workspaces/fhir-agent`. PR #71 isn't merged yet, so this continues on its branch:
 
+Branch `feature/phase8-m3-round-001`, PR #71 still open (target `main`), working tree clean. First, the contract, in the service, since production will consume it:
+
 <details>
-<summary>Execution details — 444 tool events</summary>
+<summary>Execution details — 445 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4301,6 +4303,7 @@ from outcome_prediction_lab.features import FEATUR…`
 ### Turn 43 activity
 
 - **Bash** `git branch --show-current && git status --short | head -3 && gh pr view 71 --json state --jq .state && git log --oneline -1`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/contract.py`
 
 </details>
 
@@ -4311,6 +4314,6 @@ from outcome_prediction_lab.features import FEATUR…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 02:04 UTC
+- **Last updated:** 18 October 2026, 02:05 UTC
 - **Turns:** 43
 - **Status:** Complete
