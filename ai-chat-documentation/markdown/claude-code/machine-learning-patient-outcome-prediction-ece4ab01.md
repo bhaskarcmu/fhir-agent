@@ -2802,8 +2802,14 @@ pandas' HTML reader needs `lxml`, and adding a dependency just for this would be
 
 Coverage is effectively complete. One flagged item to inspect: `U07`, the emergency-use category that holds COVID-19. My check may just be matching the "19" in its name:
 
+That's a flaw in the test's synthetic data, not the code: its vocabulary has only 20 distinct codes, fewer than the 32 LSA dimensions. Widening it to 60:
+
+All 21 lab tests pass. While round 002 finishes, I'll add the notebook check to the lab's CI job:
+
+The notebook check is wired into CI. Round 002's nine cross-validation runs are still going in the background; I'll pick up from their results when they finish.
+
 <details>
-<summary>Execution details — 412 tool events</summary>
+<summary>Execution details — 417 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3801,6 +3807,20 @@ outcome-prediction-lab = "…`
 
 **Ty…`
 - **Bash** `set -o pipefail && MLFLOW_DISABLE_AGENT_HINT=1 PYTHONWARNINGS=ignore outcome-prediction-lab run 002-text-and-explanations no-text ref-codes-lsa desc-words-lsa codes-plus-desc-lsa codes-plus-drug-chars…`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-lab/src/outcome_prediction_lab/tests/test_lab_tooling.py`
+- **Bash** `mkdir -p outcome-prediction-lab/notebooks && cat > outcome-prediction-lab/notebooks/README.md <<'EOF'
+# Notebooks
+
+For exploring ideas. Two rules (docs/phase8/decisions.md O38):
+
+1. **Commit notebooks…`
+- **Bash** `python -m pytest outcome-prediction-lab/src/outcome_prediction_lab/tests/test_lab_tooling.py::test_run_compare_confirm_card_scorecard_promote -q -p no:cacheprovider 2>&1 | grep -E "^E |Error|error" |…`
+- **Bash** `sed -i 's/    vocab = \[f"icdA{i:02d}" for i in range(12)\] + \[f"rx{i}" for i in range(8)\]/    vocab = [f"icdA{i:02d}" for i in range(40)] + [f"rx{i}" for i in range(20)]   # > 32 LSA dims/' outcome…`
+- **Bash** `python3 - <<'EOF'
+p='.github/workflows/tests.yml'; s=open(p).read()
+o='''      - name: Run the lab's tests
+        run: pytest outcome-prediction-lab/src/outcome_prediction_lab/tests -q -rs'''
+assert…`
 
 </details>
 
@@ -3811,6 +3831,6 @@ outcome-prediction-lab = "…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 01:20 UTC
+- **Last updated:** 18 October 2026, 01:22 UTC
 - **Turns:** 35
 - **Status:** Complete
