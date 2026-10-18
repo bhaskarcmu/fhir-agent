@@ -3190,7 +3190,7 @@ Git: worktree `/workspaces/fhir-agent`. PR #71 isn't merged yet, so this continu
 Branch `feature/phase8-m3-round-001`, PR #71 still open (target `main`), working tree clean. First, the contract, in the service, since production will consume it:
 
 <details>
-<summary>Execution details — 450 tool events</summary>
+<summary>Execution details — 452 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4330,6 +4330,12 @@ L='outcome-prediction-lab/…`
 
 **Type:** production-readin…`
 - **Bash** `set -o pipefail && MLFLOW_DISABLE_AGENT_HINT=1 PYTHONWARNINGS=ignore outcome-prediction-lab run 003-portable-contract nonobstetric-research nonobstetric-v2 nonobstetric-v2-claims any-ed-research any-e…`
+- **Bash** `python3 - <<'EOF'
+import json, glob
+for p in sorted(glob.glob("outcome-prediction-lab/rounds/003-portable-contract/runs/*.json")):
+    r = json.load(open(p)); cv = r["cv"]
+    print(f"{r['config']['na…`
+- **Bash** `R=003-portable-contract && for n in nonobstetric-v2 any-ed-v2 high-cost-v2-claims; do MLFLOW_DISABLE_AGENT_HINT=1 PYTHONWARNINGS=ignore outcome-prediction-lab confirm $R $n --record "pre-registered pr…`
 
 </details>
 
@@ -4340,6 +4346,6 @@ L='outcome-prediction-lab/…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 02:08 UTC
+- **Last updated:** 18 October 2026, 02:10 UTC
 - **Turns:** 43
 - **Status:** Complete
