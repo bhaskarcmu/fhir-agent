@@ -4451,7 +4451,7 @@ A second promotion is refused, but with a raw "File exists" error. Better to ref
 All 31 lab tests pass. Now the real promotion, under decision O59. Then I'll prove the service can load the artifact **with the lab made unimportable**:
 
 <details>
-<summary>Execution details — 938 tool events</summary>
+<summary>Execution details — 942 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6828,6 +6828,14 @@ p = Path("outcome-prediction-service/src/outcome_prediction/scoring.py"); s = p.
 def sub(old, new):
     global s; assert s.count(old) == 1, old[:6…`
 - **Read** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/api.py`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/api.py`
+- **Bash** `grep -n "def build" -A3 outcome-prediction-service/src/outcome_prediction/fhir/risk_assessment.py; grep -n 'outcome=CodeableConcept' outcome-prediction-service/src/outcome_prediction/fhir/risk_assessm…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-service/src/outcome_prediction/fhir/risk_assessment.py"); s = p.read_text()
+def sub(old, new):
+    global s; assert s.count(old)…`
+- **Bash** `sed -n 1,75p outcome-prediction-service/src/outcome_prediction/tests/test_scoring_api.py`
 
 </details>
 
@@ -6838,6 +6846,6 @@ def sub(old, new):
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 21:37 UTC
+- **Last updated:** 18 October 2026, 21:39 UTC
 - **Turns:** 63
 - **Status:** Complete
