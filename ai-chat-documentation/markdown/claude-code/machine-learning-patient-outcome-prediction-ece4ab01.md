@@ -4088,8 +4088,10 @@ Checking what the M2 artifact carries (`metadata.json`), since explanations and 
 
 First, add the "typical adult" row to the MEPS aggregates (median for numbers, most common value for categories and flags) and regenerate the file:
 
+`dateutil` is only an indirect dependency (through pandas), so I'll use pandas' own date offset rather than rely on it:
+
 <details>
-<summary>Execution details — 729 tool events</summary>
+<summary>Execution details — 734 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5929,6 +5931,17 @@ from pathlib import Path
 p = Path("outcome-prediction-service/src/outcome_prediction/etl/quality.py"); s = p.read_text()
 old = '''    ref = summarise(t)
     ref["source"] = "MEPS lon…`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/scoring.py`
+- **Bash** `grep -n "def risk_percentile" -A8 outcome-prediction-service/src/outcome_prediction/model/artifact.py; PYTHONWARNINGS=ignore python3 -c "
+import pandas as pd, time
+from outcome_prediction.scoring impo…`
+- **Bash** `mkdir -p /workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/fhir && cat > /workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/fhir/__init__.py <<'EOF'
+"""Pha…`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/fhir/risk_assessment.py`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-service/src/outcome_prediction/fhir/risk_assessment.py"); s = p.read_text()
+for old, new in [("from dateutil.relativedelta impor…`
 
 </details>
 
@@ -5939,6 +5952,6 @@ old = '''    ref = summarise(t)
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 17:21 UTC
+- **Last updated:** 18 October 2026, 17:22 UTC
 - **Turns:** 54
 - **Status:** Complete
