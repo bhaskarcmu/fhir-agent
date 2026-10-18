@@ -3957,6 +3957,37 @@ All 195 pass (client and service). Checking which CI job runs the client tests, 
 
 The container is gone. **Git:** worktree `/workspaces/fhir-agent`, branch `feature/phase8-m5-clinical-client`, committing then pushing and opening a PR to `main`.
 
+M5 is done and up for review as **PR #73**, with all 13 CI checks passing. I didn't need any decisions from you. I've also deleted the merged M4 branch, on `origin` and locally.
+
+**What M5 adds:** six new methods in `client/clinical` give Phase 8 a patient's care history: demographics, encounters, prescription history, pharmacy dispenses, care costs and insurance coverage. They return plain dataclasses and read every page of results, not just the first. The change is purely additive: nothing existing callers use has changed.
+
+**Coordination with Phase 7 (O9):**
+- **`get_medications()` is untouched.** Phase 8 didn't need a status filter on it, so Phase 7 still gets to define one. A test pins the exact request it sends.
+- **`get_medication_dispenses()` uses the name Phase 7's plan had already chosen.** I added a note to Phase 7's milestone plan so it reuses this method rather than adding a second one.
+
+**What I found in Synthea's FHIR data (O64).** I loaded 10 Synthea patients into a temporary HAPI v7.2.0 server, the same image the repo uses. This matters for M6:
+- **Visit types are merged.** Ambulatory, wellness, outpatient and urgent care visits all arrive with the same class, so telling office visits from hospital-outpatient visits needs the encounter type.
+- **No insurance records.** The payer appears only on each claim.
+- **No fill counts.** There are no pharmacy dispense records and no refill details, just one pharmacy claim per prescription.
+- **No "admitted from the ER" detail**, so it comes back as unknown rather than "no".
+- **Patient IDs:** the server assigns its own, and the Synthea ID survives as an identifier. That's how M6 will match FHIR patients to the CSV ones.
+
+**Tests:**
+- **Client package:** 54 pass, 17 of them new. The new tests replay responses I recorded from the real server (multi-page results included), with Synthea's fake names, SSN-style IDs, phone numbers and addresses removed. Other tests cover cases Synthea doesn't produce.
+- **Existing callers:** `triage-service` and `mcp-agent` pass unmodified (146 tests). Four tests error locally because they need a local Ollama model; they error the same way on `main`, and CI provides the model.
+- **Service:** `outcome-prediction-service` still passes.
+
+**Files changed:**
+- **Code:** `fhir_client.py` and `__init__.py`.
+- **Tests:** `tests/test_care_history.py`, the recorder script `tests/record_care_history.py`, and the recorded responses `tests/fixtures/care_history.json` (356 KB).
+- **Docs:** decisions O63 and O64; design §7, milestone plan, PRD and status page updated; a coordination note in Phase 7's milestone plan. In the client README I added a care-history section and repaired the existing method table, which was split and missing its header row.
+
+**Branch and commit:** `feature/phase8-m5-clinical-client`, commit `3f34a37c`.
+
+**Known limitations:** the methods were checked against Synthea data only. Dispenses, insurance records and the ER-admission flag are tested on hand-built examples, because Synthea doesn't produce them.
+
+**Next:** I haven't merged anything. Once you merge PR #73, I'll ask before deleting the branch. M6 is next: the FHIR extractor, a CSV-vs-FHIR comparison on the same patients, and a data-quality report.
+
 <details>
 <summary>Execution details — 654 tool events</summary>
 
@@ -5592,6 +5623,6 @@ M5 adds the car…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 16:27 UTC
+- **Last updated:** 18 October 2026, 16:31 UTC
 - **Turns:** 52
 - **Status:** Complete
