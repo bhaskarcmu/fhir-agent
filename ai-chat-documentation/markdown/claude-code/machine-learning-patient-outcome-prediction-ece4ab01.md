@@ -4453,7 +4453,7 @@ All 31 lab tests pass. Now the real promotion, under decision O59. Then I'll pro
 I'll put the synthetic v2 builder in a small test-support module, so both the API tests and the promotion tests can use it:
 
 <details>
-<summary>Execution details — 944 tool events</summary>
+<summary>Execution details — 945 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6844,6 +6844,7 @@ from pathlib import Path
 p = Path("outcome-prediction-service/src/outcome_prediction/tests/test_scoring_api.py"); s = p.read_text()
 def sub(old, new):
     global s; assert s.count(ol…`
+- **Bash** `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:1 PYTHONWARNINGS=ignore python -m pytest outcome-prediction-service/src/outcome_prediction/tests/test_scoring_api.py -q -p no:cacheprovider -k outcomes_are…`
 
 </details>
 
@@ -6854,6 +6855,6 @@ def sub(old, new):
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 21:39 UTC
+- **Last updated:** 18 October 2026, 21:40 UTC
 - **Turns:** 63
 - **Status:** Complete
