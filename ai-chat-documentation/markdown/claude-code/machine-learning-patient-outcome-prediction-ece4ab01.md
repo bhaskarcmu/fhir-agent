@@ -4096,8 +4096,10 @@ Two things I don't like on rereading. The `regiony1` warning expression is convo
 
 Now the dependencies and tests. Looking at how existing tests build a throwaway artifact from synthetic data (design §8 requires CI to run without MEPS):
 
+Now the API tests. The fixture trains a real artifact from the synthetic table, and patient scoring runs against M6's recorded FHIR conversation through the `client/clinical` replay:
+
 <details>
-<summary>Execution details — 740 tool events</summary>
+<summary>Execution details — 742 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5963,6 +5965,8 @@ p = Path("outcome-prediction-service/pyproject.toml"); s = p.read_text()
 old = '''dev = ["pytest>=8"]'''
 new = '''dev = ["pytest>=8", "httpx>=0.27"]
 # The sc…`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/tests/test_api.py`
+- **Bash** `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:1 PYTHONWARNINGS=ignore python -m pytest outcome-prediction-service/src/outcome_prediction/tests/test_api.py -q -p no:cacheprovider 2>&1 | grep -vE "export…`
 
 </details>
 
