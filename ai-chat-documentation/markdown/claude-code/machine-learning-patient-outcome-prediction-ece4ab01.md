@@ -2626,8 +2626,10 @@ The first attempt only installed partly; this time everything installed. Re-test
 
 All 11 finalists are logged. Now the **one** look at the test panels, then the explanations stage:
 
+All 92 service tests pass. Wiring the lab into CI, `pytest.ini`, and the install lines in `CLAUDE.md` and `.ona`:
+
 <details>
-<summary>Execution details — 359 tool events</summary>
+<summary>Execution details — 360 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3442,6 +3444,13 @@ def edit(p,pairs):
         assert s.count(o)==1,(p,o[:60],s.count(o)); s=s.replace(o,n)
     open(p,'w').write(s)
 S='outcome-prediction-serv…`
+- **Bash** `python3 - <<'EOF'
+def edit(p,pairs):
+    s=open(p).read()
+    for o,n in pairs:
+        assert s.count(o)==1,(p,o[:60],s.count(o)); s=s.replace(o,n)
+    open(p,'w').write(s)
+edit('.github/workflows/te…`
 
 </details>
 
