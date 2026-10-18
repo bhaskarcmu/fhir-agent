@@ -2604,8 +2604,10 @@ The `KNOWN_GAPS` edit had already applied before the slow build started. Rewriti
 
 Before writing the round script, a quick smoke test. The prototype configuration under leave-one-panel-out cross-validation should give a sensible AUROC, and the honest encoding should behave:
 
+All 11 lab tests pass. The cross-validation run is still in the background; I'll wait for it to finish before writing the pre-registration, since the finalists' configuration depends on those results.
+
 <details>
-<summary>Execution details — 339 tool events</summary>
+<summary>Execution details — 341 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3355,6 +3357,8 @@ from outcome_prediction_lab.evaluate import cv_predict, binary_metr…`
 - **Bash** `cat /tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/tasks/b4g1th3nc.output | grep -v "^ *$" | sed -E "s/'max_iter': ([0-9]+)/iters \1/" | cut -c1-170`
 - **Bash** `sed -i '/^from sklearn.impute import IterativeImputer  # noqa: F401  (enable_iterative_imputer below)$/d' outcome-prediction-lab/src/outcome_prediction_lab/round_001.py && python -c "import outcome_pr…`
 - **Bash** `set -o pipefail && MLFLOW_DISABLE_AGENT_HINT=1 python -W ignore -m outcome_prediction_lab.round_001 cv_any_stay 2>&1 | grep -vE "^\s*$|Warning|warn\("`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-lab/src/outcome_prediction_lab/tests/test_lab_units.py`
+- **Bash** `python -m pytest outcome-prediction-lab/src/outcome_prediction_lab/tests -q -p no:cacheprovider 2>&1 | tail -3`
 
 </details>
 
@@ -3365,6 +3369,6 @@ from outcome_prediction_lab.evaluate import cv_predict, binary_metr…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 00:23 UTC
+- **Last updated:** 18 October 2026, 00:24 UTC
 - **Turns:** 31
 - **Status:** Complete
