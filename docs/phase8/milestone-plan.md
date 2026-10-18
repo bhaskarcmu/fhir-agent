@@ -1,7 +1,6 @@
 # Phase 8 Milestone Plan — Patient Outcome Prediction
 
-M1–M13. **M1–M2 built** (verified results below); **M3 in progress — round 001 (iteration 1)
-done**; M4–M13 planned. M10 and M11 are folded into M3 (O45). Expanded from M1–M11 after a second scope pass added a
+M1–M13. **M1–M3 built** (verified results below; M3 closed 2026-10-18, O60); M4–M13 planned. M10 and M11 are folded into M3 (O45). Expanded from M1–M11 after a second scope pass added a
 dedicated experimentation track (`decisions.md` O28–O40): M3 (workbench) and M12 (promotion)
 are new, and the former model-improvement milestones are now rounds of the
 [experimentation protocol](./experimentation-protocol.md).
@@ -155,9 +154,14 @@ focus predictions now have a production-contract model**; subgroup fairness repo
 their model cards (FR-E6, O57); a 65+ check for all four — the general models beat 65+ specialists by
 0.02–0.04 CV AUROC, so no separate 65+ model (FR-M6, O58).
 
-**Remaining M3 work:** the person-scored scorecard criteria, and choosing the first promotion among
-the four (O40). Round 000 stays.
-**Not yet built:** round 000.
+**Round 000 done** (`outcome-prediction-lab/rounds/000-baseline-reproduction/report.md`): M2's
+`meps25-v1` models reproduced through the lab CLI **bit for bit** (test AUROC 0.769008… / 0.707620…),
+by calling the service's own fitting code (`"model": "meps25-v1"`); lab CV AUROC 0.768 / 0.686; model
+card for `meps25-v1`. The original M3 deliverable is complete.
+
+**M3 closed (O60, 2026-10-18).** Person-scored scorecard criteria recorded for all four focus models;
+**O40 decided (O59): the first promotion is non-obstetric hospital stay** (`nonobstetric-v2`, on
+`meps-portable-v2`), which M12 serves beside `meps25-v1`. The lab stays open for rounds on demand.
 
 ---
 

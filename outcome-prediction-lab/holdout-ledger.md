@@ -24,3 +24,5 @@ panels are scored; `holdout.require` refuses to score a candidate without one.
 | 2026-10-18T14:31:51+00:00 | 003-portable-contract | any-ed-v2:fairness | 26, 27 | Round 004 pre-registered fairness look (FR-E6) for focus production model any-ed-v2. |
 | 2026-10-18T14:32:00+00:00 | 003-portable-contract | high-cost-v2-claims:fairness | 26, 27 | Round 004 pre-registered fairness look (FR-E6) for focus production model high-cost-v2-claims. |
 | 2026-10-18T14:32:10+00:00 | 004-focus-four-readiness | er-admit-v2:fairness | 26, 27 | Round 004 pre-registered fairness look (FR-E6) for focus production model er-admit-v2. |
+| 2026-10-18T14:46:52+00:00 | 000-baseline-reproduction | meps25-v1 | 26, 27 | Round 000 pre-registered reproduction of M2's meps25-v1 (results already reported by M2; reveals nothing new). |
+| 2026-10-18T14:46:55+00:00 | 000-baseline-reproduction | meps25-v1-comparison | 26, 27 | Round 000 pre-registered reproduction of M2's meps25-v1-comparison (results already reported by M2; reveals nothing new). |

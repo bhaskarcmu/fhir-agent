@@ -35,7 +35,9 @@ the *financial* view. Three can be validated by any customer; high cost needs cl
 | ETL review | What survives conversion from customer FHIR | Last-year spending isn't portable; high cost can be predicted without it (CV 0.860 → 0.852) | O25 → O52–O53 |
 | Round 003 | The portable contract `meps-portable-v2` | Production models lose nothing for admissions and ER visits, a little for high cost; high cost needs claims to be validated | [round 003 report](../../outcome-prediction-lab/rounds/003-portable-contract/report.md), O52–O54 |
 | **2026-10-18** | **Repo owner narrows the focus to the four in §1** | — | **O55** |
+| Round 000 | M2's model reproduced through the lab, bit for bit | The lab and the service agree exactly | [round 000 report](../../outcome-prediction-lab/rounds/000-baseline-reproduction/report.md) |
 | Round 004 | Readiness of the four: ER-admission production model, fairness, 65+ | All four have production models; fairness findings recorded (uninsured rarely flagged — labels measure use, not need); general models beat 65+ specialists | [round 004 report](../../outcome-prediction-lab/rounds/004-focus-four-readiness/report.md), O56–O58 |
+| **2026-10-18** | **First promotion chosen; M3 closed** | Non-obstetric hospital stay goes first (M12) | **O59, O60** |
 
 ## 3. What changes now
 
@@ -44,8 +46,8 @@ the *financial* view. Three can be validated by any customer; high cost needs cl
 - **Gap closed (round 004):** admission through the ER now has its production-contract model
   (`er-admit-v2`, O56). Every focus model's card carries a subgroup fairness report (O57) and 65+
   performance; no separate 65+ model (O58).
-- **O40** ("which outcome to promote first") now chooses *among these four*; the recommendation stands
-  — non-obstetric admission first.
+- **O40 decided (O59):** the first promotion is **non-obstetric hospital stay** (`nonobstetric-v2`);
+  the other three follow as later promotions.
 - **Service work (M6, M7, M12)** builds the four labels' inputs on `meps-portable-v2`; any-stay
   (`meps25-v1`) stays only as the reproduced reference model from M2.
 

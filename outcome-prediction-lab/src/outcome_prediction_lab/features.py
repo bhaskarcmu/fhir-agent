@@ -70,6 +70,29 @@ FEATURE_SETS = {
 }
 
 
+class ServiceReference(BaseEstimator):
+    """M2's `meps25-v1` models exactly as the service fits them — the service's own `fit_gbm` /
+    `fit_comparison` and matrices, not a lab copy (O29). Needs the UNRE-ENCODED lab table
+    (`runs.reference_frame`): the prototype's encoding is part of the contract."""
+
+    def __init__(self, kind: str = "gbm"):
+        self.kind = kind
+
+    def _matrix(self, X):
+        from outcome_prediction.model import comparison_matrix, feature_matrix
+        return feature_matrix(X[PROTO_FEATURES]) if self.kind == "gbm" else comparison_matrix(X)
+
+    def fit(self, X, y):
+        from outcome_prediction.model.fit import fit_comparison, fit_gbm
+        fit = fit_gbm if self.kind == "gbm" else fit_comparison
+        self.model_ = fit(self._matrix(X), np.asarray(y).astype(int))
+        self.classes_ = self.model_.classes_
+        return self
+
+    def predict_proba(self, X):
+        return self.model_.predict_proba(self._matrix(X))
+
+
 class MissingnessAugmenter(BaseEstimator, TransformerMixin):
     """Missingness augmentation (O53) as a pipeline step: while FITTING, hide each listed column
     for a random share of training rows, so the model learns to predict without it; when

@@ -4,16 +4,17 @@
 >
 > **🚧 Focus: four predictions (O55)** — admission through the ER, hospital stay not related to
 > pregnancy or childbirth, any ER visit, and being a high-cost patient ([`prediction-targets.md`](./prediction-targets.md)).
-> **M1–M2 built** (prototype reproduced exactly). **M3 in progress:** rounds 001–004 done — the lab and
+> **M1–M2 built** (prototype reproduced exactly). **M3 built** (closed, O60): rounds 000–004 (000: M2 reproduced through the lab, bit for bit) — the lab and
 > its CLI, nine targets explored, plain-language narratives, the portable contract
 > `meps-portable-v2`, and production models for **all four** (test AUROC: ER admission 0.785,
 > non-obstetric stay 0.795, any ER visit 0.740, high cost 0.834), each with a subgroup fairness report
-> and a 65+ check (no separate 65+ model needed).
+> and a 65+ check (no separate 65+ model needed). **First promotion (O59): non-obstetric hospital
+> stay**, to be served in M12.
 > M10/M11 folded into M3 (O45). M4–M13 planned. A research prototype from an earlier session
 > was handed over and reconciled with this repo's conventions; what it established is restated
 > in `prototype-baseline.md`, and the raw hand-off documents are not kept in the repo (O5). A
 > second pass added a permanent **experimentation track** (`outcome-prediction-lab`, O28–O40).
-> `prd.md`, `design.md`, `decisions.md` (`O1`–`O58`), `milestone-plan.md` (M1–M13) and
+> `prd.md`, `design.md`, `decisions.md` (`O1`–`O60`), `milestone-plan.md` (M1–M13) and
 > `experimentation-protocol.md` reflect both passes. Cloud deployment, recalibration and monitoring
 > are reserved for **Phase 8b**.
 >
@@ -28,7 +29,7 @@
 >   experimentation workbench (§12).
 > - [`prediction-targets.md`](./prediction-targets.md) — the four focus predictions, the decision path
 >   that led to them, and where all parked work lives.
-> - [`decisions.md`](./decisions.md) — the ADR-style index (`O1`–`O58`), same convention as
+> - [`decisions.md`](./decisions.md) — the ADR-style index (`O1`–`O60`), same convention as
 >   Phase 2/3/4/6/7.
 > - [`milestone-plan.md`](./milestone-plan.md) — M1–M13, short and long story for each, with the
 >   mapping from the prototype's planned stages.

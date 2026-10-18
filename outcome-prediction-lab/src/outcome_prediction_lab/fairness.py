@@ -137,7 +137,7 @@ def run(round_id: str, name: str) -> dict:
     path = runs.fitted_path(round_id, name)
     if not path.exists():
         raise runs.ConfigError(f"{name} has no fitted model — confirm it first")
-    df = runs.lab_frame()
+    df = runs.frame_for(cfg)
     test = df[df.panel.isin(TEST_PANELS).to_numpy() & runs._in_population(df, cfg)].reset_index(drop=True)
     hook = runs._scoring_hook(cfg)
     p = joblib.load(path).predict_proba(hook(test) if hook else test)[:, 1]

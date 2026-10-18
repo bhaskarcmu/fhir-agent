@@ -9,7 +9,7 @@ the `RiskAssessment` shape, scoring-mode semantics, the FHIR mapping sketch, art
 agent's tool contract, testing, and the prototype defects found in review.
 **Milestone plan:** [`milestone-plan.md`](./milestone-plan.md) — M1–M13, kept as its own
 document, same convention as Phase 6 (`phase6/decisions.md` H23) and Phase 7.
-**Decision index:** [`decisions.md`](./decisions.md) — `O1`–`O58`.
+**Decision index:** [`decisions.md`](./decisions.md) — `O1`–`O60`.
 **Experimentation protocol:** [`experimentation-protocol.md`](./experimentation-protocol.md) —
 the standing runbook for research rounds in `outcome-prediction-lab` (second pass, §12).
 **Prototype baseline:** [`prototype-baseline.md`](./prototype-baseline.md) — data choices,
@@ -213,7 +213,7 @@ milestone shown), **Changed** (in, but altered — see §11), **8b** (deferred t
 | FR-X1 | `outcome-prediction-lab` runs candidates from committed configs (label, form, contract version, model family, search space, seeds) and tracks every run locally with data checksums, code commit and metrics | In — M3 |
 | FR-X2 | Exploration evaluates only by panel-grouped CV on training panels; the CLI refuses configs that name test panels | In — M3 |
 | FR-X3 | Test-panel confirmation requires a holdout-ledger entry; the CLI refuses otherwise | In — M3 |
-| FR-X4 | Each round leaves a committed directory: pre-registration, configs, report, summary metrics, scorecards | In — M3 (round 000), then every round |
+| FR-X4 | Each round leaves a committed directory: pre-registration, configs, report, summary metrics, scorecards | Done — M3 rounds 000–004; every later round |
 | FR-X5 | Target scorecard covering the O36 criteria, ML criteria filled automatically, non-ML criteria with written rationale | In — M3 |
 | FR-X6 | Model card for every candidate and promoted model | In — M3 |
 | FR-X7 | Outcome × form study with a recorded decision on what to take forward | In — M10 |
@@ -282,10 +282,10 @@ PPV on the unplanned label reported against QAdmissions' 42% with the outcome di
 
 Resolved: see `decisions.md` O1–O22 (first pass), O28–O39 (second pass, experimentation) and O41–O44 (data provenance and testing).
 
-Still open: O23 (MEPS commercial use, a legal question), O24 (qualitative bands), O25
-(non-portable features), O26 (FHIR vs claims as primary customer input), O27 (code-list
-sign-off), O40 (which outcome(s) and form(s) to promote first — decided by M10's scorecards,
-which also settles any-stay vs unplanned-stay as the headline label). Carried over unchanged
+Still open: O23 (MEPS commercial use, a legal question), O24 (qualitative bands), O26 (FHIR vs
+claims as primary customer input), O27 (code-list sign-off). Resolved since: O25 (non-portable
+features — by O52/O53) and O40 (first promotion — by O59: non-obstetric hospital stay, which also
+settles any-stay vs unplanned-stay as the headline label). Carried over unchanged
 from the prototype's plan: which cloud hosts production (Phase 8b).
 
 **Risks carried over from the prototype's plan** (`prototype-baseline.md` §9) — AHRQ declining commercial use, an employer

@@ -141,7 +141,13 @@ per-patient explanations, missing values, feature importance). Results:
 | O57 | **Every focus production model ships with a subgroup fairness report** (race/ethnicity, insurance, sex, age band: AUROC with CI, calibration ratio, flag share, cases caught, precision) on its model card; it is a logged test-panel look (`<config>:fairness`). Known findings travel with the model: **uninsured adults are almost never flagged** (labels measure use, not need), calibration bends toward the average by age and insurance, and Black adults' AUROC for non-obstetric stay is lower (0.745 vs 0.787) | Accepted (FR-E6) | `outcome-prediction-lab fairness`; reports in each round's `fairness/`. Phase 8b repeats the check per customer, per group. Race/ethnicity stays out of the inputs and out of per-patient narratives (O50). |
 | O58 | **No separate 65+ model** (FR-M6): the general production models are used for adults 65+ | Accepted | Pre-registered rule (specialist must beat the general model's CV AUROC on 65+ by ≥ +0.005) failed for all four, by 0.020–0.038. 65+ performance and calibration are reported on every model card. Report §4. |
 
-## Supersession notes
+## Closing M3
+
+| ID | Decision | Status | Rationale / where it lives |
+|---|---|---|---|
+| O59 | **The first promotion is the non-obstetric hospital stay (`admit_nonobstetric_y2`), as a probability, via `003-portable-contract/nonobstetric-v2`** on `meps-portable-v2` (records-only tier). M12 serves it beside `meps25-v1`. The person-scored scorecard criteria for all four focus models are recorded (`rounds/*/criteria/*.json`), drafted by Claude and adopted by the repo owner | Accepted (repo owner, 2026-10-18); **resolves O40** | Highest-quality label a records-only customer can validate (test AUROC 0.795, calibrated; top 10% hold 38% of stays); classic care-management signal; scorecard: measurable in records or claims, actionable High, native `RiskAssessment` (O3). Its known fairness findings (O57) travel with it. The other three stay focus predictions for later promotions. |
+| O60 | **M3 is closed**: the workbench is built and rounds 000–004 are complete. The lab stays available; new rounds open on demand under the protocol (O45) | Accepted (repo owner, 2026-10-18) | Every M3 deliverable is met: round 000 reproduces M2 bit for bit; CLI guards are tested; the four focus models have model cards, fairness reports, 65+ checks and full scorecards; O40 decided (O59). |
+
 
 - **O44 supersedes O17's last clause** ("tests that need the MEPS cache self-skip when it's
   absent; MEPS downloads stay out of required CI"). The rest of O17 — artifacts never committed,
@@ -153,6 +159,8 @@ per-patient explanations, missing values, feature importance). Results:
   used only in the `portable-v2+claims` tier. O25's row is left as written, for the record.
 - **O55 narrows O40**: the first promotion is chosen among the four focus predictions (O40 stays
   open for that choice; the recommendation is non-obstetric admission). O40's row is left as written.
+- **O59 resolves O40**: the first promotion is non-obstetric hospital stay (`nonobstetric-v2`). O40's
+  row is left as written.
 - **O46 refines O30**: same tool (MLflow), different store (SQLite instead of the retired file
   store), now an optional extra.
 

@@ -253,3 +253,26 @@ def test_fairness_needs_its_own_ledger_entry(lab):
     runs.confirm("r1", "m", frame=frame)
     with pytest.raises(holdout.NotInLedger):
         fairness.run("r1", "m")
+
+
+# ── round 000: M2's models through the lab ───────────────────────────────────────────
+
+def test_reference_model_is_the_services_own_fit(lab):
+    from outcome_prediction.model import LABEL, feature_matrix, split_masks
+    from outcome_prediction.model.fit import fit_validation
+    from outcome_prediction.tests.conftest import synthetic_table
+    table = synthetic_table(per_panel=160, seed=0)
+    lab("ref", label=LABEL, features="prototype", model="meps25-v1", params=None, baseline_inputs=None)
+    holdout.record("r1", "ref", "test")
+    c = runs.confirm("r1", "ref", frame=table)
+    _, test = split_masks(table)
+    expected = fit_validation(table).gbm.predict_proba(feature_matrix(table)[test])[:, 1]
+    from sklearn.metrics import roc_auc_score
+    assert c["test"]["auroc"] == roc_auc_score(table[LABEL].to_numpy()[test], expected)
+    assert c["test"]["mean_pred"] == pytest.approx(expected.mean(), abs=1e-12)
+
+
+def test_reference_model_refuses_other_features(lab):
+    lab("ref-bad", label="label_hosp_12m", features="portable-v2", model="meps25-v1")
+    with pytest.raises(runs.ConfigError, match="M2's fixed model"):
+        runs.load_config(runs.config_path("r1", "ref-bad"))

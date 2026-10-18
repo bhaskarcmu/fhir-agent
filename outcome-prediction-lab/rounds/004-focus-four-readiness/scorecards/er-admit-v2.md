@@ -7,9 +7,9 @@
 | Base rate | data | 4.9% |
 | Worklist value | test | top 10%: 20% have the outcome; they hold 40% of all cases |
 | Adults 65+ | test | AUROC 0.729 |
-| Measurable in customer data | person | _TO BE SCORED BY A PERSON_ — Can a customer's own FHIR / claims data observe this outcome (needed to validate and recalibrate)? |
-| Actionable | person | _TO BE SCORED BY A PERSON_ — What would a care manager do differently for a flagged patient? |
-| Lead time | person | _TO BE SCORED BY A PERSON_ — Is there time to act before the outcome happens? |
-| FHIR representability | person | _TO BE SCORED BY A PERSON_ — Probability -> RiskAssessment natively; count / cost needs a decision revisiting O3 (O35). |
-| Regulatory posture | person | _TO BE SCORED BY A PERSON_ — Does this change the FDA clinical-decision-support position? |
+| Measurable in customer data | person | **Yes — records or claims** — Admission source = emergency department is on the inpatient Encounter (hospitalization.admitSource) or the claim's point of origin; records-only customers see only their own hospitals. |
+| Actionable | person | **High** — Unplanned admissions are what care management tries to prevent: outreach, medication reconciliation, same-day / after-hours access, care plans for exacerbations. |
+| Lead time | person | **Good** — 12-month horizon from a year of history: weeks to months to act for most patients; little lead time for events in the first weeks. |
+| FHIR representability | person | **Native** — A 12-month event probability maps directly onto RiskAssessment.prediction.probabilityDecimal (O3). |
+| Regulatory posture | person | **Non-device CDS likely** — Population-level planning aid reviewed by a clinician, with its basis shown (per-patient narratives); not time-critical, not a diagnosis. Same posture for all four; to be confirmed by regulatory review before Phase 8b. |
 | Uplift / impactability | — | Not assessable with MEPS (no intervention data — O37) |

@@ -1,0 +1,23 @@
+{
+  "_scored_by": "Repo owner, 2026-10-18 (drafted by Claude, adopted by the repo owner; decisions.md O59)",
+  "measurable_in_customer_data": {
+    "score": "Yes \u2014 records or claims",
+    "rationale": "Inpatient Encounters with a non-obstetric reason; records-only customers see only their own hospitals."
+  },
+  "actionable": {
+    "score": "High",
+    "rationale": "The classic care-management enrolment signal; includes planned stays (surgery), so it's broader than avoidable admissions."
+  },
+  "lead_time": {
+    "score": "Good",
+    "rationale": "12-month horizon from a year of history: weeks to months to act for most patients; little lead time for events in the first weeks."
+  },
+  "fhir_representability": {
+    "score": "Native",
+    "rationale": "A 12-month event probability maps directly onto RiskAssessment.prediction.probabilityDecimal (O3)."
+  },
+  "regulatory_posture": {
+    "score": "Non-device CDS likely",
+    "rationale": "Population-level planning aid reviewed by a clinician, with its basis shown (per-patient narratives); not time-critical, not a diagnosis. Same posture for all four; to be confirmed by regulatory review before Phase 8b."
+  }
+}

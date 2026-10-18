@@ -34,7 +34,7 @@ from outcome_prediction_lab import holdout
 from outcome_prediction_lab.evaluate import (
     TEST_PANELS, TRAIN_PANELS, binary_metrics, cost_metrics, count_metrics, cv_predict,
 )
-from outcome_prediction_lab.features import FEATURE_SETS, honest_frame, make_model
+from outcome_prediction_lab.features import FEATURE_SETS, ServiceReference, honest_frame, make_model
 
 LAB_ROOT = Path(__file__).resolve().parents[2]
 ROUNDS = LAB_ROOT / "rounds"
@@ -45,6 +45,10 @@ TUNED = {"learning_rate": 0.03, "max_leaf_nodes": 15, "min_samples_leaf": 120,
 REQUIRED = {"name", "label", "task", "features", "model"}
 ALLOWED = REQUIRED | {"text", "params", "monotone", "baseline_inputs", "learning_only", "description",
                       "outcome_phrase", "augment_missing", "simulate_missing_at_scoring", "population"}
+
+
+# M2's served models, fitted by the service's own code on the unre-encoded table (round 000).
+REFERENCE_MODELS = {"meps25-v1": "gbm", "meps25-v1-comparison": "comparison"}
 
 
 class ConfigError(ValueError):
@@ -67,6 +71,8 @@ def load_config(path: Path) -> dict:
                           f"the split is fixed (training panels for runs, test panels only via confirm)")
     if cfg["features"] not in FEATURE_SETS:
         raise ConfigError(f"{path}: features must be one of {sorted(FEATURE_SETS)}")
+    if cfg["model"] in REFERENCE_MODELS and (cfg["features"], cfg["task"]) != ("prototype", "binary"):
+        raise ConfigError(f"{path}: {cfg['model']} is M2's fixed model — features 'prototype', task 'binary'")
     if cfg["task"] not in ("binary", "count", "cost"):
         raise ConfigError(f"{path}: task must be binary, count or cost")
     if not re.fullmatch(r"[a-z0-9][a-z0-9.-]*", cfg["name"]):
@@ -100,7 +106,20 @@ def lab_frame() -> pd.DataFrame:
     return h
 
 
+@lru_cache(maxsize=1)
+def reference_frame() -> pd.DataFrame:
+    """The lab table WITHOUT honest re-encoding — what M2's `meps25-v1` contract was trained on."""
+    from outcome_prediction_lab.data import build_lab_table
+    return build_lab_table()
+
+
+def frame_for(cfg: dict) -> pd.DataFrame:
+    return reference_frame() if cfg["model"] in REFERENCE_MODELS else lab_frame()
+
+
 def _factory(cfg: dict):
+    if cfg["model"] in REFERENCE_MODELS:
+        return lambda: ServiceReference(REFERENCE_MODELS[cfg["model"]])
     cats, nums = FEATURE_SETS[cfg["features"]]
     params = TUNED if cfg.get("params") == "tuned" else (cfg.get("params") or {})
     return lambda: make_model(cfg["model"], cats, nums, text=cfg.get("text"), task=cfg["task"],
@@ -180,7 +199,7 @@ def _provenance() -> dict:
 def run(round_id: str, name: str, frame: pd.DataFrame | None = None) -> dict:
     """Cross-validate one config on the training panels and write runs/<name>.json."""
     cfg = load_config(config_path(round_id, name))
-    df = lab_frame() if frame is None else frame
+    df = frame_for(cfg) if frame is None else frame
     rows = df.panel.isin(TRAIN_PANELS).to_numpy() & _in_population(df, cfg)
     X = df[rows].reset_index(drop=True)
     y, raw = _targets(X, cfg)
@@ -245,7 +264,7 @@ def fitted_path(round_id: str, name: str) -> Path:
 
 def fit_on_training_panels(round_id: str, name: str, frame: pd.DataFrame | None = None):
     cfg = load_config(config_path(round_id, name))
-    df = lab_frame() if frame is None else frame
+    df = frame_for(cfg) if frame is None else frame
     rows = df.panel.isin(TRAIN_PANELS).to_numpy() & _in_population(df, cfg)
     y, _ = _targets(df[rows], cfg)
     return cfg, _factory(cfg)().fit(df[rows], y)
@@ -254,7 +273,7 @@ def fit_on_training_panels(round_id: str, name: str, frame: pd.DataFrame | None 
 def confirm(round_id: str, name: str, frame: pd.DataFrame | None = None) -> dict:
     """The ONE path to the test panels: refuses unless the ledger already records this look."""
     holdout.require(round_id, name)
-    df = lab_frame() if frame is None else frame
+    df = frame_for(load_config(config_path(round_id, name))) if frame is None else frame
     cfg, model = fit_on_training_panels(round_id, name, df)
     test = df.panel.isin(TEST_PANELS).to_numpy() & _in_population(df, cfg)
     Xt = df[test]
@@ -276,7 +295,9 @@ def confirm(round_id: str, name: str, frame: pd.DataFrame | None = None) -> dict
     path.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump(model, path)
     result["fitted_model_sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
-    (round_dir(round_id) / "runs" / f"{name}.confirm.json").write_text(json.dumps(result, indent=2) + "\n")
+    out = round_dir(round_id) / "runs"
+    out.mkdir(exist_ok=True)
+    (out / f"{name}.confirm.json").write_text(json.dumps(result, indent=2) + "\n")
     return result
 
 
@@ -316,6 +337,14 @@ def _fairness_section(round_id: str, name: str) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _contract_line(cfg: dict) -> str:
+    if cfg["model"] in REFERENCE_MODELS:
+        return "meps25-v1 — M2's reproduced reference contract (the prototype's inputs and encoding); superseded for new work by meps-portable-v2 (O52)"
+    if cfg["features"].startswith("portable-v2"):
+        return f"{cfg['features']} — production contract meps-portable-v2 (O52)"
+    return f"{cfg['features']} — research features, NOT the production contract"
+
+
 def card(round_id: str, name: str) -> Path:
     """A model card in the spirit of TRIPOD+AI: intended use, data, outcome, inputs, performance
     (CV and, if confirmed, test), limitations — generated from the committed run records."""
@@ -337,12 +366,12 @@ def card(round_id: str, name: str) -> Path:
 | **Training data** | Panels 21–25 (2016–2021); evaluation by leave-one-panel-out cross-validation |
 | **Test data** | Panels 26–27 (2021–2023), scored once after a holdout-ledger entry |
 | **Inputs** | {len(cats)} categorical + {len(nums)} numeric features (`{cfg["features"]}`); text representations: {text} |
-| **Model** | `{cfg["model"]}`, task `{cfg["task"]}`, params {"round-001 tuned" if cfg.get("params") == "tuned" else (cfg.get("params") or "defaults")} |
+| **Model** | `{cfg["model"]}`, task `{cfg["task"]}`, params {"the service's fixed meps25-v1 settings" if cfg["model"] in REFERENCE_MODELS else "round-001 tuned" if cfg.get("params") == "tuned" else (cfg.get("params") or "defaults")} |
 | **Cross-validated performance** | {_fmt_metrics(r["cv"])} |
 | **Cross-validated baseline** | {_fmt_metrics(r.get("cv_baseline"))} |
 | **Test performance** | {_fmt_metrics(c["test"]) if c else "_not confirmed_"} |
 | **Test baseline** | {_fmt_metrics(c.get("test_baseline")) if c else "_not confirmed_"} |
-| **Feature contract** | {cfg["features"]}{" — production contract meps-portable-v2 (O52)" if cfg["features"].startswith("portable-v2") else " — research features, NOT the production contract"} |
+| **Feature contract** | {_contract_line(cfg)} |
 | **Missing inputs** | trained with missingness augmentation on {", ".join(cfg.get("augment_missing") or {}) or "none"}; scored with {", ".join(cfg.get("simulate_missing_at_scoring") or []) or "nothing"} blanked, as production will |
 | **Outcome observable by a customer** | {_observability(cfg["label"])} |
 | **Data provenance** | manifest sha256 `{r["provenance"]["manifest_sha256"][:12]}…`, code `{(r["provenance"]["git_commit"] or "unknown")[:12]}` |

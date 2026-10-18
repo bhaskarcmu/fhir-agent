@@ -7,9 +7,9 @@
 | Base rate | data | 10.0% |
 | Worklist value | test | top 10%: 44% have the outcome; they hold 44% of all cases |
 | Adults 65+ | test | AUROC 0.782 |
-| Measurable in customer data | person | _TO BE SCORED BY A PERSON_ — Can a customer's own FHIR / claims data observe this outcome (needed to validate and recalibrate)? |
-| Actionable | person | _TO BE SCORED BY A PERSON_ — What would a care manager do differently for a flagged patient? |
-| Lead time | person | _TO BE SCORED BY A PERSON_ — Is there time to act before the outcome happens? |
-| FHIR representability | person | _TO BE SCORED BY A PERSON_ — Probability -> RiskAssessment natively; count / cost needs a decision revisiting O3 (O35). |
-| Regulatory posture | person | _TO BE SCORED BY A PERSON_ — Does this change the FDA clinical-decision-support position? |
+| Measurable in customer data | person | **Claims only (O54)** — Total next-year spending needs paid claims across all providers; records hold one system's charges. |
+| Actionable | person | **Medium — finance, not need** — Useful for budgeting and programme sizing. Must NOT be used alone to allocate care: cost-based targeting under-serves groups with less access to care (Obermeyer et al., 2019; round 004 found uninsured adults almost never flagged). |
+| Lead time | person | **Good** — 12-month horizon from a year of history: weeks to months to act for most patients; little lead time for events in the first weeks. |
+| FHIR representability | person | **Native** — A 12-month event probability maps directly onto RiskAssessment.prediction.probabilityDecimal (O3). |
+| Regulatory posture | person | **Non-device; fairness review needed** — Financial use is outside clinical decision support, but resource-allocation use needs a documented fairness review per customer (O57). |
 | Uplift / impactability | — | Not assessable with MEPS (no intervention data — O37) |
