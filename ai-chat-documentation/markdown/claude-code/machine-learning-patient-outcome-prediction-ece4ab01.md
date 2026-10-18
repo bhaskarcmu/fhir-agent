@@ -4084,8 +4084,10 @@ Cleaned up. Reading M7's scope and the design sections it builds on:
 
 Reading the requirements M7 implements (FR-S*, FR-M8, FR-A*), decisions O14, O18, O22 and O24, and the existing `triage-service`, which sets the pattern for FastAPI, OpenTelemetry and compose:
 
+Checking what the M2 artifact carries (`metadata.json`), since explanations and percentiles have to come from it:
+
 <details>
-<summary>Execution details — 724 tool events</summary>
+<summary>Execution details — 725 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5915,6 +5917,8 @@ M6 builds t…`
 - **Bash** `grep -n "^| FR-S\|^| FR-M8\|^| FR-M7" docs/phase8/prd.md | cut -c1-260; grep -n "^| O14 \|^| O18 \|^| O22 \|^| O24 \|^| O13 \|^| O16 " docs/phase8/decisions.md | cut -c1-500; ls triage-service triage-…`
 - **Bash** `sed -n 33,90p docker-compose.yml; grep -n '"80[0-9][0-9]\|- "8' docker-compose.yml; cat triage-service/Dockerfile; cat triage-service/pyproject.toml | sed -n 1,40p`
 - **Bash** `cat triage-service/src/triage/observability.py; sed -n 1,120p triage-service/src/triage/main.py`
+- **Bash** `A=$(ls -d outcome-prediction-service/models/gbm-meps25-v1-* | tail -1); ls $A; python3 -c "
+import json,sys; m=json.load(open('$A/metadata.json')); print(list(m)); print({k:(v if not isinstance(v,(dic…`
 
 </details>
 
@@ -5925,6 +5929,6 @@ M6 builds t…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 17:19 UTC
+- **Last updated:** 18 October 2026, 17:20 UTC
 - **Turns:** 54
 - **Status:** Complete
