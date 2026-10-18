@@ -4014,8 +4014,18 @@ Still 504 KB. Finding where the bulk is:
 
 All 14 pass on the first try, which makes me suspicious, so I'm checking the fixture parity isn't vacuous:
 
+The FHIR report shows the income default for all 20 rows and no unknown codes. Now tests for the quality report, appended to the M6 test file:
+
+18 pass. Next, re-recording the M5 client fixture: `get_medication_history()` now sends `_include`. The parity server holds the same patient, `aa616abe…`.
+
+Five prescriptions with four included Medication records (some share one, or carry an inline code). Adding the tests:
+
+The condition-history test has an escape-hatch `or`, which makes it weak. Checking how many conditions the recorded patient has, so I can assert the real number:
+
+Now the full suite across every affected package:
+
 <details>
-<summary>Execution details — 694 tool events</summary>
+<summary>Execution details — 704 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5759,6 +5769,43 @@ from pathlib import Path
 p = Path("outcome-prediction-service/src/outcome_prediction/etl/quality.py"); s = p.read_text()
 def sub(old, new):
     global s; assert s.count(old) == 1, ol…`
+- **Bash** `cat >> outcome-prediction-service/src/outcome_prediction/tests/test_etl_fhir.py <<'EOF'
+
+
+# ── data-quality report (FR-T6) ──────────────────────────────────────────────────────
+
+from outcome_predicti…`
+- **Bash** `PYTHONWARNINGS=ignore python -m pytest outcome-prediction-service/src/outcome_prediction/tests/test_etl_fhir.py -q -p no:cacheprovider -k identical 2>&1 | grep -E "^E " | head -8`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-service/src/outcome_prediction/etl/quality.py"); s = p.read_text()
+def sub(old, new):
+    global s; assert s.count(old) == 1, ol…`
+- **Bash** `grep -n "client.get_\|SINCE" client/clinical/tests/record_care_history.py | head; python3 - <<'EOF'
+from pathlib import Path
+p = Path("client/clinical/tests/record_care_history.py"); s = p.read_text()…`
+- **Bash** `python3 -c "
+import json; d = json.load(open('client/clinical/tests/fixtures/care_history.json'))
+mr = [e['resource'] for k, b in d['responses'].items() for e in b.get('entry', []) if e['resource']['r…`
+- **Bash** `python3 - <<'EOF'
+import json, urllib.request
+g = lambda p: json.loads(urllib.request.urlopen("http://localhost:8090/fhir" + p).read())
+pid = g("/Patient?identifier=46ee9d82-b52c-856d-069b-5064ff05222…`
+- **Bash** `cat >> client/clinical/tests/test_care_history.py <<'EOF'
+
+
+class TestHistoryCompleteness:
+    """Added in Phase 8 M6: medicines named by reference, and condition histories over 100."""
+
+    def test_…`
+- **Bash** `cd /workspaces/fhir-agent/client/clinical && python3 -c "
+from tests.test_care_history import ReplayClient, PID
+c = ReplayClient(); h = c.get_condition_history(PID); print(len(h), sum(p.startswith('?_…`
+- **Bash** `cd /workspaces/fhir-agent && python3 - <<'EOF'
+from pathlib import Path
+p = Path("client/clinical/tests/test_care_history.py"); s = p.read_text()
+old = '''        history = client.get_condition_histor…`
+- **Bash** `PYTHONWARNINGS=ignore MLFLOW_DISABLE_AGENT_HINT=1 python -m pytest outcome-prediction-service client/clinical/tests outcome-prediction-lab/src/outcome_prediction_lab/tests -q -p no:cacheprovider 2>/de…`
 
 </details>
 
@@ -5769,6 +5816,6 @@ def sub(old, new):
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 17:00 UTC
+- **Last updated:** 18 October 2026, 17:02 UTC
 - **Turns:** 53
 - **Status:** Complete
