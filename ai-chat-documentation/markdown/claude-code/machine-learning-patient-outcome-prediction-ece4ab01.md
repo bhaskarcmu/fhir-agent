@@ -3875,8 +3875,12 @@ The "Supersession notes" heading is gone from `decisions.md` on `main`. Nothing 
 
 My M3-closing commit (`befdbb59`) dropped the "## Supersession notes" heading from `decisions.md`. Checking the diff to see how:
 
+All 171 pass (153 before plus 18 new). Checking the new test filename is unique across the repo, since pytest needs distinct basenames:
+
+All names are unique. **Git:** worktree `/workspaces/fhir-agent`, branch `feature/phase8-m4-synthea-harness`, commit 2 of 2, then push and open a PR to `main`.
+
 <details>
-<summary>Execution details — 599 tool events</summary>
+<summary>Execution details — 602 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5378,6 +5382,12 @@ old = "Unit tests use tiny synthetic Stata files and a synthetic modelling table
 
 Synthea (Apache 2.0, MITRE) generates synthetic patients only; the committed fixture is its output,
 with identifier-like columns (names, SSNs, addr…`
+- **Bash** `git ls-files -co --exclude-standard | grep -c "/test_etl_synthea.py$"; git ls-files -co --exclude-standard | grep -E "/(canonical|synthea|synthea_csv|to_contract)\.py$"`
+- **Bash** `git add -A outcome-prediction-service docs && git commit -q -F - <<'EOF'
+fix(phase8): M4 scoring mode (as_of), leakage test, prototype defects fixed (O61, O62)
+
+- canonical.as_of_view: the scoring-mod…`
+- **Bash** `git push -q -u origin feature/phase8-m4-synthea-harness 2>&1 | grep -v "^remote:" | tail -2; git status -sb | head -1`
 
 </details>
 
@@ -5388,6 +5398,6 @@ with identifier-like columns (names, SSNs, addr…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 15:51 UTC
+- **Last updated:** 18 October 2026, 15:53 UTC
 - **Turns:** 51
 - **Status:** Complete
