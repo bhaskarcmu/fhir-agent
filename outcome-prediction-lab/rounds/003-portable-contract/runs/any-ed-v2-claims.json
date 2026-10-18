@@ -1,0 +1,52 @@
+{
+  "config": {
+    "name": "any-ed-v2-claims",
+    "label": "any_ed_y2",
+    "task": "binary",
+    "model": "gbm",
+    "params": "tuned",
+    "baseline_inputs": [
+      "agey1x",
+      "ertoty1"
+    ],
+    "outcome_phrase": "at least one emergency-room visit",
+    "features": "portable-v2+claims",
+    "text": [
+      "icd_lsa"
+    ],
+    "augment_missing": {
+      "povcaty1": 0.5
+    },
+    "simulate_missing_at_scoring": [
+      "povcaty1"
+    ],
+    "description": "Production contract plus claims-only inputs (prescription fills, home-health days)."
+  },
+  "cv": {
+    "n": 44497,
+    "rate": 0.1527518709126458,
+    "auroc": 0.7304575567548329,
+    "auprc": 0.35512233261419257,
+    "brier": 0.11546729732271123,
+    "mean_pred": 0.15147334247177827,
+    "top10_ppv": 0.4340301191278939,
+    "top10_sensitivity": 0.2840959246726497,
+    "auroc_65plus": 0.6921286502660008
+  },
+  "provenance": {
+    "at": "2026-10-18T02:09:33+00:00",
+    "git_commit": "409fcf7a93b1b41477ccb1c0fcd870b254617b53",
+    "manifest_sha256": "8467b5410f00e9812d9be182dca0eaac23607f92efb0166775d23abed36fd7e6"
+  },
+  "cv_baseline": {
+    "n": 44497,
+    "rate": 0.1527518709126458,
+    "auroc": 0.6662128380870169,
+    "auprc": 0.30961891661416663,
+    "brier": 0.12103933245772883,
+    "mean_pred": 0.15233132212629538,
+    "top10_ppv": 0.38503034389750507,
+    "top10_sensitivity": 0.252022951302045,
+    "auroc_65plus": 0.6531019963262497
+  }
+}

@@ -16,3 +16,6 @@ panels are scored; `holdout.require` refuses to score a candidate without one.
 | 2026-10-18T00:40:34+00:00 | 001-what-and-how | target/cost_y2 | 26, 27 | single confirmation of a CV-chosen finalist; pre-registered in rounds/001-what-and-how/README.md |
 | 2026-10-18T00:40:34+00:00 | 001-what-and-how | target/died_y2 | 26, 27 | single confirmation of a CV-chosen finalist; pre-registered in rounds/001-what-and-how/README.md |
 | 2026-10-18T00:40:34+00:00 | 001-what-and-how | target/lost_insurance_y2 | 26, 27 | single confirmation of a CV-chosen finalist; pre-registered in rounds/001-what-and-how/README.md |
+| 2026-10-18T02:10:44+00:00 | 003-portable-contract | nonobstetric-v2 | 26, 27 | pre-registered production-contract candidate (rounds/003-portable-contract/README.md) |
+| 2026-10-18T02:10:49+00:00 | 003-portable-contract | any-ed-v2 | 26, 27 | pre-registered production-contract candidate (rounds/003-portable-contract/README.md) |
+| 2026-10-18T02:10:55+00:00 | 003-portable-contract | high-cost-v2-claims | 26, 27 | pre-registered production-contract candidate (rounds/003-portable-contract/README.md) |

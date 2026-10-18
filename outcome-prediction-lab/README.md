@@ -2,7 +2,7 @@
 
 Phase 8's experimentation workbench: research **rounds** that explore what to predict and how,
 without eroding the test set. Runbook: [`docs/phase8/experimentation-protocol.md`](../docs/phase8/experimentation-protocol.md).
-Decisions: `docs/phase8/decisions.md` O28–O51.
+Decisions: `docs/phase8/decisions.md` O28–O54.
 
 Imports `outcome-prediction-service` (dataset build, model definitions, MEPS download) — one
 implementation, not a fork (O29). Nothing in the service imports the lab.
@@ -41,7 +41,10 @@ A config (`rounds/<round>/configs/<name>.json`) says only *what* to model:
 
 `text` combines representations: `lsa` / `ae` / `dae` (code tokens), `desc_lsa` (code descriptions as
 words), `drug_char_lsa` (drug names as character n-grams); sparse `tfidf` / `desc_tfidf` /
-`drug_char_tfidf` for `"model": "lr"`. Keys naming panels or splits are refused.
+`drug_char_tfidf` for `"model": "lr"`; `icd_lsa` (ICD-10-only codes, portable). `"features":
+"portable-v2"` / `"portable-v2+claims"` select the production contract; `augment_missing` and
+`simulate_missing_at_scoring` handle inputs production rarely has (O53). Keys naming panels or splits
+are refused.
 
 ## Rounds
 
@@ -49,6 +52,7 @@ words), `drug_char_lsa` (drug names as character n-grams); sparse `tfidf` / `des
 |---|---|---|
 | 001 | What to predict, and how (prototype objective, 7 new targets, concepts) | [`rounds/001-what-and-how/report.md`](./rounds/001-what-and-how/report.md) |
 | 002 | Text on code descriptions and drug names; self-explanatory narratives; the CLI | [`rounds/002-text-and-explanations/report.md`](./rounds/002-text-and-explanations/report.md) |
+| 003 | The portable feature contract `meps-portable-v2`: what production models can use | [`rounds/003-portable-contract/report.md`](./rounds/003-portable-contract/report.md) |
 
 Round 001 predates the CLI and runs as a script (`python -m outcome_prediction_lab.round_001 <stage>`);
 round 002 onwards use the CLI.

@@ -1,0 +1,17 @@
+{
+  "name": "nonobstetric-research",
+  "label": "admit_nonobstetric_y2",
+  "task": "binary",
+  "model": "gbm",
+  "params": "tuned",
+  "baseline_inputs": [
+    "agey1x",
+    "ipdisy1"
+  ],
+  "outcome_phrase": "an overnight hospital stay that isn't related to pregnancy or childbirth",
+  "features": "portable+knowledge",
+  "text": [
+    "lsa"
+  ],
+  "description": "Research model (round-002 reference pattern): includes last-year spending, CCSR groups and Multum classes."
+}

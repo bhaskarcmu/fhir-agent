@@ -54,6 +54,9 @@ def honest_frame(t: pd.DataFrame) -> pd.DataFrame:
     return x
 
 
+from outcome_prediction import contract as _contract  # noqa: E402
+
+_V2_CATS = list(_contract.CATEGORICAL)
 FEATURE_SETS = {
     "prototype": (CATEGORICAL, NUMERIC_BASE),
     "honest": (CATEGORICAL, NUMERIC_BASE),
@@ -61,7 +64,33 @@ FEATURE_SETS = {
     "portable+knowledge": (CATEGORICAL, NUMERIC_BASE + COVERAGE + CODE_COUNTS + KNOWLEDGE),
     "portable+knowledge+survey": (CATEGORICAL + SURVEY_CATEGORICAL,
                                   NUMERIC_BASE + COVERAGE + CODE_COUNTS + KNOWLEDGE + SURVEY_NUMERIC),
+    # The production contract (O52): only what customer FHIR / claims data can supply.
+    "portable-v2": (_V2_CATS, [n for n in _contract.names(_contract.DEFAULT_TIERS) if n not in _V2_CATS]),
+    "portable-v2+claims": (_V2_CATS, [n for n in _contract.names(_contract.WITH_CLAIMS_TIERS) if n not in _V2_CATS]),
 }
+
+
+class MissingnessAugmenter(BaseEstimator, TransformerMixin):
+    """Missingness augmentation (O53) as a pipeline step: while FITTING, hide each listed column
+    for a random share of training rows, so the model learns to predict without it; when
+    predicting, pass rows through untouched. sklearn calls fit_transform on training data and
+    transform at prediction time, so the masking can never touch a row being scored."""
+
+    def __init__(self, rates: dict | None = None, random_state: int = 0):
+        self.rates, self.random_state = rates, random_state
+
+    def fit(self, X, y=None):
+        return self
+
+    def fit_transform(self, X, y=None, **_):
+        X = X.copy()
+        rng = np.random.default_rng(self.random_state)
+        for col, rate in (self.rates or {}).items():
+            X.loc[rng.random(len(X)) < rate, col] = np.nan
+        return X
+
+    def transform(self, X):
+        return X
 
 
 class ToDense(BaseEstimator, TransformerMixin):
@@ -126,12 +155,17 @@ TEXT_BLOCKS = {
                                          ("ae", AutoencoderEmbedding(denoise=0.2))]), 16),
     "desc_lsa": ("desc_text", lambda: Pipeline([("tfidf", word_tfidf()),
                                                  ("svd", TruncatedSVD(32, random_state=0))]), 32),
+    "icd_lsa": ("tokens_icd", lambda: Pipeline([("tfidf", tfidf()), ("svd", TruncatedSVD(32, random_state=0))]), 32),
     "drug_char_lsa": ("drug_names", lambda: Pipeline([("tfidf", char_tfidf()),
                                                        ("svd", TruncatedSVD(32, random_state=0))]), 32),
 }
 # Sparse (uncompressed) variants, for the linear model only.
 SPARSE_TEXT = {"tfidf": ("tokens", tfidf), "desc_tfidf": ("desc_text", word_tfidf),
                "drug_char_tfidf": ("drug_names", char_tfidf)}
+
+
+# Code-token representations — explained by tracing back to the patient's own codes (narrate.py).
+CODE_KINDS = ("lsa", "ae", "dae", "icd_lsa")
 
 
 def _kinds(text) -> list[str]:
@@ -147,7 +181,15 @@ GBM_DEFAULT = {"max_iter": 300, "learning_rate": 0.05, "random_state": 0}
 
 
 def make_model(model: str, cats: list[str], nums: list[str], text: str | None = None,
-               task: str = "binary", params: dict | None = None, monotone: bool = False):
+               task: str = "binary", params: dict | None = None, monotone: bool = False,
+               augment: dict | None = None):
+    pipe = _make_model(model, cats, nums, text, task, params, monotone)
+    if augment:
+        pipe.steps.insert(0, ("augment", MissingnessAugmenter(augment)))
+    return pipe
+
+
+def _make_model(model, cats, nums, text, task, params, monotone):
     """Columns are ordered categoricals first, so their positions in the transformed matrix are
     known. `text` adds a learned code representation ('lsa', 'ae', 'dae'; 'tfidf' only with lr)."""
     params = {**GBM_DEFAULT, **(params or {})}
@@ -166,7 +208,7 @@ def make_model(model: str, cats: list[str], nums: list[str], text: str | None = 
     for kind in _kinds(text):
         column, factory, _ = TEXT_BLOCKS[kind]
         # "codes" keeps round 001's name for its single code-token block (explain.py relies on it)
-        name = "codes" if kind in ("lsa", "ae", "dae") else f"text_{kind}"
+        name = "codes" if kind in CODE_KINDS else f"text_{kind}"
         blocks.append((name, factory(), column))
     cols = ColumnTransformer(blocks)
     is_cat = [True] * len(cats) + [False] * len(nums)

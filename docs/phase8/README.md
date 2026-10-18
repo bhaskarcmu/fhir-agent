@@ -8,7 +8,7 @@
 > was handed over and reconciled with this repo's conventions; what it established is restated
 > in `prototype-baseline.md`, and the raw hand-off documents are not kept in the repo (O5). A
 > second pass added a permanent **experimentation track** (`outcome-prediction-lab`, O28–O40).
-> `prd.md`, `design.md`, `decisions.md` (`O1`–`O51`), `milestone-plan.md` (M1–M13) and
+> `prd.md`, `design.md`, `decisions.md` (`O1`–`O54`), `milestone-plan.md` (M1–M13) and
 > `experimentation-protocol.md` reflect both passes. Cloud deployment, recalibration and monitoring
 > are reserved for **Phase 8b**.
 >
@@ -21,7 +21,7 @@
 >   `RiskAssessment` shape, training vs scoring mode, the FHIR mapping sketch, model artifacts,
 >   the agent's tool contract, testing, the prototype defects found in review, and the
 >   experimentation workbench (§12).
-> - [`decisions.md`](./decisions.md) — the ADR-style index (`O1`–`O51`), same convention as
+> - [`decisions.md`](./decisions.md) — the ADR-style index (`O1`–`O54`), same convention as
 >   Phase 2/3/4/6/7.
 > - [`milestone-plan.md`](./milestone-plan.md) — M1–M13, short and long story for each, with the
 >   mapping from the prototype's planned stages.

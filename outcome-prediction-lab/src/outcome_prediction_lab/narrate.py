@@ -51,6 +51,15 @@ CONDITION = {"hibpdx": "high blood pressure", "chddx": "coronary heart disease",
 INCOME = {1: "household income below the federal poverty line", 2: "household income just above the poverty line",
           3: "low household income", 4: "middle household income", 5: "high household income"}
 REGION = {1: "the Northeast", 2: "the Midwest", 3: "the South", 4: "the West"}
+ICD10_CHAPTERS = {1: "infections", 2: "cancers and other growths", 3: "blood and immune system",
+                  4: "hormones, nutrition and metabolism", 5: "mental and behavioural health",
+                  6: "nervous system", 7: "eyes", 8: "ears", 9: "heart and blood vessels",
+                  10: "lungs and airways", 11: "digestive system", 12: "skin",
+                  13: "bones, joints and muscles", 14: "kidneys, bladder and reproductive organs",
+                  15: "pregnancy", 16: "newborn conditions", 17: "congenital conditions",
+                  18: "symptoms and abnormal findings", 19: "injuries and poisonings",
+                  20: "external causes of injury", 21: "check-ups and other health-service contacts",
+                  22: "COVID-19 and other special codes"}
 NOT_NARRATED = {"racethx", "n_suppressed_codes"}
 AGE_BANDS = [(18, 44, "18–44"), (45, 64, "45–64"), (65, 74, "65–74"), (75, 200, "75 and over")]
 ELIX_BUCKETS = [(0, 0, "none"), (1, 2, "1–2"), (3, 4, "3–4"), (5, 999, "5 or more")]
@@ -119,7 +128,8 @@ class Aggregates:
         stats = exploded.groupby("tok").y.agg(["mean", "size"])
         agg.by_token = stats[stats["size"] >= min_n]["mean"].to_dict()
         agg.by_elix = y.groupby(t.elixhauser_count_approx.map(elix_bucket)).mean().to_dict()
-        agg.medians = {c: float(t[c].median()) for c in ("totexpy1", "rxtoty1", "obtotvy1", "n_rx_classes")}
+        agg.medians = {c: float(t[c].median()) for c in ("totexpy1", "rxtoty1", "obtotvy1", "n_rx_classes",
+                                                           "n_distinct_drugs") if c in t}
         agg.hfrs_sorted = np.sort(t.hfrs.to_numpy())
         agg.risk_sorted = None if risk is None else np.sort(risk)
         return agg
@@ -205,6 +215,16 @@ def reason(feature: str, row: pd.Series, up: bool, agg: Aggregates, outcome: str
                           if not t.startswith(('icd', 'rx')) and t[:3] in vocab['body_system']} - {None})
         listed = f": {', '.join(systems[:4])}" + (" and others" if len(systems) > 4 else "") if systems else ""
         return f"health problems in {_plural(v, 'body system')}{listed}" if v > 0 else "no recorded health problems"
+    if feature == "n_icd_chapters":
+        from outcome_prediction.contract import icd10_chapter
+        chapters = sorted({icd10_chapter(t[3:]) for t in str(row.get("tokens_icd", "")).split()} - {None})
+        named = [ICD10_CHAPTERS[c] for c in chapters]
+        listed = f" ({', '.join(named[:4])}{' and others' if len(named) > 4 else ''})" if named else ""
+        return f"health problems in {_plural(v, 'area', 'areas')} of the body{listed}" if v > 0 else "no recorded health problems"
+    if feature == "n_distinct_drugs":
+        if v <= 0:
+            return "no prescription medicines"
+        return f"{_plural(v, 'different medicine')} (the typical adult takes {int(agg.medians['n_distinct_drugs'])})"
     if feature == "n_rx_classes":
         if v <= 0:
             return "no prescription medicines"
@@ -294,8 +314,9 @@ class Narrator:
         cats, nums = FEATURE_SETS[cfg["features"]]
         self.dense = cats + nums
         names = list(self.dense)
+        from outcome_prediction_lab.features import CODE_KINDS
         for kind in _kinds(cfg.get("text")):
-            prefix = "codes_" if kind in ("lsa", "ae", "dae") else f"text_{kind}_"
+            prefix = "codes_" if kind in CODE_KINDS else f"text_{kind}_"
             names += [f"{prefix}{i}" for i in range(TEXT_BLOCKS[kind][2])]
         self.names = names
         self.explainer = shap.TreeExplainer(pipe.named_steps["clf"])
@@ -307,9 +328,11 @@ class Narrator:
     def _code_contribs(self, row: pd.DataFrame, phi_codes: np.ndarray) -> dict[str, float]:
         if "codes" not in self.pipe.named_steps["cols"].named_transformers_ or not len(phi_codes):
             return {}
-        codes = self.pipe.named_steps["cols"].named_transformers_["codes"]
+        cols = self.pipe.named_steps["cols"]
+        codes = cols.named_transformers_["codes"]
+        column = next(c for n, _, c in cols.transformers_ if n == "codes")   # "tokens" or "tokens_icd"
         tfidf, svd = codes.named_steps["tfidf"], codes.named_steps["svd"]
-        x = tfidf.transform(row["tokens"]).toarray()[0]
+        x = tfidf.transform(row[column]).toarray()[0]
         present = np.nonzero(x)[0]
         if not len(present):
             return {}
@@ -321,6 +344,12 @@ class Narrator:
         return dict(zip(vocab, per))
 
     def explain(self, row: pd.DataFrame) -> dict:
+        # Explain what production would see: inputs the config blanks at scoring (e.g. income,
+        # rarely recorded) are blanked here too, so the data-gap sentence appears where it should.
+        blank = self.cfg.get("simulate_missing_at_scoring") or []
+        if blank:
+            row = row.copy()
+            row[blank] = np.nan
         z = self.pipe.named_steps["cols"].transform(row)
         phi = self.explainer.shap_values(z)[0]
         contribs = dict(zip(self.names, phi))

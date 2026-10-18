@@ -138,6 +138,12 @@ drug-names / notebook check, in CI); every code named in plain language (O49); s
 per-patient narratives with comparison groups (O50); TF-IDF on code descriptions (no gain for
 gradient boosting, +0.002 for a linear model); character n-grams for drug names (72.6% vs 68.4% class
 accuracy on unseen names); a drug-class defect fixed (O51). No test look (pre-registered bar not met).
+
+**Iteration 3 done — round 003** (`outcome-prediction-lab/rounds/003-portable-contract/report.md`): the
+portable feature contract `meps-portable-v2` (O52) with "drop, don't impute" and missingness
+augmentation (O53), and outcome observability (O54); O25 resolved. Production-contract models on the
+test panels: non-obstetric admission 0.795, any ER visit 0.740, high cost 0.834 (with claims).
+**M6 and M7 now build against `meps-portable-v2`**, not `meps25-v1`.
 **Not yet built:** round 000.
 
 ---

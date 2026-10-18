@@ -185,3 +185,31 @@ def test_notebook_check_flags_outputs_and_strip_fixes_them(tmp_path):
 
 def test_committed_notebooks_are_clean():
     assert notebooks.check() == []
+
+
+# ── portable contract and missingness augmentation (O52, O53) ────────────────────────
+
+def test_augmenter_hides_values_only_while_fitting():
+    from outcome_prediction_lab.features import MissingnessAugmenter
+    X = pd.DataFrame({"povcaty1": [1.0] * 1000, "agey1x": [50.0] * 1000})
+    aug = MissingnessAugmenter({"povcaty1": 0.5})
+    fitted = aug.fit_transform(X)
+    assert 0.4 < fitted.povcaty1.isna().mean() < 0.6 and fitted.agey1x.notna().all()
+    assert aug.transform(X).povcaty1.notna().all()                  # scoring rows are never touched
+    assert X.povcaty1.notna().all()                                 # and the input isn't mutated
+
+
+def test_contract_feature_sets_obey_their_tiers():
+    from outcome_prediction_lab.features import FEATURE_SETS
+    records = set(sum(FEATURE_SETS["portable-v2"], []))
+    claims = set(sum(FEATURE_SETS["portable-v2+claims"], []))
+    assert "totexpy1" not in records | claims
+    assert {"rxtoty1", "hhtotdy1"} <= claims - records
+    assert {"n_icd_chapters", "n_distinct_drugs"} <= records and "n_ccsr_systems" not in records
+
+
+def test_configs_may_request_augmentation_and_production_scoring(lab):
+    lab("p", features="portable-v2", augment_missing={"povcaty1": 0.5},
+        simulate_missing_at_scoring=["povcaty1"])
+    cfg = runs.load_config(runs.config_path("r1", "p"))
+    assert runs._scoring_hook(cfg)(pd.DataFrame({"povcaty1": [3.0]})).povcaty1.isna().all()

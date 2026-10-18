@@ -162,7 +162,7 @@ own objective (AUROC 0.769 → 0.788) and added seven new targets.
   contract, the `RiskAssessment` shape, training vs scoring mode, the FHIR mapping sketch, the
   agent's tool contract, prototype defects found in review, and the experimentation workbench.
 - **[`milestone-plan.md`](./phase8/milestone-plan.md)** — M1–M13, none started.
-- **[`decisions.md`](./phase8/decisions.md)** — the ADR-style index (O1–O51), same convention.
+- **[`decisions.md`](./phase8/decisions.md)** — the ADR-style index (O1–O54), same convention.
 - **[`experimentation-protocol.md`](./phase8/experimentation-protocol.md)** — the standing
   runbook for research rounds in `outcome-prediction-lab`; outlives the phase.
 - **[`prototype-baseline.md`](./phase8/prototype-baseline.md)** — what the research prototype

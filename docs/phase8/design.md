@@ -91,7 +91,11 @@ the lab (O29). Nothing in earlier phases depends on anything in Phase 8.
 The prototype's first principle ("one feature contract") is enforced structurally: extractors may
 not compute features; only `to_contract.py` does, so a mapping fix lands once for every source.
 
-## 3. The feature contract `meps25-v1`
+## 3. The feature contracts — `meps25-v1` (prototype) and `meps-portable-v2` (production)
+
+**Production uses `meps-portable-v2`** (O52), defined once in `outcome_prediction/contract.py`: each
+input's FHIR source, reliability tier and MEPS origin; the outcome-observability table (O54); the
+ICD-10 chapter map. Below is the prototype's `meps25-v1`, kept because M2's reproduced model uses it.
 
 Carried over unchanged from the prototype (field reference: `prototype-baseline.md` §7): 25
 required integer features, MEPS codes,

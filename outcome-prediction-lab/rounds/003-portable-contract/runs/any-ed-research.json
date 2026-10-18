@@ -1,0 +1,46 @@
+{
+  "config": {
+    "name": "any-ed-research",
+    "label": "any_ed_y2",
+    "task": "binary",
+    "model": "gbm",
+    "params": "tuned",
+    "baseline_inputs": [
+      "agey1x",
+      "ertoty1"
+    ],
+    "outcome_phrase": "at least one emergency-room visit",
+    "features": "portable+knowledge",
+    "text": [
+      "lsa"
+    ],
+    "description": "Research model (round-002 reference pattern): includes last-year spending, CCSR groups and Multum classes."
+  },
+  "cv": {
+    "n": 44497,
+    "rate": 0.1527518709126458,
+    "auroc": 0.7342553841626962,
+    "auprc": 0.3589839248933687,
+    "brier": 0.11510690322038573,
+    "mean_pred": 0.1523767302139474,
+    "top10_ppv": 0.43717689368397394,
+    "top10_sensitivity": 0.2861556569074592,
+    "auroc_65plus": 0.6954530029468686
+  },
+  "provenance": {
+    "at": "2026-10-18T02:09:06+00:00",
+    "git_commit": "409fcf7a93b1b41477ccb1c0fcd870b254617b53",
+    "manifest_sha256": "8467b5410f00e9812d9be182dca0eaac23607f92efb0166775d23abed36fd7e6"
+  },
+  "cv_baseline": {
+    "n": 44497,
+    "rate": 0.1527518709126458,
+    "auroc": 0.6662128380870169,
+    "auprc": 0.30961891661416663,
+    "brier": 0.12103933245772883,
+    "mean_pred": 0.15233132212629538,
+    "top10_ppv": 0.38503034389750507,
+    "top10_sensitivity": 0.252022951302045,
+    "auroc_65plus": 0.6531019963262497
+  }
+}

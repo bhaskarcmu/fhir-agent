@@ -44,7 +44,7 @@ TUNED = {"learning_rate": 0.03, "max_leaf_nodes": 15, "min_samples_leaf": 120,
          "l2_regularization": 1.0, "max_iter": 600}
 REQUIRED = {"name", "label", "task", "features", "model"}
 ALLOWED = REQUIRED | {"text", "params", "monotone", "baseline_inputs", "learning_only", "description",
-                      "outcome_phrase"}
+                      "outcome_phrase", "augment_missing", "simulate_missing_at_scoring"}
 
 
 class ConfigError(ValueError):
@@ -104,7 +104,20 @@ def _factory(cfg: dict):
     cats, nums = FEATURE_SETS[cfg["features"]]
     params = TUNED if cfg.get("params") == "tuned" else (cfg.get("params") or {})
     return lambda: make_model(cfg["model"], cats, nums, text=cfg.get("text"), task=cfg["task"],
-                              params=params, monotone=cfg.get("monotone", False))
+                              params=params, monotone=cfg.get("monotone", False),
+                              augment=cfg.get("augment_missing"))
+
+
+def _scoring_hook(cfg: dict):
+    """Score as production will: blank the inputs a customer usually can't supply (O53)."""
+    cols = cfg.get("simulate_missing_at_scoring") or []
+    if not cols:
+        return None
+    def hook(X):
+        X = X.copy()
+        X[cols] = np.nan
+        return X
+    return hook
 
 
 def _baseline_factory(task: str):
@@ -159,7 +172,7 @@ def run(round_id: str, name: str, frame: pd.DataFrame | None = None) -> dict:
     y, raw = _targets(X, cfg)
     g, age = X.panel.to_numpy(), X.agey1x.to_numpy()
     proba = cfg["task"] == "binary"
-    pred = cv_predict(_factory(cfg), X, y, g, proba=proba)
+    pred = cv_predict(_factory(cfg), X, y, g, proba=proba, test_hook=_scoring_hook(cfg))
     result = {"config": cfg, "cv": _metrics(cfg, y, pred, raw, age if proba else None),
               "provenance": _provenance()}
     if cfg.get("baseline_inputs"):
@@ -233,7 +246,9 @@ def confirm(round_id: str, name: str, frame: pd.DataFrame | None = None) -> dict
     Xt = df[test]
     y, raw = _targets(Xt, cfg)
     proba = cfg["task"] == "binary"
-    pred = model.predict_proba(Xt)[:, 1] if proba else model.predict(Xt)
+    hook = _scoring_hook(cfg)
+    Xs = hook(Xt) if hook else Xt
+    pred = model.predict_proba(Xs)[:, 1] if proba else model.predict(Xs)
     result = {"config": cfg, "test": _metrics(cfg, y, pred, raw, Xt.agey1x.to_numpy() if proba else None),
               "provenance": _provenance()}
     if cfg.get("baseline_inputs"):
@@ -267,6 +282,11 @@ def _fmt_metrics(m: dict | None) -> str:
     return ", ".join(f"{k} {m[k]:.3f}" for k in keys) + f" (n = {m['n']:,})"
 
 
+def _observability(label: str) -> str:
+    from outcome_prediction.contract import LABEL_OBSERVABILITY
+    return LABEL_OBSERVABILITY.get(label, "not assessed")
+
+
 def card(round_id: str, name: str) -> Path:
     """A model card in the spirit of TRIPOD+AI: intended use, data, outcome, inputs, performance
     (CV and, if confirmed, test), limitations — generated from the committed run records."""
@@ -293,6 +313,9 @@ def card(round_id: str, name: str) -> Path:
 | **Cross-validated baseline** | {_fmt_metrics(r.get("cv_baseline"))} |
 | **Test performance** | {_fmt_metrics(c["test"]) if c else "_not confirmed_"} |
 | **Test baseline** | {_fmt_metrics(c.get("test_baseline")) if c else "_not confirmed_"} |
+| **Feature contract** | {cfg["features"]}{" — production contract meps-portable-v2 (O52)" if cfg["features"].startswith("portable-v2") else " — research features, NOT the production contract"} |
+| **Missing inputs** | trained with missingness augmentation on {", ".join(cfg.get("augment_missing") or {}) or "none"}; scored with {", ".join(cfg.get("simulate_missing_at_scoring") or []) or "nothing"} blanked, as production will |
+| **Outcome observable by a customer** | {_observability(cfg["label"])} |
 | **Data provenance** | manifest sha256 `{r["provenance"]["manifest_sha256"][:12]}…`, code `{(r["provenance"]["git_commit"] or "unknown")[:12]}` |
 
 ## Limitations

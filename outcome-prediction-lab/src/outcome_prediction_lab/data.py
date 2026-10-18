@@ -120,6 +120,11 @@ def _code_documents(panel: int, year: int, rx_class_level: str = "most_specific"
     out = pd.DataFrame(index=pd.Index(sorted(set(cond.DUPERSID) | set(rx.DUPERSID)), name="dupersid"))
     out = out.join(know)
     out["n_icd"] = icd_sets.apply(len)
+    # Portable counterparts (contract meps-portable-v2): ICD-10 chapters instead of CCSR body
+    # systems; ICD-only code tokens instead of ICD + CCSR + Multum tokens.
+    from outcome_prediction.contract import icd10_chapter
+    out["n_icd_chapters"] = icd_sets.apply(lambda s: len({icd10_chapter(c) for c in s} - {None}))
+    out["tokens_icd"] = icd_sets.apply(lambda s: " ".join("icd" + c for c in sorted(s)))
     out["n_ccsr_systems"] = ccsr.assign(sys=ccsr.ccsr.str[:3]).groupby("DUPERSID").sys.nunique()
 
     tokens = pd.concat([
@@ -133,9 +138,11 @@ def _code_documents(panel: int, year: int, rx_class_level: str = "most_specific"
     names = rx_all.RXDRGNAM.astype(str).str.strip()
     names = rx_all.assign(n=names)[~names.isin(["-15", "-9", "-8", "-7", "-1", "", "nan"])]
     out["drug_names"] = names.groupby("DUPERSID").n.apply(lambda s: " | ".join(sorted(set(s))))
+    # Distinct drugs (Multum generic names ~ RxNorm ingredients in FHIR): portable, unlike classes.
+    out["n_distinct_drugs"] = names.groupby("DUPERSID").n.nunique()
     out["n_rx_classes"] = rx.groupby("DUPERSID").rxc.nunique()
     out["n_suppressed_codes"] = cond[cond.icd == "-15"].groupby("DUPERSID").size()
-    out = out.reindex(columns=["tokens", "drug_names", "hfrs", "charlson_approx", "elixhauser_vw_approx",
+    out = out.reindex(columns=["tokens", "tokens_icd", "drug_names", "n_icd_chapters", "n_distinct_drugs", "hfrs", "charlson_approx", "elixhauser_vw_approx",
                                "elixhauser_count_approx", "n_icd", "n_ccsr_systems", "n_rx_classes",
                                "n_suppressed_codes"])
     return out.reset_index().assign(panel=panel)
@@ -178,6 +185,8 @@ def build_lab_table(cache: Path | None = None, rebuild: bool = False,
     t[fill0] = t[fill0].fillna(0)
     t["tokens"] = t["tokens"].fillna("")
     t["drug_names"] = t["drug_names"].fillna("")
+    t["tokens_icd"] = t["tokens_icd"].fillna("")
+    t[["n_icd_chapters", "n_distinct_drugs"]] = t[["n_icd_chapters", "n_distinct_drugs"]].fillna(0)
     for c in ("admit_y2", "admit_nonobstetric_y2", "admit_via_er_y2"):
         t[c] = t[c].fillna(False).astype(int)
     t = add_targets(t)

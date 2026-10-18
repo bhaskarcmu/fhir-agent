@@ -17,6 +17,8 @@ import json
 import sys
 from pathlib import Path
 
+import numpy as np
+
 
 def _cmd_run(a):
     from outcome_prediction_lab import runs
@@ -88,7 +90,9 @@ def _cmd_explain(a):
             sys.exit(f"no test-panel patient {a.patient}")
         picks = [rows.index[0]]
     else:
-        risk = pipe.predict_proba(test)[:, 1]
+        scored = test.copy()
+        scored[cfg.get("simulate_missing_at_scoring") or []] = np.nan     # rank as production would
+        risk = pipe.predict_proba(scored)[:, 1]
         order = risk.argsort()
         qs = [0.05, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99, 0.999][: a.sample]
         picks = [int(order[int(q * (len(order) - 1))]) for q in qs]

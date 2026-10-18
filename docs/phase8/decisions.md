@@ -117,6 +117,15 @@ per-patient explanations, missing values, feature importance). Results:
 | O50 | **Patient narratives are templated and self-explanatory:** full names instead of codes; comparisons with OBSERVED next-year rates among comparable adults in the training panels; the marginal-vs-conditional case named explicitly; race/ethnicity never narrated per patient; a patient's actual outcome never shown | Accepted | Repo owner's requirement (no codes to look up; compare with meaningful aggregates). Showing outcomes would make an explanation a test-panel look; narrating race per patient invites misuse — its influence belongs in aggregate fairness reporting. `narrate.py`. |
 | O51 | **Drug classes use the most specific Multum level available** (TC1S1_1 > TC1S1 > TC1). Round 001's level-3-only behaviour stays available, pinned in its script, so its numbers remain reproducible | Accepted | Level 3 is "inapplicable" for classes without a third level: round 001 gave 34% of fills no class. Measured effect on prediction: nil. |
 
+
+## Round 003 — the portable feature contract
+
+| ID | Decision | Status | Rationale / where it lives |
+|---|---|---|---|
+| O52 | **Production models are trained on the portable contract `meps-portable-v2`** (`outcome_prediction/contract.py`): every input tagged with its FHIR source and a reliability tier (always / usually / rarely / claims-only / not portable). Two tiers of use: records-only customers (`portable-v2`) and customers who also send claims (`portable-v2+claims`). MEPS-only CCSR groups and Multum drug classes are replaced by ICD-10-only code tokens, ICD-10 chapter counts and distinct-medicine counts | Accepted | A model must never depend on an input production can't fill. Cost measured in round 003 (test panels): non-obstetric admission 0.795 → **0.795**, any ER visit 0.739 → **0.740**, high cost 0.850 → **0.834** (with claims). `outcome-prediction-lab/rounds/003-portable-contract/report.md`. |
+| O53 | **Always-missing inputs are dropped and the model retrained — never imputed; sometimes-missing inputs stay, with missingness augmentation** (a pipeline step that hides them for half of training rows, never at scoring). Income is the sometimes-missing case: models are scored with it blanked, as production will be | Accepted | An imputed value is a function of the other inputs, so it adds no information — only silent miscalibration. Augmentation keeps calibration with income blanked (mean prediction 0.0741 vs rate 0.0741, CV). |
+| O54 | **A target is only offered to a customer who can observe its outcome**: admissions and ER visits from records (within the system) or claims; high cost **from claims only** — its production model is the claims-tier one, and the model card states it | Accepted | Without the outcome, a customer can neither validate nor recalibrate the model (scorecard criterion "measurable in customer data", O36). `contract.LABEL_OBSERVABILITY`. |
+
 ## Supersession notes
 
 - **O44 supersedes O17's last clause** ("tests that need the MEPS cache self-skip when it's
@@ -124,6 +133,9 @@ per-patient explanations, missing values, feature importance). Results:
   manifest verified before deserialisation, a throwaway model trained on a synthetic fixture for
   service tests — stands. O17's row is left as written, for the record.
 
+- **O52 and O53 resolve O25**: last-year spending is not portable and is dropped from every
+  production model (not imputed); prescription fills and home-health days are claims-only inputs,
+  used only in the `portable-v2+claims` tier. O25's row is left as written, for the record.
 - **O46 refines O30**: same tool (MLflow), different store (SQLite instead of the retired file
   store), now an optional extra.
 

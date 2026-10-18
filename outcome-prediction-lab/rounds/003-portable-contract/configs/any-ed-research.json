@@ -1,0 +1,17 @@
+{
+  "name": "any-ed-research",
+  "label": "any_ed_y2",
+  "task": "binary",
+  "model": "gbm",
+  "params": "tuned",
+  "baseline_inputs": [
+    "agey1x",
+    "ertoty1"
+  ],
+  "outcome_phrase": "at least one emergency-room visit",
+  "features": "portable+knowledge",
+  "text": [
+    "lsa"
+  ],
+  "description": "Research model (round-002 reference pattern): includes last-year spending, CCSR groups and Multum classes."
+}

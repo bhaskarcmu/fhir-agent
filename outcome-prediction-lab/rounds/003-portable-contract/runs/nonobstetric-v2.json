@@ -1,0 +1,52 @@
+{
+  "config": {
+    "name": "nonobstetric-v2",
+    "label": "admit_nonobstetric_y2",
+    "task": "binary",
+    "model": "gbm",
+    "params": "tuned",
+    "baseline_inputs": [
+      "agey1x",
+      "ipdisy1"
+    ],
+    "outcome_phrase": "an overnight hospital stay that isn't related to pregnancy or childbirth",
+    "features": "portable-v2",
+    "text": [
+      "icd_lsa"
+    ],
+    "augment_missing": {
+      "povcaty1": 0.5
+    },
+    "simulate_missing_at_scoring": [
+      "povcaty1"
+    ],
+    "description": "Production contract meps-portable-v2, records-only tier; income learned-missing and blanked at scoring."
+  },
+  "cv": {
+    "n": 44497,
+    "rate": 0.07409488280108771,
+    "auroc": 0.7982565718761687,
+    "auprc": 0.2665656404975445,
+    "brier": 0.061001193846509365,
+    "mean_pred": 0.07405478907839272,
+    "top10_ppv": 0.2861317149921331,
+    "top10_sensitivity": 0.38610858356081285,
+    "auroc_65plus": 0.698757650754226
+  },
+  "provenance": {
+    "at": "2026-10-18T02:08:37+00:00",
+    "git_commit": "409fcf7a93b1b41477ccb1c0fcd870b254617b53",
+    "manifest_sha256": "8467b5410f00e9812d9be182dca0eaac23607f92efb0166775d23abed36fd7e6"
+  },
+  "cv_baseline": {
+    "n": 44497,
+    "rate": 0.07409488280108771,
+    "auroc": 0.7477828586446637,
+    "auprc": 0.22492353316721242,
+    "brier": 0.06345611650514164,
+    "mean_pred": 0.07380361898002355,
+    "top10_ppv": 0.24724657226343,
+    "top10_sensitivity": 0.33363663936912347,
+    "auroc_65plus": 0.6467575605056097
+  }
+}
