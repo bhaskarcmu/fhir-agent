@@ -2634,8 +2634,10 @@ Identical output, so it's deterministic. Next, licence records (O13): an attribu
 
 Final checks: both test suites, the duplicate-filename rule, and a look at exactly what would be committed (no data, models or tracking database):
 
+I'll watch CI on the new PR in the background, especially the `phase8` job, which now also runs the lab's tests:
+
 <details>
-<summary>Execution details — 373 tool events</summary>
+<summary>Execution details — 375 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3501,6 +3503,11 @@ feat(phase8): M3 round 001 — outcome-prediction-lab, what to predict and how
 
 First iteration of M3 (M10/M11 folded in, O45). New package
 outcome-prediction-lab with a fully…`
+- **Bash** `gh pr create --base main --head feature/phase8-m3-round-001 --title "feat(phase8): M3 round 001 — outcome-prediction-lab, what to predict and how" --body-file - <<'EOF'
+## Summary
+
+The first iteration…`
+- **Bash** `sleep 40; for i in $(seq 1 150); do p=$(gh pr checks 71 2>/dev/null | awk -F'\t' '$2=="pending"' | wc -l); t=$(gh pr checks 71 2>/dev/null | wc -l); [ "$t" -gt 0 ] && [ "$p" -eq 0 ] && break; sleep 10…`
 
 </details>
 
