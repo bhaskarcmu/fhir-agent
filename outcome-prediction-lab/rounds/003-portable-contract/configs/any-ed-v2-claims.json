@@ -1,0 +1,23 @@
+{
+  "name": "any-ed-v2-claims",
+  "label": "any_ed_y2",
+  "task": "binary",
+  "model": "gbm",
+  "params": "tuned",
+  "baseline_inputs": [
+    "agey1x",
+    "ertoty1"
+  ],
+  "outcome_phrase": "at least one emergency-room visit",
+  "features": "portable-v2+claims",
+  "text": [
+    "icd_lsa"
+  ],
+  "augment_missing": {
+    "povcaty1": 0.5
+  },
+  "simulate_missing_at_scoring": [
+    "povcaty1"
+  ],
+  "description": "Production contract plus claims-only inputs (prescription fills, home-health days)."
+}

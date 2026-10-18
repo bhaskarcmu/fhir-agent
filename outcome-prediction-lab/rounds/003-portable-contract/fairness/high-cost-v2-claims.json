@@ -1,0 +1,303 @@
+{
+  "overall": {
+    "n": 11863,
+    "rate": 0.10005900699654388,
+    "auroc": 0.8344791031099682,
+    "flag_cutoff": 0.2734605794130127,
+    "flagged_share": 0.10005900699654388,
+    "share_of_cases_flagged": 0.43639427127211455
+  },
+  "groups": {
+    "Race / ethnicity": [
+      {
+        "group": "White, non-Hispanic",
+        "n": 6997,
+        "events": 833,
+        "rate": 0.11905102186651421,
+        "mean_predicted": 0.12323051519322901,
+        "calibration_ratio": 1.035106740464614,
+        "flagged_share": 0.12276690010004288,
+        "share_of_cases_flagged": 0.44537815126050423,
+        "precision_if_flagged": 0.4318975552968568,
+        "auroc": 0.8110077256080888,
+        "auroc_ci95": [
+          0.7958913441219263,
+          0.8287350614723196
+        ]
+      },
+      {
+        "group": "Hispanic",
+        "n": 2197,
+        "events": 123,
+        "rate": 0.05598543468365953,
+        "mean_predicted": 0.06288316393478567,
+        "calibration_ratio": 1.1232057818270254,
+        "flagged_share": 0.04642694583522986,
+        "share_of_cases_flagged": 0.36585365853658536,
+        "precision_if_flagged": 0.4411764705882353,
+        "auroc": 0.8845442215270753,
+        "auroc_ci95": [
+          0.8581573869689515,
+          0.9128642374698147
+        ]
+      },
+      {
+        "group": "Black, non-Hispanic",
+        "n": 1669,
+        "events": 158,
+        "rate": 0.09466746554823248,
+        "mean_predicted": 0.10166066938934032,
+        "calibration_ratio": 1.073871248169677,
+        "flagged_share": 0.09886159376872379,
+        "share_of_cases_flagged": 0.4620253164556962,
+        "precision_if_flagged": 0.44242424242424244,
+        "auroc": 0.8446686325595423,
+        "auroc_ci95": [
+          0.8137842931434425,
+          0.8773340786306261
+        ]
+      },
+      {
+        "group": "Asian, non-Hispanic",
+        "n": 665,
+        "events": 42,
+        "rate": 0.06315789473684211,
+        "mean_predicted": 0.05350231758354128,
+        "calibration_ratio": 0.8471200284060703,
+        "flagged_share": 0.02706766917293233,
+        "share_of_cases_flagged": 0.2619047619047619,
+        "precision_if_flagged": 0.6111111111111112,
+        "auroc": 0.8204349155392494,
+        "auroc_ci95": [
+          0.7434482248781314,
+          0.8780549733559719
+        ]
+      },
+      {
+        "group": "Other or multiple, non-Hispanic",
+        "n": 335,
+        "events": 31,
+        "rate": 0.09253731343283582,
+        "mean_predicted": 0.11139771976353043,
+        "calibration_ratio": 1.2038140684123448,
+        "flagged_share": 0.12835820895522387,
+        "share_of_cases_flagged": 0.5806451612903226,
+        "precision_if_flagged": 0.4186046511627907,
+        "auroc": 0.8652376910016978,
+        "auroc_ci95": [
+          0.7991131709137396,
+          0.9298430824942548
+        ]
+      }
+    ],
+    "Insurance (year 1)": [
+      {
+        "group": "Any private insurance",
+        "n": 7271,
+        "events": 642,
+        "rate": 0.08829597029294457,
+        "mean_predicted": 0.09300822473407055,
+        "calibration_ratio": 1.0533688505318177,
+        "flagged_share": 0.07371750790812819,
+        "share_of_cases_flagged": 0.35358255451713394,
+        "precision_if_flagged": 0.42350746268656714,
+        "auroc": 0.8155019787030366,
+        "auroc_ci95": [
+          0.797751928204884,
+          0.8308470503593072
+        ]
+      },
+      {
+        "group": "Public insurance only",
+        "n": 3671,
+        "events": 528,
+        "rate": 0.14383001906837373,
+        "mean_predicted": 0.14929169058669478,
+        "calibration_ratio": 1.0379730987571147,
+        "flagged_share": 0.17651865976573142,
+        "share_of_cases_flagged": 0.5473484848484849,
+        "precision_if_flagged": 0.44598765432098764,
+        "auroc": 0.8309015826415603,
+        "auroc_ci95": [
+          0.8143419243029574,
+          0.844645857889884
+        ]
+      },
+      {
+        "group": "Uninsured",
+        "n": 921,
+        "events": 17,
+        "rate": 0.018458197611292075,
+        "mean_predicted": 0.020254682205440497,
+        "calibration_ratio": 1.0973271947770997,
+        "flagged_share": 0.003257328990228013,
+        "share_of_cases_flagged": 0.11764705882352941,
+        "precision_if_flagged": 0.6666666666666666,
+        "auroc": null,
+        "note": "too few events (< 20) for a stable AUROC"
+      }
+    ],
+    "Sex": [
+      {
+        "group": "Women",
+        "n": 6417,
+        "events": 729,
+        "rate": 0.11360448807854137,
+        "mean_predicted": 0.11800122868955819,
+        "calibration_ratio": 1.0387021735266049,
+        "flagged_share": 0.11890291413433068,
+        "share_of_cases_flagged": 0.4554183813443073,
+        "precision_if_flagged": 0.4351245085190039,
+        "auroc": 0.8229891968073715,
+        "auroc_ci95": [
+          0.8061420728259187,
+          0.8397454343231998
+        ]
+      },
+      {
+        "group": "Men",
+        "n": 5446,
+        "events": 458,
+        "rate": 0.08409842085934631,
+        "mean_predicted": 0.08919450532418274,
+        "calibration_ratio": 1.060596672479256,
+        "flagged_share": 0.07785530664708043,
+        "share_of_cases_flagged": 0.40611353711790393,
+        "precision_if_flagged": 0.4386792452830189,
+        "auroc": 0.8463804396928173,
+        "auroc_ci95": [
+          0.8305159849954761,
+          0.8642559467756282
+        ]
+      }
+    ],
+    "Age band": [
+      {
+        "group": "18\u201344",
+        "n": 4362,
+        "events": 177,
+        "rate": 0.0405777166437414,
+        "mean_predicted": 0.04696264041948526,
+        "calibration_ratio": 1.1573504944056199,
+        "flagged_share": 0.024530032095369098,
+        "share_of_cases_flagged": 0.22598870056497175,
+        "precision_if_flagged": 0.37383177570093457,
+        "auroc": 0.8254142788678964,
+        "auroc_ci95": [
+          0.7933670485409717,
+          0.859077578699574
+        ]
+      },
+      {
+        "group": "45\u201364",
+        "n": 3965,
+        "events": 397,
+        "rate": 0.10012610340479193,
+        "mean_predicted": 0.10134507610456918,
+        "calibration_ratio": 1.0121743746967677,
+        "flagged_share": 0.0905422446406053,
+        "share_of_cases_flagged": 0.3904282115869018,
+        "precision_if_flagged": 0.43175487465181056,
+        "auroc": 0.8182045695857948,
+        "auroc_ci95": [
+          0.7995160957871527,
+          0.8382537035363419
+        ]
+      },
+      {
+        "group": "65\u201374",
+        "n": 2094,
+        "events": 313,
+        "rate": 0.14947468958930277,
+        "mean_predicted": 0.15959743194071332,
+        "calibration_ratio": 1.067722116561833,
+        "flagged_share": 0.16141356255969436,
+        "share_of_cases_flagged": 0.476038338658147,
+        "precision_if_flagged": 0.4408284023668639,
+        "auroc": 0.784899354743808,
+        "auroc_ci95": [
+          0.7570962409196357,
+          0.8113093135999284
+        ]
+      },
+      {
+        "group": "75 and over",
+        "n": 1442,
+        "events": 300,
+        "rate": 0.20804438280166435,
+        "mean_predicted": 0.2094908971901034,
+        "calibration_ratio": 1.0069529124937637,
+        "flagged_share": 0.2656033287101248,
+        "share_of_cases_flagged": 0.58,
+        "precision_if_flagged": 0.45430809399477806,
+        "auroc": 0.7701211325160537,
+        "auroc_ci95": [
+          0.7384629494750306,
+          0.7975952855939787
+        ]
+      }
+    ]
+  },
+  "summary": {
+    "Race / ethnicity": {
+      "auroc_range": [
+        0.8110077256080888,
+        0.8845442215270753
+      ],
+      "auroc_gap": 0.07353649591898659,
+      "calibration_ratio_range": [
+        0.8471200284060703,
+        1.2038140684123448
+      ],
+      "share_of_cases_flagged_range": [
+        0.2619047619047619,
+        0.5806451612903226
+      ]
+    },
+    "Insurance (year 1)": {
+      "auroc_range": [
+        0.8155019787030366,
+        0.8309015826415603
+      ],
+      "auroc_gap": 0.015399603938523687,
+      "calibration_ratio_range": [
+        1.0379730987571147,
+        1.0533688505318177
+      ],
+      "share_of_cases_flagged_range": [
+        0.35358255451713394,
+        0.5473484848484849
+      ]
+    },
+    "Sex": {
+      "auroc_range": [
+        0.8229891968073715,
+        0.8463804396928173
+      ],
+      "auroc_gap": 0.023391242885445807,
+      "calibration_ratio_range": [
+        1.0387021735266049,
+        1.060596672479256
+      ],
+      "share_of_cases_flagged_range": [
+        0.40611353711790393,
+        0.4554183813443073
+      ]
+    },
+    "Age band": {
+      "auroc_range": [
+        0.7701211325160537,
+        0.8254142788678964
+      ],
+      "auroc_gap": 0.05529314635184268,
+      "calibration_ratio_range": [
+        1.0069529124937637,
+        1.1573504944056199
+      ],
+      "share_of_cases_flagged_range": [
+        0.22598870056497175,
+        0.58
+      ]
+    }
+  }
+}

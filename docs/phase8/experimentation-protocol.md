@@ -24,6 +24,12 @@ on record. Typical triggers:
 
 Don't start a round to tune a number nobody has asked about.
 
+## 1a. Default scope
+
+Rounds work on the **four focus predictions** (decisions.md O55; `prediction-targets.md`) unless the
+repo owner explicitly asks for another target. Parked targets remain in the lab table and can be
+run with a config — but only on request.
+
 ## 2. The rules every round follows
 
 1. **Training panels only for exploration.** All comparisons use panel-grouped cross-validation
@@ -38,6 +44,25 @@ Don't start a round to tune a number nobody has asked about.
 5. **Reproduce before you compare.** Each round re-runs the current served model's config first,
    so its baseline numbers come from the same code and library versions as the new ones.
 6. **Synthea is never evidence of accuracy.** It may appear only as a pipeline check.
+
+## 2a. The command line
+
+Every step below has a command (`outcome-prediction-lab --help`):
+
+| Step | Command |
+|---|---|
+| Run configs (CV, training panels only) | `outcome-prediction-lab run <round> <config> [...]` |
+| Compare a round's runs | `outcome-prediction-lab compare <round>` (writes `comparison.md`) |
+| Confirm a finalist (one logged test look) | `outcome-prediction-lab confirm <round> <config> --record "why"` |
+| Model card / target scorecard | `outcome-prediction-lab card` / `scorecard <round> <config> [--criteria person.json]` |
+| Promote (needs a decision ID) | `outcome-prediction-lab promote <round> <config> --decision O<n>` |
+| Explain patients | `outcome-prediction-lab explain <round> <config> --patient ID / --sample N / --all` |
+| Subgroup fairness of a confirmed model (one logged test look) | `outcome-prediction-lab fairness <round> <config> --record "why"` |
+| Notebook hygiene | `outcome-prediction-lab notebooks-check` (CI) / `notebooks-strip <file>` |
+
+Configs live in `rounds/<round>/configs/<name>.json` and may only say *what* to model (label, task,
+features, model, text representations, parameters, baseline inputs, and an optional `population`
+such as `{"age_min": 65}` for a specialist); any key naming panels or splits is refused.
 
 ## 3. Steps
 

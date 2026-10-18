@@ -1,0 +1,19 @@
+{
+  "name": "lr-sparse-all-text",
+  "label": "admit_nonobstetric_y2",
+  "task": "binary",
+  "features": "portable+knowledge",
+  "model": "lr",
+  "params": null,
+  "baseline_inputs": [
+    "agey1x",
+    "ipdisy1"
+  ],
+  "outcome_phrase": "an overnight hospital stay that isn't related to pregnancy or childbirth",
+  "text": [
+    "tfidf",
+    "desc_tfidf",
+    "drug_char_tfidf"
+  ],
+  "description": "Logistic regression on all three sparse text representations."
+}

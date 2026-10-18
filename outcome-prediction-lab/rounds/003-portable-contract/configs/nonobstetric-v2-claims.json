@@ -1,0 +1,23 @@
+{
+  "name": "nonobstetric-v2-claims",
+  "label": "admit_nonobstetric_y2",
+  "task": "binary",
+  "model": "gbm",
+  "params": "tuned",
+  "baseline_inputs": [
+    "agey1x",
+    "ipdisy1"
+  ],
+  "outcome_phrase": "an overnight hospital stay that isn't related to pregnancy or childbirth",
+  "features": "portable-v2+claims",
+  "text": [
+    "icd_lsa"
+  ],
+  "augment_missing": {
+    "povcaty1": 0.5
+  },
+  "simulate_missing_at_scoring": [
+    "povcaty1"
+  ],
+  "description": "Production contract plus claims-only inputs (prescription fills, home-health days)."
+}

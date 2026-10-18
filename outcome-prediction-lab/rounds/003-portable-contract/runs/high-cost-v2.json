@@ -1,0 +1,53 @@
+{
+  "config": {
+    "name": "high-cost-v2",
+    "label": "high_cost_y2",
+    "task": "binary",
+    "model": "gbm",
+    "params": "tuned",
+    "baseline_inputs": [
+      "agey1x",
+      "ipdisy1",
+      "ertoty1"
+    ],
+    "outcome_phrase": "health care costs among the highest 10% of adults",
+    "features": "portable-v2",
+    "text": [
+      "icd_lsa"
+    ],
+    "augment_missing": {
+      "povcaty1": 0.5
+    },
+    "simulate_missing_at_scoring": [
+      "povcaty1"
+    ],
+    "description": "Production contract meps-portable-v2, records-only tier; income learned-missing and blanked at scoring."
+  },
+  "cv": {
+    "n": 44497,
+    "rate": 0.10005168887790188,
+    "auroc": 0.8401583483630332,
+    "auprc": 0.4234955767037123,
+    "brier": 0.0718661454027831,
+    "mean_pred": 0.09901216814004482,
+    "top10_ppv": 0.43515396718363675,
+    "top10_sensitivity": 0.4348607367475292,
+    "auroc_65plus": 0.7679439852257158
+  },
+  "provenance": {
+    "at": "2026-10-18T02:10:06+00:00",
+    "git_commit": "409fcf7a93b1b41477ccb1c0fcd870b254617b53",
+    "manifest_sha256": "8467b5410f00e9812d9be182dca0eaac23607f92efb0166775d23abed36fd7e6"
+  },
+  "cv_baseline": {
+    "n": 44497,
+    "rate": 0.10005168887790188,
+    "auroc": 0.7343980889872658,
+    "auprc": 0.26370315489025564,
+    "brier": 0.08284479037295545,
+    "mean_pred": 0.0999881339261986,
+    "top10_ppv": 0.30321420543942457,
+    "top10_sensitivity": 0.3030098831985624,
+    "auroc_65plus": 0.6414142312152082
+  }
+}

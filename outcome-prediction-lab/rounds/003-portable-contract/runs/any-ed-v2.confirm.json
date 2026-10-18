@@ -1,0 +1,53 @@
+{
+  "config": {
+    "name": "any-ed-v2",
+    "label": "any_ed_y2",
+    "task": "binary",
+    "model": "gbm",
+    "params": "tuned",
+    "baseline_inputs": [
+      "agey1x",
+      "ertoty1"
+    ],
+    "outcome_phrase": "at least one emergency-room visit",
+    "features": "portable-v2",
+    "text": [
+      "icd_lsa"
+    ],
+    "augment_missing": {
+      "povcaty1": 0.5
+    },
+    "simulate_missing_at_scoring": [
+      "povcaty1"
+    ],
+    "description": "Production contract meps-portable-v2, records-only tier; income learned-missing and blanked at scoring."
+  },
+  "test": {
+    "n": 11863,
+    "rate": 0.1545983309449549,
+    "auroc": 0.7400657232520783,
+    "auprc": 0.37265096842826556,
+    "brier": 0.11548016367150288,
+    "mean_pred": 0.15163892041162416,
+    "top10_ppv": 0.43929173693086004,
+    "top10_sensitivity": 0.2840785169029444,
+    "auroc_65plus": 0.7088744280759003
+  },
+  "provenance": {
+    "at": "2026-10-18T02:10:53+00:00",
+    "git_commit": "409fcf7a93b1b41477ccb1c0fcd870b254617b53",
+    "manifest_sha256": "8467b5410f00e9812d9be182dca0eaac23607f92efb0166775d23abed36fd7e6"
+  },
+  "test_baseline": {
+    "n": 11863,
+    "rate": 0.1545983309449549,
+    "auroc": 0.6818422050426717,
+    "auprc": 0.32491110363042397,
+    "brier": 0.12113771431942537,
+    "mean_pred": 0.1570559758304477,
+    "top10_ppv": 0.41652613827993257,
+    "top10_sensitivity": 0.2693565976008724,
+    "auroc_65plus": 0.6595481342253745
+  },
+  "fitted_model_sha256": "ec1d6c4ab5a959878436b24c4b0a5afb067d84b88c246d8ec0bf24c46a19c672"
+}

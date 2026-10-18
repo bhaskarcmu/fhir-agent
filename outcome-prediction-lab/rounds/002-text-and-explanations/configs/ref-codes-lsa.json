@@ -1,0 +1,17 @@
+{
+  "name": "ref-codes-lsa",
+  "label": "admit_nonobstetric_y2",
+  "task": "binary",
+  "features": "portable+knowledge",
+  "model": "gbm",
+  "params": "tuned",
+  "baseline_inputs": [
+    "agey1x",
+    "ipdisy1"
+  ],
+  "outcome_phrase": "an overnight hospital stay that isn't related to pregnancy or childbirth",
+  "text": [
+    "lsa"
+  ],
+  "description": "Reference: round 001's configuration on the corrected drug classes."
+}

@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "outcome-prediction-lab"
+version = "0.1.0"
+description = "Phase 8 experimentation workbench: research rounds for outcome prediction (docs/phase8/experimentation-protocol.md)"
+requires-python = ">=3.12"   # shap >= 0.52 requires Python 3.12
+dependencies = [
+    "outcome-prediction-service",   # pip install -e outcome-prediction-service — one implementation, not a fork (O29)
+    "shap==0.54.1",
+]
+
+[project.scripts]
+outcome-prediction-lab = "outcome_prediction_lab.cli:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+# Local run tracking + UI (O30). Optional: heavy, and a round's committed metrics.json is the record.
+tracking = ["mlflow==3.17.1"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-dir]
+"" = "src"

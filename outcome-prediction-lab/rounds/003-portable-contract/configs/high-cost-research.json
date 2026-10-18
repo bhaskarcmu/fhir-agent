@@ -1,0 +1,18 @@
+{
+  "name": "high-cost-research",
+  "label": "high_cost_y2",
+  "task": "binary",
+  "model": "gbm",
+  "params": "tuned",
+  "baseline_inputs": [
+    "agey1x",
+    "ipdisy1",
+    "ertoty1"
+  ],
+  "outcome_phrase": "health care costs among the highest 10% of adults",
+  "features": "portable+knowledge",
+  "text": [
+    "lsa"
+  ],
+  "description": "Research model (round-002 reference pattern): includes last-year spending, CCSR groups and Multum classes."
+}

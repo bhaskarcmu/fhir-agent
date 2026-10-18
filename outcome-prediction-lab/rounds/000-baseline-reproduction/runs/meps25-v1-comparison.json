@@ -1,0 +1,27 @@
+{
+  "config": {
+    "name": "meps25-v1-comparison",
+    "label": "label_hosp_12m",
+    "task": "binary",
+    "features": "prototype",
+    "outcome_phrase": "at least one inpatient discharge (the prototype's label; includes childbirth)",
+    "model": "meps25-v1-comparison",
+    "description": "M2's comparison model (age and any prior stay), fitted by the service's own code."
+  },
+  "cv": {
+    "n": 44497,
+    "rate": 0.08490460031013326,
+    "auroc": 0.6856936742051044,
+    "auprc": 0.202358531107785,
+    "brier": 0.07340478407452306,
+    "mean_pred": 0.08457291805860104,
+    "top10_ppv": 0.25106765565295575,
+    "top10_sensitivity": 0.2956590788777131,
+    "auroc_65plus": 0.6468823502153038
+  },
+  "provenance": {
+    "at": "2026-10-18T14:46:44+00:00",
+    "git_commit": "c21cae0d847353a37cd653993b957f0980701c9b",
+    "manifest_sha256": "8467b5410f00e9812d9be182dca0eaac23607f92efb0166775d23abed36fd7e6"
+  }
+}

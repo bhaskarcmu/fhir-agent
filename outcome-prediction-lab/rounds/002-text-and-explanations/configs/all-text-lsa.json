@@ -1,0 +1,19 @@
+{
+  "name": "all-text-lsa",
+  "label": "admit_nonobstetric_y2",
+  "task": "binary",
+  "features": "portable+knowledge",
+  "model": "gbm",
+  "params": "tuned",
+  "baseline_inputs": [
+    "agey1x",
+    "ipdisy1"
+  ],
+  "outcome_phrase": "an overnight hospital stay that isn't related to pregnancy or childbirth",
+  "text": [
+    "lsa",
+    "desc_lsa",
+    "drug_char_lsa"
+  ],
+  "description": "All three text representations."
+}

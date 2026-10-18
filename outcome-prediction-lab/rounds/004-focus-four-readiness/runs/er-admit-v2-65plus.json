@@ -1,0 +1,56 @@
+{
+  "config": {
+    "name": "er-admit-v2-65plus",
+    "label": "admit_via_er_y2",
+    "task": "binary",
+    "model": "gbm",
+    "params": "tuned",
+    "features": "portable-v2",
+    "baseline_inputs": [
+      "agey1x",
+      "ipdisy1",
+      "ertoty1"
+    ],
+    "outcome_phrase": "a hospital admission through the emergency room",
+    "augment_missing": {
+      "povcaty1": 0.5
+    },
+    "simulate_missing_at_scoring": [
+      "povcaty1"
+    ],
+    "text": [
+      "icd_lsa"
+    ],
+    "population": {
+      "age_min": 65
+    },
+    "description": "65+ specialist: the production configuration trained and scored on adults 65+ only."
+  },
+  "cv": {
+    "n": 10500,
+    "rate": 0.09761904761904762,
+    "auroc": 0.6794097432267199,
+    "auprc": 0.19416674865110806,
+    "brier": 0.08550258423397916,
+    "mean_pred": 0.08811180233964006,
+    "top10_ppv": 0.24285714285714285,
+    "top10_sensitivity": 0.24878048780487805,
+    "auroc_65plus": 0.6794097432267199
+  },
+  "provenance": {
+    "at": "2026-10-18T14:29:53+00:00",
+    "git_commit": "548f63b5d0c51fff872049d9ce8879c9e22120f0",
+    "manifest_sha256": "8467b5410f00e9812d9be182dca0eaac23607f92efb0166775d23abed36fd7e6"
+  },
+  "cv_baseline": {
+    "n": 10500,
+    "rate": 0.09761904761904762,
+    "auroc": 0.6743525838213527,
+    "auprc": 0.20440507228120475,
+    "brier": 0.08449731953901653,
+    "mean_pred": 0.09756205023700537,
+    "top10_ppv": 0.25142857142857145,
+    "top10_sensitivity": 0.2575609756097561,
+    "auroc_65plus": 0.6743525838213527
+  }
+}

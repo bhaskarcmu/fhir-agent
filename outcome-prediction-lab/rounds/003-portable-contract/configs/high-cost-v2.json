@@ -1,0 +1,24 @@
+{
+  "name": "high-cost-v2",
+  "label": "high_cost_y2",
+  "task": "binary",
+  "model": "gbm",
+  "params": "tuned",
+  "baseline_inputs": [
+    "agey1x",
+    "ipdisy1",
+    "ertoty1"
+  ],
+  "outcome_phrase": "health care costs among the highest 10% of adults",
+  "features": "portable-v2",
+  "text": [
+    "icd_lsa"
+  ],
+  "augment_missing": {
+    "povcaty1": 0.5
+  },
+  "simulate_missing_at_scoring": [
+    "povcaty1"
+  ],
+  "description": "Production contract meps-portable-v2, records-only tier; income learned-missing and blanked at scoring."
+}

@@ -91,7 +91,11 @@ the lab (O29). Nothing in earlier phases depends on anything in Phase 8.
 The prototype's first principle ("one feature contract") is enforced structurally: extractors may
 not compute features; only `to_contract.py` does, so a mapping fix lands once for every source.
 
-## 3. The feature contract `meps25-v1`
+## 3. The feature contracts — `meps25-v1` (prototype) and `meps-portable-v2` (production)
+
+**Production uses `meps-portable-v2`** (O52), defined once in `outcome_prediction/contract.py`: each
+input's FHIR source, reliability tier and MEPS origin; the outcome-observability table (O54); the
+ICD-10 chapter map. Below is the prototype's `meps25-v1`, kept because M2's reproduced model uses it.
 
 Carried over unchanged from the prototype (field reference: `prototype-baseline.md` §7): 25
 required integer features, MEPS codes,
@@ -304,10 +308,13 @@ The lab trains *many* candidates across outcome × form (O34) — label definiti
 
 | Command | Does | Guard |
 |---|---|---|
-| `run <config>` | Train + panel-grouped CV on training panels; log to MLflow | Refuses configs that name test panels |
+| `run <round> <config>` | Train + panel-grouped CV on training panels; log to MLflow (optional) | Refuses configs with keys naming panels or splits |
 | `compare <round>` | Cross-validated comparison report across a round's runs, incl. subgroups and calibration | — |
 | `confirm <round> <candidate>` | Evaluate one candidate on the test panels | Refuses without a matching `holdout-ledger.md` entry (O32) |
-| `card <run>` | Generate a model card (O39) | — |
+| `card <round> <config>` | Generate a model card (O39) | — |
+| `scorecard <round> <config>` | Target scorecard (O36): ML criteria filled, person-scored criteria marked as owed | — |
+| `explain <round> <config>` | Self-explanatory per-patient narratives (O50) | Never shows outcomes |
+| `fairness <round> <config>` | Subgroup report on the test panels (race/ethnicity, insurance, sex, age band), added to the model card (O57) | Refuses without a `<config>:fairness` ledger entry and a confirmed model |
 | `promote <run> --decision O<n>` | Write `PROMOTION.json` into a service artifact | Refuses unless the decision ID exists in `decisions.md` and a model card is present (O33) |
 
 **Prediction forms and evaluation** (O34):

@@ -1,0 +1,18 @@
+{
+  "name": "er-admit-research",
+  "label": "admit_via_er_y2",
+  "task": "binary",
+  "model": "gbm",
+  "params": "tuned",
+  "baseline_inputs": [
+    "agey1x",
+    "ipdisy1",
+    "ertoty1"
+  ],
+  "outcome_phrase": "a hospital admission through the emergency room",
+  "features": "portable+knowledge",
+  "text": [
+    "lsa"
+  ],
+  "description": "Research model: includes last-year spending, CCSR groups and Multum classes."
+}

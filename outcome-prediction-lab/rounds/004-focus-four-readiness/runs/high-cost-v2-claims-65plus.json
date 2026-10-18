@@ -1,0 +1,56 @@
+{
+  "config": {
+    "name": "high-cost-v2-claims-65plus",
+    "label": "high_cost_y2",
+    "task": "binary",
+    "model": "gbm",
+    "params": "tuned",
+    "features": "portable-v2+claims",
+    "baseline_inputs": [
+      "agey1x",
+      "ipdisy1",
+      "ertoty1"
+    ],
+    "outcome_phrase": "health care costs among the highest 10% of adults",
+    "augment_missing": {
+      "povcaty1": 0.5
+    },
+    "simulate_missing_at_scoring": [
+      "povcaty1"
+    ],
+    "text": [
+      "icd_lsa"
+    ],
+    "population": {
+      "age_min": 65
+    },
+    "description": "65+ specialist: the production configuration trained and scored on adults 65+ only."
+  },
+  "cv": {
+    "n": 10500,
+    "rate": 0.1919047619047619,
+    "auroc": 0.7671325401270086,
+    "auprc": 0.47403628250054575,
+    "brier": 0.12913214871467643,
+    "mean_pred": 0.18420180261083682,
+    "top10_ppv": 0.5752380952380952,
+    "top10_sensitivity": 0.2997518610421836,
+    "auroc_65plus": 0.7671325401270086
+  },
+  "provenance": {
+    "at": "2026-10-18T14:29:40+00:00",
+    "git_commit": "548f63b5d0c51fff872049d9ce8879c9e22120f0",
+    "manifest_sha256": "8467b5410f00e9812d9be182dca0eaac23607f92efb0166775d23abed36fd7e6"
+  },
+  "cv_baseline": {
+    "n": 10500,
+    "rate": 0.1919047619047619,
+    "auroc": 0.6394559074472393,
+    "auprc": 0.31534979212877357,
+    "brier": 0.14833877728172826,
+    "mean_pred": 0.19193858035276848,
+    "top10_ppv": 0.4066666666666667,
+    "top10_sensitivity": 0.2119106699751861,
+    "auroc_65plus": 0.6394559074472393
+  }
+}

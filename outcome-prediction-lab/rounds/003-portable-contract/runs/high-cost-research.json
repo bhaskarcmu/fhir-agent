@@ -1,0 +1,47 @@
+{
+  "config": {
+    "name": "high-cost-research",
+    "label": "high_cost_y2",
+    "task": "binary",
+    "model": "gbm",
+    "params": "tuned",
+    "baseline_inputs": [
+      "agey1x",
+      "ipdisy1",
+      "ertoty1"
+    ],
+    "outcome_phrase": "health care costs among the highest 10% of adults",
+    "features": "portable+knowledge",
+    "text": [
+      "lsa"
+    ],
+    "description": "Research model (round-002 reference pattern): includes last-year spending, CCSR groups and Multum classes."
+  },
+  "cv": {
+    "n": 44497,
+    "rate": 0.10005168887790188,
+    "auroc": 0.8598585071130109,
+    "auprc": 0.5013357527290118,
+    "brier": 0.06629296800916107,
+    "mean_pred": 0.09933138665161034,
+    "top10_ppv": 0.49606653180489996,
+    "top10_sensitivity": 0.49573225516621744,
+    "auroc_65plus": 0.7990468364110654
+  },
+  "provenance": {
+    "at": "2026-10-18T02:09:51+00:00",
+    "git_commit": "409fcf7a93b1b41477ccb1c0fcd870b254617b53",
+    "manifest_sha256": "8467b5410f00e9812d9be182dca0eaac23607f92efb0166775d23abed36fd7e6"
+  },
+  "cv_baseline": {
+    "n": 44497,
+    "rate": 0.10005168887790188,
+    "auroc": 0.7343980889872658,
+    "auprc": 0.26370315489025564,
+    "brier": 0.08284479037295545,
+    "mean_pred": 0.0999881339261986,
+    "top10_ppv": 0.30321420543942457,
+    "top10_sensitivity": 0.3030098831985624,
+    "auroc_65plus": 0.6414142312152082
+  }
+}

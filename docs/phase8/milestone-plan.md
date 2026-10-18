@@ -1,6 +1,6 @@
 # Phase 8 Milestone Plan — Patient Outcome Prediction
 
-M1–M13. **M1–M2 built** (verified results below); M3–M13 planned. Expanded from M1–M11 after a second scope pass added a
+M1–M13. **M1–M3 built** (verified results below; M3 closed 2026-10-18, O60); M4–M13 planned. M10 and M11 are folded into M3 (O45). Expanded from M1–M11 after a second scope pass added a
 dedicated experimentation track (`decisions.md` O28–O40): M3 (workbench) and M12 (promotion)
 are new, and the former model-improvement milestones are now rounds of the
 [experimentation protocol](./experimentation-protocol.md).
@@ -121,6 +121,48 @@ covered by a test that shows them refusing; a model card for the `meps25-v1` mod
 
 **Depends on:** M2. (Runs in parallel with the whole service track.)
 
+**Re-scoped (O45):** M3 now also carries M10 and M11's work — it builds the lab *while* running
+real, iterative rounds, and ends when the repo owner decides no further iteration is needed.
+
+**Iteration 1 done — round 001** (`outcome-prediction-lab/rounds/001-what-and-how/report.md`):
+on the prototype's exact objective and test panels, AUROC 0.769 → 0.788 (+0.019 [+0.011, +0.027]),
+AUPRC 0.265 → 0.307 — mostly from code features (TF-IDF → LSA), and mostly because pregnancy codes
+predict childbirth admissions; seven new targets, all beating simple baselines; concept-by-concept
+verdicts. Built: lab table (28 MEPS files, IDs normalised), honest missing encoding, code
+"documents", vendored HFRS/Charlson/Elixhauser, pipelines, leave-one-panel-out CV, paired bootstrap,
+holdout ledger with guard, SHAP narratives, surrogate tree, value-of-information action items.
+**Iteration 2 done — round 002** (`outcome-prediction-lab/rounds/002-text-and-explanations/report.md`):
+the `outcome-prediction-lab` CLI (run / compare / confirm / card / scorecard / promote / explain /
+drug-names / notebook check, in CI); every code named in plain language (O49); self-explanatory
+per-patient narratives with comparison groups (O50); TF-IDF on code descriptions (no gain for
+gradient boosting, +0.002 for a linear model); character n-grams for drug names (72.6% vs 68.4% class
+accuracy on unseen names); a drug-class defect fixed (O51). No test look (pre-registered bar not met).
+
+**Iteration 3 done — round 003** (`outcome-prediction-lab/rounds/003-portable-contract/report.md`): the
+portable feature contract `meps-portable-v2` (O52) with "drop, don't impute" and missingness
+augmentation (O53), and outcome observability (O54); O25 resolved. Production-contract models on the
+test panels: non-obstetric admission 0.795, any ER visit 0.740, high cost 0.834 (with claims).
+**M6 and M7 now build against `meps-portable-v2`**, not `meps25-v1`.
+
+**Focus (O55, 2026-10-18):** four predictions — admission through the ER, non-obstetric hospital stay,
+any ER visit, high-cost patient ([`prediction-targets.md`](./prediction-targets.md)). Remaining M3 work
+applies to these four.
+
+**Iteration 4 done — round 004** (`outcome-prediction-lab/rounds/004-focus-four-readiness/report.md`):
+admission through the ER on the production contract (`er-admit-v2`, test AUROC 0.785; O56) — **all four
+focus predictions now have a production-contract model**; subgroup fairness reports for all four on
+their model cards (FR-E6, O57); a 65+ check for all four — the general models beat 65+ specialists by
+0.02–0.04 CV AUROC, so no separate 65+ model (FR-M6, O58).
+
+**Round 000 done** (`outcome-prediction-lab/rounds/000-baseline-reproduction/report.md`): M2's
+`meps25-v1` models reproduced through the lab CLI **bit for bit** (test AUROC 0.769008… / 0.707620…),
+by calling the service's own fitting code (`"model": "meps25-v1"`); lab CV AUROC 0.768 / 0.686; model
+card for `meps25-v1`. The original M3 deliverable is complete.
+
+**M3 closed (O60, 2026-10-18).** Person-scored scorecard criteria recorded for all four focus models;
+**O40 decided (O59): the first promotion is non-obstetric hospital stay** (`nonobstetric-v2`, on
+`meps-portable-v2`), which M12 serves beside `meps25-v1`. The lab stays open for rounds on demand.
+
 ---
 
 ### M4 — Synthea CSV harness, scoring mode, leakage test
@@ -231,7 +273,7 @@ encounter dated after `as_of` and showing the score doesn't move.
 
 ---
 
-### M10 — Round 001: what to predict, and in what form
+### M10 — Round 001: what to predict, and in what form *(folded into M3 — O45)*
 
 **Short story:** The first real research round — decide which outcomes and prediction forms
 are advisable, by scorecard, not by metric alone.
@@ -255,7 +297,7 @@ non-probability form chosen, the O35 representation decision too.
 
 ---
 
-### M11 — Round 002: improve the chosen target(s)
+### M11 — Round 002: improve the chosen target(s) *(folded into M3 — O45)*
 
 **Short story:** Close the gap to the prototype's targets (AUROC ≥ 0.78; ≥ 0.73 for 65+) for
 what M10 chose.

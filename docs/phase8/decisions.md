@@ -93,12 +93,76 @@ owner chose to implement all of it now, with private bucket(s) and without DVC.
 | O43 | Until the real bucket is wanted, a **local GCS emulator** (`fsouza/fake-gcs-server:1.56.1`, compose service `gcs-emulator`, profile `phase8`) stands in for it, reached by the real `google-cloud-storage` client via `STORAGE_EMULATOR_HOST`. Tests reach it through the `gcs_emulator` fixture, which reuses a running emulator or starts this image itself (O44), so the `gs://` path is tested on every PR. It is a **test stand-in, not a backup** — its storage lives on this workspace's Docker host — and it doesn't enforce retention, IAM or public-access prevention, which exist only in the unapplied Terraform | Accepted | Repo owner's choice to skip creating a GCP bucket for now. Verified before relying on it: the emulator honours the write-once generation precondition (a second create returns 412), and the full real-data path (push 21 originals, verify, AHRQ-down restore of all 7 panels, byte-identical rebuild) runs through it. Preservation is covered separately by the repo owner's off-workspace `file://` copy. |
 | O44 | **Tests that need data populate it; they don't skip.** Session fixtures (`tests/conftest.py`) give every test that asks for them complete, verified data — `meps_cache` fetches any missing panel (local archive → AHRQ → mirrors, checked against the manifest), and sets aside and re-fetches any cached file that doesn't match it; `gcs_emulator` reuses a reachable emulator or starts a container for the session; `meps_emulator_bucket` creates the emulator bucket if absent and tops up any missing data zip. This holds for one test, a file, or the whole suite, run by hand or by CI. A fixture that can't obtain its data **fails** the test; skipping happens only when `OUTCOME_PREDICTION_TESTS_OFFLINE=1` is set deliberately. CI caches the original zips (keyed on the manifest) | Accepted; **supersedes O17's self-skip clause** | Repo owner's requirement: before approving, they need to know the tests actually pass — and a skipped test proves nothing. A green CI run now means every Phase 8 test, including the exact-reproduction checks, executed. The cache keeps CI independent of AHRQ after its first run. |
 
-## Supersession notes
+
+## Third pass — M3, round 001 (iteration 1)
+
+The repo owner asked for M3 to be a multi-prompt, learning-oriented milestone covering *what* to
+predict and *how*, with explicit concepts to try (TF-IDF, autoencoders, random forest with
+per-patient explanations, missing values, feature importance). Results:
+`outcome-prediction-lab/rounds/001-what-and-how/report.md`.
+
+| ID | Decision | Status | Rationale / where it lives |
+|---|---|---|---|
+| O45 | **M10 and M11 are folded into M3.** M3 builds the lab *while* running real rounds, iteratively; it ends when the repo owner decides no further iteration is needed. M10/M11 keep their numbers as markers but carry no separate work | Accepted | Repo owner's choice ("we can always change milestones again"). Building tools in the course of real exploration is better learning than building them first in the abstract. |
+| O46 | MLflow tracking uses a **local SQLite store** (`outcome-prediction-lab/mlflow.db`, gitignored) and is an **optional** `tracking` extra (`mlflow==3.17.1`), best-effort in round scripts | Accepted; **refines O30** | MLflow 3 retired the file store O30 assumed; `mlflow-skinny` can't use SQLite. Heavy dependencies stay optional because a round's committed `metrics.json` is the record (O31). |
+| O47 | **Admission labels count stays that *began* in year 2**; the recommended headline label is **non-obstetric admission** (excludes `RSNINHOS` 4–6) | Accepted for the lab; promotion still via O40 | The prototype's label counts year-2 discharges and includes childbirth; round 001 showed most code-feature gain on it is pregnancy codes predicting deliveries. Non-obstetric admission scores higher (test AUROC 0.795) on a label that means what a care manager means. |
+| O48 | **Death and loss of insurance are learning-only targets**: never promoted from MEPS-only work | Accepted | Kept to teach rare-event evaluation. Any real use needs clinical / fairness governance, not just a model. |
+
+
+## Round 002 — text, tooling and narratives
+
+| ID | Decision | Status | Rationale / where it lives |
+|---|---|---|---|
+| O49 | **Codes are named from the pinned sources only:** ICD-10 and CCSR labels from AHRQ's MEPS documentation pages, Multum drug classes from AHRQ's therapeutic-class table, gaps from the CDC/NCHS ICD-10-CM FY2026 release (public domain, pinned by SHA-256). Unnamed CCSR groups are described by body system; AHRQ-truncated labels end in "…"; one documented override (U07 = COVID-19) | Accepted | No extra licences: HCUP's CCSR file was not used because its download terms aren't stated clearly. `outcome_prediction_lab/vocabulary.py`. |
+| O50 | **Patient narratives are templated and self-explanatory:** full names instead of codes; comparisons with OBSERVED next-year rates among comparable adults in the training panels; the marginal-vs-conditional case named explicitly; race/ethnicity never narrated per patient; a patient's actual outcome never shown | Accepted | Repo owner's requirement (no codes to look up; compare with meaningful aggregates). Showing outcomes would make an explanation a test-panel look; narrating race per patient invites misuse — its influence belongs in aggregate fairness reporting. `narrate.py`. |
+| O51 | **Drug classes use the most specific Multum level available** (TC1S1_1 > TC1S1 > TC1). Round 001's level-3-only behaviour stays available, pinned in its script, so its numbers remain reproducible | Accepted | Level 3 is "inapplicable" for classes without a third level: round 001 gave 34% of fills no class. Measured effect on prediction: nil. |
+
+
+## Round 003 — the portable feature contract
+
+| ID | Decision | Status | Rationale / where it lives |
+|---|---|---|---|
+| O52 | **Production models are trained on the portable contract `meps-portable-v2`** (`outcome_prediction/contract.py`): every input tagged with its FHIR source and a reliability tier (always / usually / rarely / claims-only / not portable). Two tiers of use: records-only customers (`portable-v2`) and customers who also send claims (`portable-v2+claims`). MEPS-only CCSR groups and Multum drug classes are replaced by ICD-10-only code tokens, ICD-10 chapter counts and distinct-medicine counts | Accepted | A model must never depend on an input production can't fill. Cost measured in round 003 (test panels): non-obstetric admission 0.795 → **0.795**, any ER visit 0.739 → **0.740**, high cost 0.850 → **0.834** (with claims). `outcome-prediction-lab/rounds/003-portable-contract/report.md`. |
+| O53 | **Always-missing inputs are dropped and the model retrained — never imputed; sometimes-missing inputs stay, with missingness augmentation** (a pipeline step that hides them for half of training rows, never at scoring). Income is the sometimes-missing case: models are scored with it blanked, as production will be | Accepted | An imputed value is a function of the other inputs, so it adds no information — only silent miscalibration. Augmentation keeps calibration with income blanked (mean prediction 0.0741 vs rate 0.0741, CV). |
+| O54 | **A target is only offered to a customer who can observe its outcome**: admissions and ER visits from records (within the system) or claims; high cost **from claims only** — its production model is the claims-tier one, and the model card states it | Accepted | Without the outcome, a customer can neither validate nor recalibrate the model (scorecard criterion "measurable in customer data", O36). `contract.LABEL_OBSERVABILITY`. |
+
+
+## Focus
+
+| ID | Decision | Status | Rationale / where it lives |
+|---|---|---|---|
+| O55 | **Phase 8 focuses on four predictions only, unless the repo owner explicitly says otherwise:** (1) admission through the emergency room, (2) hospital stay not related to pregnancy or childbirth, (3) any emergency-room visit, (4) being a high-cost patient. All other targets are **parked, not deleted** | Accepted (repo owner, 2026-10-18); **narrows O40** to a choice among these four | All four are event probabilities (native `RiskAssessment`, O3); three are validatable from records, high cost from claims (O54). The decision path and every parked item's location: [`prediction-targets.md`](./prediction-targets.md). |
+
+## Round 004 — readiness of the four focus predictions
+
+| ID | Decision | Status | Rationale / where it lives |
+|---|---|---|---|
+| O56 | **Admission through the ER's production model is `er-admit-v2`** — `meps-portable-v2`, records-only tier, income learned-missing and blanked at scoring. The claims tier adds nothing (CV 0.7798 vs 0.7797) | Accepted | Test AUROC **0.785** (research model 0.788; baseline 0.754); calibrated (0.051 vs 0.049). ER-origin admissions are observable in records or claims (O54). All four focus predictions now have a production-contract model. `outcome-prediction-lab/rounds/004-focus-four-readiness/report.md` §2. |
+| O57 | **Every focus production model ships with a subgroup fairness report** (race/ethnicity, insurance, sex, age band: AUROC with CI, calibration ratio, flag share, cases caught, precision) on its model card; it is a logged test-panel look (`<config>:fairness`). Known findings travel with the model: **uninsured adults are almost never flagged** (labels measure use, not need), calibration bends toward the average by age and insurance, and Black adults' AUROC for non-obstetric stay is lower (0.745 vs 0.787) | Accepted (FR-E6) | `outcome-prediction-lab fairness`; reports in each round's `fairness/`. Phase 8b repeats the check per customer, per group. Race/ethnicity stays out of the inputs and out of per-patient narratives (O50). |
+| O58 | **No separate 65+ model** (FR-M6): the general production models are used for adults 65+ | Accepted | Pre-registered rule (specialist must beat the general model's CV AUROC on 65+ by ≥ +0.005) failed for all four, by 0.020–0.038. 65+ performance and calibration are reported on every model card. Report §4. |
+
+## Closing M3
+
+| ID | Decision | Status | Rationale / where it lives |
+|---|---|---|---|
+| O59 | **The first promotion is the non-obstetric hospital stay (`admit_nonobstetric_y2`), as a probability, via `003-portable-contract/nonobstetric-v2`** on `meps-portable-v2` (records-only tier). M12 serves it beside `meps25-v1`. The person-scored scorecard criteria for all four focus models are recorded (`rounds/*/criteria/*.json`), drafted by Claude and adopted by the repo owner | Accepted (repo owner, 2026-10-18); **resolves O40** | Highest-quality label a records-only customer can validate (test AUROC 0.795, calibrated; top 10% hold 38% of stays); classic care-management signal; scorecard: measurable in records or claims, actionable High, native `RiskAssessment` (O3). Its known fairness findings (O57) travel with it. The other three stay focus predictions for later promotions. |
+| O60 | **M3 is closed**: the workbench is built and rounds 000–004 are complete. The lab stays available; new rounds open on demand under the protocol (O45) | Accepted (repo owner, 2026-10-18) | Every M3 deliverable is met: round 000 reproduces M2 bit for bit; CLI guards are tested; the four focus models have model cards, fairness reports, 65+ checks and full scorecards; O40 decided (O59). |
+
 
 - **O44 supersedes O17's last clause** ("tests that need the MEPS cache self-skip when it's
   absent; MEPS downloads stay out of required CI"). The rest of O17 — artifacts never committed,
   manifest verified before deserialisation, a throwaway model trained on a synthetic fixture for
   service tests — stands. O17's row is left as written, for the record.
+
+- **O52 and O53 resolve O25**: last-year spending is not portable and is dropped from every
+  production model (not imputed); prescription fills and home-health days are claims-only inputs,
+  used only in the `portable-v2+claims` tier. O25's row is left as written, for the record.
+- **O55 narrows O40**: the first promotion is chosen among the four focus predictions (O40 stays
+  open for that choice; the recommendation is non-obstetric admission). O40's row is left as written.
+- **O59 resolves O40**: the first promotion is non-obstetric hospital stay (`nonobstetric-v2`). O40's
+  row is left as written.
+- **O46 refines O30**: same tool (MLflow), different store (SQLite instead of the retired file
+  store), now an optional extra.
 
 Future entries that revise one of the above will say so explicitly here, same convention as
 Phase 4 (`E`-series), Phase 6 (`H`-series) and Phase 7 (`R`-series).

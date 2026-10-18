@@ -103,6 +103,7 @@ OFFLINE_ENV = "OUTCOME_PREDICTION_TESTS_OFFLINE"
 # Must match the gcs-emulator image in docker-compose.yml (checked by test_meps_mirror_emulator).
 GCS_EMULATOR_IMAGE = "fsouza/fake-gcs-server:1.56.1"
 EMULATOR_BUCKET = "phase8-reference-data"
+LONGITUDINAL_KEYS = {f"h{n}" for n in LONGITUDINAL_PANELS.values()}
 
 
 def _offline() -> bool:
@@ -191,9 +192,10 @@ def gcs_emulator():
 
 @pytest.fixture(scope="session")
 def meps_emulator_bucket(gcs_emulator, meps_cache):
-    """`gs://phase8-reference-data` on the emulator, holding every manifest data zip — created
-    if absent, topped up if incomplete, then verified (O44). Documentation is left out: AHRQ
-    may edit its HTML pages, and a cosmetic edit shouldn't fail a data test."""
+    """`gs://phase8-reference-data` on the emulator, holding the longitudinal panels' data zips —
+    created if absent, topped up if incomplete, then verified (O44). Limited to what the tests
+    use (the manifest also pins the lab's event files, ~95 MB more). Documentation is left out:
+    AHRQ may edit its HTML pages, and a cosmetic edit shouldn't fail a data test."""
     from google.api_core.exceptions import Conflict
     from google.cloud import storage
 
@@ -207,10 +209,11 @@ def meps_emulator_bucket(gcs_emulator, meps_cache):
         pass                                            # already exists: top it up below
     manifest = load_manifest()
     archive = meps_cache / "archive"
-    ensure_archive(manifest, archive, include_docs=False)
+    keys = LONGITUDINAL_KEYS
+    ensure_archive(manifest, archive, include_docs=False, keys=keys)
     mirror = from_uri(f"gs://{EMULATOR_BUCKET}")
-    push(manifest, archive, [mirror], include_docs=False)
-    problems = verify(manifest, [mirror], include_docs=False)
+    push(manifest, archive, [mirror], include_docs=False, keys=keys)
+    problems = verify(manifest, [mirror], include_docs=False, keys=keys)
     if problems:
         pytest.fail("emulator bucket failed verification:\n" + "\n".join(problems), pytrace=False)
     return mirror

@@ -1,0 +1,9 @@
+{
+  "name": "meps25-v1-comparison",
+  "label": "label_hosp_12m",
+  "task": "binary",
+  "features": "prototype",
+  "outcome_phrase": "at least one inpatient discharge (the prototype's label; includes childbirth)",
+  "model": "meps25-v1-comparison",
+  "description": "M2's comparison model (age and any prior stay), fitted by the service's own code."
+}

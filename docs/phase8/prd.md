@@ -9,7 +9,7 @@ the `RiskAssessment` shape, scoring-mode semantics, the FHIR mapping sketch, art
 agent's tool contract, testing, and the prototype defects found in review.
 **Milestone plan:** [`milestone-plan.md`](./milestone-plan.md) — M1–M13, kept as its own
 document, same convention as Phase 6 (`phase6/decisions.md` H23) and Phase 7.
-**Decision index:** [`decisions.md`](./decisions.md) — `O1`–`O44`.
+**Decision index:** [`decisions.md`](./decisions.md) — `O1`–`O60`.
 **Experimentation protocol:** [`experimentation-protocol.md`](./experimentation-protocol.md) —
 the standing runbook for research rounds in `outcome-prediction-lab` (second pass, §12).
 **Prototype baseline:** [`prototype-baseline.md`](./prototype-baseline.md) — data choices,
@@ -55,6 +55,7 @@ hand-checkable comparison score** and its top reasons, and every reported metric
 | Input path | FHIR from `fhir-service` via `client/clinical`, this phase (O8, O9). |
 | Agent | New `outcome-prediction-agent/` on `agent-platform`; `mcp-agent` untouched; self-hosted LLM by default (O15, O16). |
 | Exposure | Internal-only; no Kong route (O14). |
+| **Focus (O55)** | Four predictions only, unless the repo owner says otherwise: admission through the ER; hospital stay not related to pregnancy or childbirth; any ER visit; being a high-cost patient. Other targets parked, not deleted — [`prediction-targets.md`](./prediction-targets.md). |
 | **Experimentation track** | **Second pass** — a dedicated workbench, `outcome-prediction-lab/`, built once (M3) and used by every later research round under a standing protocol; milestones are never reopened (O28–O31). |
 | **Holdout and promotion** | **Second pass** — test panels only for logged confirmation (O32); nothing reaches the service without a promotion record and a decision entry (O33). |
 | **Prediction space** | **Second pass** — explore outcome × form: which outcomes, and as probability, count, cost or tier (O34); serving a non-probability form needs a decision revisiting O3 (O35); judged on a scorecard with non-ML criteria (O36). |
@@ -152,7 +153,7 @@ milestone shown), **Changed** (in, but altered — see §11), **8b** (deferred t
 | FR-M3 | Temporal validation: train panels 21–25, test 26–27 | In — M2 |
 | FR-M4 | Release model on all panels, with feature list, categories, library versions, data hash | Changed — M2: plus SHA-256 manifest verified before load (O17) |
 | FR-M5 | Panel-grouped CV tuning on training panels only | In — M11 |
-| FR-M6 | Separate or specially tuned model for 65+ | In — M11 |
+| FR-M6 | Separate or specially tuned model for 65+ | Done — M3 round 004: checked; general models win, no separate 65+ model (O58) |
 | FR-M7 | Recalibration on a customer's own data | 8b — needs customer outcomes |
 | FR-M8 | Per-patient explanations (top contributing features) | In — M7 |
 
@@ -165,7 +166,7 @@ milestone shown), **Changed** (in, but altered — see §11), **8b** (deferred t
 | FR-E3 | Subgroup AUROC by age band, sex, prior hospitalization | In — M2 |
 | FR-E4 | Permutation importance on test panels | In — M2 |
 | FR-E5 | Survey-weighted AUROC (`LONGWT`) | In — M2 |
-| FR-E6 | Fairness metrics by race/ethnicity and insurance type | In — M11 |
+| FR-E6 | Fairness metrics by race/ethnicity and insurance type | Done — M3 round 004: on every focus model card (O57) |
 
 ### ETL
 
@@ -212,7 +213,7 @@ milestone shown), **Changed** (in, but altered — see §11), **8b** (deferred t
 | FR-X1 | `outcome-prediction-lab` runs candidates from committed configs (label, form, contract version, model family, search space, seeds) and tracks every run locally with data checksums, code commit and metrics | In — M3 |
 | FR-X2 | Exploration evaluates only by panel-grouped CV on training panels; the CLI refuses configs that name test panels | In — M3 |
 | FR-X3 | Test-panel confirmation requires a holdout-ledger entry; the CLI refuses otherwise | In — M3 |
-| FR-X4 | Each round leaves a committed directory: pre-registration, configs, report, summary metrics, scorecards | In — M3 (round 000), then every round |
+| FR-X4 | Each round leaves a committed directory: pre-registration, configs, report, summary metrics, scorecards | Done — M3 rounds 000–004; every later round |
 | FR-X5 | Target scorecard covering the O36 criteria, ML criteria filled automatically, non-ML criteria with written rationale | In — M3 |
 | FR-X6 | Model card for every candidate and promoted model | In — M3 |
 | FR-X7 | Outcome × form study with a recorded decision on what to take forward | In — M10 |
@@ -281,10 +282,10 @@ PPV on the unplanned label reported against QAdmissions' 42% with the outcome di
 
 Resolved: see `decisions.md` O1–O22 (first pass), O28–O39 (second pass, experimentation) and O41–O44 (data provenance and testing).
 
-Still open: O23 (MEPS commercial use, a legal question), O24 (qualitative bands), O25
-(non-portable features), O26 (FHIR vs claims as primary customer input), O27 (code-list
-sign-off), O40 (which outcome(s) and form(s) to promote first — decided by M10's scorecards,
-which also settles any-stay vs unplanned-stay as the headline label). Carried over unchanged
+Still open: O23 (MEPS commercial use, a legal question), O24 (qualitative bands), O26 (FHIR vs
+claims as primary customer input), O27 (code-list sign-off). Resolved since: O25 (non-portable
+features — by O52/O53) and O40 (first promotion — by O59: non-obstetric hospital stay, which also
+settles any-stay vs unplanned-stay as the headline label). Carried over unchanged
 from the prototype's plan: which cloud hosts production (Phase 8b).
 
 **Risks carried over from the prototype's plan** (`prototype-baseline.md` §9) — AHRQ declining commercial use, an employer

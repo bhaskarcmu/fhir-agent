@@ -1,0 +1,143 @@
+{
+  "n_training_names": 4904,
+  "n_test_names_unseen": 656,
+  "n_test_names_seen_before": 1549,
+  "exact_lookup": {
+    "class_accuracy_on_unseen": 0.0,
+    "class_accuracy_on_seen": 0.9715945771465462
+  },
+  "word_tfidf_1nn": {
+    "class_accuracy": 0.6844512195121951,
+    "top_class_accuracy": 0.774390243902439,
+    "share_with_no_overlap": 0.11890243902439024,
+    "examples": [
+      {
+        "name": "ABILIFY MAINTENANCE ER",
+        "matched": "ABILIFY",
+        "correct_class": true
+      },
+      {
+        "name": "ADAPLENS-BNZYL PEROX",
+        "matched": "CLINDAMYCIN PHOS/BENZOYL PEROX",
+        "correct_class": true
+      },
+      {
+        "name": "ADHANSIA XR",
+        "matched": "METFORMIN XR",
+        "correct_class": false
+      },
+      {
+        "name": "ADVAIR DISKU AER 250/50",
+        "matched": "ADVAIR DISKU AER",
+        "correct_class": true
+      },
+      {
+        "name": "ADVAIR DISKU AER 500/50",
+        "matched": "ADVAIR DISKU AER",
+        "correct_class": true
+      },
+      {
+        "name": "ADVAIR HFA AER 115/21",
+        "matched": "ADVAIR HFA AER",
+        "correct_class": true
+      },
+      {
+        "name": "AFRIN 12 HR",
+        "matched": "AFRIN",
+        "correct_class": true
+      },
+      {
+        "name": "AGENTS FOR HYPERTENSIVE EMERGENCIES",
+        "matched": "AGENTS FOR PULMONARY HYPERTENSION",
+        "correct_class": false
+      },
+      {
+        "name": "ALAHIST D",
+        "matched": "ALAHIST DM",
+        "correct_class": true
+      },
+      {
+        "name": "ALBUTEROL / IPRATROPIUM 120D",
+        "matched": "IPRATROPIUM-ALBUTEROL",
+        "correct_class": true
+      },
+      {
+        "name": "ALBUTEROL HFA INH (200 PUFFS) 18 GM",
+        "matched": "ALBUTEROL HFA",
+        "correct_class": true
+      },
+      {
+        "name": "ALBUTEROL HFA INH (200 PUFFS) 8.5GM",
+        "matched": "ALBUTEROL HFA",
+        "correct_class": true
+      }
+    ]
+  },
+  "char_ngram_tfidf_1nn": {
+    "class_accuracy": 0.725609756097561,
+    "top_class_accuracy": 0.8246951219512195,
+    "share_with_no_overlap": 0.0,
+    "examples": [
+      {
+        "name": "ABILIFY MAINTENANCE ER",
+        "matched": "ABILIFY MAIN",
+        "correct_class": true
+      },
+      {
+        "name": "ADAPLENS-BNZYL PEROX",
+        "matched": "ADAPALENE",
+        "correct_class": true
+      },
+      {
+        "name": "ADHANSIA XR",
+        "matched": "LARISSIA",
+        "correct_class": false
+      },
+      {
+        "name": "ADVAIR DISKU AER 250/50",
+        "matched": "ADVAIR DISKU AER",
+        "correct_class": true
+      },
+      {
+        "name": "ADVAIR DISKU AER 500/50",
+        "matched": "ADVAIR DISKU AER",
+        "correct_class": true
+      },
+      {
+        "name": "ADVAIR HFA AER 115/21",
+        "matched": "ADVAIR HFA AER",
+        "correct_class": true
+      },
+      {
+        "name": "AFRIN 12 HR",
+        "matched": "AFRIN",
+        "correct_class": true
+      },
+      {
+        "name": "AGENTS FOR HYPERTENSIVE EMERGENCIES",
+        "matched": "AGENTS FOR PULMONARY HYPERTENSION",
+        "correct_class": false
+      },
+      {
+        "name": "ALAHIST D",
+        "matched": "ALAHIST DM",
+        "correct_class": true
+      },
+      {
+        "name": "ALBUTEROL / IPRATROPIUM 120D",
+        "matched": "ALBUTEROL IPRATROPIUM",
+        "correct_class": true
+      },
+      {
+        "name": "ALBUTEROL HFA INH (200 PUFFS) 18 GM",
+        "matched": "ALBUTEROL HFA",
+        "correct_class": true
+      },
+      {
+        "name": "ALBUTEROL HFA INH (200 PUFFS) 8.5GM",
+        "matched": "ALBUTEROL HFA",
+        "correct_class": true
+      }
+    ]
+  }
+}

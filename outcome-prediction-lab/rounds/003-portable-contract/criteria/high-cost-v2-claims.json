@@ -1,0 +1,23 @@
+{
+  "_scored_by": "Repo owner, 2026-10-18 (drafted by Claude, adopted by the repo owner; decisions.md O59)",
+  "measurable_in_customer_data": {
+    "score": "Claims only (O54)",
+    "rationale": "Total next-year spending needs paid claims across all providers; records hold one system's charges."
+  },
+  "actionable": {
+    "score": "Medium \u2014 finance, not need",
+    "rationale": "Useful for budgeting and programme sizing. Must NOT be used alone to allocate care: cost-based targeting under-serves groups with less access to care (Obermeyer et al., 2019; round 004 found uninsured adults almost never flagged)."
+  },
+  "lead_time": {
+    "score": "Good",
+    "rationale": "12-month horizon from a year of history: weeks to months to act for most patients; little lead time for events in the first weeks."
+  },
+  "fhir_representability": {
+    "score": "Native",
+    "rationale": "A 12-month event probability maps directly onto RiskAssessment.prediction.probabilityDecimal (O3)."
+  },
+  "regulatory_posture": {
+    "score": "Non-device; fairness review needed",
+    "rationale": "Financial use is outside clinical decision support, but resource-allocation use needs a documented fairness review per customer (O57)."
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "config": {
+    "name": "meps25-v1",
+    "label": "label_hosp_12m",
+    "task": "binary",
+    "features": "prototype",
+    "outcome_phrase": "at least one inpatient discharge (the prototype's label; includes childbirth)",
+    "model": "meps25-v1",
+    "description": "M2's reference gradient-boosting model, fitted by the service's own code."
+  },
+  "cv": {
+    "n": 44497,
+    "rate": 0.08490460031013326,
+    "auroc": 0.7682989840465697,
+    "auprc": 0.26194529340337347,
+    "brier": 0.07018693217540929,
+    "mean_pred": 0.08425401973762772,
+    "top10_ppv": 0.29287480332659027,
+    "top10_sensitivity": 0.34489147697194283,
+    "auroc_65plus": 0.6985429208981733
+  },
+  "provenance": {
+    "at": "2026-10-18T14:46:41+00:00",
+    "git_commit": "c21cae0d847353a37cd653993b957f0980701c9b",
+    "manifest_sha256": "8467b5410f00e9812d9be182dca0eaac23607f92efb0166775d23abed36fd7e6"
+  }
+}

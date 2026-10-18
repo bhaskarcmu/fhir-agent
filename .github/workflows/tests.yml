@@ -192,6 +192,25 @@ jobs:
       - name: Run Phase 8 test suites
         run: pytest outcome-prediction-service/src/outcome_prediction/tests -q -rs
 
+  # The experimentation lab needs Python 3.12 (shap >= 0.52 requires it), so it gets its own job;
+  # the service above stays on the repo's 3.11. Unit tests only — synthetic data, no MEPS download.
+  phase8-lab:
+    name: phase8 lab (python 3.12)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the lab (and the service it imports)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e "outcome-prediction-service[dev]" -e "outcome-prediction-lab[dev]"
+      - name: Run the lab's tests
+        run: pytest outcome-prediction-lab/src/outcome_prediction_lab/tests -q -rs
+      - name: Notebooks are committed without outputs (decisions.md O38)
+        run: outcome-prediction-lab notebooks-check
+
   # ── Phase 3 Terraform stubs ──────────────────────────────────────────────────
   # `terraform validate` only -- not `plan` or `apply`. Plan needs live GCP provider
   # credentials this project doesn't provision (verified, not assumed: the google provider

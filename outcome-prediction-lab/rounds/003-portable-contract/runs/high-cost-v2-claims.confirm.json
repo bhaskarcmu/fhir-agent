@@ -1,0 +1,54 @@
+{
+  "config": {
+    "name": "high-cost-v2-claims",
+    "label": "high_cost_y2",
+    "task": "binary",
+    "model": "gbm",
+    "params": "tuned",
+    "baseline_inputs": [
+      "agey1x",
+      "ipdisy1",
+      "ertoty1"
+    ],
+    "outcome_phrase": "health care costs among the highest 10% of adults",
+    "features": "portable-v2+claims",
+    "text": [
+      "icd_lsa"
+    ],
+    "augment_missing": {
+      "povcaty1": 0.5
+    },
+    "simulate_missing_at_scoring": [
+      "povcaty1"
+    ],
+    "description": "Production contract plus claims-only inputs (prescription fills, home-health days)."
+  },
+  "test": {
+    "n": 11863,
+    "rate": 0.10005900699654388,
+    "auroc": 0.8344791031099682,
+    "auprc": 0.41855118252557144,
+    "brier": 0.07224207317098137,
+    "mean_pred": 0.10477679849080285,
+    "top10_ppv": 0.43591905564924116,
+    "top10_sensitivity": 0.43555181128896375,
+    "auroc_65plus": 0.7822230618501294
+  },
+  "provenance": {
+    "at": "2026-10-18T02:10:59+00:00",
+    "git_commit": "409fcf7a93b1b41477ccb1c0fcd870b254617b53",
+    "manifest_sha256": "8467b5410f00e9812d9be182dca0eaac23607f92efb0166775d23abed36fd7e6"
+  },
+  "test_baseline": {
+    "n": 11863,
+    "rate": 0.10005900699654388,
+    "auroc": 0.7216030381587972,
+    "auprc": 0.24893369203630636,
+    "brier": 0.08371753641940809,
+    "mean_pred": 0.10847448816913147,
+    "top10_ppv": 0.2900505902192243,
+    "top10_sensitivity": 0.2898062342038753,
+    "auroc_65plus": 0.6336112476901707
+  },
+  "fitted_model_sha256": "f8d95eeed8e7634abcf1a7388ddb31b7fcb367cc465852864dfb76f6535396ef"
+}
