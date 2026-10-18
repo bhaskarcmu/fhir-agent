@@ -4361,8 +4361,10 @@ Proceed to the next milestone that makes logical sense after this one
 
 Cleaned up. The remaining milestones are M12 (first promotion into the service) and M13 (versioned code lists). Which comes first depends on their dependencies, so I'm reading both:
 
+Every draft prefix exists in the CDC FY2026 release. Creating the branch. **Git:** worktree `/workspaces/fhir-agent`, from `main`, new branch `feature/phase8-m13-code-lists`.
+
 <details>
-<summary>Execution details — 871 tool events</summary>
+<summary>Execution details — 876 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6568,6 +6570,20 @@ m = json.loads(subprocess.run(["unzip","-p","outcome-prediction-service/data/raw
 import json, subprocess, re, pandas as pd
 from outcome_prediction.etl.transform.to_contract import DX_PATTERNS
 m = json.loads(subprocess.run(["unzip","-p","outcome-prediction-service…`
+- **Bash** `sed -n 28,42p outcome-prediction-lab/src/outcome_prediction_lab/vocabulary.py; grep -n "def obtain_original" -B2 -A6 outcome-prediction-service/src/outcome_prediction/meps/*.py outcome-prediction-lab/…`
+- **Bash** `sed -n 140,175p outcome-prediction-lab/src/outcome_prediction_lab/vocabulary.py; grep -n "ICD10CM" outcome-prediction-lab/src/outcome_prediction_lab/*.py outcome-prediction-lab/src/outcome_prediction_…`
+- **Bash** `python3 - <<'EOF'
+import io, zipfile
+from outcome_prediction.meps.download import obtain_original
+from outcome_prediction.meps.manifest import archive_dir
+url = "https://ftp.cdc.gov/pub/Health_Statist…`
+- **Bash** `git switch -q -c feature/phase8-m13-code-lists && git branch --show-current && mkdir -p outcome-prediction-service/src/outcome_prediction/etl/codelists`
+- **Bash** `python3 - <<'EOF'
+import io, json, zipfile
+from pathlib import Path
+from outcome_prediction.meps.download import obtain_original
+from outcome_prediction.meps.manifest import archive_dir
+url = "https:/…`
 
 </details>
 
@@ -6578,6 +6594,6 @@ m = json.loads(subprocess.run(["unzip","-p","outcome-prediction-service…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 20:46 UTC
+- **Last updated:** 18 October 2026, 20:48 UTC
 - **Turns:** 61
 - **Status:** Complete
