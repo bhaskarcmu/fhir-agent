@@ -3808,8 +3808,14 @@ Java 21 and Docker are available. Checking how the repo pins and runs Synthea v4
 
 There's a discrepancy: O11 says "the repo's pinned Synthea v4.0.0", but `generate.sh` pins **3.3.0**. Checking which releases actually exist:
 
+Nothing needs your input yet. Starting M4 on a feature branch. Worktree: `/workspaces/fhir-agent`, branch `main`, new branch `feature/phase8-m4-synthea-harness`.
+
+The checksum matches GitHub's published digest, so I'll pin it. Checking v4.0.0's command-line flags:
+
+Running a 20-patient trial with both exports, to check the v4.0.0 CSV schema, timing and output size before the full run:
+
 <details>
-<summary>Execution details — 547 tool events</summary>
+<summary>Execution details — 553 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5198,6 +5204,12 @@ p = Path(sys.argv[1]); s = p.read_text(…`
 - **Bash** `grep -rn -i "synthea" --include=*.md --include=*.yaml --include=*.yml --include=*.sh --include=*.py --include=Makefile --include=*.json . 2>/dev/null | grep -iE "jar|v4|4\.0\.0|download|java -jar|run_…`
 - **Bash** `sed -n 1,130p data/scripts/generate.sh; sed -n 40,80p data/synthea/synthea.properties; ls -la data/synthea data/sample | head; sed -n 245,265p docs/phase8/prototype-baseline.md; grep -n "criterion 4\|…`
 - **Bash** `gh api repos/synthetichealth/synthea/releases --jq '.[] | "\(.tag_name)  \(.published_at)  \(.assets | map(.name + " " + (.size|tostring)) | join(", "))"' 2>&1 | head -8; git log --oneline -3 -- data/…`
+- **Bash** `sed -n 250,275p docs/phase8/prd.md; grep -n "FR-F3\|FR-D4\|FR-S4\|Synthea" docs/phase8/prd.md | head; cat outcome-prediction-service/pyproject.toml; cat outcome-prediction-service/src/outcome_predicti…`
+- **Bash** `git switch -q -c feature/phase8-m4-synthea-harness && git branch --show-current; cat outcome-prediction-service/.gitignore 2>/dev/null; git check-ignore -v outcome-prediction-service/data/synthea/x ou…`
+- **Bash** `mkdir -p /workspaces/fhir-agent/outcome-prediction-service/data/raw/synthea && cd /workspaces/fhir-agent/outcome-prediction-service/data/raw/synthea && curl -sSL -o synthea-4.0.0.jar https://github.co…`
+- **Bash** `timeout 60 java -jar synthea-4.0.0.jar -h 2>&1 | head -40`
+- **Bash** `rm -rf trial && /usr/bin/time -f "%e s, %M KB" timeout 600 java -Xmx4g -jar synthea-4.0.0.jar -s 42 -cs 42 -p 20 -a 18-90 -e 20241231 --exporter.baseDirectory=./trial/ --exporter.csv.export=true --exp…`
+- **Bash** `rm -rf trial && SECONDS=0; timeout 600 java -Xmx4g -jar synthea-4.0.0.jar -s 42 -cs 42 -p 20 -a 18-90 -e 20241231 --exporter.baseDirectory=./trial/ --exporter.csv.export=true --exporter.fhir.export=tr…`
 
 </details>
 
@@ -5208,6 +5220,6 @@ p = Path(sys.argv[1]); s = p.read_text(…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 15:36 UTC
+- **Last updated:** 18 October 2026, 15:37 UTC
 - **Turns:** 50
 - **Status:** Complete
