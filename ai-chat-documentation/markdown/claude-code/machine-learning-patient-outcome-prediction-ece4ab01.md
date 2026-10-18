@@ -2622,8 +2622,10 @@ All 11 lab tests pass. The cross-validation run is still in the background; I'll
 
 MLflow 3 has retired its file-based store, and the "skinny" package can't use the SQLite store it now requires. I'll try the full `mlflow` package; it's lab-only, so the extra weight is acceptable.
 
+The first attempt only installed partly; this time everything installed. Re-testing SQLite tracking:
+
 <details>
-<summary>Execution details — 344 tool events</summary>
+<summary>Execution details — 346 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3386,6 +3388,10 @@ try:
 - **Bash** `python -m pip install -q "mlflow" 2>&1 | tail -1; MLFLOW_DISABLE_AGENT_HINT=1 python -W ignore - <<'EOF' 2>&1 | tail -2
 import mlflow
 mlflow.set_tracking_uri("sqlite:////tmp/claude-1000/-workspaces-fh…`
+- **Bash** `python -m pip install "mlflow" 2>&1 | grep -iE "error|conflict|Successfully|already satisfied: mlflow " | head -8; python -m pip show mlflow alembic 2>/dev/null | grep -E "^(Name|Version)"`
+- **Bash** `MLFLOW_DISABLE_AGENT_HINT=1 python -W ignore - <<'EOF' 2>&1 | tail -2
+import mlflow
+mlflow.set_tracking_uri("sqlite:////tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scra…`
 
 </details>
 
@@ -3396,6 +3402,6 @@ mlflow.set_tracking_uri("sqlite:////tmp/claude-1000/-workspaces-fh…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 00:31 UTC
+- **Last updated:** 18 October 2026, 00:32 UTC
 - **Turns:** 32
 - **Status:** Complete
