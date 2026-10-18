@@ -3927,8 +3927,14 @@ Cleaned up. Now M5. Reading its scope and the existing clinical client:
 
 The compose `fhir` service is `hapiproject/hapi:v7.2.0`. Checking its settings so a throwaway container behaves the same:
 
+While HAPI starts, I'm creating the M5 branch. **Git:** worktree `/workspaces/fhir-agent`, from `main`, new branch `feature/phase8-m5-clinical-client`.
+
+HAPI is ready. Loading the 5-patient run (hospitals and practitioners first) with the repo's own loader:
+
+The loader sorts filenames, and the uppercase patient files sort *before* `hospitalInformation…`, so their conditional references would fail. I'll post the bundles myself in the right order:
+
 <details>
-<summary>Execution details — 617 tool events</summary>
+<summary>Execution details — 626 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5465,6 +5471,17 @@ for f in glob.glob("*.json"):
 - **Bash** `cd /workspaces/fhir-agent && ls docker-compose*.yml compose*.yml 2>/dev/null; grep -n "fhir:\|fhir-service:\|image:\|build:\|profiles" docker-compose.yml 2>/dev/null | head -20; ls fhir-service/target…`
 - **Bash** `cd /workspaces/fhir-agent && sed -n 13,34p docker-compose.yml; sed -n 1,40p data/scripts/load.py | grep -n "def \|transaction\|FHIR_BASE"`
 - **Bash** `cd /workspaces/fhir-agent/outcome-prediction-service/data/raw/synthea && rm -rf fhir-5-s42 && (java -Xmx4g -jar synthea-4.0.0.jar -s 42 -cs 42 -p 5 -a 18-90 -e 20241231 --exporter.baseDirectory=./fhir…`
+- **Bash** `cd /workspaces/fhir-agent/outcome-prediction-service/data/raw/synthea && tail -5 fhir-5-s42.log; find . -maxdepth 3 -newer synthea-4.0.0.jar -type d | head; ls`
+- **Bash** `ls -la fhir-5-s42 | head; ls az-3000-s42/fhir | head -3; ls az-3000-s42/fhir | wc -l; ls -la --time-style=+%H:%M az-3000-s42/fhir | head -4`
+- **Bash** `ls fhir-5-s42/fhir; du -sh fhir-5-s42/fhir; curl -s -o /dev/null -w "hapi %{http_code}\n" localhost:8090/fhir/metadata`
+- **Bash** `for i in $(seq 1 90); do c=$(curl -s -o /dev/null -w "%{http_code}" localhost:8090/fhir/metadata); [ "$c" = 200 ] && echo "hapi ready after ${i}x2s" && exit 0; sleep 2; done; echo "hapi NOT ready"; do…`
+- **Bash** `cd /workspaces/fhir-agent && git switch -q -c feature/phase8-m5-clinical-client && git branch --show-current && grep -rn "from fhir_clinical_client import\|fhir_clinical_client\." --include=*.py . | g…`
+- **Bash** `cat /tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/tasks/bnj6cvk5q.output; python3 data/scripts/load.py --help 2>&1 | head -15`
+- **Bash** `sed -n 1,40p data/scripts/load.py | grep -n "SAMPLE\|dir\|argv\|ENV\|environ"`
+- **Bash** `sed -n 24,34p data/scripts/load.py; grep -n "hospitalInformation\|practitioner\|sorted\|glob" data/scripts/load.py | head`
+- **Bash** `cd /workspaces/fhir-agent/outcome-prediction-service/data/raw/synthea/fhir-5-s42/fhir && python3 - <<'EOF'
+import json, glob, urllib.request
+files = sorted(glob.glob("hospital*.json")) + sorted(glob.g…`
 
 </details>
 
@@ -5475,6 +5492,6 @@ for f in glob.glob("*.json"):
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 16:16 UTC
+- **Last updated:** 18 October 2026, 16:18 UTC
 - **Turns:** 52
 - **Status:** Complete
