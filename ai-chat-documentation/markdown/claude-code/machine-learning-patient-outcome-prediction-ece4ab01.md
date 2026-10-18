@@ -3871,10 +3871,12 @@ Nothing needs your input yet.
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+The "Supersession notes" heading is gone from `decisions.md` on `main`. Nothing was written (the script failed on its first edit). Checking what the merged file looks like:
+
+My M3-closing commit (`befdbb59`) dropped the "## Supersession notes" heading from `decisions.md`. Checking the diff to see how:
 
 <details>
-<summary>Execution details — 590 tool events</summary>
+<summary>Execution details — 595 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5349,6 +5351,19 @@ from sklearn.metrics import roc_auc_score
 from outcome_prediction.etl.extract import synthea_csv
 from outcome_prediction.…`
 - **Bash** `grep -n "^| O5[0-9] \|^| O6" docs/phase8/decisions.md | cut -c1-12; grep -n "^## " docs/phase8/decisions.md | tail -5`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+def sub(path, old, new):
+    p = Path(path); s = p.read_text(); assert s.count(old) == 1, (path, old[:70]); p.write_text(s.replace(old, new))
+D = "docs/phase…`
+- **Bash** `grep -n "Supersession" docs/phase8/decisions.md; git diff --stat docs/`
+- **Bash** `wc -l docs/phase8/decisions.md; tail -25 docs/phase8/decisions.md | cut -c1-160; git log --oneline -3 -- docs/phase8/decisions.md`
+- **Bash** `git show befdbb59 -- docs/phase8/decisions.md | head -30 | cut -c1-120`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+def sub(path, old, new):
+    p = Path(path); s = p.read_text(); assert s.count(old) == 1, (path, old[:70]); p.write_text(s.replace(old, new))
+D = "docs/phase…`
 
 </details>
 
@@ -5359,6 +5374,6 @@ from outcome_prediction.…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 15:49 UTC
+- **Last updated:** 18 October 2026, 15:50 UTC
 - **Turns:** 51
-- **Status:** Incomplete
+- **Status:** Complete
