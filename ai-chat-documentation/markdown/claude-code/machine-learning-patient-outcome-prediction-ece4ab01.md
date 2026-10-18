@@ -3822,8 +3822,12 @@ Now `to_contract.py`, the prototype's rules from `prototype-baseline.md` §6.3 a
 
 Now the commit-1 tests. They cover the fixture's schema, the `coronary` regression case, the pinned generation command, and the checksum guard:
 
+First, the boundary filter in `canonical.py`:
+
+Now `to_contract.py`. I'm rewriting it around one `contract_rows(view, as_of)` used by both modes, and keeping the prototype function, renamed, as the reference:
+
 <details>
-<summary>Execution details — 573 tool events</summary>
+<summary>Execution details — 576 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5243,6 +5247,9 @@ s…`
 - **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/tests/test_etl_synthea.py`
 - **Bash** `sed -i '/^import numpy as np$/d' outcome-prediction-service/src/outcome_prediction/etl/synthea.py && PYTHONWARNINGS=ignore python -m pytest outcome-prediction-service/src/outcome_prediction/tests/test…`
 - **Bash** `git add outcome-prediction-service/src/outcome_prediction/etl outcome-prediction-service/src/outcome_prediction/tests/test_etl_synthea.py outcome-prediction-service/src/outcome_prediction/tests/fixtur…`
+- **Read** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/etl/transform/to_contract.py`
+- **Edit** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/etl/canonical.py`
+- **Read** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/etl/transform/to_contract.py`
 
 </details>
 
@@ -5253,6 +5260,6 @@ s…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 15:44 UTC
+- **Last updated:** 18 October 2026, 15:45 UTC
 - **Turns:** 50
 - **Status:** Complete
