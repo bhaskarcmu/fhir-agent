@@ -4090,8 +4090,14 @@ First, add the "typical adult" row to the MEPS aggregates (median for numbers, m
 
 `dateutil` is only an indirect dependency (through pandas), so I'll use pandas' own date offset rather than rely on it:
 
+Next, OpenTelemetry. I'm copying triage-service's small setup rather than sharing it, as triage's own docstring argues for deterministic services. Then the API:
+
+Two things I don't like on rereading. The `regiony1` warning expression is convoluted. And a blanket `ValueError` → 422 handler would disguise genuine bugs as client errors. Fixing both:
+
+Now the dependencies and tests. Looking at how existing tests build a throwaway artifact from synthetic data (design §8 requires CI to run without MEPS):
+
 <details>
-<summary>Execution details — 734 tool events</summary>
+<summary>Execution details — 740 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5942,6 +5948,21 @@ from outcome_prediction.scoring impo…`
 from pathlib import Path
 p = Path("outcome-prediction-service/src/outcome_prediction/fhir/risk_assessment.py"); s = p.read_text()
 for old, new in [("from dateutil.relativedelta impor…`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/observability.py`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/api.py`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-service/src/outcome_prediction/api.py"); s = p.read_text()
+def sub(old, new):
+    global s; assert s.count(old) == 1, old[:60];…`
+- **Bash** `grep -n "def \|fixture" outcome-prediction-service/src/outcome_prediction/tests/conftest.py | head -30; grep -n "def test\|write_artifact\|fit_release\|build_metadata" outcome-prediction-service/src/o…`
+- **Bash** `grep -n "def test\|train(" outcome-prediction-service/src/outcome_prediction/tests/test_model_training.py | head; sed -n 94,110p outcome-prediction-service/src/outcome_prediction/model/train.py`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-service/pyproject.toml"); s = p.read_text()
+old = '''dev = ["pytest>=8"]'''
+new = '''dev = ["pytest>=8", "httpx>=0.27"]
+# The sc…`
 
 </details>
 
@@ -5952,6 +5973,6 @@ for old, new in [("from dateutil.relativedelta impor…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 17:22 UTC
+- **Last updated:** 18 October 2026, 17:23 UTC
 - **Turns:** 54
 - **Status:** Complete
