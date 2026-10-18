@@ -4459,7 +4459,7 @@ The model card's metrics differ by contract: v1 nests its AUROC under `gbm`, v2 
 The suite now has 9 tests. Running it from **cold**, so it rebuilds the image with all the M12 code and brings up the whole stack itself:
 
 <details>
-<summary>Execution details — 958 tool events</summary>
+<summary>Execution details — 961 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6880,6 +6880,11 @@ class TestNoCachedSearches:
     before a car…`
 - **Bash** `docker compose --profile phase8 up -d fhir outcome-prediction 2>&1 | tail -1; docker run -d --rm --name phase8-m12-ollama -p 11434:11434 -v phase8-ollama-models:/root/.ollama ollama/ollama:0.6.5 >/dev…`
 - **Bash** `curl -s -X POST localhost:11434/api/pull -d '{"name":"llama3.2:1b"}' | tail -1; for i in 1 2 3 4 5 6; do out=$(OUTCOME_PREDICTION_URL=http://localhost:8005 OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1…`
+- **Bash** `docker stop phase8-m12-ollama >/dev/null 2>&1; docker compose --profile phase8 rm -sf fhir outcome-prediction 2>&1 | tail -1; python3 - <<'EOF'
+from pathlib import Path
+p = Path("docs/demo-guide.md");…`
+- **Bash** `grep -n "M12" docs/phase8/prd.md docs/phase8/design.md docs/phase8/experimentation-protocol.md outcome-prediction-lab/README.md | cut -c1-180`
+- **Bash** `grep -n "promote" docs/phase8/experimentation-protocol.md outcome-prediction-lab/README.md docs/phase8/design.md | cut -c1-220; grep -n "^| O33 " docs/phase8/decisions.md | cut -c1-300`
 
 </details>
 
@@ -6890,6 +6895,6 @@ class TestNoCachedSearches:
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 21:58 UTC
+- **Last updated:** 18 October 2026, 21:59 UTC
 - **Turns:** 63
 - **Status:** Complete
