@@ -4458,8 +4458,12 @@ The model card's metrics differ by contract: v1 nests its AUROC under `gbm`, v2 
 
 The suite now has 9 tests. Running it from **cold**, so it rebuilds the image with all the M12 code and brings up the whole stack itself:
 
+On rereading, the design §8 paragraph I just wrote ends with a garbled sentence ("…refused an artifact … only in plan"). Fixing it:
+
+Now the service README (both routes and the promotion commands) and the client README (the no-cache reads):
+
 <details>
-<summary>Execution details — 961 tool events</summary>
+<summary>Execution details — 964 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6885,6 +6889,20 @@ from pathlib import Path
 p = Path("docs/demo-guide.md");…`
 - **Bash** `grep -n "M12" docs/phase8/prd.md docs/phase8/design.md docs/phase8/experimentation-protocol.md outcome-prediction-lab/README.md | cut -c1-180`
 - **Bash** `grep -n "promote" docs/phase8/experimentation-protocol.md outcome-prediction-lab/README.md docs/phase8/design.md | cut -c1-220; grep -n "^| O33 " docs/phase8/decisions.md | cut -c1-300`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+def sub(path, old, new):
+    p = Path(path); s = p.read_text(); assert s.count(old) == 1, (path, old[:70]); p.write_text(s.replace(old, new))
+D = Path("docs/…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("docs/phase8/design.md"); s = p.read_text()
+old = """the typical adult for reasons, the inputs blanked at scoring and the comparison inputs). Before…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+def sub(path, old, new):
+    p = Path(path); s = p.read_text(); assert s.count(old) == 1, (path, old[:70]); p.write_text(s.replace(old, new))
+S = "outcome-pr…`
 
 </details>
 
