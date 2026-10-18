@@ -30,6 +30,13 @@ DATA_URL = "https://meps.ahrq.gov/data_files/pufs/h{n}/h{n}dta.zip"
 DOC_URL = "https://meps.ahrq.gov/data_stats/download_data/pufs/h{n}/h{n}doc.shtml"
 CODEBOOK_URL = "https://meps.ahrq.gov/data_stats/download_data/pufs/h{n}/h{n}cb.pdf"
 
+# Files AHRQ doesn't publish in the usual Stata form. The 2016 Prescribed Medicines file (HC-188A)
+# exists only as ASCII or SAS transport, at a folder-less URL (checked against its doc page).
+# Value: (data URL, zip name, member name). The member's extension says how to read it.
+NONSTANDARD = {
+    "188a": ("https://meps.ahrq.gov/data_files/pufs/h188assp.zip", "h188assp.zip", "h188a.ssp"),
+}
+
 
 class ManifestChange(RuntimeError):
     """AHRQ now serves different data bytes than the manifest records."""
@@ -56,11 +63,11 @@ def entry_for(manifest: dict, file_number: int) -> dict | None:
     return manifest.get("files", {}).get(f"h{file_number}")
 
 
-def _panel_for(file_number: int) -> int | None:
-    return next((p for p, n in LONGITUDINAL_PANELS.items() if n == file_number), None)
+def _panel_for(file_number) -> int | None:
+    return next((p for p, n in LONGITUDINAL_PANELS.items() if str(n) == str(file_number)), None)
 
 
-def snapshot(file_number: int, manifest: dict, *, accept_change: bool = False,
+def snapshot(file_number, manifest: dict, *, accept_change: bool = False,
              archive: Path | None = None, fetch_bytes=None) -> dict:
     """Download the original zip, doc page and codebook; archive them; return the manifest
     entry. Raises ManifestChange if the data differs from an existing entry, unless accepted."""
@@ -70,10 +77,12 @@ def snapshot(file_number: int, manifest: dict, *, accept_change: bool = False,
     archive = archive or archive_dir()
     archive.mkdir(parents=True, exist_ok=True)
 
-    zip_name, dta_name = f"h{file_number}dta.zip", f"h{file_number}.dta"
-    zip_bytes = fetch_bytes(DATA_URL.format(n=file_number))
+    file_number = str(file_number).lower()      # ids can carry a letter: "239a", "248d"
+    url, zip_name, dta_name = NONSTANDARD.get(
+        file_number, (DATA_URL.format(n=file_number), f"h{file_number}dta.zip", f"h{file_number}.dta"))
+    zip_bytes = fetch_bytes(url)
     dta_bytes = _extract_dta(zip_bytes, dta_name)
-    data = {"url": DATA_URL.format(n=file_number), "zip_name": zip_name,
+    data = {"url": url, "zip_name": zip_name,
             "zip_sha256": sha256(zip_bytes), "zip_bytes": len(zip_bytes),
             "dta_name": dta_name, "dta_sha256": sha256(dta_bytes), "dta_bytes": len(dta_bytes)}
 
@@ -103,7 +112,7 @@ def snapshot(file_number: int, manifest: dict, *, accept_change: bool = False,
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("command", choices=["snapshot"])
-    parser.add_argument("files", nargs="*", type=int,
+    parser.add_argument("files", nargs="*",
                         help="MEPS file numbers (default: all two-year longitudinal panels)")
     parser.add_argument("--accept-change", action="store_true",
                         help="adopt data that differs from the manifest (a deliberate, reviewed change)")

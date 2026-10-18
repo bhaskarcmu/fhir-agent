@@ -1,0 +1,114 @@
+{
+  "model": "any_stay/new-portable",
+  "global_importance_mean_abs_logodds": {
+    "(learned code pattern, all dims)": 0.4810029944399344,
+    "agey1x": 0.15617113424239457,
+    "totexpy1": 0.12610687019654834,
+    "n_ccsr_systems": 0.12133944881239576,
+    "mcrevy1": 0.10549734503070696,
+    "elixhauser_count_approx": 0.09746214172200837,
+    "hibpdx": 0.09507165196284925,
+    "rxtoty1": 0.09110489674767652,
+    "n_icd": 0.07625401840958167,
+    "ertoty1": 0.07493091156443128,
+    "sex": 0.0646886922981918,
+    "hfrs": 0.05777443406266952,
+    "regiony1": 0.04309198793018806,
+    "ipngtdy1": 0.039691304205160184,
+    "arthdx": 0.02698610120581886,
+    "elixhauser_vw_approx": 0.025037920421526177,
+    "mcdevy1": 0.02414848336421226,
+    "povcaty1": 0.018101424096658745,
+    "optotvy1": 0.017339559472983438,
+    "obtotvy1": 0.01406976685373488,
+    "chddx": 0.013203941203505227,
+    "midx": 0.01285221362913236,
+    "charlson_approx": 0.011950981849502613,
+    "ohrtdx": 0.010896750898988389,
+    "emphdx": 0.010312542290267304,
+    "n_suppressed_codes": 0.009933054133321835,
+    "n_rx_classes": 0.008550694413699735,
+    "strkdx": 0.008140088003448735,
+    "hhtotdy1": 0.007661150028975987,
+    "inscovy1": 0.004704249029866513,
+    "ipdisy1": 0.004226171483115364,
+    "racethx": 0.004137264034956956,
+    "asthdx": 0.0026437253694916217,
+    "diabdx": 0.00024309942211190675,
+    "angidx": 0.00023125780868853412,
+    "choldx": 0.0
+  },
+  "direction_corr_value_vs_contribution": {
+    "sex": 0.10791576503202902,
+    "racethx": -0.0015354887004795448,
+    "regiony1": -0.012754677389298875,
+    "inscovy1": 0.052506657459707035,
+    "povcaty1": -0.02591337873491854,
+    "agey1x": 0.8401554735264307,
+    "ipdisy1": 0.26907326231324147,
+    "ipngtdy1": 0.5929443953335504,
+    "ertoty1": 0.8734184445706364,
+    "obtotvy1": 0.7929904474743737,
+    "optotvy1": 0.383637933632701,
+    "hhtotdy1": 0.6094545284657609,
+    "rxtoty1": 0.42103229614983223,
+    "totexpy1": 0.295785472886324,
+    "hibpdx": 0.9389182210601993,
+    "chddx": 0.9521554497994155,
+    "angidx": 0.7924832494734733,
+    "midx": 0.9472053911948048,
+    "ohrtdx": 0.9402181175262936,
+    "strkdx": 0.9614306608880648,
+    "emphdx": 0.9714388446653439,
+    "diabdx": 0.9461203008656188,
+    "arthdx": 0.9455181251848018,
+    "asthdx": 0.7596473845855667,
+    "choldx": NaN,
+    "mcrevy1": 0.9632819590520257,
+    "mcdevy1": 0.9413655812537146,
+    "n_icd": 0.8787737563576509,
+    "n_ccsr_systems": 0.8406689562321408,
+    "n_rx_classes": 0.6449446395651561,
+    "n_suppressed_codes": 0.7248331708531739,
+    "hfrs": 0.8470334141081938,
+    "charlson_approx": 0.7838001876253239,
+    "elixhauser_vw_approx": 0.8485533381804647,
+    "elixhauser_count_approx": 0.8669667605644361
+  },
+  "examples": {
+    "low risk": {
+      "predicted": 0.025402789511607713,
+      "hospitalized_in_year_2": 0,
+      "codes": "icdJ11 icdM25 icdZ00 icdZ01 FAC014 MUS010 RSP003",
+      "narrative": "Estimated 12-month hospitalization risk 3% (model baseline 6%). Raised most by: conditions in 3 body systems (odds \u00d71.16); hospital frailty score 2.3 (odds \u00d71.05); their overall pattern of diagnosis and drug codes (odds \u00d71.03). Lowered most by: age 39 (odds \u00d70.86); 0 prescription fills last year (odds \u00d70.87); $548 of health spending last year (odds \u00d70.89). Codes driving the code pattern (approximate): J11 (odds \u00d70.92), RSP003 (odds \u00d70.93), FAC014 (odds \u00d71.06). These describe what the model weighed, not causes; a planning aid, not a diagnosis."
+    },
+    "high risk": {
+      "predicted": 0.2310088407322214,
+      "hospitalized_in_year_2": 1,
+      "codes": "icdE11 icdE78 icdH04 icdI10 icdJ45 icdM06 icdM10 icdN19 icdR52 icdU07 CIR007 END002 END005 END010 EYE008 GEN002 INF012 MUS003 MUS033 RSP009 SYM016 rx215 rx215 rx215 rx215 rx347 rx215 rx173 rx239",
+      "narrative": "Estimated 12-month hospitalization risk 23% (model baseline 6%). Raised most by: their overall pattern of diagnosis and drug codes (odds \u00d71.37); 10 distinct diagnosis codes (odds \u00d71.24); $18,212 of health spending last year (odds \u00d71.24). Lowered most by: 0 ER visits last year (odds \u00d70.94); 0 nights in hospital last year (odds \u00d70.95); South (odds \u00d70.95). Codes driving the code pattern (approximate): rx215 (odds \u00d71.33), rx347 (odds \u00d71.10), SYM016 (odds \u00d71.03). These describe what the model weighed, not causes; a planning aid, not a diagnosis."
+    },
+    "very high risk": {
+      "predicted": 0.5709911613757035,
+      "hospitalized_in_year_2": 1,
+      "codes": "icdN15 icdU07 icdZ34 GEN001 INF012 PRG029 rx159",
+      "narrative": "Estimated 12-month hospitalization risk 57% (model baseline 6%). Raised most by: their overall pattern of diagnosis and drug codes (odds \u00d714.66); conditions in 3 body systems (odds \u00d71.29); 0 nights in hospital last year (odds \u00d71.22). Lowered most by: female (odds \u00d70.91); hospital frailty score 0.0 (odds \u00d70.93); Northeast (odds \u00d70.95). Codes driving the code pattern (approximate): PRG029 (odds \u00d72.82), Z34 (odds \u00d72.80), rx159 (odds \u00d71.57). These describe what the model weighed, not causes; a planning aid, not a diagnosis."
+    }
+  },
+  "value_of_information": {
+    "predicted_with_income_unknown": 0.25469239045204173,
+    "action_items": [
+      "Record household income (for the poverty category): depending on it, this estimate ranges from 23% to 28%."
+    ]
+  },
+  "surrogate_tree": {
+    "depth": 3,
+    "fidelity_r2_on_test": 0.5661747910695636,
+    "rules": "|--- n_icd <= 7.5\n|   |--- n_icd <= 2.5\n|   |   |--- n_ccsr_systems <= 0.5\n|   |   |   |--- value: [0.0]\n|   |   |--- n_ccsr_systems >  0.5\n|   |   |   |--- value: [0.1]\n|   |--- n_icd >  2.5\n|   |   |--- ipngtdy1 <= 1.5\n|   |   |   |--- value: [0.1]\n|   |   |--- ipngtdy1 >  1.5\n|   |   |   |--- value: [0.2]\n|--- n_icd >  7.5\n|   |--- ipngtdy1 <= 2.5\n|   |   |--- chddx <= 0.5\n|   |   |   |--- value: [0.2]\n|   |   |--- chddx >  0.5\n|   |   |   |--- value: [0.3]\n|   |--- ipngtdy1 >  2.5\n|   |   |--- ertoty1 <= 1.5\n|   |   |   |--- value: [0.4]\n|   |   |--- ertoty1 >  1.5\n|   |   |   |--- value: [0.5]\n"
+  },
+  "single_tree_model": {
+    "depth": 4,
+    "test_auroc": 0.7324586656251147,
+    "rules": "|--- n_icd <= 7.5\n|   |--- totexpy1 <= 4371.5\n|   |   |--- agey1x <= 72.5\n|   |   |   |--- n_ccsr_systems <= 1.5\n|   |   |   |   |--- class: 0\n|   |   |   |--- n_ccsr_systems >  1.5\n|   |   |   |   |--- class: 0\n|   |   |--- agey1x >  72.5\n|   |   |   |--- agey1x <= 81.5\n|   |   |   |   |--- class: 0\n|   |   |   |--- agey1x >  81.5\n|   |   |   |   |--- class: 0\n|   |--- totexpy1 >  4371.5\n|   |   |--- ipngtdy1 <= 3.5\n|   |   |   |--- mcrevy1 <= 0.5\n|   |   |   |   |--- class: 0\n|   |   |   |--- mcrevy1 >  0.5\n|   |   |   |   |--- class: 0\n|   |   |--- ipngtdy1 >  3.5\n|   |   |   |--- agey1x <= 47.5\n|   |   |   |   |--- class: 0\n|   |   |   |--- agey1x >  47.5\n|   |   |   |   |--- class: 0\n|--- n_icd >  7.5\n|   |--- ipngtdy1 <= 2.5\n|   |   |--- chddx <= 0.5\n|   |   |   |--- agey1x <= 75.5\n|   |   |   |   |--- class: 0\n|   |   |   |--- agey1x >  75.5\n|   |   |   |   |--- class: 0\n|   |   |--- chddx >  0.5\n|   |   |   |--- charlson_approx <= 5.5\n|   |   |   |   |--- class: 0\n|   |   |   |--- charlson_approx >  5.5\n|   |   |   |   |--- class: 0\n|   |--- ipngtdy1 >  2.5\n|   |   |--- midx <= 0.5\n|   |   |   |--- elixhauser_vw_approx <= 5.5\n|   |   |   |   |--- class: 0\n|   |   |   |--- elixhauser_vw_approx >  5.5\n|   |   |   |   |--- class: 0\n|   |   |--- midx >  0.5\n|   |   |   |--- class: 1\n"
+  }
+}

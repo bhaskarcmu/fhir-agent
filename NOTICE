@@ -99,6 +99,18 @@ Source:    https://github.com/testcontainers/testcontainers-java
 Licence:   MIT License
            https://opensource.org/licenses/MIT
 
+------------------------------------------------------------------------
+comorbidipy — clinical code-list tables (vendored data, not a dependency)
+------------------------------------------------------------------------
+Source:    https://pypi.org/project/comorbidipy/ (version 0.5.0)
+Version:   0.5.0
+Licence:   MIT License — Copyright (c) 2021, vvcb
+           https://opensource.org/licenses/MIT
+
+outcome-prediction-lab/src/outcome_prediction_lab/knowledge.py reproduces this package's
+Hospital Frailty Risk Score, Charlson and Elixhauser (ICD-10, Quan) mapping and weight
+tables verbatim, with the full MIT licence text in the module docstring.
+
 ========================================================================
 FULL LICENCE TEXTS
 ========================================================================

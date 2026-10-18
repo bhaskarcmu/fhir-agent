@@ -95,9 +95,11 @@ def test_fixture_image_matches_docker_compose():
 # ── The real MEPS originals in the populated emulator bucket ─────────────────────────
 
 
-def test_populated_bucket_holds_every_manifest_data_zip(meps_emulator_bucket):
+def test_populated_bucket_holds_every_longitudinal_data_zip(meps_emulator_bucket):
     from outcome_prediction.meps.mirror import verify as verify_mirror
-    assert verify_mirror(load_manifest(), [meps_emulator_bucket], include_docs=False) == []
+    from outcome_prediction.tests.conftest import LONGITUDINAL_KEYS
+    assert verify_mirror(load_manifest(), [meps_emulator_bucket], include_docs=False,
+                         keys=LONGITUDINAL_KEYS) == []
 
 
 def test_a_real_panel_restores_from_the_bucket_with_ahrq_down(meps_emulator_bucket, tmp_path, monkeypatch):

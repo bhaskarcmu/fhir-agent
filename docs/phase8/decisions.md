@@ -93,12 +93,30 @@ owner chose to implement all of it now, with private bucket(s) and without DVC.
 | O43 | Until the real bucket is wanted, a **local GCS emulator** (`fsouza/fake-gcs-server:1.56.1`, compose service `gcs-emulator`, profile `phase8`) stands in for it, reached by the real `google-cloud-storage` client via `STORAGE_EMULATOR_HOST`. Tests reach it through the `gcs_emulator` fixture, which reuses a running emulator or starts this image itself (O44), so the `gs://` path is tested on every PR. It is a **test stand-in, not a backup** — its storage lives on this workspace's Docker host — and it doesn't enforce retention, IAM or public-access prevention, which exist only in the unapplied Terraform | Accepted | Repo owner's choice to skip creating a GCP bucket for now. Verified before relying on it: the emulator honours the write-once generation precondition (a second create returns 412), and the full real-data path (push 21 originals, verify, AHRQ-down restore of all 7 panels, byte-identical rebuild) runs through it. Preservation is covered separately by the repo owner's off-workspace `file://` copy. |
 | O44 | **Tests that need data populate it; they don't skip.** Session fixtures (`tests/conftest.py`) give every test that asks for them complete, verified data — `meps_cache` fetches any missing panel (local archive → AHRQ → mirrors, checked against the manifest), and sets aside and re-fetches any cached file that doesn't match it; `gcs_emulator` reuses a reachable emulator or starts a container for the session; `meps_emulator_bucket` creates the emulator bucket if absent and tops up any missing data zip. This holds for one test, a file, or the whole suite, run by hand or by CI. A fixture that can't obtain its data **fails** the test; skipping happens only when `OUTCOME_PREDICTION_TESTS_OFFLINE=1` is set deliberately. CI caches the original zips (keyed on the manifest) | Accepted; **supersedes O17's self-skip clause** | Repo owner's requirement: before approving, they need to know the tests actually pass — and a skipped test proves nothing. A green CI run now means every Phase 8 test, including the exact-reproduction checks, executed. The cache keeps CI independent of AHRQ after its first run. |
 
+
+## Third pass — M3, round 001 (iteration 1)
+
+The repo owner asked for M3 to be a multi-prompt, learning-oriented milestone covering *what* to
+predict and *how*, with explicit concepts to try (TF-IDF, autoencoders, random forest with
+per-patient explanations, missing values, feature importance). Results:
+`outcome-prediction-lab/rounds/001-what-and-how/report.md`.
+
+| ID | Decision | Status | Rationale / where it lives |
+|---|---|---|---|
+| O45 | **M10 and M11 are folded into M3.** M3 builds the lab *while* running real rounds, iteratively; it ends when the repo owner decides no further iteration is needed. M10/M11 keep their numbers as markers but carry no separate work | Accepted | Repo owner's choice ("we can always change milestones again"). Building tools in the course of real exploration is better learning than building them first in the abstract. |
+| O46 | MLflow tracking uses a **local SQLite store** (`outcome-prediction-lab/mlflow.db`, gitignored) and is an **optional** `tracking` extra (`mlflow==3.17.1`), best-effort in round scripts | Accepted; **refines O30** | MLflow 3 retired the file store O30 assumed; `mlflow-skinny` can't use SQLite. Heavy dependencies stay optional because a round's committed `metrics.json` is the record (O31). |
+| O47 | **Admission labels count stays that *began* in year 2**; the recommended headline label is **non-obstetric admission** (excludes `RSNINHOS` 4–6) | Accepted for the lab; promotion still via O40 | The prototype's label counts year-2 discharges and includes childbirth; round 001 showed most code-feature gain on it is pregnancy codes predicting deliveries. Non-obstetric admission scores higher (test AUROC 0.795) on a label that means what a care manager means. |
+| O48 | **Death and loss of insurance are learning-only targets**: never promoted from MEPS-only work | Accepted | Kept to teach rare-event evaluation. Any real use needs clinical / fairness governance, not just a model. |
+
 ## Supersession notes
 
 - **O44 supersedes O17's last clause** ("tests that need the MEPS cache self-skip when it's
   absent; MEPS downloads stay out of required CI"). The rest of O17 — artifacts never committed,
   manifest verified before deserialisation, a throwaway model trained on a synthetic fixture for
   service tests — stands. O17's row is left as written, for the record.
+
+- **O46 refines O30**: same tool (MLflow), different store (SQLite instead of the retired file
+  store), now an optional extra.
 
 Future entries that revise one of the above will say so explicitly here, same convention as
 Phase 4 (`E`-series), Phase 6 (`H`-series) and Phase 7 (`R`-series).

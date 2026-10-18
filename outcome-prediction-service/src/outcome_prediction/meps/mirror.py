@@ -132,21 +132,26 @@ def configured_mirrors() -> list[Mirror]:
     return [from_uri(u) for u in os.environ.get(ENV, "").split(",") if u.strip()]
 
 
-def _archived_files(manifest: dict, include_docs: bool = True) -> list[tuple[str, str]]:
-    """(name, sha256) of every original file the manifest records: data zips, and docs."""
+def _archived_files(manifest: dict, include_docs: bool = True,
+                    keys: set[str] | None = None) -> list[tuple[str, str]]:
+    """(name, sha256) of every original file the manifest records: data zips, and docs.
+    `keys` (e.g. {"h252"}) restricts it to those manifest entries."""
     files = []
-    for entry in manifest["files"].values():
+    for key, entry in manifest["files"].items():
+        if keys is not None and key not in keys:
+            continue
         files.append((entry["data"]["zip_name"], entry["data"]["zip_sha256"]))
         if include_docs:
             files += [(doc["name"], doc["sha256"]) for doc in entry["documentation"]]
     return files
 
 
-def push(manifest: dict, archive: Path, mirrors: list[Mirror], *, include_docs: bool = True) -> list[str]:
+def push(manifest: dict, archive: Path, mirrors: list[Mirror], *, include_docs: bool = True,
+         keys: set[str] | None = None) -> list[str]:
     """Upload every manifest file from the local archive to every mirror. Each file is
     checked against the manifest first, so a mirror never receives unverified bytes."""
     log = []
-    for name, sha in _archived_files(manifest, include_docs):
+    for name, sha in _archived_files(manifest, include_docs, keys):
         data = (archive / name).read_bytes()
         if hashlib.sha256(data).hexdigest() != sha:
             raise MirrorError(f"{archive / name} does not match the manifest — not uploading")
@@ -156,10 +161,11 @@ def push(manifest: dict, archive: Path, mirrors: list[Mirror], *, include_docs: 
     return log
 
 
-def verify(manifest: dict, mirrors: list[Mirror], *, include_docs: bool = True) -> list[str]:
+def verify(manifest: dict, mirrors: list[Mirror], *, include_docs: bool = True,
+           keys: set[str] | None = None) -> list[str]:
     """Re-download and hash every manifest file on every mirror. Returns problems found."""
     problems = []
-    for name, sha in _archived_files(manifest, include_docs):
+    for name, sha in _archived_files(manifest, include_docs, keys):
         for mirror in mirrors:
             key = object_key(sha, name)
             try:

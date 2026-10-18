@@ -75,9 +75,10 @@ def mirror(tmp_path):
 
 def test_committed_manifest_pins_every_longitudinal_panel():
     files = load_manifest(MANIFEST_PATH)["files"]
-    assert set(files) == {f"h{n}" for n in LONGITUDINAL_PANELS.values()}
+    panel_of = {f"h{n}": p for p, n in LONGITUDINAL_PANELS.items()}
+    assert set(panel_of) <= set(files)            # plus the lab's event files (round 001)
     for key, entry in files.items():
-        assert entry["panel"] == {f"h{n}": p for p, n in LONGITUDINAL_PANELS.items()}[key]
+        assert entry["panel"] == panel_of.get(key)
         assert re.fullmatch(r"[0-9a-f]{64}", entry["data"]["zip_sha256"])
         assert re.fullmatch(r"[0-9a-f]{64}", entry["data"]["dta_sha256"])
         assert {d["name"] for d in entry["documentation"]} == {f"{key}doc.shtml", f"{key}cb.pdf"}
@@ -86,6 +87,8 @@ def test_committed_manifest_pins_every_longitudinal_panel():
 def test_committed_manifest_matches_the_local_cache(meps_cache):
     """Where the real data is present, it is exactly what the manifest pins."""
     for key, entry in load_manifest(MANIFEST_PATH)["files"].items():
+        if entry["kind"] != "longitudinal":        # meps_cache populates the longitudinal panels
+            continue
         path = meps_cache / entry["data"]["dta_name"]
         assert _sha(path.read_bytes()) == entry["data"]["dta_sha256"], key
 

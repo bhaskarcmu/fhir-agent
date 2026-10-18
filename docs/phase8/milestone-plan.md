@@ -1,6 +1,7 @@
 # Phase 8 Milestone Plan — Patient Outcome Prediction
 
-M1–M13. **M1–M2 built** (verified results below); M3–M13 planned. Expanded from M1–M11 after a second scope pass added a
+M1–M13. **M1–M2 built** (verified results below); **M3 in progress — round 001 (iteration 1)
+done**; M4–M13 planned. M10 and M11 are folded into M3 (O45). Expanded from M1–M11 after a second scope pass added a
 dedicated experimentation track (`decisions.md` O28–O40): M3 (workbench) and M12 (promotion)
 are new, and the former model-improvement milestones are now rounds of the
 [experimentation protocol](./experimentation-protocol.md).
@@ -121,6 +122,19 @@ covered by a test that shows them refusing; a model card for the `meps25-v1` mod
 
 **Depends on:** M2. (Runs in parallel with the whole service track.)
 
+**Re-scoped (O45):** M3 now also carries M10 and M11's work — it builds the lab *while* running
+real, iterative rounds, and ends when the repo owner decides no further iteration is needed.
+
+**Iteration 1 done — round 001** (`outcome-prediction-lab/rounds/001-what-and-how/report.md`):
+on the prototype's exact objective and test panels, AUROC 0.769 → 0.788 (+0.019 [+0.011, +0.027]),
+AUPRC 0.265 → 0.307 — mostly from code features (TF-IDF → LSA), and mostly because pregnancy codes
+predict childbirth admissions; seven new targets, all beating simple baselines; concept-by-concept
+verdicts. Built: lab table (28 MEPS files, IDs normalised), honest missing encoding, code
+"documents", vendored HFRS/Charlson/Elixhauser, pipelines, leave-one-panel-out CV, paired bootstrap,
+holdout ledger with guard, SHAP narratives, surrogate tree, value-of-information action items.
+**Not yet built:** the `run/compare/confirm/card/promote` CLI (a round script stands in), scorecard
+and model-card generators, the notebook check, round 000.
+
 ---
 
 ### M4 — Synthea CSV harness, scoring mode, leakage test
@@ -231,7 +245,7 @@ encounter dated after `as_of` and showing the score doesn't move.
 
 ---
 
-### M10 — Round 001: what to predict, and in what form
+### M10 — Round 001: what to predict, and in what form *(folded into M3 — O45)*
 
 **Short story:** The first real research round — decide which outcomes and prediction forms
 are advisable, by scorecard, not by metric alone.
@@ -255,7 +269,7 @@ non-probability form chosen, the O35 representation decision too.
 
 ---
 
-### M11 — Round 002: improve the chosen target(s)
+### M11 — Round 002: improve the chosen target(s) *(folded into M3 — O45)*
 
 **Short story:** Close the gap to the prototype's targets (AUROC ≥ 0.78; ≥ 0.73 for 65+) for
 what M10 chose.

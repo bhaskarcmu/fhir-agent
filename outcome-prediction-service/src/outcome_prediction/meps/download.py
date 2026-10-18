@@ -108,13 +108,15 @@ def _obtain_zip(entry: dict, archive: Path, mirrors: list[Mirror]) -> bytes:
 
 
 def ensure_archive(manifest: dict, archive: Path, mirrors: list[Mirror] | None = None,
-                   *, include_docs: bool = True) -> list[str]:
+                   *, include_docs: bool = True, keys: set[str] | None = None) -> list[str]:
     """Make the local archive hold every original the manifest lists (data zips, and the doc
     pages + codebooks if `include_docs`), fetching only what's missing or wrong. Returns the
     names it had to fetch."""
     mirrors = configured_mirrors() if mirrors is None else mirrors
     fetched = []
-    for entry in manifest["files"].values():
+    for key, entry in manifest["files"].items():
+        if keys is not None and key not in keys:
+            continue
         wanted = [(entry["data"]["zip_name"], entry["data"]["zip_sha256"], entry["data"]["url"])]
         if include_docs:
             wanted += [(d["name"], d["sha256"], d["url"]) for d in entry["documentation"]]
@@ -127,8 +129,8 @@ def ensure_archive(manifest: dict, archive: Path, mirrors: list[Mirror] | None =
     return fetched
 
 
-def _fetch_manifested(file_number: int, entry: dict, cache: Path, mirrors: list[Mirror]) -> Path:
-    name = f"h{file_number}.dta"
+def _fetch_manifested(file_number, entry: dict, cache: Path, mirrors: list[Mirror]) -> Path:
+    name = entry["data"]["dta_name"]           # usually h{n}.dta; h188a.ssp for SAS transport
     path, expected = cache / name, entry["data"]["dta_sha256"]
     if path.exists():
         if _sha256(path.read_bytes()) != expected:
@@ -183,7 +185,7 @@ def _fetch_unmanifested(file_number: int, cache: Path) -> Path:
     return path
 
 
-def fetch(file_number: int, cache: Path | None = None, *, manifest: dict | None = None,
+def fetch(file_number, cache: Path | None = None, *, manifest: dict | None = None,
           mirrors: list[Mirror] | None = None) -> Path:
     """Return the path to a verified h{n}.dta, obtaining it if absent."""
     cache = cache or meps_cache_dir()
@@ -197,7 +199,7 @@ def fetch(file_number: int, cache: Path | None = None, *, manifest: dict | None 
 
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("files", nargs="*", type=int,
+    parser.add_argument("files", nargs="*",
                         help="MEPS file numbers (default: all two-year longitudinal panels)")
     args = parser.parse_args(argv)
     for n in args.files or LONGITUDINAL_PANELS.values():

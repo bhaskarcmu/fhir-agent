@@ -1,0 +1,3 @@
+# Local MLflow tracking store (SQLite) — a working cache, not the record (O31). Rounds are committed.
+mlflow.db
+mlruns/

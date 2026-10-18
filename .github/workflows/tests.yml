@@ -188,9 +188,11 @@ jobs:
       - name: Install Phase 8 packages
         run: |
           python -m pip install --upgrade pip
-          pip install -e "outcome-prediction-service[dev,gcs]"
+          pip install -e "outcome-prediction-service[dev,gcs]" -e "outcome-prediction-lab[dev]"
       - name: Run Phase 8 test suites
-        run: pytest outcome-prediction-service/src/outcome_prediction/tests -q -rs
+        run: |
+          pytest outcome-prediction-service/src/outcome_prediction/tests -q -rs
+          pytest outcome-prediction-lab/src/outcome_prediction_lab/tests -q -rs
 
   # ── Phase 3 Terraform stubs ──────────────────────────────────────────────────
   # `terraform validate` only -- not `plan` or `apply`. Plan needs live GCP provider
