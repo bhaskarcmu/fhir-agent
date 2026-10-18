@@ -3958,7 +3958,7 @@ All 195 pass (client and service). Checking which CI job runs the client tests, 
 The container is gone. **Git:** worktree `/workspaces/fhir-agent`, branch `feature/phase8-m5-clinical-client`, committing then pushing and opening a PR to `main`.
 
 <details>
-<summary>Execution details — 652 tool events</summary>
+<summary>Execution details — 654 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5577,6 +5577,11 @@ old = """**Deliverable:** `client/clinical` supports both emulators' full resour
 feat(phase8): M5 client/clinical care history, additive (O63, O64)
 
 - Six new methods and dataclasses: get_demographics (Demographics), get_e…`
+- **Bash** `gh pr create --base main --head feature/phase8-m5-clinical-client --title "Phase 8 M5: client/clinical care-history methods (additive)" --body-file - <<'EOF' 2>&1 | tail -1
+## Summary
+
+M5 adds the car…`
+- **Bash** `sleep 20; timeout 1500 gh pr checks 73 --watch --interval 30 >/dev/null 2>&1; gh pr checks 73 2>&1 | awk -F'\t' '{print $2" — "$1}' | sort | uniq -c`
 
 </details>
 
@@ -5587,6 +5592,6 @@ feat(phase8): M5 client/clinical care history, additive (O63, O64)
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 16:26 UTC
+- **Last updated:** 18 October 2026, 16:27 UTC
 - **Turns:** 52
 - **Status:** Complete
