@@ -4289,7 +4289,7 @@ By patient ID the agent succeeds 5 of 5 on the real stack. By name it never does
 Re-measuring by name on the real stack:
 
 <details>
-<summary>Execution details — 848 tool events</summary>
+<summary>Execution details — 849 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6435,6 +6435,7 @@ from ou…`
 - **Write** `/workspaces/fhir-agent/e2e/test_outcome_prediction_acceptance.py`
 - **Bash** `SECONDS=0; OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:1 python -m pytest e2e/test_outcome_prediction_acceptance.py -v -p no:cacheprovider 2>&1 | grep -E "PASS|FAIL|ERROR|^E |passed|failed" | head -3…`
 - **Bash** `docker stop phase8-m9-ollama >/dev/null 2>&1; docker compose --profile phase8 rm -sf fhir outcome-prediction 2>&1 | tail -1; docker ps --format '{{.Names}}' | grep -cE "fhir-agent|ollama" || true; SEC…`
+- **Bash** `docker compose --profile phase8 up -d --build fhir outcome-prediction 2>&1 | tail -1; docker run -d --rm --name phase8-m9-ollama -p 11434:11434 -v phase8-ollama-models:/root/.ollama ollama/ollama:0.6.…`
 
 </details>
 
@@ -6445,6 +6446,6 @@ from ou…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 19:12 UTC
+- **Last updated:** 18 October 2026, 19:17 UTC
 - **Turns:** 59
 - **Status:** Complete
