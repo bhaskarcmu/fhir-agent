@@ -2803,7 +2803,7 @@ pandas' HTML reader needs `lxml`, and adding a dependency just for this would be
 Coverage is effectively complete. One flagged item to inspect: `U07`, the emergency-use category that holds COVID-19. My check may just be matching the "19" in its name:
 
 <details>
-<summary>Execution details — 406 tool events</summary>
+<summary>Execution details — 408 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3782,6 +3782,13 @@ def edit(p,pairs):
         assert s.count(o)==1,(p,o[:60],s.count(o)); s=s.replace(o,n)
     open(p,'w').write(s)
 L='outcome-prediction-lab/…`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-lab/src/outcome_prediction_lab/drugnames.py`
+- **Bash** `time python3 - <<'EOF'
+import json
+from outcome_prediction_lab import drugnames
+r = drugnames.run()
+print({k: v for k, v in r.items() if k.startswith("n_")}, "| exact:", r["exact_lookup"])
+for k in ("…`
 
 </details>
 
@@ -3792,6 +3799,6 @@ L='outcome-prediction-lab/…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 01:18 UTC
+- **Last updated:** 18 October 2026, 01:19 UTC
 - **Turns:** 35
 - **Status:** Complete
