@@ -3879,6 +3879,38 @@ All 171 pass (153 before plus 18 new). Checking the new test filename is unique 
 
 All names are unique. **Git:** worktree `/workspaces/fhir-agent`, branch `feature/phase8-m4-synthea-harness`, commit 2 of 2, then push and open a PR to `main`.
 
+M4 is done and up for review as **PR #72**, with all 13 CI checks passing. I didn't need anything from you to unblock it.
+
+**What M4 delivers**
+- **Reproduction first, fixes second.** M4 required these as separate changes, so they're two commits. The first (`9523af5d`) applies the prototype's Synthea rules exactly as written, defects included. The second (`e2192faf`) fixes them.
+- **Rows from Synthea in both modes.** On the full 3,000-person Arizona population (2,916 adults), the schema and sanity checks pass in training and scoring mode.
+- **The reproduction matches the prototype's run** closely: same AUROC (0.656), 2,916 vs 2,913 adults, 24.1% vs 25.1% coronary heart disease, 33.9 vs 33.8 average prescription fills. As always with Synthea, this only shows the pipeline works mechanically, not that the model is accurate.
+- **The prescription leak is fixed.** Features now use only what was knowable on the `as_of` date, and training uses the same calculation with `as_of` set to 31 December. For a prescription still running on that date, fills are estimated from the patient's own earlier record for the same drug, or one a month if there isn't one. A flat monthly rule would overcount, because many prescriptions are 90-day supplies.
+- **The leakage test passes on the fixed code and fails on the prototype's code**, which shows it genuinely catches the leak.
+- **Two smaller fixes:** an unknown state now maps to 0 instead of South, and both modes encode categories the same way.
+
+**Two decisions I recorded rather than ask you about (easy to reverse):**
+- **O61, Synthea version:** O11 calls v4.0.0 "the repo's pinned" version, but the repo's shared `generate.sh` pins 3.3.0. Phase 8 now pins v4.0.0 itself, checked against a SHA-256, and leaves the shared script untouched.
+- **O61, CSV-only generation:** O11 says CSV and FHIR should come from one run. A trial showed the same seed produces the same patients with or without FHIR, and the full FHIR export would be about 26 GB, so M6 will regenerate FHIR for the same population when it needs it.
+- **O62** records the cut-off rules described above.
+
+**A mistake of mine, now fixed:** my M3-closing commit, already merged in PR #71, deleted the "Supersession notes" heading in `decisions.md`. This PR puts it back.
+
+**Files changed**
+- **New ETL code** in `outcome-prediction-service/src/outcome_prediction/etl/`: `canonical.py`, `extract/synthea_csv.py`, `transform/to_contract.py`, `synthea.py`.
+- **Tests:** `tests/test_etl_synthea.py` and a 172 KB fixture of 7 synthetic adults with name, SSN and address columns removed.
+- **Docs:** decisions, design §6 and §11, milestone plan, PRD, status page, service README.
+
+**Validation:** all 171 service and lab tests pass, including 18 new ones. No data, Synthea output or model files are committed.
+
+**Branch:** `feature/phase8-m4-synthea-harness`.
+
+**Known limitations**
+- The fill estimate for running prescriptions is an approximation. M6 settles the real FHIR rule.
+- A hospital stay still in progress on the cut-off date counts as one stay, as in the prototype. Strictly, the survey variable (MEPS) counts discharges.
+
+**Next:** I haven't merged anything. Once you merge PR #72, I'll ask before deleting the branch. M5, adding to the clinical client, is next.
+
 <details>
 <summary>Execution details — 604 tool events</summary>
 
@@ -5403,6 +5435,6 @@ M4 in two…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 15:53 UTC
+- **Last updated:** 18 October 2026, 15:57 UTC
 - **Turns:** 51
 - **Status:** Complete
