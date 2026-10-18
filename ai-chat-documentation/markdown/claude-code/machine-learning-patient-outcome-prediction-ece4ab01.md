@@ -4279,7 +4279,7 @@ Cleaned up. Reading M9's scope and how the repo's existing e2e suites are built 
 The demo guide is organised by audience, and Phase 3 added its own section (5a). Reading that section as the model for a Phase 8 one:
 
 <details>
-<summary>Execution details — 833 tool events</summary>
+<summary>Execution details — 835 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6382,6 +6382,10 @@ M8 adds a new…`
 - **Bash** `cat e2e/conftest.py | head -60; ls docs/demo-guide.md 2>&1; grep -n "^#\|^##" docs/demo-guide.md 2>/dev/null | head -30; grep -n "e2e" .github/workflows/tests.yml pytest.ini | head`
 - **Bash** `sed -n 1,66p docs/demo-guide.md; sed -n '/^## 5a/,/^## 6/p' docs/demo-guide.md`
 - **Bash** `grep -n "ollama" -i docker-compose.yml | head; grep -n "LLM_BASE_URL\|host.docker.internal" docker-compose.yml | head -5`
+- **Bash** `cd /workspaces/fhir-agent/outcome-prediction-service/data/raw/synthea/fhir-5-s42/fhir && python3 - <<'EOF'
+import json, glob, collections
+for f in sorted(glob.glob("*Information*.json")) + sorted(glob…`
+- **Bash** `cd /workspaces/fhir-agent && grep -n "^def generate_command" -A12 outcome-prediction-service/src/outcome_prediction/etl/synthea.py; grep -n "def main" -A12 outcome-prediction-service/src/outcome_predi…`
 
 </details>
 
