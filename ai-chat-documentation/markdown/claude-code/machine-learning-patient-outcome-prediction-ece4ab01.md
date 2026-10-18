@@ -4463,7 +4463,7 @@ On rereading, the design §8 paragraph I just wrote ends with a garbled sentence
 Now the service README (both routes and the promotion commands) and the client README (the no-cache reads):
 
 <details>
-<summary>Execution details — 964 tool events</summary>
+<summary>Execution details — 966 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6903,6 +6903,9 @@ from pathlib import Path
 def sub(path, old, new):
     p = Path(path); s = p.read_text(); assert s.count(old) == 1, (path, old[:70]); p.write_text(s.replace(old, new))
 S = "outcome-pr…`
+- **Bash** `git ls-files -co --exclude-standard | grep "tests/test_" | awk -F/ '{print $NF}' | sort | uniq -d; git status --short; git diff --stat | tail -1; git status --short | grep -E "models/|\.joblib|data/ra…`
+- **Bash** `git add -A NOTICE client/clinical docs e2e outcome-prediction-agent outcome-prediction-lab outcome-prediction-service && git status --short | grep -c . && git commit -q -F - <<'EOF'
+feat(phase8): M12…`
 
 </details>
 
@@ -6913,6 +6916,6 @@ S = "outcome-pr…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 21:59 UTC
+- **Last updated:** 18 October 2026, 22:02 UTC
 - **Turns:** 63
 - **Status:** Complete
