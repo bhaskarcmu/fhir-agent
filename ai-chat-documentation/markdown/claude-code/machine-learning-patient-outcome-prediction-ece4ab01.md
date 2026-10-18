@@ -4024,8 +4024,10 @@ The condition-history test has an escape-hatch `or`, which makes it weak. Checki
 
 Now the full suite across every affected package:
 
+Now the docs. Reading design §7 to replace the mapping *sketch* with the confirmed rules:
+
 <details>
-<summary>Execution details — 704 tool events</summary>
+<summary>Execution details — 709 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5806,6 +5808,19 @@ from pathlib import Path
 p = Path("client/clinical/tests/test_care_history.py"); s = p.read_text()
 old = '''        history = client.get_condition_histor…`
 - **Bash** `PYTHONWARNINGS=ignore MLFLOW_DISABLE_AGENT_HINT=1 python -m pytest outcome-prediction-service client/clinical/tests outcome-prediction-lab/src/outcome_prediction_lab/tests -q -p no:cacheprovider 2>/de…`
+- **Bash** `grep -n "phase8" -A30 .github/workflows/tests.yml | grep -n "pip install\|pytest" | head; grep -n "dependencies\|clinical" outcome-prediction-service/pyproject.toml`
+- **Bash** `grep -n "^name\|dev" client/clinical/pyproject.toml; sed -n 186,194p .github/workflows/tests.yml`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path(".github/workflows/tests.yml"); s = p.read_text()
+old = '''          pip install -e "outcome-prediction-service[dev,gcs]"
+      - name: Run Phase 8…`
+- **Bash** `sed -n '/^## 7. Canonical model/,/^## 8\./p' docs/phase8/design.md`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("docs/phase8/design.md"); s = p.read_text()
+start = s.index("## 7. Canonical model and the FHIR mapping sketch (O21 — unvalidated)")
+end = s.index("…`
 
 </details>
 
@@ -5816,6 +5831,6 @@ old = '''        history = client.get_condition_histor…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 17:02 UTC
+- **Last updated:** 18 October 2026, 17:04 UTC
 - **Turns:** 53
 - **Status:** Complete
