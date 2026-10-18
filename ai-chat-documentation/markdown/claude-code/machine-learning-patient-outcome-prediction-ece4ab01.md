@@ -3944,7 +3944,7 @@ The one failure is the request I'd flagged as unrecorded. The test should use th
 Every cost links to a recorded encounter (31 of 31), so I'm tightening that assertion to require all of them. Then the M5 gate: `triage-service` and `mcp-agent` must pass unmodified.
 
 <details>
-<summary>Execution details — 638 tool events</summary>
+<summary>Execution details — 640 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5529,6 +5529,8 @@ old = '''        encounter_ids = {e.id for e in client.get_encounters(PID)}  # u
 from pathlib import Path
 p = Path("client/clinical/tests/test_care_history.py"); s = p.read_text()
 old = '''        assert sum(eid in encounter_ids for eid in linked) / len(linked) >…`
+- **Bash** `OTEL_SDK_DISABLED=true python -m pytest triage-service mcp-agent -q -p no:cacheprovider 2>&1 | grep -E "passed|failed|error" | tail -3`
+- **Bash** `python -m pytest triage-service mcp-agent -q -p no:cacheprovider 2>/dev/null | grep -E "^(FAILED|ERROR)|passed|failed" | tail -25`
 
 </details>
 
@@ -5539,6 +5541,6 @@ old = '''        assert sum(eid in encounter_ids for eid in linked) / len(linked
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 16:22 UTC
+- **Last updated:** 18 October 2026, 16:23 UTC
 - **Turns:** 52
 - **Status:** Complete
