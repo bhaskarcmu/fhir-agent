@@ -4288,8 +4288,12 @@ By patient ID the agent succeeds 5 of 5 on the real stack. By name it never does
 
 Re-measuring by name on the real stack:
 
+The section landed without the `---` separator the other sections have. Adding it:
+
+Before trusting the guide, I'm running its beat 3 commands exactly as written (with the `Z` timestamps), then cleaning up:
+
 <details>
-<summary>Execution details — 850 tool events</summary>
+<summary>Execution details — 853 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6437,6 +6441,17 @@ from ou…`
 - **Bash** `docker stop phase8-m9-ollama >/dev/null 2>&1; docker compose --profile phase8 rm -sf fhir outcome-prediction 2>&1 | tail -1; docker ps --format '{{.Names}}' | grep -cE "fhir-agent|ollama" || true; SEC…`
 - **Bash** `docker compose --profile phase8 up -d --build fhir outcome-prediction 2>&1 | tail -1; docker run -d --rm --name phase8-m9-ollama -p 11434:11434 -v phase8-ollama-models:/root/.ollama ollama/ollama:0.6.…`
 - **Bash** `curl -s -X POST localhost:11434/api/pull -d '{"name":"llama3.2:1b"}' | tail -1; for i in 1 2 3 4 5 6; do out=$(OUTCOME_PREDICTION_URL=http://localhost:8005 OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("docs/demo-guide.md"); s = p.read_text()
+row_old = "| **Any audience — provider search** | \"Can it find a real doctor who takes this patient?\" | […`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("docs/demo-guide.md"); s = p.read_text()
+old = "\n## 5b. Hospitalization risk (Phase 8, 8 minutes)"
+assert s.count(old) == 1
+i = s.index(old); befor…`
+- **Bash** `score() { curl -s -X POST localhost:8005/risk/hospitalization-12m -H 'Content-Type: application/json' -d "{\"patient_id\": \"3208\", \"as_of\": \"$1\"}" | python3 -c "import json,sys; ra=json.load(sys…`
 
 </details>
 
@@ -6447,6 +6462,6 @@ from ou…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 19:21 UTC
+- **Last updated:** 18 October 2026, 19:22 UTC
 - **Turns:** 59
 - **Status:** Complete
