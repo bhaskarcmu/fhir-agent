@@ -2850,6 +2850,63 @@ Everything is green and only reviewable text is staged. Committing to PR #71's b
 
 I'll watch PR #71's CI in the background, especially the lab job, which now also runs the notebook check:
 
+All four items are done and pushed to PR #71 (https://github.com/bhaskarcmu/fhir-agent/pull/71). The work ran as **round 002**, entirely through the new command-line tool, so the tooling got used for real. CI is running now; I'll report the result when it finishes.
+
+## 1. Lab tooling
+
+There's now an `outcome-prediction-lab` command with these subcommands:
+- **`run`, `compare`**: run experiments and compare them, using only the training panels.
+- **`confirm`**: the only way to score the test panels. It refuses unless the look is logged in the holdout ledger first.
+- **`card`**: generates a model card.
+- **`scorecard`**: fills in the ML criteria automatically and marks the human-judged ones as still owed.
+- **`promote`**: refuses unless the model has been confirmed, has a model card, matches its recorded checksum and is backed by a recorded decision. It always refuses learning-only targets.
+- **`explain`**: one patient, a sample, or everyone.
+- **`drug-names`**: the drug-name experiment.
+- **`notebooks-check` / `notebooks-strip`**: the check now runs in CI.
+
+Experiment configs can only say *what* to model; any setting that names panels or splits is rejected. In this round, `promote` correctly refused the reference model because it had no test-panel confirmation.
+
+## 2. Drug classes and every other code now have names
+
+All names come from AHRQ's own MEPS documentation, which the manifest already pins:
+- **Drug classes:** all 492, e.g. `rx215` → "insulin".
+- **ICD-10 and CCSR codes:** about 180 ICD-10 codes MEPS doesn't label are filled from the CDC's public-domain ICD-10-CM release, pinned by checksum.
+- **Edge cases:** CCSR groups AHRQ left unnamed are described by body system, labels AHRQ cut short end in "…", and the U07 code reads as COVID-19.
+
+**Naming exposed a real defect from round 001:** only the third level of the drug-class hierarchy was used, which left **34% of prescription fills** (e.g. lisinopril, omeprazole) without a class. It's fixed. The measured effect on prediction was nil, and round 001's script pins the old behaviour so its numbers stay reproducible.
+
+## 3. The two text experiments
+
+The label here is the non-obstetric admission, so pregnancy codes can't inflate the results.
+- **TF-IDF on code descriptions:** no gain for gradient boosting (0.7979 vs 0.7988). It does help logistic regression, by +0.002, because related codes share words in their names.
+- **Character n-grams on drug names** are clearly the right tool for messy names. On pharmacy-recorded names first seen in 2021–22, they found the right drug class **72.6%** of the time, versus 68.4% for whole words, and every name found a match. Word matching found nothing in common for 12% of names. As *model features* they add nothing.
+- **No variant beat the reference by the +0.003 set in advance, so I didn't score the test panels this round.**
+
+## 4. Per-patient explanations
+
+Each patient now gets a few self-explanatory sentences. Codes are always replaced by their full names, and every reason is compared with real groups of adults. For example:
+
+> This 56-year-old man has an estimated 27% chance of an overnight hospital stay that isn't related to pregnancy or childbirth in the next 12 months — about 3.6 times the average adult (7.4%) … pushed up mainly by taking a medicine of the class "calcium channel blocking agents" (17% of adults with this were hospitalised for reasons other than childbirth); 7 serious long-term conditions on the Elixhauser comorbidity list (29% of adults with 5 or more such conditions were hospitalised …) … held down by taking a medicine of the class "HMG-CoA reductase inhibitors" (15% … — above the average on its own, but for someone with the rest of this patient's record it points to lower risk) …
+
+- **Apparent contradictions are explained.** In that last clause, statin users are above average on their own, yet for this patient the model treats statins as lowering risk. The narrative says so rather than leaving a puzzle.
+- **Narratives for all 11,863 test patients.** `explain --all` produced them in 2.5 minutes, at a median of 180 words each. An audit found **no raw codes** and **no mention of race**.
+- **Two things are never shown:** race, whose influence belongs in aggregate fairness reporting, and the patient's actual outcome, since that would amount to looking at the test results.
+
+## Files and validation
+
+- **New lab modules:** `cli.py`, `runs.py`, `vocabulary.py`, `narrate.py`, `drugnames.py`, `notebooks.py`.
+- **Round 002 records** in `outcome-prediction-lab/rounds/002-text-and-explanations/`: report, configs, run results, model card, scorecard, example narratives.
+- **Decisions O49–O51** added, and the docs are updated.
+- **Tests:** service 92 passed, lab 22 passed (11 new). The notebook check is clean. No data, model or narrative files are committed.
+- **Branch and commit:** `feature/phase8-m3-round-001` @ `409fcf7a`.
+
+## Known limitations
+
+- **The scorecard's human-judged criteria are still blank.** Measurable in customer data, actionable, lead time, FHIR fit and regulatory position need a person to fill them in (`--criteria file.json`).
+- **The comparison rates come from MEPS survey adults (2016–2021)**, not a customer population.
+- **The explanations' code-level reasons are an approximation**, derived through the compressed code representation.
+- **Round 000 hasn't been built yet.**
+
 <details>
 <summary>Execution details — 440 tool events</summary>
 
