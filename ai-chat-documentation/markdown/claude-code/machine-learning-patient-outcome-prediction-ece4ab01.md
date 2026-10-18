@@ -2803,7 +2803,7 @@ pandas' HTML reader needs `lxml`, and adding a dependency just for this would be
 Coverage is effectively complete. One flagged item to inspect: `U07`, the emergency-use category that holds COVID-19. My check may just be matching the "19" in its name:
 
 <details>
-<summary>Execution details — 408 tool events</summary>
+<summary>Execution details — 412 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3789,6 +3789,18 @@ from outcome_prediction_lab import drugnames
 r = drugnames.run()
 print({k: v for k, v in r.items() if k.startswith("n_")}, "| exact:", r["exact_lookup"])
 for k in ("…`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-lab/src/outcome_prediction_lab/cli.py`
+- **Bash** `python3 - <<'EOF'
+p='outcome-prediction-lab/pyproject.toml'; s=open(p).read()
+o='''[project.optional-dependencies]'''
+assert s.count(o)==1
+s=s.replace(o,'''[project.scripts]
+outcome-prediction-lab = "…`
+- **Bash** `R=outcome-prediction-lab/rounds/002-text-and-explanations && mkdir -p $R/configs && cat > $R/README.md <<'EOF'
+# Round 002 — text on codes and drug names, and self-explanatory patient narratives
+
+**Ty…`
+- **Bash** `set -o pipefail && MLFLOW_DISABLE_AGENT_HINT=1 PYTHONWARNINGS=ignore outcome-prediction-lab run 002-text-and-explanations no-text ref-codes-lsa desc-words-lsa codes-plus-desc-lsa codes-plus-drug-chars…`
 
 </details>
 
@@ -3799,6 +3811,6 @@ for k in ("…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 01:19 UTC
+- **Last updated:** 18 October 2026, 01:20 UTC
 - **Turns:** 35
 - **Status:** Complete
