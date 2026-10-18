@@ -4451,7 +4451,7 @@ A second promotion is refused, but with a raw "File exists" error. Better to ref
 All 31 lab tests pass. Now the real promotion, under decision O59. Then I'll prove the service can load the artifact **with the lab made unimportable**:
 
 <details>
-<summary>Execution details — 931 tool events</summary>
+<summary>Execution details — 933 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6806,6 +6806,16 @@ p = Path("outcome-prediction-lab/src/outcome_prediction_lab/runs.py"); s = p.rea
 old = '''    # The confirmed model itself. Unpickling resolves'''
 ne…`
 - **Bash** `SECONDS=0; MLFLOW_DISABLE_AGENT_HINT=1 PYTHONWARNINGS=ignore outcome-prediction-lab promote 003-portable-contract nonobstetric-v2 --decision O59 2>&1 | tail -2; echo "${SECONDS}s"; D=$(ls -d outcome-p…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+def sub(path, old, new):
+    p = Path(path); s = p.read_text(); assert s.count(old) == 1, (path, old[:60]); p.write_text(s.replace(old, new))
+sub("outcome-pr…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-service/src/outcome_prediction/etl/codelists/__init__.py"); s = p.read_text()
+old = '''def versions() -> dict[str, dict]:'''
+new…`
 
 </details>
 
@@ -6816,6 +6826,6 @@ ne…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 21:35 UTC
+- **Last updated:** 18 October 2026, 21:36 UTC
 - **Turns:** 63
 - **Status:** Complete
