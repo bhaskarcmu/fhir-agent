@@ -1,0 +1,1 @@
+"""Canonical tables → contract rows."""
