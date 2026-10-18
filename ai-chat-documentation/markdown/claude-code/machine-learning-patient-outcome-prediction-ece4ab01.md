@@ -4098,8 +4098,10 @@ Now the dependencies and tests. Looking at how existing tests build a throwaway 
 
 Now the API tests. The fixture trains a real artifact from the synthetic table, and patient scoring runs against M6's recorded FHIR conversation through the `client/clinical` replay:
 
+All 23 API tests pass. I'm tidying one assertion whose `and`/`or` precedence reads ambiguously:
+
 <details>
-<summary>Execution details — 743 tool events</summary>
+<summary>Execution details — 746 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5972,6 +5974,18 @@ from pathlib import Path
 p = Path("outcome-prediction-service/src/outcome_prediction/tests/test_api.py"); s = p.read_text()
 def sub(old, new):
     global s; assert s.count(old) == 1,…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-service/src/outcome_prediction/tests/test_api.py"); s = p.read_text()
+old = '''    assert first["subject"] == {"identifier": {"v…`
+- **Bash** `cat > outcome-prediction-service/Dockerfile <<'EOF'
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# client/clinical first: the patient endpoint reads FHIR through it (not on PyPI).
+COPY client/clinical /app/cl…`
+- **Bash** `docker ps --format '{{.Names}}' | grep -E "fhir-agent-(fhir|outcome)" ; SECONDS=0; docker compose --profile phase8 build outcome-prediction 2>&1 | tail -3; echo "${SECONDS}s"`
 
 </details>
 
@@ -5982,6 +5996,6 @@ def sub(old, new):
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 17:24 UTC
+- **Last updated:** 18 October 2026, 17:25 UTC
 - **Turns:** 54
 - **Status:** Complete
