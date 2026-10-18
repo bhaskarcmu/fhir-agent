@@ -4101,7 +4101,7 @@ Now the API tests. The fixture trains a real artifact from the synthetic table, 
 All 23 API tests pass. I'm tidying one assertion whose `and`/`or` precedence reads ambiguously:
 
 <details>
-<summary>Execution details — 746 tool events</summary>
+<summary>Execution details — 747 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5986,6 +5986,7 @@ WORKDIR /app
 # client/clinical first: the patient endpoint reads FHIR through it (not on PyPI).
 COPY client/clinical /app/cl…`
 - **Bash** `docker ps --format '{{.Names}}' | grep -E "fhir-agent-(fhir|outcome)" ; SECONDS=0; docker compose --profile phase8 build outcome-prediction 2>&1 | tail -3; echo "${SECONDS}s"`
+- **Bash** `docker compose --profile phase8 up -d fhir outcome-prediction 2>&1 | tail -3; for i in $(seq 1 60); do s=$(docker inspect -f '{{.State.Health.Status}}' fhir-agent-outcome-prediction 2>/dev/null); [ "$…`
 
 </details>
 
@@ -5996,6 +5997,6 @@ COPY client/clinical /app/cl…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 17:25 UTC
+- **Last updated:** 18 October 2026, 17:26 UTC
 - **Turns:** 54
 - **Status:** Complete
