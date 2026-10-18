@@ -4006,8 +4006,12 @@ Two large patients are still loading. Meanwhile, the client fix: `get_medication
 
 The load finished. Checking the result:
 
+That anchor also appears in the prototype function, so nothing was written. Rerunning with the replacements confined to `contract_rows`'s own text:
+
+M4's 18 tests still pass. Now the first real parity run: the same 33 patients through both paths, year 1 = 2023, compared feature by feature:
+
 <details>
-<summary>Execution details — 675 tool events</summary>
+<summary>Execution details — 678 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5693,6 +5697,20 @@ def sub(old, new):
 - **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/etl/extract/fhir.py`
 - **Bash** `cat /tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/tasks/ba3vc2fn3.output`
 - **Bash** `grep -n "def contract_rows" -A75 outcome-prediction-service/src/outcome_prediction/etl/transform/to_contract.py`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-service/src/outcome_prediction/etl/transform/to_contract.py"); s = p.read_text()
+def sub(old, new):
+    global s; assert s.count…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-service/src/outcome_prediction/etl/transform/to_contract.py"); full = p.read_text()
+i = full.index("MONTH_DAYS = 30.4375"); j =…`
+- **Bash** `PYTHONWARNINGS=ignore python3 - <<'EOF'
+import json, urllib.request, pandas as pd
+from fhir_clinical_client import FHIRClient
+from outcome_prediction.etl.extract import synthea_csv, fhir
+from outcome_…`
 
 </details>
 
@@ -5703,6 +5721,6 @@ def sub(old, new):
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 16:51 UTC
+- **Last updated:** 18 October 2026, 16:52 UTC
 - **Turns:** 53
 - **Status:** Complete
