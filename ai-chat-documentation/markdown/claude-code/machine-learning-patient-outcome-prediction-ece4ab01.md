@@ -4280,8 +4280,12 @@ The demo guide is organised by audience, and Phase 3 added its own section (5a).
 
 **Git:** worktree `/workspaces/fhir-agent`, from `main`, new branch `feature/phase8-m9-acceptance`.
 
+Right after a patient is posted, the identifier search finds nothing, so the second run posted that patient again. Before changing code, I'll look at what the server actually holds:
+
+The server holds the patient twice, and the identifier is there, so it's the search that's failing. Testing the exact request the seeder sends:
+
 <details>
-<summary>Execution details — 837 tool events</summary>
+<summary>Execution details — 840 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6397,6 +6401,16 @@ p = Path("outcome-prediction-service/pyproject.toml"); s = p.read_text()
 old = '''    "uvicorn[standard]>=0.29",
     "opentelemetry-sdk>=1.27",'''
 new = '''…`
+- **Bash** `curl -s "localhost:8080/fhir/Patient?_count=50&_elements=identifier" | python3 -c "
+import json,sys; d=json.load(sys.stdin); print('patients', d.get('total'), len(d.get('entry',[])))
+for e in d.get('e…`
+- **Bash** `python3 -c "
+import httpx
+for params in ({'identifier': 'https://github.com/synthetichealth/synthea|ba419d35-0dfe-8af7-347c-eebf02485a56'}, {'identifier': 'ba419d35-0dfe-8af7-347c-eebf02485a56'}):…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-service/src/outcome_prediction/etl/synthea.py"); s = p.read_text()
+old = '''    def on_server(synthea_id: str) -> dict | None:…`
 
 </details>
 
@@ -6407,6 +6421,6 @@ new = '''…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 18:52 UTC
+- **Last updated:** 18 October 2026, 18:55 UTC
 - **Turns:** 59
 - **Status:** Complete
