@@ -3290,8 +3290,49 @@ Capture the above appropriately, and document how I got to this point of decidin
 
 This is a scoping decision, so it belongs in the Phase 8 decision record. I'll also write the story of how we got here, including the parked targets and the ideas that were dropped, so none of that work gets lost. First, where PR #71 stands, and whether any doc mentions the dropped "find similar patients" idea:
 
+One formatting slip: the new status line ends with an unmatched `**`. Fixing it, adding the focus to the PRD and the lab README, and checking that every link in the new doc resolves:
+
+Every link resolves. These are docs-only changes, so there's nothing new to test. Committing on `feature/phase8-m3-round-001` (worktree `/workspaces/fhir-agent`, PR #71 into `main`):
+
+The four-prediction focus is recorded as decision **O55**, along with how we got here, and nothing else was deleted. It's in PR #71 as commit `548f63b5` on `feature/phase8-m3-round-001`.
+
+**The new reference document is `docs/phase8/prediction-targets.md`.** It has four parts:
+
+1. **The four focus predictions**, each with its best result so far, its production model, and what data a customer must provide:
+
+   | Prediction | Best result so far | Production model |
+   |---|---|---|
+   | Admission through the ER | 0.788 (research features) | **not built yet** |
+   | Hospital stay not related to pregnancy or childbirth | 0.795 | ready |
+   | Any ER visit | 0.740 | ready |
+   | High-cost patient | 0.834 (needs claims) | ready |
+
+2. **How we got here**, step by step with links to the evidence:
+   - the prototype's single target;
+   - the exact reproduction (M1–M2);
+   - round 001's discovery that the any-stay target is distorted by childbirth;
+   - round 002's text experiments and narratives;
+   - the "find similar patients" idea, critiqued and then dropped;
+   - the review of what survives converting customer FHIR records;
+   - round 003's portable contract;
+   - your decision.
+3. **Parked work, kept and findable.** Any hospital stay, number of ER visits, total spending, death and losing insurance each list their status, where their results live and how to restart them. Every one is still a label in the lab, one config away.
+4. **Ideas considered and dropped**, each with the reason: "find similar patients" (which wasn't written down anywhere before this), UK data, neighbourhood deprivation data, "potentially preventable admissions", predicting who benefits from outreach, and TF-IDF on code descriptions.
+
+**Where the decision now appears:**
+- **`decisions.md`**: O55, which narrows O40 so the first model to promote is chosen *from among the four*. My recommendation is still non-obstetric admission.
+- **Phase README**: the title is now just "Patient Outcome Prediction", and the status leads with the four.
+- **PRD**: the focus is in its decisions table.
+- **Milestone plan**: M3's remaining work now applies to the four.
+- **Experimentation runbook and lab README**: future rounds use the four by default, and parked targets run only on request.
+- **Docs index and PR description**: updated to match.
+
+**Validation:** this is a docs-only change, so no tests were run. I checked that every link in the new and updated docs resolves.
+
+**One gap the focus makes visible:** admission through the ER is the only one of the four without a production-contract model, because round 003 covered the other three. I'd make it the first item of the next round, alongside fairness metrics and a 65+ check for all four.
+
 <details>
-<summary>Execution details — 464 tool events</summary>
+<summary>Execution details — 469 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4476,6 +4517,28 @@ p=sys.argv[1]; s=ope…`
 ### Turn 45 activity
 
 - **Bash** `git branch --show-current && git status --short | head -3 && gh pr view 71 --json state --jq .state && grep -rn -i "similar patient" docs/phase8 outcome-prediction-lab --include=*.md | head -3; grep -…`
+- **Write** `/workspaces/fhir-agent/docs/phase8/prediction-targets.md`
+- **Bash** `python3 - <<'EOF'
+def edit(p,pairs):
+    s=open(p).read()
+    for o,n in pairs:
+        assert s.count(o)==1,(p,o[:60],s.count(o)); s=s.replace(o,n)
+    open(p,'w').write(s)
+D='docs/phase8/'
+s=open(D+…`
+- **Bash** `python3 - <<'EOF'
+def edit(p,pairs):
+    s=open(p).read()
+    for o,n in pairs:
+        assert s.count(o)==1,(p,o[:60],s.count(o)); s=s.replace(o,n)
+    open(p,'w').write(s)
+edit('docs/phase8/README.m…`
+- **Bash** `cd /workspaces/fhir-agent && git add -A && git status --short && git commit -q -F - <<'EOF'
+docs(phase8): focus on four predictions (O55) and record how we got there
+
+The repo owner narrowed Phase 8 t…`
+- **Bash** `cd /workspaces/fhir-agent && P=/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad/pr71.md && gh pr view 71 --json body --jq .body > $P && python3 - "$P" <<'EOF'
+im…`
 
 </details>
 
@@ -4486,6 +4549,6 @@ p=sys.argv[1]; s=ope…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 14:22 UTC
+- **Last updated:** 18 October 2026, 14:23 UTC
 - **Turns:** 45
 - **Status:** Complete
