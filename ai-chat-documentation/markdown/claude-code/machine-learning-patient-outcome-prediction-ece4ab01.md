@@ -2935,7 +2935,60 @@ Critique all of this first
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+## Critique: "find similar patients" with autoencoder embeddings
+
+**The use case is good.** Reusing a care team's research for patients facing the same situation is a real and well-studied idea (patient-similarity search, case-based retrieval). The weak points are mostly in how "similar" gets defined, not in the vector technique. Six issues.
+
+**1. "Similar" must mean "similar for this intervention", and an autoencoder doesn't know which intervention.**
+- An autoencoder learns whatever best rebuilds the *whole* record. That's dominated by common features: age, high blood pressure, cholesterol, how many prescriptions.
+- But whether a researched option carries over often hinges on a few specific things. For a care plan made for a heart-failure patient on insulin who keeps missing appointments, the relevant facts are heart failure, insulin, missed care, and perhaps insurance type. Two patients can sit close together overall and differ on exactly those.
+- Generic similarity will surface *plausible-looking* neighbours, which is worse than obviously wrong ones, because staff trust them.
+
+**2. Our own evidence says the autoencoder probably won't beat simpler methods.**
+- In round 001, the autoencoder's representation matched LSA (the linear method) for prediction, at 8× the cost. Denoising added nothing.
+- For similarity, plain TF-IDF cosine, LSA, or a weighted match on chosen attributes are strong baselines. They also have a big advantage: the shared codes behind a match can be shown directly.
+- The well-known precedent, *Deep Patient* (Miotto et al., 2016), used stacked denoising autoencoders on health records. Strong representation results haven't translated into much clinical use, largely because the matches can't be explained. An autoencoder is worth testing, but it shouldn't be the assumed answer.
+
+**3. The most transferable factors aren't in the data.**
+- What makes a researched option apply again is often social or practical: transport, a caregiver, language, housing, cost.
+- MEPS has a little of this (insurance, income, a few survey items), and customer records often have even less.
+- An embedding can't match on what it never saw, and it gives no warning that it's missing.
+
+**4. There's no ground truth for "the same research applies".** That's the hardest part.
+- MEPS has no record of interventions, the same gap as uplift (O37). So we can't learn, or even measure directly, whether an option carries over.
+- What we *can* measure in the lab are proxies:
+  - **Held-out codes:** hide some of a patient's codes and check whether their neighbours have them.
+  - **Outcome agreement:** check whether neighbours share the patient's outcomes.
+  - **Stability:** check whether neighbour lists stay steady over time.
+  - **Coverage:** check that unusual patients still get useful neighbours.
+- Real validation needs clinicians rating neighbour lists for a sample of real cases. That's cheap to do, and it's the only measure that matches the claim.
+
+**5. Showing other patients' records raises privacy and governance questions.**
+- In production, neighbours must come only from **the same customer's own panel**. MEPS respondents mean nothing to a clinic, and mixing data across customers is out.
+- Even within a panel, this is care-management use under HIPAA. It needs:
+  - role-based access;
+  - "minimum necessary" display, i.e. the shared attributes, not the whole chart;
+  - an audit log of who looked at whom.
+- Embeddings are derived personal data too, and need the same protection.
+
+**6. Fairness, anchoring, and the time-saving claim.**
+- **Fairness.** If similarity uses race or insurance, "patients like this one" can quietly steer interventions along demographic lines. Race should be excluded, as in the narratives.
+- **Anchoring.** The output should be a *prompt to consider*, never "do the same thing". Each plan still needs individual review, and the tool should say so.
+- **Time saved is a claim to test, not assume.** It could be checked by timing a small pilot.
+
+## What I'd recommend instead
+
+- **Build "find similar patients", but design it around explainable, adjustable matching rather than an opaque autoencoder:**
+  1. Start from the index patient and **turn their record into editable facets**: conditions, drug classes, use of care, coverage, risk drivers.
+  2. The care team chooses which facets matter *for the option they researched*, then finds patients who match on those.
+  3. Rank by weighted similarity, and **show the shared and differing facts** for each match.
+- **Run a lab round to choose the similarity method by evidence:**
+  - **Representations:** TF-IDF cosine, LSA, the autoencoder, the denoising autoencoder, and one new option: **similarity of risk drivers**. That compares patients' SHAP explanation vectors, so "similar" means "at risk for the same reasons", which is close to what an intervention addresses.
+  - **Proxy measures:** the four from point 4 (held-out codes, outcome agreement, stability, coverage).
+  - **Output:** a small neighbour-list sample for clinician review.
+- **Scale isn't a problem.** A clinic panel of tens of thousands needs only direct cosine search, no vector database.
+
+If you'd like, the next step is round 003 along those lines. It covers the comparison, the proxy evaluations, and an explained neighbour list from `explain`-style templates. Production concerns (customer-only search, access control, auditing) would be recorded as requirements for Phase 8b.
 
 <details>
 <summary>Execution details — 441 tool events</summary>
@@ -4046,6 +4099,6 @@ p=sys.argv[1]; s=ope…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 01:41 UTC
+- **Last updated:** 18 October 2026, 01:42 UTC
 - **Turns:** 39
-- **Status:** Incomplete
+- **Status:** Complete
