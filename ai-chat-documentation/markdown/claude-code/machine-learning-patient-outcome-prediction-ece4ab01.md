@@ -2625,7 +2625,7 @@ MLflow 3 has retired its file-based store, and the "skinny" package can't use th
 The first attempt only installed partly; this time everything installed. Re-testing SQLite tracking:
 
 <details>
-<summary>Execution details — 346 tool events</summary>
+<summary>Execution details — 348 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3392,6 +3392,13 @@ mlflow.set_tracking_uri("sqlite:////tmp/claude-1000/-workspaces-fh…`
 - **Bash** `MLFLOW_DISABLE_AGENT_HINT=1 python -W ignore - <<'EOF' 2>&1 | tail -2
 import mlflow
 mlflow.set_tracking_uri("sqlite:////tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scra…`
+- **Bash** `python3 - <<'EOF'
+p='outcome-prediction-lab/src/outcome_prediction_lab/round_001.py'; s=open(p).read()
+def rep(o,n):
+    global s
+    assert s.count(o)==1,o[:60]; s=s.replace(o,n)
+rep('''        mlflo…`
+- **Bash** `set -o pipefail && MLFLOW_DISABLE_AGENT_HINT=1 python -W ignore -m outcome_prediction_lab.round_001 cv_finalists 2>&1 | grep -vE "^\s*$|Warning|warn\(|INFO"`
 
 </details>
 
