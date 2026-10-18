@@ -4444,8 +4444,10 @@ Cleaned up. M12 is the biggest remaining milestone, so before planning I'll map 
 
 The tables now live in the service, and the lab's re-export works (HFRS still has its 109 codes). Next, `MissingnessAugmenter` moves to a new service module, along with the comparison model v2 needs:
 
+Artifact tests still pass. Retrofitting the M2 artifact's record next. Design §8 says `meps25-v1` is "promoted by decision O2/O3 itself". Checking what O2 and O3 say before citing them:
+
 <details>
-<summary>Execution details — 920 tool events</summary>
+<summary>Execution details — 925 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6771,6 +6773,14 @@ from pathlib import Path
 p = Path("outcome-prediction-lab/src/outcome_prediction_lab/features.py"); s = p.read_text()
 start = s.index("class MissingnessAugmenter(BaseEstimator, Trans…`
 - **Bash** `sed -n 1,100p outcome-prediction-service/src/outcome_prediction/model/artifact.py`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/model/promotion.py`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-service/src/outcome_prediction/model/artifact.py"); s = p.read_text()
+old = '''    present = {p.name for p in directory.iterdir(…`
+- **Bash** `grep -n "^| O2 \|^| O3 " docs/phase8/decisions.md | cut -c1-300`
+- **Bash** `A=$(ls -d outcome-prediction-service/models/gbm-meps25-v1-* | tail -1) && python -m outcome_prediction.model.promotion retrofit "$A" --decision O2 --note "Reproduced prototype, served under O2/O3 (des…`
+- **Bash** `grep -n "promote" outcome-prediction-lab/src/outcome_prediction_lab/tests/test_lab_tooling.py | head; sed -n '/^def test_run_compare_confirm_card_scorecard_promote/,/^def test_learning_only/p' outcome…`
 
 </details>
 
@@ -6781,6 +6791,6 @@ start = s.index("class MissingnessAugmenter(BaseEstimator, Trans…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 21:32 UTC
+- **Last updated:** 18 October 2026, 21:33 UTC
 - **Turns:** 63
 - **Status:** Complete
