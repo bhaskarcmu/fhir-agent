@@ -2,6 +2,7 @@
 
     GET  /health                                    artifact loaded and verified?
     GET  /model                                     model ID, contract, training summary, metrics
+    GET  /agent-tools, POST /agent-tools/{name}      the agent's only tools (tools.py, design.md §9)
     POST /risk/hospitalization-12m                  {patient_id, as_of?} -> RiskAssessment
     POST /risk/hospitalization-12m/contract-rows    {contract_version, rows} -> Bundle
 
@@ -25,8 +26,9 @@ from typing import Annotated
 
 import pandas as pd
 from fastapi import Depends, FastAPI, HTTPException, Request
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+from outcome_prediction import tools
 from outcome_prediction.etl.extract import fhir as fhir_extract
 from outcome_prediction.etl.transform import to_contract
 from outcome_prediction.fhir.risk_assessment import Bundle, Identifier, Reference, RiskAssessment, build, bundle
@@ -167,3 +169,43 @@ def score_rows(req: ContractRowsRequest, scorer: Annotated[Scorer, Depends(get_s
                          warnings=warnings[s.patient_ref])
                    for s in scorer.score(rows)]
     return bundle(assessments)
+
+
+# ── the agent's tools (design.md §9; tools.py) ───────────────────────────────────────
+
+@app.get("/agent-tools")
+def agent_tools() -> list[dict]:
+    """The complete list of what an agent may call — nothing else is reachable."""
+    return tools.DEFINITIONS
+
+
+@app.post("/agent-tools/{name}")
+def call_agent_tool(name: str, args: dict, request: Request,
+                    scorer: Annotated[Scorer, Depends(get_scorer)]) -> dict:
+    """Run one tool. Arguments outside its schema are refused (422); an unknown tool is 404.
+    A tool that ran answers 200 with an explicit `outcome`, so the agent never has to guess."""
+    if name not in tools.INPUTS:
+        raise HTTPException(404, f"no tool {name!r}; the tools are {tools.NAMES}")
+    try:
+        parsed = tools.INPUTS[name](**args)
+    except ValidationError as e:
+        raise HTTPException(422, [err["msg"] + f" ({'.'.join(map(str, err['loc']))})" for err in e.errors()])
+    tag_current_span("outcome-prediction", trigger="agent-tool", tool=name)
+    if name == "get_model_card":
+        return {"outcome": "model_card", "model_card": model(scorer)}
+    try:
+        client = request.app.dependency_overrides.get(get_client, get_client)()
+    except HTTPException as e:
+        return {"outcome": "unavailable", "detail": e.detail}
+    if name == "find_patient":
+        from fhir_clinical_client import FHIRClientError
+        try:
+            return {"outcome": "candidates", **tools.find_patient(client, parsed.name)}
+        except FHIRClientError:
+            return {"outcome": "unavailable", "detail": "the FHIR server could not be searched"}
+    try:
+        ra = score_patient(PatientRequest(patient_id=parsed.patient_id, as_of=parsed.as_of), scorer, client)
+    except HTTPException as e:
+        outcome = {404: "not_found", 422: "no_estimate"}.get(e.status_code, "unavailable")
+        return {"outcome": outcome, "detail": e.detail}
+    return {"outcome": "estimate", "risk_assessment": ra.model_dump(exclude_none=True)}

@@ -9,7 +9,7 @@ the `RiskAssessment` shape, scoring-mode semantics, the FHIR mapping sketch, art
 agent's tool contract, testing, and the prototype defects found in review.
 **Milestone plan:** [`milestone-plan.md`](./milestone-plan.md) — M1–M13, kept as its own
 document, same convention as Phase 6 (`phase6/decisions.md` H23) and Phase 7.
-**Decision index:** [`decisions.md`](./decisions.md) — `O1`–`O68`.
+**Decision index:** [`decisions.md`](./decisions.md) — `O1`–`O70`.
 **Experimentation protocol:** [`experimentation-protocol.md`](./experimentation-protocol.md) —
 the standing runbook for research rounds in `outcome-prediction-lab` (second pass, §12).
 **Prototype baseline:** [`prototype-baseline.md`](./prototype-baseline.md) — data choices,
@@ -202,9 +202,9 @@ milestone shown), **Changed** (in, but altered — see §11), **8b** (deferred t
 
 | ID | Requirement | Status |
 |---|---|---|
-| FR-A1 | `outcome-prediction-agent` resolves a patient by name (via the service's tools), calls the risk tool, and narrates the result | In — M8 |
-| FR-A2 | Every number or reason the agent states is present in the tool output; it never computes, rounds into a band, or compares against thresholds of its own | In — M8 |
-| FR-A3 | Every narration states that the score is a planning aid, not a diagnosis, and names the model version | In — M8 |
+| FR-A1 | `outcome-prediction-agent` resolves a patient by name (via the service's tools), calls the risk tool, and narrates the result | Done — M8 (O69, O70) |
+| FR-A2 | Every number or reason the agent states is present in the tool output; it never computes, rounds into a band, or compares against thresholds of its own | Done — M8 (O69, O70) |
+| FR-A3 | Every narration states that the score is a planning aid, not a diagnosis, and names the model version | Done — M8 (O69, O70) |
 
 ### Experimentation (new, second pass)
 

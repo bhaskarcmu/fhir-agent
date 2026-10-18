@@ -285,6 +285,13 @@ clinical logic in the agent. `explain.py`'s system prompt allows only facts pres
 returned `RiskAssessment` (FR-A2), plus the fixed planning-aid statement (FR-A3); the
 agent-turn output gate follows `agent-platform`'s `output_gate.py` pattern.
 
+**Built in M8 (O69, O70).** The service publishes the tools (`GET /agent-tools`, `POST
+/agent-tools/{name}`); the agent offers the model exactly those. Stricter than the paragraph above:
+the model never writes the reply. `explain.py` builds it from the tool output, a turn ends on one
+of eight outcomes (`ESTIMATE`, `MODEL_CARD`, `CHOOSE_PATIENT`, `NOT_FOUND`, `NO_ESTIMATE`,
+`NEEDS_PATIENT`, `OUT_OF_SCOPE`, `UNAVAILABLE`), and `explain.grounded` withholds any reply with a
+number the service didn't return.
+
 ## 10. Testing strategy
 
 Carried over from the prototype's test plan, mapped to this repo:

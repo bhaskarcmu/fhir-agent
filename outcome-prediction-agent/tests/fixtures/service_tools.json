@@ -1,0 +1,48 @@
+[
+ {
+  "name": "find_patient",
+  "description": "Find patients by name. Returns candidates (id, name, birth date). If more than one matches, do not choose: report the candidates and ask which patient is meant.",
+  "input_schema": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "name"
+   ],
+   "properties": {
+    "name": {
+     "type": "string",
+     "description": "Full or partial name"
+    }
+   }
+  }
+ },
+ {
+  "name": "get_hospitalization_risk",
+  "description": "The service's 12-month hospitalization risk estimate for ONE patient, as a FHIR RiskAssessment. Takes only the patient id (and optionally the as-of date). It cannot be adjusted, re-scored with different inputs, or classified as high/low.",
+  "input_schema": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "patient_id"
+   ],
+   "properties": {
+    "patient_id": {
+     "type": "string"
+    },
+    "as_of": {
+     "type": "string",
+     "description": "YYYY-MM-DD; default today"
+    }
+   }
+  }
+ },
+ {
+  "name": "get_model_card",
+  "description": "How the risk model was built: model version, training data, validation metrics.",
+  "input_schema": {
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {}
+  }
+ }
+]
