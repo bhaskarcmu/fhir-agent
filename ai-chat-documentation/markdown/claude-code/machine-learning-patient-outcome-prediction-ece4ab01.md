@@ -4454,8 +4454,12 @@ I'll put the synthetic v2 builder in a small test-support module, so both the AP
 
 A real bug in `portable_rows`. When no adult qualifies (as of 1950 here), the scores frame is built from an empty list and has no columns. Giving it explicit columns:
 
+The model card's metrics differ by contract: v1 nests its AUROC under `gbm`, v2 under `model`. The agent's narration (and its test) will read either:
+
+The suite now has 9 tests. Running it from **cold**, so it rebuilds the image with all the M12 code and brings up the whole stack itself:
+
 <details>
-<summary>Execution details — 946 tool events</summary>
+<summary>Execution details — 953 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6851,6 +6855,21 @@ def sub(old, new):
 from pathlib import Path
 p = Path("outcome-prediction-service/src/outcome_prediction/etl/transform/to_contract.py"); s = p.read_text()
 old = '''    scores = pd.DataFrame([knowledge.s…`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/tests/test_m12_promotion.py`
+- **Bash** `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:1 PYTHONWARNINGS=ignore python -m pytest outcome-prediction-service/src/outcome_prediction/tests/test_m12_promotion.py -q -p no:cacheprovider 2>/dev/null |…`
+- **Bash** `grep -n "estimated chance of a hospital admission" outcome-prediction-agent/src/outcome_prediction_agent/explain.py; python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-agent/src/o…`
+- **Bash** `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:1 python -m pytest outcome-prediction-agent/tests/test_risk_agent.py outcome-prediction-agent/tests/test_risk_explain.py -q -p no:cacheprovider 2>/dev/null…`
+- **Bash** `grep -n 'gbm, comp = v.get("gbm", {}), v.get("comparison", {})' outcome-prediction-agent/src/outcome_prediction_agent/explain.py; python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-predictio…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("e2e/test_outcome_prediction_acceptance.py"); s = p.read_text()
+def sub(old, new, count=1):
+    global s; assert s.count(old) == count, (old[:60], s…`
+- **Bash** `docker ps --format '{{.Names}}' | grep -E "fhir-agent|ollama" || echo "nothing running"; docker compose --profile phase8 build -q outcome-prediction 2>&1 | tail -1; SECONDS=0; OTEL_EXPORTER_OTLP_ENDPO…`
 
 </details>
 
@@ -6861,6 +6880,6 @@ old = '''    scores = pd.DataFrame([knowledge.s…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 21:41 UTC
+- **Last updated:** 18 October 2026, 21:43 UTC
 - **Turns:** 63
 - **Status:** Complete
