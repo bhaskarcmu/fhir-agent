@@ -3943,8 +3943,14 @@ The one failure is the request I'd flagged as unrecorded. The test should use th
 
 Every cost links to a recorded encounter (31 of 31), so I'm tightening that assertion to require all of them. Then the M5 gate: `triage-service` and `mcp-agent` must pass unmodified.
 
+The same 4 errors occur with my changes stashed, so they come from the environment, not from M5. Getting the actual reason:
+
+Confirmed: Ollama isn't running locally (CI provides it). Now the docs. Here's how the client README documents methods:
+
+The existing method table is broken: a blank line splits it, and the second half has no header row. Since I'm editing that section anyway, I'll repair it (docs only) and add a care-history section:
+
 <details>
-<summary>Execution details — 640 tool events</summary>
+<summary>Execution details — 646 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5531,6 +5537,21 @@ p = Path("client/clinical/tests/test_care_history.py"); s = p.read_text()
 old = '''        assert sum(eid in encounter_ids for eid in linked) / len(linked) >…`
 - **Bash** `OTEL_SDK_DISABLED=true python -m pytest triage-service mcp-agent -q -p no:cacheprovider 2>&1 | grep -E "passed|failed|error" | tail -3`
 - **Bash** `python -m pytest triage-service mcp-agent -q -p no:cacheprovider 2>/dev/null | grep -E "^(FAILED|ERROR)|passed|failed" | tail -25`
+- **Bash** `python -m pytest "mcp-agent/tests/test_provider_integration.py::test_live_ollama_resolves_to_a_valid_gated_decision" -q -p no:cacheprovider 2>/dev/null | grep -E "^E " | head -4; git stash -q && pytho…`
+- **Bash** `python -m pytest "mcp-agent/tests/test_provider_integration.py::test_live_ollama_resolves_to_a_valid_gated_decision" -q -p no:cacheprovider -rE 2>/dev/null | grep -iE "ollama|skip|fixture|Error|refuse…`
+- **Bash** `sed -n 80,200p client/clinical/README.md`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("client/clinical/README.md"); s = p.read_text()
+def sub(old, new):
+    global s; assert s.count(old) == 1, old[:60]; s = s.replace(old, new)
+sub("""…`
+- **Bash** `sed -n 15,24p client/clinical/README.md; sed -n 266,300p client/clinical/README.md`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("client/clinical/README.md"); s = p.read_text()
+old = "| `requirements.txt` | Python dependencies (stdlib only for now) |\n"
+new = old + ("| `tests/…`
 
 </details>
 
@@ -5541,6 +5562,6 @@ old = '''        assert sum(eid in encounter_ids for eid in linked) / len(linked
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 16:23 UTC
+- **Last updated:** 18 October 2026, 16:24 UTC
 - **Turns:** 52
 - **Status:** Complete
