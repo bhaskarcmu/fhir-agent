@@ -57,6 +57,11 @@ def build_reference(table: pd.DataFrame) -> dict:
         t[c] = t[c].clip(lower=0).astype(int)              # the meps25-v1 rule (feature_matrix)
     ref = summarise(t)
     ref["source"] = "MEPS longitudinal panels 21-25, adults, unweighted (outcome-prediction-service M1 table)"
+    # A typical adult, for per-patient explanations (FR-M8): the median of each number, the most
+    # common category or flag value. Explanations ask "what if this one input were typical?".
+    typical = {c: int(t[c].mode().iloc[0]) for c in CATEGORICAL + FLAGS}
+    typical.update({c: int(t[c].where(t[c] >= 0).median()) for c in COUNTS + ["agey1x"]})
+    ref["typical"] = {c: typical[c] for c in FEATURES}
     return ref
 
 

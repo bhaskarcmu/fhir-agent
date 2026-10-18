@@ -1,6 +1,6 @@
 # Phase 8 Milestone Plan — Patient Outcome Prediction
 
-M1–M13. **M1–M6 built** (verified results below; M3 closed 2026-10-18, O60); M7–M13 planned. M10 and M11 are folded into M3 (O45). Expanded from M1–M11 after a second scope pass added a
+M1–M13. **M1–M7 built** (verified results below; M3 closed 2026-10-18, O60); M8–M13 planned. M10 and M11 are folded into M3 (O45). Expanded from M1–M11 after a second scope pass added a
 dedicated experimentation track (`decisions.md` O28–O40): M3 (workbench) and M12 (promotion)
 are new, and the former model-improvement milestones are now rounds of the
 [experimentation protocol](./experimentation-protocol.md).
@@ -267,6 +267,16 @@ whose `basis` references resolve; contract-row batches return a `Bundle`; single
 under 100 ms measured and recorded.
 
 **Depends on:** M6.
+
+**Verified (M7 built):** `api.py`, `fhir/risk_assessment.py`, `scoring.py` (O67, O68). On the compose
+stack (`fhir` + `outcome-prediction`, profile `phase8`, port 8005) serving the real M2 artifact
+`gbm-meps25-v1-950d8be12078`, verified at startup: 10 Synthea v4.0.0 patients loaded; the 5 adults
+alive on 2024-12-31 each got a `RiskAssessment` that **HAPI's `$validate` passes with no errors or
+warnings** and whose `basis` references **all resolve**; the 5 who had died got 422, not an estimate.
+Contract-row `Bundle`s work; **single-row latency 26 ms median, 46 ms p95** over HTTP (1,000 rows:
+0.98 s). Outcome code verified (O22). The live check surfaced race as a top reason; it is now never
+a reason (O50, O67). OpenTelemetry follows triage-service's pattern. Tests: 26 new, offline (a real
+artifact trained on the synthetic table; M6's recorded FHIR conversation).
 
 ---
 

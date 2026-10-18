@@ -9,7 +9,7 @@ the `RiskAssessment` shape, scoring-mode semantics, the FHIR mapping sketch, art
 agent's tool contract, testing, and the prototype defects found in review.
 **Milestone plan:** [`milestone-plan.md`](./milestone-plan.md) — M1–M13, kept as its own
 document, same convention as Phase 6 (`phase6/decisions.md` H23) and Phase 7.
-**Decision index:** [`decisions.md`](./decisions.md) — `O1`–`O66`.
+**Decision index:** [`decisions.md`](./decisions.md) — `O1`–`O68`.
 **Experimentation protocol:** [`experimentation-protocol.md`](./experimentation-protocol.md) —
 the standing runbook for research rounds in `outcome-prediction-lab` (second pass, §12).
 **Prototype baseline:** [`prototype-baseline.md`](./prototype-baseline.md) — data choices,
@@ -155,7 +155,7 @@ milestone shown), **Changed** (in, but altered — see §11), **8b** (deferred t
 | FR-M5 | Panel-grouped CV tuning on training panels only | In — M11 |
 | FR-M6 | Separate or specially tuned model for 65+ | Done — M3 round 004: checked; general models win, no separate 65+ model (O58) |
 | FR-M7 | Recalibration on a customer's own data | 8b — needs customer outcomes |
-| FR-M8 | Per-patient explanations (top contributing features) | In — M7 |
+| FR-M8 | Per-patient explanations (top contributing features) | Done — M7: occlusion against a typical adult (O67) |
 
 ### Evaluation
 
@@ -192,9 +192,9 @@ milestone shown), **Changed** (in, but altered — see §11), **8b** (deferred t
 
 | ID | Requirement | Status |
 |---|---|---|
-| FR-S1 | REST API: score one patient or a batch of contract rows | Changed — M7: patient-by-ID endpoint added; responses are `RiskAssessment` / `Bundle` (O3) |
-| FR-S2 | Return main risk, comparison risk, percentile, model version, top reasons | Changed — M7: carried inside the `RiskAssessment` (`design.md` §4) |
-| FR-S3 | Health and model-metadata endpoints | In — M7 |
+| FR-S1 | REST API: score one patient or a batch of contract rows | Done — M7: patient-by-ID endpoint added; responses are `RiskAssessment` / `Bundle` (O3) |
+| FR-S2 | Return main risk, comparison risk, percentile, model version, top reasons | Done — M7: carried inside the `RiskAssessment` (`design.md` §4) |
+| FR-S3 | Health and model-metadata endpoints | Done — M7 |
 | FR-S4 | Batch job scoring a whole population from object storage | 8b |
 | FR-S5 | Input-drift and performance monitoring | 8b |
 

@@ -399,5 +399,34 @@ services:
       timeout: 5s
       retries: 12
 
+  # ── Phase 8: outcome-prediction scoring service (M7) ────────────────────────
+  # 12-month hospitalization risk as a FHIR RiskAssessment. Internal only — no Kong route (O14).
+  # Needs a trained artifact in outcome-prediction-service/models/ (python -m
+  # outcome_prediction.model.train); it is verified at startup and the service refuses to
+  # start on a mismatch. `docker compose --profile phase8 up --build -d fhir outcome-prediction`
+  outcome-prediction:
+    build:
+      context: .
+      dockerfile: outcome-prediction-service/Dockerfile
+    container_name: fhir-agent-outcome-prediction
+    profiles: ["phase8"]
+    ports:
+      - "8005:8005"
+    environment:
+      FHIR_GATEWAY_URL: ${FHIR_GATEWAY_URL:-http://fhir:8080/fhir}
+      FHIR_API_KEY: ${FHIR_API_KEY:-}            # Kong API key — omit for local dev
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4317}
+    volumes:
+      - ./outcome-prediction-service/models:/models:ro
+    depends_on:
+      fhir:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8005/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
 volumes:
   phase8-gcs-emulator:

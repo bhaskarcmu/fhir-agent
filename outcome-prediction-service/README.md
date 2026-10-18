@@ -6,7 +6,7 @@ milestones) trains, evaluates and serves the 12-month hospitalization model as F
 
 **Built so far:** M1 (MEPS acquisition, dataset build, variable dictionary), M2 (training,
 evaluation, model artifact), M4 (Synthea CSV harness, `as_of` scoring mode, leakage test) and M6 (FHIR
-extractor, CSV ↔ FHIR parity, data-quality report). No API or compose service yet.
+extractor, CSV ↔ FHIR parity, data-quality report) and M7 (the scoring API).
 
 ## Install
 
@@ -74,6 +74,30 @@ Code path: `etl/extract/synthea_csv.py` (reading only) → `etl/canonical.py` (f
 as_of)`; `training_rows(canon, year)` = scoring rows as of 31 December + the label). The prototype's
 mapping is kept as `prototype_training_rows` — reference only, defects marked — so the leakage test
 can show it catches them (`docs/phase8/design.md` §6, §11; decisions O61, O62).
+
+## The scoring API (M7)
+
+12-month hospitalization risk as a FHIR R4 `RiskAssessment` (design `docs/phase8/design.md` §4–§5).
+Internal only — no Kong route (O14).
+
+```bash
+pip install -e client/clinical -e "outcome-prediction-service[api]"
+FHIR_GATEWAY_URL=http://localhost:8080/fhir uvicorn outcome_prediction.api:app --port 8005
+# or: docker compose --profile phase8 up --build -d fhir outcome-prediction
+
+curl localhost:8005/health                                       # artifact loaded and verified
+curl localhost:8005/model                                        # model card facts, labelled metrics
+curl -X POST localhost:8005/risk/hospitalization-12m \
+     -H 'Content-Type: application/json' -d '{"patient_id": "3208", "as_of": "2024-12-31"}'
+curl -X POST localhost:8005/risk/hospitalization-12m/contract-rows \
+     -H 'Content-Type: application/json' -d '{"contract_version": "meps25-v1", "rows": [...]}'   # -> Bundle
+```
+
+The artifact is `OUTCOME_PREDICTION_ARTIFACT`, else the newest `models/gbm-meps25-v1-*`; it is
+verified against its manifest at startup and the service won't start on a mismatch. Each
+assessment carries the probability, the comparison model's probability, the training-population
+percentile, up to three plain-language reasons (O67), the records used (`basis`) and any input
+warnings. No high / moderate / low band until thresholds are signed off (O24).
 
 ## FHIR path, parity and data quality (M6)
 
