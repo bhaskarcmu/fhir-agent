@@ -4264,8 +4264,22 @@ M8 is done and up for review as **PR #76**, with all 14 CI checks passing. That 
 
 **Next:** I haven't merged anything. Once you merge PR #76, I'll ask before deleting the branch. M9 is next: the end-to-end acceptance case and demo.
 
+## Turn 59
+
+### Prompt
+
+PR #76 merged. Delete merged branches.
+
+Proceed to M9
+
+### Claude response
+
+Cleaned up. Reading M9's scope and how the repo's existing e2e suites are built and run:
+
+The demo guide is organised by audience, and Phase 3 added its own section (5a). Reading that section as the model for a Phase 8 one:
+
 <details>
-<summary>Execution details — 827 tool events</summary>
+<summary>Execution details — 833 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6360,6 +6374,15 @@ M8 adds a new…`
 
 - **Bash** `cat /tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/tasks/b0bvh93dh.output`
 
+### Turn 59 activity
+
+- **Bash** `gh pr view 76 --json state,mergedAt -q '"\(.state) \(.mergedAt)"' && git switch -q main && git pull -q --ff-only origin main && git fetch -q --prune && git branch -a --merged origin/main | grep m8; gi…`
+- **Bash** `git push -q origin --delete feature/phase8-m8-agent && git branch -d feature/phase8-m8-agent && git branch -a`
+- **Bash** `sed -n '/^### M9/,/^### M10/p' docs/phase8/milestone-plan.md; ls e2e; grep -n "e2e" docs/phase8/design.md docs/phase8/prd.md | cut -c1-200 | head; head -60 e2e/$(ls e2e | grep -m1 "^test_")`
+- **Bash** `cat e2e/conftest.py | head -60; ls docs/demo-guide.md 2>&1; grep -n "^#\|^##" docs/demo-guide.md 2>/dev/null | head -30; grep -n "e2e" .github/workflows/tests.yml pytest.ini | head`
+- **Bash** `sed -n 1,66p docs/demo-guide.md; sed -n '/^## 5a/,/^## 6/p' docs/demo-guide.md`
+- **Bash** `grep -n "ollama" -i docker-compose.yml | head; grep -n "LLM_BASE_URL\|host.docker.internal" docker-compose.yml | head -5`
+
 </details>
 
 ---
@@ -6369,6 +6392,6 @@ M8 adds a new…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 18:41 UTC
-- **Turns:** 58
+- **Last updated:** 18 October 2026, 18:51 UTC
+- **Turns:** 59
 - **Status:** Complete
