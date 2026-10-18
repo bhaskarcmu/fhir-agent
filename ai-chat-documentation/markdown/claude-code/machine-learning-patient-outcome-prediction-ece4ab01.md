@@ -3189,8 +3189,74 @@ Git: worktree `/workspaces/fhir-agent`. PR #71 isn't merged yet, so this continu
 
 Branch `feature/phase8-m3-round-001`, PR #71 still open (target `main`), working tree clean. First, the contract, in the service, since production will consume it:
 
+The report's figures match the run records: top-10% hit rates of 30%, 44% and 44%, and calibration of 0.080 vs 0.079, 0.152 vs 0.155, and 0.105 vs 0.100. Final checks before committing:
+
+Clean. Committing on `feature/phase8-m3-round-001` (worktree `/workspaces/fhir-agent`, PR #71 into `main`):
+
+The recommendations are implemented and pushed to PR #71 as round 003: production models now use only what a customer's FHIR or claims data can supply. CI is running now, and I'll report when it finishes.
+
+## What changed
+
+**The portable contract.** `outcome_prediction/contract.py` defines `meps-portable-v2`, the inputs production models may use. Each input records where it comes from in FHIR and how reliably customers have it:
+
+| Tier | Inputs | How production models treat it |
+|---|---|---|
+| Always | Age, sex | Used |
+| Usually | Race/ethnicity, region, insurance, Medicare and Medicaid status, hospital stays, nights, ER and office visits, the 11 conditions, diagnosis-code features, frailty, Charlson and Elixhauser scores | Used |
+| Rarely | Household income | Optional; models learn to cope without it |
+| Claims only | Prescription fills, home-health days | Used only for customers who send claims |
+| Not portable | Last year's spending | **Dropped** |
+
+**Replacements for features that only exist in MEPS:**
+- **CCSR condition groups and Multum drug classes** → ICD-10 codes only, which are portable.
+- **CCSR body-system counts** → ICD-10 chapter counts.
+- **Drug-class counts** → distinct-medicine counts. These track the class counts almost exactly (correlation 0.996) and map to RxNorm in FHIR.
+
+**Two rules for missing inputs (O53):**
+- **Always missing → drop the input and retrain.** Never fill it in.
+- **Sometimes missing → keep it, with augmentation.** A new pipeline step hides income in half the training rows during training only. Models are then scored with income blanked, the way production will run them.
+
+**Outcome observability (O54).** A target is only offered to customers who can observe its outcome. High cost needs claims data, and its model card now says so.
+
+## Results on the untouched test panels
+
+Three looks, chosen in advance and logged before scoring:
+
+| Target | Production-contract model | Round 001 research model |
+|---|---|---|
+| Non-obstetric admission | **0.795** | 0.795 |
+| Any ER visit | **0.740** | 0.739 |
+| High cost, with claims | **0.834** | 0.850 |
+
+- Admissions and ER visits lose nothing. High cost loses a little but still clearly beats a realistic baseline (0.722).
+- All three stay calibrated with income missing.
+- Narratives now show what production would see, including: *"Household income isn't recorded; depending on it, the estimate would be between 20% and 26%, worth recording."*
+
+## Files and validation
+
+- **New:**
+  - `outcome-prediction-service/src/outcome_prediction/contract.py`, with its tests;
+  - round 003's configs, results, model cards, scorecards, example narratives and report.
+- **Updated:**
+  - the lab's data, features, run engine, narratives and CLI;
+  - decisions O52–O54, with a note that they resolve O25;
+  - the design and milestone plan: **M6 and M7 now build against `meps-portable-v2`**.
+- **Tests:** service 123 passed (31 new contract tests), lab 25 passed. The notebook check is clean, and no data or model files are committed.
+- **Branch and commit:** `feature/phase8-m3-round-001` @ `4330dc50`.
+
+## Known limitations
+
+- **Records-only customers will still undercount admissions and ER visits** that happen at other hospitals, so they'll need recalibration (Phase 8b).
+- **Still to be confirmed against real FHIR:** the office vs hospital-outpatient visit split and the SNOMED → ICD-10 mapping (M6 and M13).
+- **Still open for M3:**
+  - round 000;
+  - fairness metrics;
+  - a model specially for adults 65+;
+  - your scorecard judgements;
+  - the O40 decision on what to promote first. I recommend non-obstetric admission.
+
 <details>
-<summary>Execution details — 456 tool events</summary>
+<summary>Execution details — 462 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4348,6 +4414,25 @@ o='''    def explain(self, row: pd.DataFrame) -> dict:
 # ── portable contract and missingness augmentation (O52, O53) ────────────────────────
 
 def test_augmenter…`
+- **Bash** `python3 - <<'EOF'
+def edit(p,pairs):
+    s=open(p).read()
+    for o,n in pairs:
+        assert s.count(o)==1,(p,o[:60],s.count(o)); s=s.replace(o,n)
+    open(p,'w').write(s)
+D='docs/phase8/'
+s=open(D+…`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-lab/rounds/003-portable-contract/report.md`
+- **Bash** `outcome-prediction-lab notebooks-check 2>/dev/null; dupes=$(git ls-files -o -c --exclude-standard "*test_*.py" | xargs -n1 basename | sort | uniq -c | awk '$1>1'); [ -z "$dupes" ] && echo "no duplicat…`
+- **Bash** `git commit -q -F - <<'EOF'
+feat(phase8): portable feature contract meps-portable-v2 (round 003; O25 resolved)
+
+Production models now train only on what customer FHIR / claims data can
+supply. O52-O54;…`
+- **Bash** `P=/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad/pr71.md && gh pr view 71 --json body --jq .body > $P && python3 - "$P" <<'EOF'
+import sys
+p=sys.argv[1]; s=ope…`
+- **Bash** `sleep 40; for i in $(seq 1 150); do p=$(gh pr checks 71 2>/dev/null | awk -F'\t' '$2=="pending"' | wc -l); t=$(gh pr checks 71 2>/dev/null | wc -l); [ "$t" -gt 0 ] && [ "$p" -eq 0 ] && break; sleep 10…`
 
 </details>
 
@@ -4358,6 +4443,6 @@ def test_augmenter…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 02:13 UTC
+- **Last updated:** 18 October 2026, 02:14 UTC
 - **Turns:** 43
 - **Status:** Complete
