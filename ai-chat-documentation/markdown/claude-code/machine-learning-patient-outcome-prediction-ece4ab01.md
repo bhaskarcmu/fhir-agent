@@ -4373,8 +4373,65 @@ The wheel now carries all 13 data files (11 lists, the map and the MEPS aggregat
 
 M13 is done and up for review as PR #78. I'm now waiting for CI to finish, and will report the results when it does.
 
+## Turn 62
+
+### Prompt
+
+<task-notification>
+<task-id>blen3k97i</task-id>
+<tool-use-id>toolu_01PrKRS66XUqGQEmYtkrPdwB</tool-use-id>
+<output-file>/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/tasks/blen3k97i.output</output-file>
+<status>completed</status>
+<summary>Background command "Watch PR #78 CI checks until done" completed (exit code 0)</summary>
+</task-notification>
+
+### Claude response
+
+M13 is done and up for review as **PR #78**, with all 14 CI checks passing. I deleted the merged M9 branch, on GitHub and locally.
+
+I did M13 before M12 on purpose. M12 serves the better `nonobstetric-v2` model, which needs ICD-10 codes, but FHIR and Synthea record conditions in SNOMED CT. The SNOMED→ICD-10 mapping is part of M13, so M12 couldn't come first.
+
+**What M13 delivers:**
+- **Code lists replace text matching.** The 11 diagnosis flags now come from versioned ICD-10-CM code lists (71 entries in total) instead of the prototype's text patterns. Each list states the MEPS survey question it reproduces and what it excludes and why. All are marked "unreviewed" until someone takes clinical sign-off (O27, still open).
+- **Validated against CDC's release.** A check command confirms every entry exists in the official CDC ICD-10-CM FY2026 release. The lab now imports that file's pin from the service, so it's defined in one place.
+- **SNOMED mapping.** SNOMED conditions are translated using Synthea's own bundled map, as you chose. It's licensed Apache-2.0 and credited in `NOTICE`.
+- **Before/after comparison.** The data-quality report now compares the old patterns with the code lists, and counts conditions that can't be mapped.
+
+**Before and after, on the 3,000 Synthea adults:**
+
+| Flag | Old patterns | Code lists | Why |
+|---|---|---|---|
+| Coronary heart disease | 24.1% | 26.2% | Past heart attacks and unstable angina now count |
+| Arthritis | 11.9% | 14.6% | Gout and fibromyalgia count, as MEPS defines arthritis; a jaw disorder no longer does |
+| The other 9 flags | — | unchanged | — |
+
+**Problems found by measuring, and fixed:**
+- **Over-matching.** Synthea's map lists every ICD-10 code a concept *might* become, so treating any match as a hit would have labelled chronic kidney disease as hypertension and hay fever as asthma.
+- **Under-matching.** Requiring *every* target to match would have lost cases such as diabetic neuropathy.
+- **The rule now used:** ignore pregnancy, newborn and injury codes, then require most targets to match. An exact tie also counts when no other condition claims any of the targets. This counts "history of bypass surgery" as coronary disease but keeps kidney disease out. All of these cases are now tests.
+- **A tie bug, caught live:** on the live stack, a demo patient briefly lost her bypass-surgery record from the evidence, which is what exposed the tie case. Her score and the demo guide's numbers are unchanged.
+
+**Main limitation:** Synthea's map covers only its own 574 SNOMED codes. Most of what it misses are social findings such as employment status, but a real EHR uses far more codes, so production will need the NLM map, which requires your UMLS licence.
+
+**Checks run:**
+- 304 tests pass across the service, client and lab, 25 of them new.
+- The agent's 39 tests pass.
+- The CSV-vs-FHIR parity test, the leakage test and the old false-positive coronary test still pass.
+- The 5 end-to-end acceptance tests pass on the live stack.
+
+**Files changed:**
+- **Code lists:** the new `etl/codelists/` folder (11 lists, the map, the module), plus `test_codelists.py`.
+- **Code:** `to_contract.py`, `quality.py`, and the lab's `vocabulary.py`.
+- **Tests:** `test_etl_fhir.py`.
+- **Packaging:** `pyproject.toml` now declares the package's data files.
+- **Licences and docs:** `NOTICE`, `data/reference/README.md`, decisions O73–O74, design, PRD, milestone plan, status pages, service README.
+
+**Branch and commit:** `feature/phase8-m13-code-lists`, commit `21e0f0ba`.
+
+**Next:** I haven't merged anything. Once you merge PR #78, I'll ask before deleting the branch. M12 comes next: promoting `nonobstetric-v2` and serving it alongside the current model.
+
 <details>
-<summary>Execution details — 906 tool events</summary>
+<summary>Execution details — 907 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6672,6 +6729,10 @@ old = '''    assert set(rep["unknown_codes"].values()…`
 M13 replaces the pro…`
 - **Bash** `timeout 2400 gh pr checks 78 --watch --interval 30 >/dev/null 2>&1; gh pr checks 78 2>&1 | awk -F'\t' '{print $2" — "$1}' | sort | uniq -c`
 
+### Turn 62 activity
+
+- **Bash** `cat /tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/tasks/blen3k97i.output`
+
 </details>
 
 ---
@@ -6681,6 +6742,6 @@ M13 replaces the pro…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 21:05 UTC
-- **Turns:** 61
+- **Last updated:** 18 October 2026, 21:09 UTC
+- **Turns:** 62
 - **Status:** Complete
