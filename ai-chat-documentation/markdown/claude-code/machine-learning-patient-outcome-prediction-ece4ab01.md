@@ -4462,8 +4462,10 @@ On rereading, the design §8 paragraph I just wrote ends with a garbled sentence
 
 Now the service README (both routes and the promotion commands) and the client README (the no-cache reads):
 
+M12 is done and up for review as PR #79. I'm now waiting for CI to finish, and will report the results when it does.
+
 <details>
-<summary>Execution details — 966 tool events</summary>
+<summary>Execution details — 968 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6906,6 +6908,11 @@ S = "outcome-pr…`
 - **Bash** `git ls-files -co --exclude-standard | grep "tests/test_" | awk -F/ '{print $NF}' | sort | uniq -d; git status --short; git diff --stat | tail -1; git status --short | grep -E "models/|\.joblib|data/ra…`
 - **Bash** `git add -A NOTICE client/clinical docs e2e outcome-prediction-agent outcome-prediction-lab outcome-prediction-service && git status --short | grep -c . && git commit -q -F - <<'EOF'
 feat(phase8): M12…`
+- **Bash** `gh pr create --base main --head feature/phase8-m12-first-promotion --title "Phase 8 M12: first promotion — nonobstetric-v2 served beside meps25-v1" --body-file - <<'EOF' 2>&1 | tail -1
+## Summary
+
+M12…`
+- **Bash** `timeout 2400 gh pr checks 79 --watch --interval 30 >/dev/null 2>&1; gh pr checks 79 2>&1 | awk -F'\t' '{print $2" — "$1}' | sort | uniq -c`
 
 </details>
 
