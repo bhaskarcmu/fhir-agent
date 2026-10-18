@@ -2593,7 +2593,7 @@ All exist except the **2016 prescriptions zip (`h188adta.zip`, 404)**, even thou
 All 21 recorded. Now the content check: for each file, which year it really covers (from its year-suffixed weight variable, e.g. `PERWT16F`) and which panels it contains.
 
 <details>
-<summary>Execution details — 311 tool events</summary>
+<summary>Execution details — 312 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3267,6 +3267,10 @@ edit('outcom…`
 import re, pandas as pd
 from outcome_prediction.meps.download import fetch
 expect = {"190":("conditions",2016),"199":("conditions",2017),"207":("conditions",2018),"214":("conditions"…`
+- **Bash** `python3 - <<'EOF'
+import pandas as pd
+d = pd.read_csv('outcome-prediction-service/data/processed/h252_dictionary.csv')
+want = ['RTHLTH2','MNHLTH2','ADLHLP2','IADLHP2','ACTLIM2','WLKLIM2','COGLIM2','SO…`
 
 </details>
 
