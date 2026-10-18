@@ -4367,8 +4367,12 @@ All 22 pass. Now the one-definition refactor: the lab imports the CDC pin from t
 
 Back to 8 records (Condition/3312, the CABG history, is cited again), so the demo guide is accurate as written, and all 5 acceptance tests pass with the code lists. Removing the containers I started:
 
+Recording the crosswalk's licence in both established places (O13): `NOTICE` for the vendored third-party content, and the data-source inventory. Then the decisions and status docs:
+
+The wheel now carries all 13 data files (11 lists, the map and the MEPS aggregates). Final checks:
+
 <details>
-<summary>Execution details — 898 tool events</summary>
+<summary>Execution details — 901 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6645,6 +6649,15 @@ old_start = s.index("def flags_for_code(code: str…`
 - **Bash** `docker compose --profile phase8 up -d --build outcome-prediction 2>&1 | tail -1; for i in $(seq 1 60); do [ "$(docker inspect -f '{{.State.Health.Status}}' fhir-agent-outcome-prediction 2>/dev/null)"…`
 - **Bash** `docker stop phase8-m13-ollama >/dev/null 2>&1; docker compose --profile phase8 rm -sf fhir outcome-prediction 2>&1 | tail -1; docker ps --format '{{.Names}}' | grep -E "fhir-agent|ollama" || echo "not…`
 - **Bash** `sed -n 95,125p NOTICE`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+def sub(path, old, new):
+    p = Path(path); s = p.read_text(); assert s.count(old) == 1, (path, old[:70]); p.write_text(s.replace(old, new))
+sub("NOTICE", "…`
+- **Bash** `grep -n "package-data\|\[tool.setuptools" outcome-prediction-service/pyproject.toml; python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-service/pyproject.toml"); s = p.read_text()…`
+- **Bash** `rm -rf /tmp/whl; cd /workspaces/fhir-agent && OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:1 PYTHONWARNINGS=ignore MLFLOW_DISABLE_AGENT_HINT=1 python -m pytest outcome-prediction-service client/clinic…`
 
 </details>
 
