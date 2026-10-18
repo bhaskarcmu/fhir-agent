@@ -4440,10 +4440,10 @@ Proceed with M12
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Cleaned up. M12 is the biggest remaining milestone, so before planning I'll map exactly what the promoted `nonobstetric-v2` model consumes: its feature contract, and the lab code it was built with.
 
 <details>
-<summary>Execution details — 907 tool events</summary>
+<summary>Execution details — 912 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6745,6 +6745,14 @@ M13 replaces the pro…`
 
 - **Bash** `cat /tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/tasks/blen3k97i.output`
 
+### Turn 63 activity
+
+- **Bash** `gh pr view 78 --json state,mergedAt -q '"\(.state) \(.mergedAt)"' && git switch -q main && git pull -q --ff-only origin main && git fetch -q --prune && git branch -a --merged origin/main | grep m13; g…`
+- **Bash** `git push -q origin --delete feature/phase8-m13-code-lists && git branch -d feature/phase8-m13-code-lists && git branch -a`
+- **Bash** `sed -n 1,140p outcome-prediction-service/src/outcome_prediction/contract.py`
+- **Bash** `cat outcome-prediction-lab/rounds/003-portable-contract/configs/nonobstetric-v2.json; sed -n 1,30p outcome-prediction-lab/src/outcome_prediction_lab/features.py; sed -n 96,240p outcome-prediction-lab/…`
+- **Bash** `grep -n "def _longitudinal_extras" -A40 outcome-prediction-lab/src/outcome_prediction_lab/data.py | head -60; grep -n "def _code_documents" -A50 outcome-prediction-lab/src/outcome_prediction_lab/data.…`
+
 </details>
 
 ---
@@ -6754,6 +6762,6 @@ M13 replaces the pro…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 21:26 UTC
+- **Last updated:** 18 October 2026, 21:27 UTC
 - **Turns:** 63
-- **Status:** Incomplete
+- **Status:** Complete
