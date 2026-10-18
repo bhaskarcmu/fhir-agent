@@ -156,7 +156,13 @@ per-patient explanations, missing values, feature importance). Results:
 | O61 | **Phase 8 pins Synthea v4.0.0 itself** (`etl/synthea.py`: release URL + SHA-256 `ed43c20a…`, verified before use) and generates the prototype's population (seed 42, 3,000, ages 18–90, end 2024-12-31, Arizona) **CSV-only**. The FHIR half (O11) is regenerated from the same seed when M6 needs it | Accepted | O11 called v4.0.0 "the repo's pinned" release, but `data/scripts/generate.sh` pins 3.3.0 for earlier phases and stays untouched. Same seed → same patients with or without the FHIR export (checked on a 20-patient run), and full-history FHIR for 3,700 people would be ~26 GB. |
 | O62 | **Scoring mode is the training rule** (`as_of_view` + `contract_rows`): training mode = scoring mode as of 31 December of year 1, plus the label. Values final only when a record ends are unknown while it runs: a running prescription's fills are estimated from the same person's last **ended** record of the same drug (else one a month) × the per-fill price; a running stay counts nights so far and no cost; a death after `as_of` is unknown | Accepted | Fixes `design.md` §11 defects 1, 3, 4. The leakage test (records after `as_of` change nothing) passes, and fails on the reproduced prototype code. Synthea fill rates vary (median 1.09 a month, many 90-day supplies), so a flat monthly rule overcounts. M6 decides the FHIR equivalent (`MedicationDispense` or `dispenseRequest`). |
 
-## Supersession notes
+## M5 — `client/clinical` care history
+
+| ID | Decision | Status | Rationale / where it lives |
+|---|---|---|---|
+| O63 | **`client/clinical` gains six care-history methods, additively**: `get_demographics`, `get_encounters(since=)`, `get_medication_history`, `get_medication_dispenses`, `get_care_costs(since=)`, `get_coverage` — new dataclasses, every page read. **`get_medications()` is untouched**: Phase 8 doesn't need its status filter, so Phase 7 M3 still defines it (O9); Phase 7 M3 reuses `get_medication_dispenses()`, which uses the name its plan already chose | Accepted | O9, FR-F1. Existing callers' requests and results are unchanged (a test pins `get_medications()`'s exact request); `triage-service` and `mcp-agent` suites pass unmodified. Tests replay responses recorded from HAPI v7.2.0 loaded with Synthea v4.0.0. |
+| O64 | **What Synthea v4.0.0's FHIR actually carries** (O21, checked in M5): Encounter class folds CSV classes (AMB = ambulatory + wellness + outpatient + urgent care; IMP = inpatient + SNF; HH = home + hospice), so office vs hospital-outpatient needs `Encounter.type`; **no `Coverage`** — the payer is on each ExplanationOfBenefit; **no `MedicationDispense`, no `dispenseRequest`** — one pharmacy claim per prescription, no fill count; **no `hospitalization.admitSource`**; state as a postal code ("AZ"); HAPI assigns its own IDs, the Synthea ID survives as `Patient.identifier` | Accepted — input to M6 | M6 decides each mapping rule from these facts (fills and ER-origin admissions have no direct FHIR source in Synthea). `design.md` §7. |
+
 
 - **O44 supersedes O17's last clause** ("tests that need the MEPS cache self-skip when it's
   absent; MEPS downloads stay out of required CI"). The rest of O17 — artifacts never committed,
@@ -173,6 +179,8 @@ per-patient explanations, missing values, feature importance). Results:
 - **O61 corrects O11's wording**: v4.0.0 is pinned by Phase 8 (`etl/synthea.py`), not by the repo's
   `generate.sh` (3.3.0); and the M4 run is CSV-only, with FHIR regenerated from the same seed for M6.
   O11's row is left as written.
+- **O64 confirms part of O21** (the FHIR mapping sketch): the encounter, coverage and fill risks it
+  named are real in Synthea v4.0.0. M6 still validates each mapping rule. O21's row is left as written.
 - **O46 refines O30**: same tool (MLflow), different store (SQLite instead of the retired file
   store), now an optional extra.
 

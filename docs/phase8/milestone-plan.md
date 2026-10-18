@@ -1,6 +1,6 @@
 # Phase 8 Milestone Plan — Patient Outcome Prediction
 
-M1–M13. **M1–M4 built** (verified results below; M3 closed 2026-10-18, O60); M5–M13 planned. M10 and M11 are folded into M3 (O45). Expanded from M1–M11 after a second scope pass added a
+M1–M13. **M1–M5 built** (verified results below; M3 closed 2026-10-18, O60); M6–M13 planned. M10 and M11 are folded into M3 (O45). Expanded from M1–M11 after a second scope pass added a
 dedicated experimentation track (`decisions.md` O28–O40): M3 (workbench) and M12 (promotion)
 are new, and the former model-improvement milestones are now rounds of the
 [experimentation protocol](./experimentation-protocol.md).
@@ -208,6 +208,15 @@ unmodified.
 `client/clinical` callers unaffected.
 
 **Depends on:** M1's scaffold only; can start alongside M2.
+
+**Verified (M5 built):** six additive methods and dataclasses (O63) — demographics, encounters,
+medication history, dispenses, care costs (ExplanationOfBenefit) and coverage — reading every page,
+with paging links replayed through the gateway. Checked live against HAPI v7.2.0 loaded with 10
+Synthea v4.0.0 patients (up to 401 claims and 336 prescriptions for one patient); unit tests replay a
+recorded, de-identified conversation (17 new tests, 54 in the package). `get_medications()` is
+unchanged (its exact request is pinned by a test); `triage-service` and `mcp-agent` pass unmodified
+(146 passed; 4 live-Ollama tests need a local model, same on `main`). What Synthea's FHIR does and
+doesn't carry is recorded for M6 (O64).
 
 ---
 

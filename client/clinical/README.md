@@ -19,6 +19,8 @@ search parameters, or HTTP verbs.
 | `fhir_client.py` | `FHIRClient` class — domain-abstracted FHIR operations |
 | `smoke_test.py` | End-to-end test of the deployed stack via `FHIRClient` |
 | `requirements.txt` | Python dependencies (stdlib only for now) |
+| `tests/test_care_history.py` | Care-history tests, replaying responses recorded from a real HAPI server |
+| `tests/record_care_history.py` | How that recording was made (needs a running server; not run by pytest) |
 
 ---
 
@@ -111,10 +113,26 @@ print(patient.gender)         # "female"
 | `create_patient(family, given, gender, birth_date)` | `str` (patient ID) | Register a new patient |
 | `get_patient(patient_id)` | `Patient` | Retrieve a patient by ID |
 | `delete_patient(patient_id)` | `None` | Delete a patient (primarily for test cleanup) |
+| `get_medications(patient_id)` | `list[Medication]` | Active prescriptions (first 100) |
+| `get_allergies(patient_id)` | `list[Allergy]` | All recorded allergy intolerances |
+| `get_conditions(patient_id)` | `list[Condition]` | All conditions regardless of status |
 
-| `get_medications(patient_id)` | Returns `list[Medication]` — active prescriptions |
-| `get_allergies(patient_id)` | Returns `list[Allergy]` — all recorded allergy intolerances |
-| `get_conditions(patient_id)` | Returns `list[Condition]` — all conditions regardless of status |
+### Care history (added for Phase 8's risk models)
+
+Complete histories: these methods read every page of results, not just the first.
+
+| Method | Returns | Description |
+|---|---|---|
+| `get_demographics(patient_id)` | `Demographics` | Gender, birth and death dates, state, race, ethnicity, source-system IDs |
+| `get_encounters(patient_id, since=None)` | `list[Encounter]` | Visits, ER attendances, hospital stays — with setting, times, type, and whether a stay began in the ER (when recorded) |
+| `get_medication_history(patient_id)` | `list[Prescription]` | Every prescription, any status, with refill and supply details when recorded |
+| `get_medication_dispenses(patient_id)` | `list[Dispense]` | Fills handed over by a pharmacy (empty if the system doesn't record them) |
+| `get_care_costs(patient_id, since=None)` | `list[CareCost]` | Billed and paid amounts per claim, with payer and linked encounters or medicines |
+| `get_coverage(patient_id)` | `list[InsuranceCoverage]` | Recorded periods of insurance cover |
+
+What Synthea-generated data contains: encounters, prescriptions and claim costs (with the payer on
+each claim), but **no dispenses and no separate coverage records**, and no "admitted from the ER"
+detail — so those come back empty or `None` there.
 
 ### Coming later
 
@@ -161,6 +179,10 @@ class Condition:
     abatement_date: Optional[date]  # None if condition is ongoing
     recorded_date: Optional[date]
 ```
+
+The care-history dataclasses (`Demographics`, `Encounter`, `Prescription`, `Dispense`, `CareCost`,
+`InsuranceCoverage`) are documented field by field in `fhir_client.py`. Their times are
+`datetime`s, because hospital stays are counted in nights.
 
 ---
 
@@ -252,4 +274,5 @@ and never appear in clinical application code:
 - FHIR search parameters (`?patient=`, `?clinical-status=active`)
 - HTTP verbs and status codes
 - JSON parsing of FHIR responses
+- Search paging ("next" links are followed internally, through the gateway)
 - Kong gateway configuration or API key headers

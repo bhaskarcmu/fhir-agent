@@ -62,6 +62,11 @@ method. Purely additive — `triage-service`'s existing test suite must pass unm
 **Deliverable:** `client/clinical` supports both emulators' full resource surface;
 `triage-service` unaffected.
 
+**Coordination note (Phase 8 M5, `docs/phase8/decisions.md` O63, per O9):**
+`get_medication_dispenses()` (returning `Dispense`) already exists — reuse and extend it rather
+than adding a second one. `get_medications()`'s status filter is still unclaimed: this milestone
+defines it.
+
 **Depends on:** M2.
 
 ---
