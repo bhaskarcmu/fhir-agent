@@ -2822,10 +2822,10 @@ The notebook check is wired into CI. Round 002's nine cross-validation runs are 
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Now the round 002 report, the committed record of this iteration:
 
 <details>
-<summary>Execution details — 429 tool events</summary>
+<summary>Execution details — 432 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3877,6 +3877,15 @@ def rep(o,n):
     global s
     assert s.count(o)==1,o[:60]; s=s.replace(o,n)
 rep('''HUMAN_CRITERIA = {…`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-lab/rounds/002-text-and-explanations/report.md`
+- **Bash** `grep -n "conditions …\|abbreviated" outcome-prediction-lab/rounds/002-text-and-explanations/report.md | head -2; grep -n "^## 8. Limitations" outcome-prediction-lab/rounds/001-what-and-how/report.md`
+- **Bash** `python3 - <<'EOF'
+def edit(p,pairs):
+    s=open(p).read()
+    for o,n in pairs:
+        assert s.count(o)==1,(p,o[:60],s.count(o)); s=s.replace(o,n)
+    open(p,'w').write(s)
+edit('outcome-prediction-l…`
 
 </details>
 
@@ -3887,6 +3896,6 @@ rep('''HUMAN_CRITERIA = {…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 01:30 UTC
+- **Last updated:** 18 October 2026, 01:31 UTC
 - **Turns:** 36
-- **Status:** Incomplete
+- **Status:** Complete
