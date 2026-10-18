@@ -3612,6 +3612,32 @@ Pushed. Updating the PR #71 description:
 
 PR updated. Watching CI:
 
+Your three conditions are now met on PR #71, and all 13 CI checks pass.
+
+**1. A production model for admission through the ER.** The new `er-admit-v2` model (records-only, production contract) scores **0.785** AUROC on the test panels, against 0.754 for the simple baseline and 0.788 for the old research model. Its predictions are well calibrated (predicted 5.1% vs actual 4.9%). Adding claims data didn't help, so this model needs only clinical records. All four focus predictions now have a production model (O56).
+
+**2. Fairness metrics for all four (O57).** There's a new `outcome-prediction-lab fairness` command, and it can't run until the look is logged in the holdout ledger. It breaks results down by race/ethnicity, insurance, sex and age band. Every model card now includes these figures. What it found:
+- **Race/ethnicity:** predicted and actual rates agree closely for White, Hispanic and Black adults (ratios 0.96–1.12), and the gaps between men and women are small.
+- **Uninsured adults are almost never flagged** (0–2%). The outcomes measure *use* of care, not *need*, and uninsured people use less care. Changing the model can't fix that, so outreach for this group shouldn't rely on the flag alone.
+- **Calibration by group:** the models over-predict for younger and privately insured adults and slightly under-predict for adults on public insurance only and those 75+. Recalibration in Phase 8b should be checked group by group, not just overall.
+- **Black adults, non-obstetric stay:** the model ranks risk less well for Black adults than for White adults (0.745 vs 0.787), though calibration is the same. This one should be monitored.
+- **Asian adults:** there are too few events to draw any conclusion.
+
+**3. The 65+ check for all four (O58).** I set the rule before running anything: a model trained only on adults 65+ would be adopted only if it beat the general model by at least 0.005 AUROC on that group. All four lost, by 0.020–0.038, so there's no separate 65+ model and no test-panel look was used on one. Performance for 65+ is lower than overall (0.70–0.78), as expected, because age alone does much of the work across all adults. The models still beat the simple baseline for 65+ by 0.04–0.15.
+
+The test panels were used five times this round (one confirmation and four fairness checks), and all five were set in advance and logged in the ledger.
+
+**What changed**
+- **Code:** a new `fairness.py`, plus updates to `runs.py` (a config option that limits a model to an age group, and the fairness section on model cards), `cli.py` and the tests.
+- **Round 004:** the plan (written first), the configs, runs, fairness reports, model card, scorecard and report. The three round-003 cards were regenerated, and their fairness reports were added.
+- **Docs:** decisions O56–O58. I also updated the PRD (fairness and 65+ requirements marked done), the prediction-targets page, the milestone plan, the status page, the CLI tables in the protocol and design docs, and the lab README.
+
+**Checks:** all 151 lab and service tests pass, the notebook check is clean, no data or model files are committed, and the fairness files contain group totals only.
+
+**Branch:** `feature/phase8-m3-round-001`, commit `c21cae0d`, and the PR #71 description is updated.
+
+**Still open in M3:** the scorecard criteria that a person has to fill in, and choosing which of the four models to promote first (O40).
+
 <details>
 <summary>Execution details — 504 tool events</summary>
 
