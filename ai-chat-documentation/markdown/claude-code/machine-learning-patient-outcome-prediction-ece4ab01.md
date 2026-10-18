@@ -4714,8 +4714,10 @@ Now rewriting the testing guide: the test counts, the CI job list, and the gaps.
 
 Testing guide is done. Now the developer guide: phases overview, repo map, dev loop, ports, and where to continue.
 
+Developer guide is done. Next are the docs index, the root README, and CLAUDE.md/.clinerules.
+
 <details>
-<summary>Execution details — 1028 tool events</summary>
+<summary>Execution details — 1030 tool events</summary>
 
 ### Turn 1 activity
 
@@ -7282,6 +7284,14 @@ old = """- Why Phase 3 is built this way → [`phase3/prd.md`](./phase3/prd.md),
 - **Bash** `grep -n "mvn\|java -jar\|docker" epic-emulator/README.md | head; grep -c "spring-boot-maven-plugin" epic-emulator/pom.xml`
 - **Bash** `sed -n 160,175p epic-emulator/README.md`
 - **Bash** `sed -i 's|epic-emulator `8092` (run with `mvn -f epic-emulator/pom.xml spring-boot:run`)|epic-emulator `8092` (no compose service — run its jar, see `epic-emulator/README.md`)|' docs/developer-guide.m…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("docs/README.md"); s = p.read_text()
+def rep(old, new):
+    global s
+    assert s.count(old) == 1, old; s = s.replace(old, new)
+rep("| **Know why Ph…`
+- **Bash** `grep -n "image: hapiproject\|hapi" docker-compose.yml | head -3; grep -n "<version>8\|hapi.fhir.version\|<parent>" -A2 fhir-service/pom.xml | head -8`
 
 </details>
 
