@@ -4101,7 +4101,7 @@ Now the API tests. The fixture trains a real artifact from the synthetic table, 
 All 23 API tests pass. I'm tidying one assertion whose `and`/`or` precedence reads ambiguously:
 
 <details>
-<summary>Execution details — 748 tool events</summary>
+<summary>Execution details — 751 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5990,6 +5990,18 @@ COPY client/clinical /app/cl…`
 - **Bash** `cd /workspaces/fhir-agent/outcome-prediction-service/data/raw/synthea/fhir-5-s42/fhir && python3 - <<'EOF'
 import json, glob, urllib.request
 files = sorted(glob.glob("hospital*.json")) + sorted(glob.g…`
+- **Bash** `cd /workspaces/fhir-agent && python3 - <<'EOF'
+import json, time, statistics, urllib.request, urllib.error
+def call(url, body=None, method=None):
+    req = urllib.request.Request(url, data=json.dumps(…`
+- **Bash** `python3 - <<'EOF'
+import json, urllib.request
+ra = json.loads(urllib.request.urlopen(urllib.request.Request("http://localhost:8005/risk/hospitalization-12m", data=json.dumps({"patient_id": "3208", "as…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+def sub(path, old, new):
+    p = Path(path); s = p.read_text(); assert s.count(old) == 1, (path, old[:60]); p.write_text(s.replace(old, new))
+S = "outcome-pr…`
 
 </details>
 
@@ -6000,6 +6012,6 @@ files = sorted(glob.glob("hospital*.json")) + sorted(glob.g…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 17:27 UTC
+- **Last updated:** 18 October 2026, 17:29 UTC
 - **Turns:** 54
 - **Status:** Complete
