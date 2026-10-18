@@ -3652,8 +3652,16 @@ The runs engine always applies the honest encoding. M2's model uses the prototyp
 
 M2's numbers are on disk. Implementing the reference model kinds:
 
+Now round 000's pre-registration and configs, written before any run:
+
+Bit-identical to M2 on every recorded metric. Generating the card and scorecard, then adding tests:
+
+A real (small) bug: `confirm` assumed `run` had already created `runs/`. Fixing it in `confirm`:
+
+Round 000 is done and tested. Writing its report and updating the docs:
+
 <details>
-<summary>Execution details — 515 tool events</summary>
+<summary>Execution details — 524 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4963,6 +4971,34 @@ import json; d=json.load(open('outcome-prediction-service/data/reports/metrics.j
 for k,v in d.items():
   if isinstance(v,dict): print(k, {a:(b if not isinstance(b,…`
 - **Bash** `grep -n "^from\|^import\|^class \|^GBM_DEFAULT" outcome-prediction-lab/src/outcome_prediction_lab/features.py | head -30; grep -n "def cv_predict" -A22 outcome-prediction-lab/src/outcome_prediction_la…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+def sub(path, old, new):
+    p = Path(path); s = p.read_text(); assert s.count(old) == 1, (path, old[:70]); p.write_text(s.replace(old, new))
+
+F = "outcome-p…`
+- **Bash** `R=outcome-prediction-lab/rounds/000-baseline-reproduction && mkdir -p $R/configs && cat > $R/README.md <<'EOF'
+# Round 000 — reproduce M2's model through the lab
+
+**Type:** tooling proof (milestone-pl…`
+- **Bash** `export MLFLOW_DISABLE_AGENT_HINT=1 PYTHONWARNINGS=ignore; for n in meps25-v1 meps25-v1-comparison; do outcome-prediction-lab confirm 000-baseline-reproduction $n --record "Round 000 pre-registered rep…`
+- **Bash** `export MLFLOW_DISABLE_AGENT_HINT=1 PYTHONWARNINGS=ignore; for n in meps25-v1 meps25-v1-comparison; do outcome-prediction-lab card 000-baseline-reproduction $n | tail -1; outcome-prediction-lab scoreca…`
+- **Bash** `sed -n 1,22p outcome-prediction-lab/src/outcome_prediction_lab/tests/test_lab_tooling.py; sed -n 93,140p outcome-prediction-lab/src/outcome_prediction_lab/tests/test_lab_tooling.py; sed -n 211,230p ou…`
+- **Bash** `cat >> outcome-prediction-lab/src/outcome_prediction_lab/tests/test_lab_tooling.py <<'EOF'
+
+
+# ── round 000: M2's models through the lab ───────────────────────────────────────────
+
+def test_reference…`
+- **Bash** `PYTHONWARNINGS=ignore python -m pytest outcome-prediction-lab/src/outcome_prediction_lab/tests -q -p no:cacheprovider -k services_own 2>&1 | grep -E "Error|error|assert" | head -10`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-lab/src/outcome_prediction_lab/runs.py"); s = p.read_text()
+old = '''    (round_dir(round_id) / "runs" / f"{name}.confirm.json")…`
+- **Bash** `python3 -c "
+import json
+for n in ['meps25-v1','meps25-v1-comparison']:
+    r=json.load(open(f'outcome-prediction-lab/rounds/000-baseline-reproduction/runs/{n}.json'))['cv']; print(n, {k:round(v,4) fo…`
 
 </details>
 
@@ -4973,6 +5009,6 @@ for k,v in d.items():
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 14:46 UTC
+- **Last updated:** 18 October 2026, 14:48 UTC
 - **Turns:** 48
 - **Status:** Complete
