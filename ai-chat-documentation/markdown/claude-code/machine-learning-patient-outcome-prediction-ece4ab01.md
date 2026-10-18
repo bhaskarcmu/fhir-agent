@@ -4446,8 +4446,10 @@ The tables now live in the service, and the lab's re-export works (HFRS still ha
 
 Artifact tests still pass. Retrofitting the M2 artifact's record next. Design §8 says `meps25-v1` is "promoted by decision O2/O3 itself". Checking what O2 and O3 say before citing them:
 
+A second promotion is refused, but with a raw "File exists" error. Better to refuse up front with a clear message, before any work is done:
+
 <details>
-<summary>Execution details — 929 tool events</summary>
+<summary>Execution details — 930 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6796,6 +6798,11 @@ from pathlib import Path
 p = Path("outcome-prediction-lab/src/outcome_prediction_lab/tests/test_lab_tooling.py"); s = p.read_text()
 def sub(old, new):
     global s; assert s.count(ol…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-lab/src/outcome_prediction_lab/runs.py"); s = p.read_text()
+old = '''    # The confirmed model itself. Unpickling resolves'''
+ne…`
 
 </details>
 
