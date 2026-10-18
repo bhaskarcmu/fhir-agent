@@ -8,6 +8,7 @@
     outcome-prediction-lab promote    <round> <config-name> --decision O<n>       promotion record
     outcome-prediction-lab explain    <round> <config-name> (--patient ID | --sample N)
     outcome-prediction-lab drug-names <round>                                     drug-name text experiment
+    outcome-prediction-lab fairness   <round> <config-name> [--record "why"]       subgroup fairness (test)
     outcome-prediction-lab notebooks-check | notebooks-strip <file.ipynb>
 """
 from __future__ import annotations
@@ -110,6 +111,17 @@ def _cmd_explain(a):
         print(dest)
 
 
+def _cmd_fairness(a):
+    from outcome_prediction_lab import fairness, holdout
+    if a.record:
+        holdout.record(a.round, f"{a.name}:fairness", a.record)
+    rep = fairness.run(a.round, a.name)
+    for dim, s in rep["summary"].items():
+        print(f"{dim:<20} AUROC {s['auroc_range'][0]:.3f}–{s['auroc_range'][1]:.3f}  calibration ratio "
+              f"{s['calibration_ratio_range'][0]:.2f}–{s['calibration_ratio_range'][1]:.2f}  cases caught "
+              f"{s['share_of_cases_flagged_range'][0]:.0%}–{s['share_of_cases_flagged_range'][1]:.0%}")
+
+
 def _cmd_drug_names(a):
     from outcome_prediction_lab import drugnames, runs
     r = drugnames.run()
@@ -156,6 +168,9 @@ def main(argv=None):
     s.add_argument("--write", action="store_true", help="also write rounds/<round>/explanations/<name>-examples.md")
     s.set_defaults(fn=_cmd_explain)
     s = sub.add_parser("drug-names"); s.add_argument("round"); s.set_defaults(fn=_cmd_drug_names)
+    s = sub.add_parser("fairness"); s.add_argument("round"); s.add_argument("name")
+    s.add_argument("--record", metavar="WHY", help="append the ledger entry first (the look is then logged)")
+    s.set_defaults(fn=_cmd_fairness)
     s = sub.add_parser("notebooks-check"); s.set_defaults(fn=_cmd_nb_check)
     s = sub.add_parser("notebooks-strip"); s.add_argument("files", nargs="+"); s.set_defaults(fn=_cmd_nb_strip)
     a = p.parse_args(argv)

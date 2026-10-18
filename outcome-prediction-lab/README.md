@@ -2,7 +2,7 @@
 
 Phase 8's experimentation workbench: research **rounds** that explore what to predict and how,
 without eroding the test set. Runbook: [`docs/phase8/experimentation-protocol.md`](../docs/phase8/experimentation-protocol.md).
-Decisions: `docs/phase8/decisions.md` O28–O54.
+Decisions: `docs/phase8/decisions.md` O28–O58.
 
 Imports `outcome-prediction-service` (dataset build, model definitions, MEPS download) — one
 implementation, not a fork (O29). Nothing in the service imports the lab.
@@ -35,6 +35,7 @@ outcome-prediction-lab card       <round> <config>                # model card
 outcome-prediction-lab scorecard  <round> <config> [--criteria person.json]
 outcome-prediction-lab promote    <round> <config> --decision O<n>
 outcome-prediction-lab explain    <round> <config> --patient ID | --sample N [--write] | --all
+outcome-prediction-lab fairness   <round> <config> --record "why" # subgroup report (a logged look)
 outcome-prediction-lab drug-names <round>                         # drug-name text experiment
 outcome-prediction-lab notebooks-check | notebooks-strip <file>
 ```
@@ -51,8 +52,8 @@ A config (`rounds/<round>/configs/<name>.json`) says only *what* to model:
 words), `drug_char_lsa` (drug names as character n-grams); sparse `tfidf` / `desc_tfidf` /
 `drug_char_tfidf` for `"model": "lr"`; `icd_lsa` (ICD-10-only codes, portable). `"features":
 "portable-v2"` / `"portable-v2+claims"` select the production contract; `augment_missing` and
-`simulate_missing_at_scoring` handle inputs production rarely has (O53). Keys naming panels or splits
-are refused.
+`simulate_missing_at_scoring` handle inputs production rarely has (O53). `"population": {"age_min": 65}`
+(and/or `age_max`) trains and scores a specialist on a subgroup. Keys naming panels or splits are refused.
 
 ## Rounds
 
@@ -61,6 +62,7 @@ are refused.
 | 001 | What to predict, and how (prototype objective, 7 new targets, concepts) | [`rounds/001-what-and-how/report.md`](./rounds/001-what-and-how/report.md) |
 | 002 | Text on code descriptions and drug names; self-explanatory narratives; the CLI | [`rounds/002-text-and-explanations/report.md`](./rounds/002-text-and-explanations/report.md) |
 | 003 | The portable feature contract `meps-portable-v2`: what production models can use | [`rounds/003-portable-contract/report.md`](./rounds/003-portable-contract/report.md) |
+| 004 | Readiness of the four focus predictions: ER-admission production model, fairness, 65+ | [`rounds/004-focus-four-readiness/report.md`](./rounds/004-focus-four-readiness/report.md) |
 
 Round 001 predates the CLI and runs as a script (`python -m outcome_prediction_lab.round_001 <stage>`);
 round 002 onwards use the CLI.
@@ -71,6 +73,7 @@ round 002 onwards use the CLI.
 |---|---|
 | `cli.py` | The command line |
 | `runs.py` | Config-driven runs, compare, confirm (ledger-guarded), model cards, scorecards, promotion |
+| `fairness.py` | Subgroup fairness of a confirmed model (ledger-guarded), on its model card |
 | `data.py` | The lab table: 56,360 adults from 28 MEPS files; person-ID normalisation; code "documents"; drug names; year-2 labels |
 | `vocabulary.py` | Plain-language names for every ICD-10, CCSR and drug-class code (O49) |
 | `knowledge.py` | Hospital Frailty Risk Score and Charlson/Elixhauser tables, vendored from comorbidipy (MIT) |
@@ -97,4 +100,5 @@ pytest outcome-prediction-lab/src/outcome_prediction_lab/tests -q
 
 Unit tests only (synthetic data): ledger guard, ID normalisation, targets, knowledge scores, honest
 encoding, autoencoder, bootstrap, vocabulary parsing, narratives, the runs engine end to end
-(config guard, CV, confirm guard, card, scorecard, promotion refusals), notebook check.
+(config guard, CV, confirm guard, card, scorecard, promotion refusals), population filter, fairness
+report and its ledger guard, notebook check.

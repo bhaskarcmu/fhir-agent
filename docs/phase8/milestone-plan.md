@@ -147,9 +147,16 @@ test panels: non-obstetric admission 0.795, any ER visit 0.740, high cost 0.834 
 
 **Focus (O55, 2026-10-18):** four predictions — admission through the ER, non-obstetric hospital stay,
 any ER visit, high-cost patient ([`prediction-targets.md`](./prediction-targets.md)). Remaining M3 work
-applies to these four: a production-contract model for **admission through the ER** (not yet built),
-fairness metrics and a 65+ check for all four, the person-scored scorecard criteria, and choosing
-the first promotion among them (O40). Round 000 stays.
+applies to these four.
+
+**Iteration 4 done — round 004** (`outcome-prediction-lab/rounds/004-focus-four-readiness/report.md`):
+admission through the ER on the production contract (`er-admit-v2`, test AUROC 0.785; O56) — **all four
+focus predictions now have a production-contract model**; subgroup fairness reports for all four on
+their model cards (FR-E6, O57); a 65+ check for all four — the general models beat 65+ specialists by
+0.02–0.04 CV AUROC, so no separate 65+ model (FR-M6, O58).
+
+**Remaining M3 work:** the person-scored scorecard criteria, and choosing the first promotion among
+the four (O40). Round 000 stays.
 **Not yet built:** round 000.
 
 ---

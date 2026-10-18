@@ -1,0 +1,55 @@
+{
+  "config": {
+    "name": "nonobstetric-v2-65plus",
+    "label": "admit_nonobstetric_y2",
+    "task": "binary",
+    "model": "gbm",
+    "params": "tuned",
+    "features": "portable-v2",
+    "baseline_inputs": [
+      "agey1x",
+      "ipdisy1"
+    ],
+    "outcome_phrase": "an overnight hospital stay that isn't related to pregnancy or childbirth",
+    "augment_missing": {
+      "povcaty1": 0.5
+    },
+    "simulate_missing_at_scoring": [
+      "povcaty1"
+    ],
+    "text": [
+      "icd_lsa"
+    ],
+    "population": {
+      "age_min": 65
+    },
+    "description": "65+ specialist: the production configuration trained and scored on adults 65+ only."
+  },
+  "cv": {
+    "n": 10500,
+    "rate": 0.15628571428571428,
+    "auroc": 0.6702415987102153,
+    "auprc": 0.28049214016077373,
+    "brier": 0.1260796480236482,
+    "mean_pred": 0.14703936507361098,
+    "top10_ppv": 0.34,
+    "top10_sensitivity": 0.21755027422303475,
+    "auroc_65plus": 0.6702415987102153
+  },
+  "provenance": {
+    "at": "2026-10-18T14:29:12+00:00",
+    "git_commit": "548f63b5d0c51fff872049d9ce8879c9e22120f0",
+    "manifest_sha256": "8467b5410f00e9812d9be182dca0eaac23607f92efb0166775d23abed36fd7e6"
+  },
+  "cv_baseline": {
+    "n": 10500,
+    "rate": 0.15628571428571428,
+    "auroc": 0.6440001626125984,
+    "auprc": 0.26934244369324656,
+    "brier": 0.12635033069598434,
+    "mean_pred": 0.15567316043695756,
+    "top10_ppv": 0.35523809523809524,
+    "top10_sensitivity": 0.22730042656916513,
+    "auroc_65plus": 0.6440001626125984
+  }
+}

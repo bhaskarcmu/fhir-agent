@@ -19,3 +19,8 @@ panels are scored; `holdout.require` refuses to score a candidate without one.
 | 2026-10-18T02:10:44+00:00 | 003-portable-contract | nonobstetric-v2 | 26, 27 | pre-registered production-contract candidate (rounds/003-portable-contract/README.md) |
 | 2026-10-18T02:10:49+00:00 | 003-portable-contract | any-ed-v2 | 26, 27 | pre-registered production-contract candidate (rounds/003-portable-contract/README.md) |
 | 2026-10-18T02:10:55+00:00 | 003-portable-contract | high-cost-v2-claims | 26, 27 | pre-registered production-contract candidate (rounds/003-portable-contract/README.md) |
+| 2026-10-18T14:31:33+00:00 | 004-focus-four-readiness | er-admit-v2 | 26, 27 | Round 004 pre-registered confirmation: records-only production-contract model for admission through the ER (README, written before CV). |
+| 2026-10-18T14:31:43+00:00 | 003-portable-contract | nonobstetric-v2:fairness | 26, 27 | Round 004 pre-registered fairness look (FR-E6) for focus production model nonobstetric-v2. |
+| 2026-10-18T14:31:51+00:00 | 003-portable-contract | any-ed-v2:fairness | 26, 27 | Round 004 pre-registered fairness look (FR-E6) for focus production model any-ed-v2. |
+| 2026-10-18T14:32:00+00:00 | 003-portable-contract | high-cost-v2-claims:fairness | 26, 27 | Round 004 pre-registered fairness look (FR-E6) for focus production model high-cost-v2-claims. |
+| 2026-10-18T14:32:10+00:00 | 004-focus-four-readiness | er-admit-v2:fairness | 26, 27 | Round 004 pre-registered fairness look (FR-E6) for focus production model er-admit-v2. |

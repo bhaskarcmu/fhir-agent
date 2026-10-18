@@ -20,6 +20,17 @@ Production contract plus claims-only inputs (prescription fills, home-health day
 | **Outcome observable by a customer** | claims only — a records-only customer can never validate or recalibrate it |
 | **Data provenance** | manifest sha256 `8467b5410f00…`, code `409fcf7a93b1` |
 
+## Subgroup fairness (test panels)
+
+Full tables: [`fairness/high-cost-v2-claims.md`](../fairness/high-cost-v2-claims.md). Widest gaps among groups with enough events:
+
+| Dimension | AUROC range | Calibration ratio range | Cases caught by the top-10% flag |
+|---|---|---|---|
+| Race / ethnicity | 0.811–0.885 | 0.85–1.20 | 26%–58% |
+| Insurance (year 1) | 0.816–0.831 | 1.04–1.05 | 35%–55% |
+| Sex | 0.823–0.846 | 1.04–1.06 | 41%–46% |
+| Age band | 0.770–0.825 | 1.01–1.16 | 23%–58% |
+
 ## Limitations
 
 - Trained on MEPS **self-reported** survey data; customer records differ (codes, charges vs payments,
@@ -28,4 +39,3 @@ Production contract plus claims-only inputs (prescription fills, home-health day
 - Explanations describe what the model weighed, not causes.
 - **Uplift / impactability is not assessable with MEPS** (no intervention data — O37): this model ranks
   risk, not who would benefit from outreach.
-- Subgroup fairness by race/ethnicity and insurance is not yet reported on this card.

@@ -1,0 +1,26 @@
+{
+  "name": "nonobstetric-v2-65plus",
+  "label": "admit_nonobstetric_y2",
+  "task": "binary",
+  "model": "gbm",
+  "params": "tuned",
+  "features": "portable-v2",
+  "baseline_inputs": [
+    "agey1x",
+    "ipdisy1"
+  ],
+  "outcome_phrase": "an overnight hospital stay that isn't related to pregnancy or childbirth",
+  "augment_missing": {
+    "povcaty1": 0.5
+  },
+  "simulate_missing_at_scoring": [
+    "povcaty1"
+  ],
+  "text": [
+    "icd_lsa"
+  ],
+  "population": {
+    "age_min": 65
+  },
+  "description": "65+ specialist: the production configuration trained and scored on adults 65+ only."
+}

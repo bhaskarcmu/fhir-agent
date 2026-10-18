@@ -9,7 +9,7 @@ the `RiskAssessment` shape, scoring-mode semantics, the FHIR mapping sketch, art
 agent's tool contract, testing, and the prototype defects found in review.
 **Milestone plan:** [`milestone-plan.md`](./milestone-plan.md) — M1–M13, kept as its own
 document, same convention as Phase 6 (`phase6/decisions.md` H23) and Phase 7.
-**Decision index:** [`decisions.md`](./decisions.md) — `O1`–`O55`.
+**Decision index:** [`decisions.md`](./decisions.md) — `O1`–`O58`.
 **Experimentation protocol:** [`experimentation-protocol.md`](./experimentation-protocol.md) —
 the standing runbook for research rounds in `outcome-prediction-lab` (second pass, §12).
 **Prototype baseline:** [`prototype-baseline.md`](./prototype-baseline.md) — data choices,
@@ -153,7 +153,7 @@ milestone shown), **Changed** (in, but altered — see §11), **8b** (deferred t
 | FR-M3 | Temporal validation: train panels 21–25, test 26–27 | In — M2 |
 | FR-M4 | Release model on all panels, with feature list, categories, library versions, data hash | Changed — M2: plus SHA-256 manifest verified before load (O17) |
 | FR-M5 | Panel-grouped CV tuning on training panels only | In — M11 |
-| FR-M6 | Separate or specially tuned model for 65+ | In — M11 |
+| FR-M6 | Separate or specially tuned model for 65+ | Done — M3 round 004: checked; general models win, no separate 65+ model (O58) |
 | FR-M7 | Recalibration on a customer's own data | 8b — needs customer outcomes |
 | FR-M8 | Per-patient explanations (top contributing features) | In — M7 |
 
@@ -166,7 +166,7 @@ milestone shown), **Changed** (in, but altered — see §11), **8b** (deferred t
 | FR-E3 | Subgroup AUROC by age band, sex, prior hospitalization | In — M2 |
 | FR-E4 | Permutation importance on test panels | In — M2 |
 | FR-E5 | Survey-weighted AUROC (`LONGWT`) | In — M2 |
-| FR-E6 | Fairness metrics by race/ethnicity and insurance type | In — M11 |
+| FR-E6 | Fairness metrics by race/ethnicity and insurance type | Done — M3 round 004: on every focus model card (O57) |
 
 ### ETL
 

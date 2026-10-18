@@ -314,6 +314,7 @@ The lab trains *many* candidates across outcome × form (O34) — label definiti
 | `card <round> <config>` | Generate a model card (O39) | — |
 | `scorecard <round> <config>` | Target scorecard (O36): ML criteria filled, person-scored criteria marked as owed | — |
 | `explain <round> <config>` | Self-explanatory per-patient narratives (O50) | Never shows outcomes |
+| `fairness <round> <config>` | Subgroup report on the test panels (race/ethnicity, insurance, sex, age band), added to the model card (O57) | Refuses without a `<config>:fairness` ledger entry and a confirmed model |
 | `promote <run> --decision O<n>` | Write `PROMOTION.json` into a service artifact | Refuses unless the decision ID exists in `decisions.md` and a model card is present (O33) |
 
 **Prediction forms and evaluation** (O34):

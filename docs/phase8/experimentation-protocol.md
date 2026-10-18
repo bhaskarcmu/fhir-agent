@@ -57,11 +57,12 @@ Every step below has a command (`outcome-prediction-lab --help`):
 | Model card / target scorecard | `outcome-prediction-lab card` / `scorecard <round> <config> [--criteria person.json]` |
 | Promote (needs a decision ID) | `outcome-prediction-lab promote <round> <config> --decision O<n>` |
 | Explain patients | `outcome-prediction-lab explain <round> <config> --patient ID / --sample N / --all` |
+| Subgroup fairness of a confirmed model (one logged test look) | `outcome-prediction-lab fairness <round> <config> --record "why"` |
 | Notebook hygiene | `outcome-prediction-lab notebooks-check` (CI) / `notebooks-strip <file>` |
 
 Configs live in `rounds/<round>/configs/<name>.json` and may only say *what* to model (label, task,
-features, model, text representations, parameters, baseline inputs); any key naming panels or splits
-is refused.
+features, model, text representations, parameters, baseline inputs, and an optional `population`
+such as `{"age_min": 65}` for a specialist); any key naming panels or splits is refused.
 
 ## 3. Steps
 

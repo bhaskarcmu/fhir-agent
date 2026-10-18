@@ -1,0 +1,27 @@
+{
+  "name": "high-cost-v2-claims-65plus",
+  "label": "high_cost_y2",
+  "task": "binary",
+  "model": "gbm",
+  "params": "tuned",
+  "features": "portable-v2+claims",
+  "baseline_inputs": [
+    "agey1x",
+    "ipdisy1",
+    "ertoty1"
+  ],
+  "outcome_phrase": "health care costs among the highest 10% of adults",
+  "augment_missing": {
+    "povcaty1": 0.5
+  },
+  "simulate_missing_at_scoring": [
+    "povcaty1"
+  ],
+  "text": [
+    "icd_lsa"
+  ],
+  "population": {
+    "age_min": 65
+  },
+  "description": "65+ specialist: the production configuration trained and scored on adults 65+ only."
+}

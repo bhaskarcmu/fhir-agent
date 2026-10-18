@@ -1,0 +1,55 @@
+{
+  "config": {
+    "name": "any-ed-v2-65plus",
+    "label": "any_ed_y2",
+    "task": "binary",
+    "model": "gbm",
+    "params": "tuned",
+    "features": "portable-v2",
+    "baseline_inputs": [
+      "agey1x",
+      "ertoty1"
+    ],
+    "outcome_phrase": "at least one emergency-room visit",
+    "augment_missing": {
+      "povcaty1": 0.5
+    },
+    "simulate_missing_at_scoring": [
+      "povcaty1"
+    ],
+    "text": [
+      "icd_lsa"
+    ],
+    "population": {
+      "age_min": 65
+    },
+    "description": "65+ specialist: the production configuration trained and scored on adults 65+ only."
+  },
+  "cv": {
+    "n": 10500,
+    "rate": 0.2215238095238095,
+    "auroc": 0.6717508758871165,
+    "auprc": 0.36530148391353295,
+    "brier": 0.16234125766207588,
+    "mean_pred": 0.21727284699338842,
+    "top10_ppv": 0.4419047619047619,
+    "top10_sensitivity": 0.1994840928632846,
+    "auroc_65plus": 0.6717508758871165
+  },
+  "provenance": {
+    "at": "2026-10-18T14:29:26+00:00",
+    "git_commit": "548f63b5d0c51fff872049d9ce8879c9e22120f0",
+    "manifest_sha256": "8467b5410f00e9812d9be182dca0eaac23607f92efb0166775d23abed36fd7e6"
+  },
+  "cv_baseline": {
+    "n": 10500,
+    "rate": 0.2215238095238095,
+    "auroc": 0.6515010684423757,
+    "auprc": 0.3612786636168338,
+    "brier": 0.16288523564718235,
+    "mean_pred": 0.22094974284041927,
+    "top10_ppv": 0.4523809523809524,
+    "top10_sensitivity": 0.20421324161650903,
+    "auroc_65plus": 0.6515010684423757
+  }
+}

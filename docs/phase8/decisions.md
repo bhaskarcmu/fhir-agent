@@ -133,6 +133,14 @@ per-patient explanations, missing values, feature importance). Results:
 |---|---|---|---|
 | O55 | **Phase 8 focuses on four predictions only, unless the repo owner explicitly says otherwise:** (1) admission through the emergency room, (2) hospital stay not related to pregnancy or childbirth, (3) any emergency-room visit, (4) being a high-cost patient. All other targets are **parked, not deleted** | Accepted (repo owner, 2026-10-18); **narrows O40** to a choice among these four | All four are event probabilities (native `RiskAssessment`, O3); three are validatable from records, high cost from claims (O54). The decision path and every parked item's location: [`prediction-targets.md`](./prediction-targets.md). |
 
+## Round 004 — readiness of the four focus predictions
+
+| ID | Decision | Status | Rationale / where it lives |
+|---|---|---|---|
+| O56 | **Admission through the ER's production model is `er-admit-v2`** — `meps-portable-v2`, records-only tier, income learned-missing and blanked at scoring. The claims tier adds nothing (CV 0.7798 vs 0.7797) | Accepted | Test AUROC **0.785** (research model 0.788; baseline 0.754); calibrated (0.051 vs 0.049). ER-origin admissions are observable in records or claims (O54). All four focus predictions now have a production-contract model. `outcome-prediction-lab/rounds/004-focus-four-readiness/report.md` §2. |
+| O57 | **Every focus production model ships with a subgroup fairness report** (race/ethnicity, insurance, sex, age band: AUROC with CI, calibration ratio, flag share, cases caught, precision) on its model card; it is a logged test-panel look (`<config>:fairness`). Known findings travel with the model: **uninsured adults are almost never flagged** (labels measure use, not need), calibration bends toward the average by age and insurance, and Black adults' AUROC for non-obstetric stay is lower (0.745 vs 0.787) | Accepted (FR-E6) | `outcome-prediction-lab fairness`; reports in each round's `fairness/`. Phase 8b repeats the check per customer, per group. Race/ethnicity stays out of the inputs and out of per-patient narratives (O50). |
+| O58 | **No separate 65+ model** (FR-M6): the general production models are used for adults 65+ | Accepted | Pre-registered rule (specialist must beat the general model's CV AUROC on 65+ by ≥ +0.005) failed for all four, by 0.020–0.038. 65+ performance and calibration are reported on every model card. Report §4. |
+
 ## Supersession notes
 
 - **O44 supersedes O17's last clause** ("tests that need the MEPS cache self-skip when it's

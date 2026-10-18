@@ -1,0 +1,27 @@
+{
+  "name": "er-admit-v2-65plus",
+  "label": "admit_via_er_y2",
+  "task": "binary",
+  "model": "gbm",
+  "params": "tuned",
+  "features": "portable-v2",
+  "baseline_inputs": [
+    "agey1x",
+    "ipdisy1",
+    "ertoty1"
+  ],
+  "outcome_phrase": "a hospital admission through the emergency room",
+  "augment_missing": {
+    "povcaty1": 0.5
+  },
+  "simulate_missing_at_scoring": [
+    "povcaty1"
+  ],
+  "text": [
+    "icd_lsa"
+  ],
+  "population": {
+    "age_min": 65
+  },
+  "description": "65+ specialist: the production configuration trained and scored on adults 65+ only."
+}

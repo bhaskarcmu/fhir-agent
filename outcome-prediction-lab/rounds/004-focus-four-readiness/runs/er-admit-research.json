@@ -1,0 +1,47 @@
+{
+  "config": {
+    "name": "er-admit-research",
+    "label": "admit_via_er_y2",
+    "task": "binary",
+    "model": "gbm",
+    "params": "tuned",
+    "baseline_inputs": [
+      "agey1x",
+      "ipdisy1",
+      "ertoty1"
+    ],
+    "outcome_phrase": "a hospital admission through the emergency room",
+    "features": "portable+knowledge",
+    "text": [
+      "lsa"
+    ],
+    "description": "Research model: includes last-year spending, CCSR groups and Multum classes."
+  },
+  "cv": {
+    "n": 44497,
+    "rate": 0.048744859203991284,
+    "auroc": 0.7817809067809068,
+    "auprc": 0.19179443693165488,
+    "brier": 0.04275464916296354,
+    "mean_pred": 0.04835738765705064,
+    "top10_ppv": 0.19644864014385255,
+    "top10_sensitivity": 0.4029506685108345,
+    "auroc_65plus": 0.7232093184889632
+  },
+  "provenance": {
+    "at": "2026-10-18T14:28:30+00:00",
+    "git_commit": "548f63b5d0c51fff872049d9ce8879c9e22120f0",
+    "manifest_sha256": "8467b5410f00e9812d9be182dca0eaac23607f92efb0166775d23abed36fd7e6"
+  },
+  "cv_baseline": {
+    "n": 44497,
+    "rate": 0.048744859203991284,
+    "auroc": 0.7346518383862781,
+    "auprc": 0.16442480115136443,
+    "brier": 0.043988751515047345,
+    "mean_pred": 0.04874598626522696,
+    "top10_ppv": 0.17554506630703529,
+    "top10_sensitivity": 0.36007376671277086,
+    "auroc_65plus": 0.6785466246219191
+  }
+}

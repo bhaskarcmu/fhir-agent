@@ -213,3 +213,43 @@ def test_configs_may_request_augmentation_and_production_scoring(lab):
         simulate_missing_at_scoring=["povcaty1"])
     cfg = runs.load_config(runs.config_path("r1", "p"))
     assert runs._scoring_hook(cfg)(pd.DataFrame({"povcaty1": [3.0]})).povcaty1.isna().all()
+
+
+# ── population filter and fairness (round 004) ───────────────────────────────────────
+
+def test_population_filter_restricts_training_and_scoring(lab):
+    frame = _frame()
+    lab("old", population={"age_min": 65})
+    r = runs.run("r1", "old", frame=frame)
+    assert r["cv"]["n"] == int(((frame.agey1x >= 65) & frame.panel.isin([21, 22, 23, 24, 25])).sum())
+    lab("bad", population={"income_min": 3})
+    with pytest.raises(runs.ConfigError, match="age_min"):
+        runs.run("r1", "bad", frame=frame)
+
+
+def test_fairness_report_covers_groups_and_flags_small_ones():
+    from outcome_prediction_lab import fairness
+    rng = np.random.default_rng(0)
+    n = 3000
+    df = pd.DataFrame({"racethx": rng.choice([1, 2, 3, 4, 5], n, p=[.2, .6, .12, .07, .01]),
+                       "inscovy1": rng.choice([1, 2, 3], n), "sex": rng.choice([1, 2], n),
+                       "agey1x": rng.integers(18, 90, n)})
+    p = rng.random(n)
+    y = (rng.random(n) < p * 0.3).astype(float)
+    rep = fairness.report(y, p, df)
+    assert set(rep["groups"]) == {"Race / ethnicity", "Insurance (year 1)", "Sex", "Age band"}
+    assert abs(rep["overall"]["flagged_share"] - 0.10) < 0.01
+    small = [r for r in rep["groups"]["Race / ethnicity"] if r["group"] == "Other or multiple, non-Hispanic"][0]
+    assert small["auroc"] is None and "too few events" in small["note"]
+    assert "Widest gaps" in fairness.markdown(rep, "x")
+
+
+def test_fairness_needs_its_own_ledger_entry(lab):
+    from outcome_prediction_lab import fairness
+    frame = _frame()
+    lab("m")
+    runs.run("r1", "m", frame=frame)
+    holdout.record("r1", "m", "unit test")
+    runs.confirm("r1", "m", frame=frame)
+    with pytest.raises(holdout.NotInLedger):
+        fairness.run("r1", "m")

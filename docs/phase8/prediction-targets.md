@@ -12,7 +12,7 @@ All four are next-12-month **event probabilities** for adults, so each maps nati
 
 | # | Prediction | Label (lab) | Best test result so far | Production model (contract `meps-portable-v2`) | Customer must supply |
 |---|---|---|---|---|---|
-| 1 | **Admission through the emergency room** | `admit_via_er_y2` | AUROC 0.788 (round 001, research features) | **not yet built** — next round | records or claims |
+| 1 | **Admission through the emergency room** | `admit_via_er_y2` | AUROC **0.785** (round 004, production contract) | `er-admit-v2` | records or claims |
 | 2 | **Hospital stay not related to pregnancy or childbirth** | `admit_nonobstetric_y2` | AUROC **0.795** (round 003, production contract) | `nonobstetric-v2` | records or claims |
 | 3 | **Any emergency-room visit** | `any_ed_y2` | AUROC **0.740** (round 003, production contract) | `any-ed-v2` | records or claims |
 | 4 | **Being a high-cost patient** (top 10% of next-year spending) | `high_cost_y2` | AUROC **0.834** (round 003, production contract, with claims) | `high-cost-v2-claims` | **claims** (O54) |
@@ -35,13 +35,15 @@ the *financial* view. Three can be validated by any customer; high cost needs cl
 | ETL review | What survives conversion from customer FHIR | Last-year spending isn't portable; high cost can be predicted without it (CV 0.860 → 0.852) | O25 → O52–O53 |
 | Round 003 | The portable contract `meps-portable-v2` | Production models lose nothing for admissions and ER visits, a little for high cost; high cost needs claims to be validated | [round 003 report](../../outcome-prediction-lab/rounds/003-portable-contract/report.md), O52–O54 |
 | **2026-10-18** | **Repo owner narrows the focus to the four in §1** | — | **O55** |
+| Round 004 | Readiness of the four: ER-admission production model, fairness, 65+ | All four have production models; fairness findings recorded (uninsured rarely flagged — labels measure use, not need); general models beat 65+ specialists | [round 004 report](../../outcome-prediction-lab/rounds/004-focus-four-readiness/report.md), O56–O58 |
 
 ## 3. What changes now
 
 - **Default scope:** every new round, model card, scorecard, narrative and milestone deliverable
   targets these four unless the repo owner says otherwise.
-- **Gap to close next:** admission through the ER has no production-contract (`meps-portable-v2`)
-  model yet — it was a round-001 target but not in round 003. It is the first item of the next round.
+- **Gap closed (round 004):** admission through the ER now has its production-contract model
+  (`er-admit-v2`, O56). Every focus model's card carries a subgroup fairness report (O57) and 65+
+  performance; no separate 65+ model (O58).
 - **O40** ("which outcome to promote first") now chooses *among these four*; the recommendation stands
   — non-obstetric admission first.
 - **Service work (M6, M7, M12)** builds the four labels' inputs on `meps-portable-v2`; any-stay

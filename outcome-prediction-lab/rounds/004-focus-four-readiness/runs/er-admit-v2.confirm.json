@@ -1,0 +1,54 @@
+{
+  "config": {
+    "name": "er-admit-v2",
+    "label": "admit_via_er_y2",
+    "task": "binary",
+    "model": "gbm",
+    "params": "tuned",
+    "baseline_inputs": [
+      "agey1x",
+      "ipdisy1",
+      "ertoty1"
+    ],
+    "outcome_phrase": "a hospital admission through the emergency room",
+    "augment_missing": {
+      "povcaty1": 0.5
+    },
+    "simulate_missing_at_scoring": [
+      "povcaty1"
+    ],
+    "text": [
+      "icd_lsa"
+    ],
+    "features": "portable-v2",
+    "description": "Production contract meps-portable-v2, records-only tier; income learned-missing and blanked at scoring."
+  },
+  "test": {
+    "n": 11863,
+    "rate": 0.04931298996881059,
+    "auroc": 0.7854365128083873,
+    "auprc": 0.19244239078427425,
+    "brier": 0.04322691492196259,
+    "mean_pred": 0.050838650478754646,
+    "top10_ppv": 0.19898819561551434,
+    "top10_sensitivity": 0.40341880341880343,
+    "auroc_65plus": 0.7289764201452354
+  },
+  "provenance": {
+    "at": "2026-10-18T14:31:37+00:00",
+    "git_commit": "548f63b5d0c51fff872049d9ce8879c9e22120f0",
+    "manifest_sha256": "8467b5410f00e9812d9be182dca0eaac23607f92efb0166775d23abed36fd7e6"
+  },
+  "test_baseline": {
+    "n": 11863,
+    "rate": 0.04931298996881059,
+    "auroc": 0.7536545698985847,
+    "auprc": 0.18469447632884506,
+    "brier": 0.043883296205258736,
+    "mean_pred": 0.05282651688317541,
+    "top10_ppv": 0.18887015177065766,
+    "top10_sensitivity": 0.38290598290598293,
+    "auroc_65plus": 0.6847018196235961
+  },
+  "fitted_model_sha256": "6db9cc362f0f2db5ae9be636cf33f9cc107851ad34032edf1033a20bb0e22b6e"
+}

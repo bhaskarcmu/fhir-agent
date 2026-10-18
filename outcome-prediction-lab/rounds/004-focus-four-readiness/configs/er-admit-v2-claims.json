@@ -1,0 +1,24 @@
+{
+  "name": "er-admit-v2-claims",
+  "label": "admit_via_er_y2",
+  "task": "binary",
+  "model": "gbm",
+  "params": "tuned",
+  "baseline_inputs": [
+    "agey1x",
+    "ipdisy1",
+    "ertoty1"
+  ],
+  "outcome_phrase": "a hospital admission through the emergency room",
+  "augment_missing": {
+    "povcaty1": 0.5
+  },
+  "simulate_missing_at_scoring": [
+    "povcaty1"
+  ],
+  "text": [
+    "icd_lsa"
+  ],
+  "features": "portable-v2+claims",
+  "description": "Production contract plus claims-only inputs."
+}

@@ -20,6 +20,17 @@ Production contract meps-portable-v2, records-only tier; income learned-missing 
 | **Outcome observable by a customer** | records (within the health system) or claims (all ERs) |
 | **Data provenance** | manifest sha256 `8467b5410f00…`, code `409fcf7a93b1` |
 
+## Subgroup fairness (test panels)
+
+Full tables: [`fairness/any-ed-v2.md`](../fairness/any-ed-v2.md). Widest gaps among groups with enough events:
+
+| Dimension | AUROC range | Calibration ratio range | Cases caught by the top-10% flag |
+|---|---|---|---|
+| Race / ethnicity | 0.706–0.779 | 0.96–1.07 | 6%–52% |
+| Insurance (year 1) | 0.713–0.782 | 0.86–1.03 | 11%–42% |
+| Sex | 0.732–0.745 | 0.95–1.04 | 24%–31% |
+| Age band | 0.680–0.749 | 0.90–1.05 | 13%–45% |
+
 ## Limitations
 
 - Trained on MEPS **self-reported** survey data; customer records differ (codes, charges vs payments,
@@ -28,4 +39,3 @@ Production contract meps-portable-v2, records-only tier; income learned-missing 
 - Explanations describe what the model weighed, not causes.
 - **Uplift / impactability is not assessable with MEPS** (no intervention data — O37): this model ranks
   risk, not who would benefit from outreach.
-- Subgroup fairness by race/ethnicity and insurance is not yet reported on this card.

@@ -44,7 +44,7 @@ TUNED = {"learning_rate": 0.03, "max_leaf_nodes": 15, "min_samples_leaf": 120,
          "l2_regularization": 1.0, "max_iter": 600}
 REQUIRED = {"name", "label", "task", "features", "model"}
 ALLOWED = REQUIRED | {"text", "params", "monotone", "baseline_inputs", "learning_only", "description",
-                      "outcome_phrase", "augment_missing", "simulate_missing_at_scoring"}
+                      "outcome_phrase", "augment_missing", "simulate_missing_at_scoring", "population"}
 
 
 class ConfigError(ValueError):
@@ -108,6 +108,20 @@ def _factory(cfg: dict):
                               augment=cfg.get("augment_missing"))
 
 
+def _in_population(df: pd.DataFrame, cfg: dict) -> np.ndarray:
+    """Rows a config applies to: the label is defined, and (optionally) the person is in the
+    config's population, e.g. {"age_min": 65} for a specialist model. Train and test alike."""
+    pop = cfg.get("population") or {}
+    if unknown := set(pop) - {"age_min", "age_max"}:
+        raise ConfigError(f"population supports age_min / age_max, not {sorted(unknown)}")
+    keep = df[cfg["label"]].notna().to_numpy().copy()     # pandas 3 hands back read-only views
+    if "age_min" in pop:
+        keep &= (df.agey1x >= pop["age_min"]).to_numpy()
+    if "age_max" in pop:
+        keep &= (df.agey1x <= pop["age_max"]).to_numpy()
+    return keep
+
+
 def _scoring_hook(cfg: dict):
     """Score as production will: blank the inputs a customer usually can't supply (O53)."""
     cols = cfg.get("simulate_missing_at_scoring") or []
@@ -167,7 +181,7 @@ def run(round_id: str, name: str, frame: pd.DataFrame | None = None) -> dict:
     """Cross-validate one config on the training panels and write runs/<name>.json."""
     cfg = load_config(config_path(round_id, name))
     df = lab_frame() if frame is None else frame
-    rows = df.panel.isin(TRAIN_PANELS).to_numpy() & df[cfg["label"]].notna().to_numpy()
+    rows = df.panel.isin(TRAIN_PANELS).to_numpy() & _in_population(df, cfg)
     X = df[rows].reset_index(drop=True)
     y, raw = _targets(X, cfg)
     g, age = X.panel.to_numpy(), X.agey1x.to_numpy()
@@ -232,7 +246,7 @@ def fitted_path(round_id: str, name: str) -> Path:
 def fit_on_training_panels(round_id: str, name: str, frame: pd.DataFrame | None = None):
     cfg = load_config(config_path(round_id, name))
     df = lab_frame() if frame is None else frame
-    rows = df.panel.isin(TRAIN_PANELS).to_numpy() & df[cfg["label"]].notna().to_numpy()
+    rows = df.panel.isin(TRAIN_PANELS).to_numpy() & _in_population(df, cfg)
     y, _ = _targets(df[rows], cfg)
     return cfg, _factory(cfg)().fit(df[rows], y)
 
@@ -242,7 +256,7 @@ def confirm(round_id: str, name: str, frame: pd.DataFrame | None = None) -> dict
     holdout.require(round_id, name)
     df = lab_frame() if frame is None else frame
     cfg, model = fit_on_training_panels(round_id, name, df)
-    test = df.panel.isin(TEST_PANELS).to_numpy() & df[cfg["label"]].notna().to_numpy()
+    test = df.panel.isin(TEST_PANELS).to_numpy() & _in_population(df, cfg)
     Xt = df[test]
     y, raw = _targets(Xt, cfg)
     proba = cfg["task"] == "binary"
@@ -252,7 +266,7 @@ def confirm(round_id: str, name: str, frame: pd.DataFrame | None = None) -> dict
     result = {"config": cfg, "test": _metrics(cfg, y, pred, raw, Xt.agey1x.to_numpy() if proba else None),
               "provenance": _provenance()}
     if cfg.get("baseline_inputs"):
-        train = df.panel.isin(TRAIN_PANELS).to_numpy() & df[cfg["label"]].notna().to_numpy()
+        train = df.panel.isin(TRAIN_PANELS).to_numpy() & _in_population(df, cfg)
         yb, _ = _targets(df[train], cfg)
         b = _baseline_factory(cfg["task"])().fit(_baseline_X(df[train], cfg["baseline_inputs"]), yb)
         Xb = _baseline_X(Xt, cfg["baseline_inputs"])
@@ -287,6 +301,21 @@ def _observability(label: str) -> str:
     return LABEL_OBSERVABILITY.get(label, "not assessed")
 
 
+def _fairness_section(round_id: str, name: str) -> str:
+    p = round_dir(round_id) / "fairness" / f"{name}.json"
+    if not p.exists():
+        return "## Subgroup fairness\n\n_Not yet assessed — run `outcome-prediction-lab fairness`._\n"
+    rep = json.loads(p.read_text())
+    lines = ["## Subgroup fairness (test panels)", "",
+             f"Full tables: [`fairness/{name}.md`](../fairness/{name}.md). Widest gaps among groups with enough events:", "",
+             "| Dimension | AUROC range | Calibration ratio range | Cases caught by the top-10% flag |", "|---|---|---|---|"]
+    for dim, s in rep["summary"].items():
+        lines.append(f"| {dim} | {s['auroc_range'][0]:.3f}–{s['auroc_range'][1]:.3f} | "
+                     f"{s['calibration_ratio_range'][0]:.2f}–{s['calibration_ratio_range'][1]:.2f} | "
+                     f"{s['share_of_cases_flagged_range'][0]:.0%}–{s['share_of_cases_flagged_range'][1]:.0%} |")
+    return "\n".join(lines) + "\n"
+
+
 def card(round_id: str, name: str) -> Path:
     """A model card in the spirit of TRIPOD+AI: intended use, data, outcome, inputs, performance
     (CV and, if confirmed, test), limitations — generated from the committed run records."""
@@ -318,6 +347,7 @@ def card(round_id: str, name: str) -> Path:
 | **Outcome observable by a customer** | {_observability(cfg["label"])} |
 | **Data provenance** | manifest sha256 `{r["provenance"]["manifest_sha256"][:12]}…`, code `{(r["provenance"]["git_commit"] or "unknown")[:12]}` |
 
+{_fairness_section(round_id, name)}
 ## Limitations
 
 - Trained on MEPS **self-reported** survey data; customer records differ (codes, charges vs payments,
@@ -326,7 +356,6 @@ def card(round_id: str, name: str) -> Path:
 - Explanations describe what the model weighed, not causes.
 - **Uplift / impactability is not assessable with MEPS** (no intervention data — O37): this model ranks
   risk, not who would benefit from outreach.
-- Subgroup fairness by race/ethnicity and insurance is not yet reported on this card.
 """
     out = round_dir(round_id) / "cards" / f"{name}.md"
     out.parent.mkdir(exist_ok=True)
