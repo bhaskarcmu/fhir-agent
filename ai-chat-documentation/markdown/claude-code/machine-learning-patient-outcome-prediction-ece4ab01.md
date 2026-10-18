@@ -3667,7 +3667,7 @@ Before running `promote`, I'm checking what M12 (the promotion milestone) owns, 
 That "Still open" paragraph now lists resolved items, which reads badly. Rewriting it:
 
 <details>
-<summary>Execution details — 533 tool events</summary>
+<summary>Execution details — 537 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5031,6 +5031,15 @@ from pathlib import Path
 p = Path("docs/phase8/prd.md"); s = p.read_text()
 old = """Still open: O23 (MEPS commercial use, a legal question), O24 (qualitative bands), O25
 (non-portabl…`
+- **Bash** `git add outcome-prediction-lab docs && git status --short`
+- **Bash** `git commit -q -F - <<'EOF'
+feat(phase8): close M3 — round 000, scorecards, first promotion chosen (O59, O60)
+
+- Round 000: `"model": "meps25-v1"` / `"meps25-v1-comparison"` run M2's models through the…`
+- **Bash** `git push -q origin feature/phase8-m3-round-001 2>&1 | tail -2; git status -sb | head -1`
+- **Bash** `S=/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad && python3 - "$S/pr71.md" <<'EOF'
+import sys; from pathlib import Path
+p = Path(sys.argv[1]); s = p.read_text(…`
 
 </details>
 
@@ -5041,6 +5050,6 @@ old = """Still open: O23 (MEPS commercial use, a legal question), O24 (qualitati
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 14:53 UTC
+- **Last updated:** 18 October 2026, 14:55 UTC
 - **Turns:** 48
 - **Status:** Complete
