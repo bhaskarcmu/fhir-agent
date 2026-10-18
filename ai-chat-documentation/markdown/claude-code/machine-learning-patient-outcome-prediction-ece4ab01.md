@@ -4459,7 +4459,7 @@ The model card's metrics differ by contract: v1 nests its AUROC under `gbm`, v2 
 The suite now has 9 tests. Running it from **cold**, so it rebuilds the image with all the M12 code and brings up the whole stack itself:
 
 <details>
-<summary>Execution details — 955 tool events</summary>
+<summary>Execution details — 956 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6872,6 +6872,12 @@ def sub(old, new, count=1):
 - **Bash** `docker ps --format '{{.Names}}' | grep -E "fhir-agent|ollama" || echo "nothing running"; docker compose --profile phase8 build -q outcome-prediction 2>&1 | tail -1; SECONDS=0; OTEL_EXPORTER_OTLP_ENDPO…`
 - **Bash** `grep -n "def _request" -A12 client/clinical/src/fhir_clinical_client/fhir_client.py | head -14; grep -rn "def _request" --include=*.py client outcome-prediction-service outcome-prediction-agent | grep…`
 - **Bash** `git status --short outcome-prediction-service/build | head -2; git check-ignore -q outcome-prediction-service/build && echo "build/ is gitignored"; rm -rf outcome-prediction-service/build && python3 -…`
+- **Bash** `cat >> client/clinical/tests/test_care_history.py <<'EOF'
+
+
+class TestNoCachedSearches:
+    """Phase 8 M12: HAPI reuses a search's results for about a minute, so a record written just
+    before a car…`
 
 </details>
 
@@ -6882,6 +6888,6 @@ def sub(old, new, count=1):
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 21:48 UTC
+- **Last updated:** 18 October 2026, 21:50 UTC
 - **Turns:** 63
 - **Status:** Complete
