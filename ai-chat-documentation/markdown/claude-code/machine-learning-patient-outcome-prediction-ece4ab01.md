@@ -2628,8 +2628,10 @@ All 11 finalists are logged. Now the **one** look at the test panels, then the e
 
 All 92 service tests pass. Wiring the lab into CI, `pytest.ini`, and the install lines in `CLAUDE.md` and `.ona`:
 
+All cross-validation, confirmation and explanation results are in. Writing the round report, which is the committed record of this iteration:
+
 <details>
-<summary>Execution details — 360 tool events</summary>
+<summary>Execution details — 361 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3451,6 +3453,7 @@ def edit(p,pairs):
         assert s.count(o)==1,(p,o[:60],s.count(o)); s=s.replace(o,n)
     open(p,'w').write(s)
 edit('.github/workflows/te…`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-lab/rounds/001-what-and-how/report.md`
 
 </details>
 
@@ -3461,6 +3464,6 @@ edit('.github/workflows/te…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 00:46 UTC
+- **Last updated:** 18 October 2026, 00:47 UTC
 - **Turns:** 32
 - **Status:** Complete
