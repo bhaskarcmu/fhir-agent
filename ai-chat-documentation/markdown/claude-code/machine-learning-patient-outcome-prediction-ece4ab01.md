@@ -3341,10 +3341,22 @@ Address all of this now. I will not approve the PR without it:
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Understood. I'll do all three as **round 004**, run through the CLI, with the test-panel rules pre-registered before any run:
+
+1. **A production-contract model for admission through the ER**: research, records-only and claims versions, then one logged confirmation of the records-only candidate.
+2. **Fairness metrics for all four production models**, by race/ethnicity, insurance type, sex and age band:
+   - discrimination, with bootstrap confidence intervals;
+   - calibration within each group;
+   - how often each group is flagged in the top 10%;
+   - how many of each group's actual cases the flag catches (equal opportunity).
+
+   Each look at test outcomes is logged in the ledger first.
+3. **The 65+ check for all four:** how the production models perform and calibrate for adults 65+, plus a cross-validated test of a **65+-only specialist** model. It gets adopted, and confirmed, only if it beats the general model by at least +0.005 AUROC on 65+.
+
+Git: worktree `/workspaces/fhir-agent`, branch `feature/phase8-m3-round-001` (PR #71, target `main`). The code comes first: a `population` config key and the fairness module.
 
 <details>
-<summary>Execution details — 469 tool events</summary>
+<summary>Execution details — 471 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4552,6 +4564,15 @@ The repo owner narrowed Phase 8 t…`
 - **Bash** `cd /workspaces/fhir-agent && P=/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad/pr71.md && gh pr view 71 --json body --jq .body > $P && python3 - "$P" <<'EOF'
 im…`
 
+### Turn 46 activity
+
+- **Bash** `git status --short | wc -l && grep -n "def run(\|def fit_on_training_panels\|def confirm(\|rows = df.panel.isin(TRAIN_PANELS)\|test = df.panel.isin(TEST_PANELS)\|train = df.panel.isin(TRAIN_PANELS)" o…`
+- **Bash** `python3 - <<'EOF'
+p='outcome-prediction-lab/src/outcome_prediction_lab/runs.py'; s=open(p).read()
+def rep(o,n,count=1):
+    global s
+    assert s.count(o)==count,(o[:70],s.count(o)); s=s.replace(o,n)…`
+
 </details>
 
 ---
@@ -4561,6 +4582,6 @@ im…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 14:25 UTC
+- **Last updated:** 18 October 2026, 14:26 UTC
 - **Turns:** 46
-- **Status:** Incomplete
+- **Status:** Complete
