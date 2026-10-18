@@ -3355,8 +3355,14 @@ Understood. I'll do all three as **round 004**, run through the CLI, with the te
 
 Git: worktree `/workspaces/fhir-agent`, branch `feature/phase8-m3-round-001` (PR #71, target `main`). The code comes first: a `population` config key and the fairness module.
 
+A stray walrus operator slipped into the insurance mapping; cleaning that up. Then the CLI subcommand, a fairness section in the model cards, and tests:
+
+pandas 3's copy-on-write returns a **read-only** array from `.notna().to_numpy()`, so the in-place `&=` fails. A real bug, caught by the test before it hit real data. Making an explicit copy:
+
+All 28 lab tests pass. Now round 004's pre-registration and configs, written before running anything:
+
 <details>
-<summary>Execution details — 472 tool events</summary>
+<summary>Execution details — 477 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4573,6 +4579,24 @@ def rep(o,n,count=1):
     global s
     assert s.count(o)==count,(o[:70],s.count(o)); s=s.replace(o,n)…`
 - **Write** `/workspaces/fhir-agent/outcome-prediction-lab/src/outcome_prediction_lab/fairness.py`
+- **Bash** `python3 - <<'EOF'
+def edit(p,pairs):
+    s=open(p).read()
+    for o,n in pairs:
+        assert s.count(o)==1,(p,o[:60],s.count(o)); s=s.replace(o,n)
+    open(p,'w').write(s)
+L='outcome-prediction-lab/…`
+- **Bash** `python -m pytest "outcome-prediction-lab/src/outcome_prediction_lab/tests/test_lab_tooling.py::test_population_filter_restricts_training_and_scoring" -q -p no:cacheprovider 2>&1 | grep -E "^E " | head…`
+- **Bash** `python3 - <<'EOF'
+p='outcome-prediction-lab/src/outcome_prediction_lab/runs.py'; s=open(p).read()
+o='''    keep = df[cfg["label"]].notna().to_numpy()'''
+assert s.count(o)==1
+s=s.replace(o,'''    keep…`
+- **Bash** `R=outcome-prediction-lab/rounds/004-focus-four-readiness && mkdir -p $R/configs && cat > $R/README.md <<'EOF'
+# Round 004 — readiness of the four focus predictions
+
+**Type:** production-readiness roun…`
+- **Bash** `set -o pipefail && MLFLOW_DISABLE_AGENT_HINT=1 PYTHONWARNINGS=ignore outcome-prediction-lab run 004-focus-four-readiness er-admit-research er-admit-v2 er-admit-v2-claims nonobstetric-v2-65plus any-ed-…`
 
 </details>
 
@@ -4583,6 +4607,6 @@ def rep(o,n,count=1):
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 14:26 UTC
+- **Last updated:** 18 October 2026, 14:28 UTC
 - **Turns:** 46
 - **Status:** Complete
