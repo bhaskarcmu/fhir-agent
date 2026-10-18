@@ -4012,8 +4012,10 @@ M4's 18 tests still pass. Now the first real parity run: the same 33 patients th
 
 Still 504 KB. Finding where the bulk is:
 
+All 14 pass on the first try, which makes me suspicious, so I'm checking the fixture parity isn't vacuous:
+
 <details>
-<summary>Execution details — 688 tool events</summary>
+<summary>Execution details — 691 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5744,6 +5746,12 @@ def sub(old, new):
 import json, collections
 d = json.load(open('outcome-prediction-service/src/outcome_prediction/tests/fixtures/fhir_recording.json'))
 size = collections.Counter(); n = collections.Counter(…`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/tests/test_etl_fhir.py`
+- **Bash** `PYTHONWARNINGS=ignore python -m pytest outcome-prediction-service/src/outcome_prediction/tests/test_etl_fhir.py -q -p no:cacheprovider 2>&1 | tail -25`
+- **Bash** `cd /workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/tests && PYTHONWARNINGS=ignore python3 -c "
+import sys; sys.argv=['x']
+from test_etl_fhir import *
+e = fhir.read(Replay(), l…`
 
 </details>
 
@@ -5754,6 +5762,6 @@ size = collections.Counter(); n = collections.Counter(…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 16:57 UTC
+- **Last updated:** 18 October 2026, 16:59 UTC
 - **Turns:** 53
 - **Status:** Complete
