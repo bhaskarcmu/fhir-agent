@@ -3000,10 +3000,59 @@ What needs to be done to complete this milestone, and what milestones and work r
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+I'll check the milestone plan as it now stands before answering, so the list is accurate:
+
+Understood: "find similar patients" is dropped. Nothing about it was built or written into the docs, so there's nothing to remove. I can record it in the PRD's out-of-scope list in the next PR, so nobody re-proposes it without context.
+
+## What's left to finish M3
+
+M3 now also covers the old M10 and M11. Its remaining deliverables:
+
+| # | Item | Why it's needed | Effort |
+|---|---|---|---|
+| 1 | **Round 000:** re-run the M2 model through the lab CLI and match M2's numbers | M3's original deliverable; proves the lab and the service agree | Small: one config, one run |
+| 2 | **Model card for the served `meps25-v1` model** | Every promoted model needs one (O39); only round 002's reference has one so far | Small, via `card` |
+| 3 | **Fairness metrics** by race/ethnicity and insurance type (FR-E6) | Moved in with M11; not done yet | Small to medium: a subgroup table for the recommended model |
+| 4 | **A model specially for adults 65+** (FR-M6) | Moved in with M11; so far 65+ is only reported, at AUROC about 0.70 | Medium: one or two configs |
+| 5 | **Your input on the scorecard:** the person-judged criteria for the recommended target (measurable in customer data, actionable, lead time, FHIR fit, regulatory position) | O36 says these need a human | **Yours**; I can draft a version for you to edit |
+| 6 | **Decide O40:** what to promote first | M3's real exit point. My recommendation: **non-obstetric admission, as a probability** (O47) | Your decision, recorded in `decisions.md` |
+| 7 | **Decide O25:** keep or drop spending, prescription fills and home health, which don't carry over well to customer data | Was due in M11. Evidence so far: dropping income and spending costs almost nothing | Your decision; I'd recommend dropping spending |
+| 8 | **Merge PR #71** | Rounds 001–002 and the CLI | Yours |
+
+## What remains in Phase 8 after M3
+
+| Milestone | What it delivers | Depends on |
+|---|---|---|
+| **M4** Synthea harness, scoring mode, leakage test | Converts Synthea CSV to model inputs. Adds "as-of date" scoring, and fixes the prototype's leak of future prescription data. | M2 |
+| **M5** `client/clinical` extension | Encounters, medication history and costs, added without breaking existing callers. Coordinated with Phase 7 M3. | M1 |
+| **M6** FHIR extractor, parity check, data-quality report | Builds model inputs from `fhir-service` and proves they match the CSV path. | M4, M5 |
+| **M7** Scoring service | The API returning a FHIR `RiskAssessment`, with the comparison score, percentile, reasons, and links to source records. | M6 |
+| **M8** `outcome-prediction-agent` | The clinician-facing agent. It can look patients up and explain results, but never re-score. | M7 |
+| **M9** End-to-end acceptance test and demo | Everything running live under the `phase8` profile. | M8 |
+| ~~M10, M11~~ | Folded into M3 (O45) | — |
+| **M12** First promotion | Serves the model chosen in O40 alongside `meps25-v1`. The service refuses any model without a promotion record. | M7, O40 |
+| **M13** Versioned clinical code lists | Replaces text-matching of diagnoses with reviewed ICD-10 code lists. Needs the UMLS licence, and someone to own the lists (O27). | M6 |
+
+Outside Phase 8 entirely, **Phase 8b** covers: cloud deployment, recalibration on customer data, monitoring, scoring a whole customer panel in batch, the real GCS bucket, and validation on a first customer.
+
+## A risk to plan for before M6/M12
+
+**The best model's features may not carry over to FHIR as easily as the plan assumes.**
+- **Drug classes.** The model uses **Multum drug classes**, which are a proprietary system that AHRQ applied to MEPS. Customer FHIR data carries RxNorm codes instead. Getting classes from those needs a free alternative such as the NLM's RxClass (ATC or VA classes) or a licensed Multum mapping, and switching class systems changes the model's inputs.
+- **CCSR groups.** These need AHRQ's ICD-10 → CCSR mapping file, whose download terms we found unclear.
+
+So promoting a code-based model (M12) needs a decision first. The options are to retrain on mappable class systems, or to promote the simpler model without code features and accept the small loss: about 0.001 AUROC on the non-obstetric label, per round 002. I'd add that as a decision before M6.
+
+## Suggested order
+
+1. Merge PR #71.
+2. Finish M3: round 000, the model card, fairness, the 65+ model, then your scorecard input and the O40/O25 decisions.
+3. Decide the drug-class/CCSR portability question.
+4. Run M4 and M5 in parallel, then M6 → M7 → M8 → M9.
+5. Then M12, with M13 alongside M6 or later.
 
 <details>
-<summary>Execution details — 441 tool events</summary>
+<summary>Execution details — 442 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4102,6 +4151,10 @@ p=sys.argv[1]; s=ope…`
 
 - **Bash** `cat /tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/tasks/b4mgu0vad.output`
 
+### Turn 40 activity
+
+- **Bash** `grep -nE "^### M[0-9]+|^\*\*Deliverable|^\*\*Depends" docs/phase8/milestone-plan.md | cut -c1-150; grep -nE "^\| O(25|40) " docs/phase8/decisions.md | cut -c1-140; grep -nE "FR-E6|FR-M6" docs/phase8/p…`
+
 </details>
 
 ---
@@ -4111,6 +4164,6 @@ p=sys.argv[1]; s=ope…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 01:48 UTC
+- **Last updated:** 18 October 2026, 01:49 UTC
 - **Turns:** 40
-- **Status:** Incomplete
+- **Status:** Complete
