@@ -4724,6 +4724,34 @@ Validating that the links in the changed files resolve:
 
 Worktree `/workspaces/fhir-agent`, branch `docs/repo-wide-refresh`, target: PR to `main`. Committing:
 
+I've brought the docs up to date and made them consistent, and the changes are in PR #80: https://github.com/bhaskarcmu/fhir-agent/pull/80. All 14 CI checks pass on the latest commit. Branch `feature/phase8-m12-first-promotion` was deleted on `origin` and locally, as you asked.
+
+**What was out of date, and what changed (all documentation; no code):**
+- **Common docs** (root `README.md`, `docs/README.md`, developer guide): they stopped at Phase 3. They now cover Phases 4–8: the component table, a short summary of each phase, the repo map, install commands, every compose profile and port, and what's next per phase. `epic-emulator` was still called a placeholder in several places (including `fhir-service/README.md` and the Phase 2 plan); it's now shown as built in Phase 4, with its open safety finding (E16).
+- **Testing guide:** the test counts were badly stale. For example, it gave `mcp-agent` as 11 tests; it now has 102. It also had no `agent-platform` or Phase 8 suites. Counts are now per suite and current, all nine CI jobs plus the gitleaks secret scan are listed, and the known gaps are stated plainly:
+  - none of the three end-to-end suites runs in CI;
+  - CI doesn't run the `epic-emulator` or `fhir-service` Java tests;
+  - the E16 safety bug has no regression test.
+- **Phase 6:** status said "M5 PR open, M6 next", and the milestone table still showed M1 as "Next up". Both now say M1–M6 are built and M7 is next.
+- **Phase 8:**
+  - Every requirement in the PRD is now marked Done or Changed, with evidence.
+  - A results table is added: all 12 acceptance criteria are met. On the later targets, AUROC is 0.795 (target ≥ 0.78) and the mean prediction is within 1 point. The 65+ target is **not met**: 0.701 against ≥ 0.73. Top-decile PPV is 30%, against QAdmissions' 42% for a different outcome.
+  - The design's repo layout now matches the actual files.
+  - The README and `prediction-targets.md` now say the non-obstetric model has been served since M12.
+- **CLAUDE.md:** I changed only the project facts (the component table and the request-flow paragraph), not the rules.
+
+**Decision for you:** `.clinerules` had drifted from CLAUDE.md, so I replaced its contents with a copy of CLAUDE.md, as both files say to keep them in sync. That drops a few Cline-only rules that conflicted with CLAUDE.md:
+- "create a PR when requested", instead of branching and opening a PR proactively;
+- "ask for clarification rather than guessing", instead of making reasonable low-risk assumptions.
+
+If you'd rather keep any of those for Cline, say which and I'll restore them.
+
+**Checks:** a script confirmed every relative link in the changed files points to a real file. Test counts come from pytest's test collection for each suite and a count of Java `@Test` methods; I didn't run the test suites, since no code changed.
+
+**Branch:** `docs/repo-wide-refresh`; commits `529a7ef8` and `5a295ba3`.
+
+**Limitations:** Phase 7's docs were already accurate and are unchanged. Past entries in `decisions.md` are historical records, so I left them as written.
+
 <details>
 <summary>Execution details — 1049 tool events</summary>
 
@@ -7370,6 +7398,6 @@ old = "| `phase3-terraform` | `terraform validate` in a matrix across the Phase 
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 22:22 UTC
+- **Last updated:** 18 October 2026, 22:26 UTC
 - **Turns:** 66
 - **Status:** Complete
