@@ -4011,7 +4011,7 @@ That anchor also appears in the prototype function, so nothing was written. Reru
 M4's 18 tests still pass. Now the first real parity run: the same 33 patients through both paths, year 1 = 2023, compared feature by feature:
 
 <details>
-<summary>Execution details — 679 tool events</summary>
+<summary>Execution details — 681 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5716,6 +5716,8 @@ import json, urllib.request, pandas as pd
 from fhir_clinical_client import FHIRClient
 from outcome_prediction.etl.extract import synthea_csv, fhir
 from outcome_…`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/etl/parity.py`
+- **Bash** `PYTHONWARNINGS=ignore python -m outcome_prediction.etl.parity --csv outcome-prediction-service/data/raw/synthea/parity-20-s42/csv --fhir http://localhost:8090/fhir --year 2023 2>&1 | tail -20`
 
 </details>
 
