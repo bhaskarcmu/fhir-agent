@@ -4365,8 +4365,10 @@ Every draft prefix exists in the CDC FY2026 release. Creating the branch. **Git:
 
 All 22 pass. Now the one-definition refactor: the lab imports the CDC pin from the service instead of keeping its own copy (O29):
 
+Back to 8 records (Condition/3312, the CABG history, is cited again), so the demo guide is accurate as written, and all 5 acceptance tests pass with the code lists. Removing the containers I started:
+
 <details>
-<summary>Execution details — 896 tool events</summary>
+<summary>Execution details — 898 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6641,6 +6643,8 @@ from pathlib import Path
 p = Path("outcome-prediction-service/src/outcome_prediction/etl/codelists/__init__.py"); s = p.read_text()
 old_start = s.index("def flags_for_code(code: str…`
 - **Bash** `docker compose --profile phase8 up -d --build outcome-prediction 2>&1 | tail -1; for i in $(seq 1 60); do [ "$(docker inspect -f '{{.State.Health.Status}}' fhir-agent-outcome-prediction 2>/dev/null)"…`
+- **Bash** `docker stop phase8-m13-ollama >/dev/null 2>&1; docker compose --profile phase8 rm -sf fhir outcome-prediction 2>&1 | tail -1; docker ps --format '{{.Names}}' | grep -E "fhir-agent|ollama" || echo "not…`
+- **Bash** `sed -n 95,125p NOTICE`
 
 </details>
 
@@ -6651,6 +6655,6 @@ old_start = s.index("def flags_for_code(code: str…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 20:56 UTC
+- **Last updated:** 18 October 2026, 20:59 UTC
 - **Turns:** 61
 - **Status:** Complete
