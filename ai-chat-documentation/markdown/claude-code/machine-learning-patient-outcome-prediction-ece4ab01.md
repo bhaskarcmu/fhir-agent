@@ -3051,6 +3051,36 @@ So promoting a code-based model (M12) needs a decision first. The options are to
 4. Run M4 and M5 in parallel, then M6 → M7 → M8 → M9.
 5. Then M12, with M13 alongside M6 or later.
 
+## Turn 41
+
+### Prompt
+
+What all are we predicting at this time, and what is the clinical value and business value for each? Summarize cleanly
+
+### Claude response
+
+We're predicting nine outcomes, all for the **next 12 months**, for US adults, and all from the previous year's data. Performance is on the untouched test panels (26–27) from round 001.
+
+| What we predict | How well (test) | Clinical value | Business value | Status |
+|---|---|---|---|---|
+| **Any overnight hospital stay** (prototype's target) | AUROC 0.788 (prototype 0.769) | Finds patients likely to be admitted, but **includes childbirth**, so many "high-risk" patients are simply pregnant | Comparison with the prototype only | Kept as the reference; not recommended for use |
+| **Hospital stay not related to pregnancy or childbirth** | AUROC 0.795; top 10% flagged: 30% admitted, catching 37% of all admissions | Proactive outreach to frail and chronically ill patients: medicine reviews, follow-up, home support, before a crisis | Avoidable admissions are the biggest cost in value-based contracts; this drives care-manager worklists and staffing | **Recommended headline target** (O47) |
+| **Admission through the emergency room** | AUROC 0.788 | The closest proxy MEPS offers for *unplanned* admissions, which are the ones outreach can most plausibly prevent | Same as above, focused on the costliest, least planned stays | Candidate; rare (4.9%), so lists are less precise |
+| **Any emergency-room visit** | AUROC 0.739; top 10%: 45% visit the ER | Same-day access, after-hours options and condition self-management for likely ER users | ER visits are frequent and often avoidable; the **biggest gain over a simple rule** (+0.057 AUROC) | Strong candidate |
+| **Number of ER visits** | Ranking correlation 0.30; top 10% account for 36% of visits | Separates frequent users from one-off visitors | Prioritises intensive programmes for the heaviest users | Modest; counts are noisy |
+| **Being a high-cost patient** (top 10% of spending) | AUROC 0.850, the best of all | Flags complex patients for complex-care management | Budgeting, reserves and risk-contract pricing; finance and population-health teams | Strong, but last year's spending alone already finds most big spenders |
+| **Total spending** | Ranking correlation 0.74; top 10% account for 37% of spending | — (a financial measure) | Calibrated cost forecasts for planning and contract negotiation | Useful for finance; only slightly better than last year's spending |
+| **Death during the year** | AUROC 0.881 | Could prompt serious-illness and advance-care-planning conversations | — | **Learning only (O48)**; never to be promoted without clinical governance |
+| **Losing health insurance** | AUROC 0.871 | Coverage gaps interrupt care and medicines | Re-enrolment help protects continuity and the practice's revenue | **Learning only (O48)**; needs a fairness review first |
+
+**In short:**
+- The **non-obstetric hospital stay** is the clinical anchor.
+- **Any ER visit** is the strongest operational add-on.
+- **High cost** is the finance-facing companion.
+- **Death** and **losing insurance** were for learning only.
+
+Every prediction is a **planning estimate**, not a diagnosis. And none of these models can say *who would benefit* from outreach, because MEPS has no data on interventions.
+
 <details>
 <summary>Execution details — 442 tool events</summary>
 
@@ -4164,6 +4194,6 @@ p=sys.argv[1]; s=ope…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 01:49 UTC
-- **Turns:** 40
+- **Last updated:** 18 October 2026, 01:51 UTC
+- **Turns:** 41
 - **Status:** Complete
