@@ -4300,8 +4300,57 @@ All 19 pass. I'm stopping the containers I started, then running the final full 
 
 M9's work is done and up for review as PR #77. I'm now waiting for CI to finish, and will report the results when it does.
 
+## Turn 60
+
+### Prompt
+
+<task-notification>
+<task-id>bi8eglogq</task-id>
+<tool-use-id>toolu_01GvQaArh6pUQugvriPogYM9</tool-use-id>
+<output-file>/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/tasks/bi8eglogq.output</output-file>
+<status>completed</status>
+<summary>Background command "Watch PR #77 CI checks until done" completed (exit code 0)</summary>
+</task-notification>
+
+### Claude response
+
+M9 is done and up for review as **PR #77**, with all 14 CI checks passing. I've also deleted the merged M8 branch, on GitHub and locally.
+
+**The acceptance test** (`e2e/test_outcome_prediction_acceptance.py`, 5 tests) runs the three demo beats against the real running services, using the real trained model and 10 seeded Synthea patients:
+- **Beat 1, scoring by API.** The returned `RiskAssessment` passes the FHIR server's own validation with no errors or warnings. Every record it cites as evidence opens, belongs to that patient, and is dated on or before the as-of date. A patient who had died gets a 422 and no estimate.
+- **Beat 2, the same patient through the agent.** The agent receives exactly the assessment the API returns, and every line of its reply is matched to a field of it.
+- **Beat 3, a record dated after the cut-off.** Adding a hospital stay after the as-of date leaves the score identical. Scored as of a later date, the stay does appear, which shows the server has it and the cut-off is what hides it.
+
+**It sets itself up.** Following the "fail, don't skip" rule (O44), the suite starts the FHIR server and scoring service, seeds the patients, and starts Ollama if any of them are missing. It then removes only what it started. Starting from nothing it passed in about 4 minutes and left nothing running. The one thing it can't create is the trained model; without one it fails and prints the commands to train it.
+
+**Problems found while running it live, and fixed:**
+- **Duplicate patients.** The FHIR server briefly re-served its earlier "patient not found" answer from cache, so seeding twice duplicated patients. The seeder now bypasses that cache, and re-running it is harmless (3 seconds, no duplicates).
+- **Identifier search.** Searching for patients by the Synthea ID system plus value found nothing on this FHIR server, so the seeder searches by value and checks the system itself.
+- **Agent bug from M8.** Synthea names contain digits ("Beier427"), so the agent was accepting a name passed as a patient ID. A typed ID now has to look like one: all digits, a UUID, or written as `Patient/…` or `id …` (O72). Name questions went from 0 of 5 answered to 3 of 8, and no reply ever stated a number the service didn't return.
+
+**Demo guide:** I added a section 5b to `docs/demo-guide.md`. It covers setup, each beat with real output from this run, talking points for each audience, and the weaknesses to mention:
+- the patients are simulated;
+- the served model is still the reproduced prototype;
+- one of the demo patient's cited records is a hospice admission counted as home health, because of the FHIR export;
+- the small local model answers about 6 questions in 10.
+
+**Files changed:**
+- **New test:** `e2e/test_outcome_prediction_acceptance.py`.
+- **Seeding:** `etl/synthea.py` (new `seed` command), with its unit test.
+- **Agent:** the ID rule in `agent.py`, plus tests.
+- **Dependencies:** `pyproject.toml` (httpx in the `api` extra).
+- **Docs:** demo guide §5b; decisions O71–O72; milestone plan; status pages; service README.
+
+**Tests:** 279 pass across the service, client and lab, 39 in the agent, and all 5 acceptance tests both warm and from a cold start.
+
+**Branch and commit:** `feature/phase8-m9-acceptance`, commit `bb69e28f`.
+
+**Limitations:** the acceptance suite runs locally, not in CI, like the repo's other end-to-end suites. The agent beat allows up to 6 attempts because the 1B model is erratic, and every attempt is checked for grounding.
+
+**Next:** I haven't merged anything. Once you merge PR #77, I'll ask before deleting the branch. The remaining milestones are M12, which promotes the better `nonobstetric-v2` model into the service, and M13, which replaces the diagnosis-matching patterns with versioned code lists.
+
 <details>
-<summary>Execution details — 861 tool events</summary>
+<summary>Execution details — 862 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6485,6 +6534,10 @@ feat(phase8): M9 end-to-end acceptance suite and demo (O71, O72…`
 M9 runs the whole Phase 8 path…`
 - **Bash** `timeout 2400 gh pr checks 77 --watch --interval 30 >/dev/null 2>&1; gh pr checks 77 2>&1 | awk -F'\t' '{print $2" — "$1}' | sort | uniq -c`
 
+### Turn 60 activity
+
+- **Bash** `cat /tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/tasks/bi8eglogq.output`
+
 </details>
 
 ---
@@ -6494,6 +6547,6 @@ M9 runs the whole Phase 8 path…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 19:25 UTC
-- **Turns:** 59
+- **Last updated:** 18 October 2026, 19:29 UTC
+- **Turns:** 60
 - **Status:** Complete
