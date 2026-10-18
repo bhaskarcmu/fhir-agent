@@ -3818,8 +3818,10 @@ The generator is running. Meanwhile I'm reading the rest of the contract's field
 
 172 KB, small enough to commit. Now the reproduction code, which is commit 1 of 2: the prototype's rules as-is, defects included, each marked.
 
+Now `to_contract.py`, the prototype's rules from `prototype-baseline.md` §6.3 as-is:
+
 <details>
-<summary>Execution details — 564 tool events</summary>
+<summary>Execution details — 569 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5230,6 +5232,11 @@ s…`
 - **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/etl/extract/__init__.py`
 - **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/etl/transform/__init__.py`
 - **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/etl/extract/synthea_csv.py`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/etl/transform/to_contract.py`
+- **Edit** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/etl/transform/to_contract.py`
+- **Bash** `sed -i 's/^from outcome_prediction.model import CATEGORICAL, FEATURES, LABEL$/from outcome_prediction.model import FEATURES, LABEL/' outcome-prediction-service/src/outcome_prediction/etl/transform/to_…`
+- **Bash** `grep -n "^def \|^class " outcome-prediction-service/src/outcome_prediction/model/artifact.py; grep -n "def main\|argparse\|add_argument" outcome-prediction-service/src/outcome_prediction/model/train.p…`
+- **Bash** `sed -n 29,40p outcome-prediction-service/src/outcome_prediction/model/artifact.py; sed -n 79,88p outcome-prediction-service/src/outcome_prediction/model/artifact.py; sed -n 111,140p outcome-prediction…`
 
 </details>
 
@@ -5240,6 +5247,6 @@ s…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 15:42 UTC
+- **Last updated:** 18 October 2026, 15:43 UTC
 - **Turns:** 50
 - **Status:** Complete
