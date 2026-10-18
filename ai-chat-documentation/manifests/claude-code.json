@@ -150,9 +150,9 @@
     "present": true,
     "raw_filename": "ece4ab01-8424-4908-a0ba-5c09fa9936d4.jsonl",
     "source_deleted_at": null,
-    "status": "complete",
+    "status": "incomplete",
     "title": "Machine learning patient outcome prediction",
-    "turns": 62,
-    "updated_at": "2026-10-18T21:09:20.922000+00:00"
+    "turns": 63,
+    "updated_at": "2026-10-18T21:26:29.358000+00:00"
   }
 }
