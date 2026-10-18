@@ -4447,7 +4447,7 @@ The tables now live in the service, and the lab's re-export works (HFRS still ha
 Artifact tests still pass. Retrofitting the M2 artifact's record next. Design §8 says `meps25-v1` is "promoted by decision O2/O3 itself". Checking what O2 and O3 say before citing them:
 
 <details>
-<summary>Execution details — 926 tool events</summary>
+<summary>Execution details — 929 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6782,6 +6782,20 @@ old = '''    present = {p.name for p in directory.iterdir(…`
 - **Bash** `A=$(ls -d outcome-prediction-service/models/gbm-meps25-v1-* | tail -1) && python -m outcome_prediction.model.promotion retrofit "$A" --decision O2 --note "Reproduced prototype, served under O2/O3 (des…`
 - **Bash** `grep -n "promote" outcome-prediction-lab/src/outcome_prediction_lab/tests/test_lab_tooling.py | head; sed -n '/^def test_run_compare_confirm_card_scorecard_promote/,/^def test_learning_only/p' outcome…`
 - **Bash** `sed -n '/^def promote/,$p' outcome-prediction-lab/src/outcome_prediction_lab/runs.py; grep -n "^from\|^import" outcome-prediction-lab/src/outcome_prediction_lab/runs.py`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-lab/src/outcome_prediction_lab/runs.py"); s = p.read_text()
+start = s.index("def promote(round_id: str, name: str, decision: str…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-lab/src/outcome_prediction_lab/runs.py"); s = p.read_text()
+def sub(old, new):
+    global s; assert s.count(old) == 1, old[:60];…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-lab/src/outcome_prediction_lab/tests/test_lab_tooling.py"); s = p.read_text()
+def sub(old, new):
+    global s; assert s.count(ol…`
 
 </details>
 
@@ -6792,6 +6806,6 @@ old = '''    present = {p.name for p in directory.iterdir(…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 21:33 UTC
+- **Last updated:** 18 October 2026, 21:34 UTC
 - **Turns:** 63
 - **Status:** Complete
