@@ -4002,8 +4002,10 @@ Cleaned up. Reading M6's scope:
 
 Same 33 patients as M4's trial. Loading into HAPI once it's ready, hospitals and practitioners first:
 
+Two large patients are still loading. Meanwhile, the client fix: `get_medication_history()` resolves `medicationReference` by asking the server to include the referenced Medication:
+
 <details>
-<summary>Execution details — 669 tool events</summary>
+<summary>Execution details — 672 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5679,6 +5681,13 @@ for f in glob.glob("fhir/*.json"):
 import pandas as pd
 from outcome_prediction.model import TRAIN_PANELS
 t = pd.read_csv('outcome-prediction-service/data/processed/meps_hosp12.csv', usecols=['p…`
+- **Bash** `cat /tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/tasks/ba3vc2fn3.output; curl -s "localhost:8090/fhir/Patient?_summary=count" | python3 -c "import json,sys; print('pati…`
+- **Bash** `grep -n "def get_medication_history" -A12 client/clinical/src/fhir_clinical_client/fhir_client.py; grep -n "def _search_all" -A30 client/clinical/src/fhir_clinical_client/fhir_client.py | head -34; gr…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("client/clinical/src/fhir_clinical_client/fhir_client.py"); s = p.read_text()
+def sub(old, new):
+    global s; assert s.count(old) == 1, old[:60]; s…`
 
 </details>
 
@@ -5689,6 +5698,6 @@ t = pd.read_csv('outcome-prediction-service/data/processed/meps_hosp12.csv', use
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 16:49 UTC
+- **Last updated:** 18 October 2026, 16:50 UTC
 - **Turns:** 53
 - **Status:** Complete
