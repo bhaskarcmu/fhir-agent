@@ -4715,7 +4715,7 @@ Now rewriting the testing guide: the test counts, the CI job list, and the gaps.
 Testing guide is done. Now the developer guide: phases overview, repo map, dev loop, ports, and where to continue.
 
 <details>
-<summary>Execution details — 1024 tool events</summary>
+<summary>Execution details — 1028 tool events</summary>
 
 ### Turn 1 activity
 
@@ -7274,6 +7274,14 @@ p = Path("docs/testing-guide.md"); s = p.read_text()
 old = "| `e2e/test_outcome_prediction_acceptance.py` | 9 | Phase 8: seeded patients scored through the r…`
 - **Bash** `grep -n "epic\|8092\|EPIC" docs/phase4/README.md | sed -n 1,20p | cut -c1-200; grep -n "mcp-agent-api\|8010\|uvicorn" mcp-agent/README.md | head -5; grep -n "^## \|docker compose" docs/demo-guide.md |…`
 - **Bash** `sed -n 433,500p docs/demo-guide.md; sed -n 1,19p docs/demo-guide.md; sed -n 563,570p docs/demo-guide.md`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("docs/demo-guide.md"); s = p.read_text()
+old = """- Why Phase 3 is built this way → [`phase3/prd.md`](./phase3/prd.md),
+  [`phase3/design.md`](./pha…`
+- **Bash** `grep -n "mvn\|java -jar\|docker" epic-emulator/README.md | head; grep -c "spring-boot-maven-plugin" epic-emulator/pom.xml`
+- **Bash** `sed -n 160,175p epic-emulator/README.md`
+- **Bash** `sed -i 's|epic-emulator `8092` (run with `mvn -f epic-emulator/pom.xml spring-boot:run`)|epic-emulator `8092` (no compose service — run its jar, see `epic-emulator/README.md`)|' docs/developer-guide.m…`
 
 </details>
 
@@ -7284,6 +7292,6 @@ old = "| `e2e/test_outcome_prediction_acceptance.py` | 9 | Phase 8: seeded patie
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 22:15 UTC
+- **Last updated:** 18 October 2026, 22:16 UTC
 - **Turns:** 66
 - **Status:** Complete
