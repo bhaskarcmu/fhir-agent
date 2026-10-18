@@ -4459,7 +4459,7 @@ The model card's metrics differ by contract: v1 nests its AUROC under `gbm`, v2 
 The suite now has 9 tests. Running it from **cold**, so it rebuilds the image with all the M12 code and brings up the whole stack itself:
 
 <details>
-<summary>Execution details — 956 tool events</summary>
+<summary>Execution details — 957 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6878,6 +6878,7 @@ def sub(old, new, count=1):
 class TestNoCachedSearches:
     """Phase 8 M12: HAPI reuses a search's results for about a minute, so a record written just
     before a car…`
+- **Bash** `docker compose --profile phase8 up -d fhir outcome-prediction 2>&1 | tail -1; docker run -d --rm --name phase8-m12-ollama -p 11434:11434 -v phase8-ollama-models:/root/.ollama ollama/ollama:0.6.5 >/dev…`
 
 </details>
 
@@ -6888,6 +6889,6 @@ class TestNoCachedSearches:
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 21:50 UTC
+- **Last updated:** 18 October 2026, 21:54 UTC
 - **Turns:** 63
 - **Status:** Complete
