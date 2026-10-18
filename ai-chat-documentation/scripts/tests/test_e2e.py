@@ -3,9 +3,10 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import helpers as h
-from archive_ai import cli
+from archive_ai import cli, pipeline
 from archive_ai.config import Config
 from archive_ai.renderer import markdown_filename
 from test_publisher import make_repo_with_remote
@@ -179,6 +180,39 @@ class EndToEndTest(unittest.TestCase):
         self.assertFalse(list(self.mdd.glob("*-sess-sec.md")), "excluded md must be purged")
         self.assertFalse((self.rawd / "sess-secret.jsonl").exists(), "excluded raw must be purged")
         self.assertTrue((self.mdd / markdown_filename("sess-good", "Gateway work")).exists())
+
+    def _write_session_with_request_logs(self):
+        h.write_jsonl(self.source / "sess-big.jsonl", [
+            h.ai_title("Big session"),
+            h.user_prompt("Do the thing", 0),
+            {"type": "api-request", "params": {"messages": ["x" * 5000]}},
+            {"type": "api-request-blob", "hash": "h", "message": "y" * 5000},
+            {"type": "api-request-shape", "shape": {}},
+            h.assistant_text("Done.", 1),
+        ])
+
+    def test_request_log_records_are_stripped_from_raw(self):
+        # Regression: api-request* records (~80% of a real session) grew one raw
+        # copy past GitHub's 100 MB limit and every push was rejected (GH001).
+        self._write_session_with_request_logs()
+        self.assertEqual(self._run_sync(), 0)
+        raw = (self.rawd / "sess-big.jsonl").read_text(encoding="utf-8")
+        types = [json.loads(line)["type"] for line in raw.splitlines()]
+        self.assertNotIn("api-request", types)
+        self.assertNotIn("api-request-blob", types)
+        self.assertNotIn("api-request-shape", types)
+        self.assertEqual(types, ["ai-title", "user", "assistant"])
+        md = (self.mdd / markdown_filename("sess-big", "Big session")).read_text(encoding="utf-8")
+        self.assertIn("Do the thing", md)
+        self.assertIn("Done.", md)
+
+    def test_oversize_raw_is_skipped_but_markdown_archived_and_push_succeeds(self):
+        self._write_session_with_request_logs()
+        with mock.patch.object(pipeline, "RAW_MAX_BYTES", 200):
+            self.assertEqual(self._run_sync(), 0)
+        self.assertFalse((self.rawd / "sess-big.jsonl").exists())
+        self.assertTrue((self.mdd / markdown_filename("sess-big", "Big session")).exists())
+        self.assertEqual(len(self._remote_log()), 2)  # pushed, not stuck locally
 
 
 if __name__ == "__main__":

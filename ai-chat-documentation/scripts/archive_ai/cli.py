@@ -15,6 +15,12 @@ def _publisher(config: Config) -> Publisher:
     return Publisher(config.archive_worktree, config.archive_subdir, config.branch, config.remote)
 
 
+def _warn_oversize(result: pipeline.PipelineResult) -> None:
+    for sid in result.raw_oversize:
+        print(f"[warn] raw copy of {sid} exceeds {pipeline.RAW_MAX_BYTES // 2**20} MB; "
+              "not written (markdown still archived)", flush=True)
+
+
 def cmd_sync(config: Config) -> int:
     result = pipeline.run(config)
     print(
@@ -26,6 +32,7 @@ def cmd_sync(config: Config) -> int:
     if result.redactions:
         summary = ", ".join(f"{k}={v}" for k, v in sorted(result.redactions.items()))
         print(f"Redactions: {summary}")
+    _warn_oversize(result)
     pub = _publisher(config)
     outcome = pub.publish(pipeline.commit_message())
     if outcome.status == "noop":
@@ -45,8 +52,13 @@ def cmd_watch(config: Config) -> int:
         # Never let one failed burst kill the daemon; the next burst retries.
         try:
             result = pipeline.run(config)
+            _warn_oversize(result)
             outcome = pub.publish(pipeline.commit_message())
             print(f"[watch] sessions={result.sessions_processed} publish={outcome.status}", flush=True)
+            if outcome.status == "push_failed":
+                # First line names the cause (e.g. GH001 large file); last is git's summary.
+                lines = outcome.detail.splitlines() or [""]
+                print(f"[watch] push error: {lines[0].strip()} ... {lines[-1].strip()}", flush=True)
         except Exception as exc:  # noqa: BLE001 - watcher must stay up
             print(f"[watch] error (will retry next burst): {exc}", flush=True)
 

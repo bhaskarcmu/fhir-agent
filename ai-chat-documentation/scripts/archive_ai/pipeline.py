@@ -18,6 +18,7 @@ points at a missing file.
 
 from __future__ import annotations
 
+import json
 from collections import Counter
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -30,6 +31,14 @@ from .redactor import Redactor
 from .renderer import markdown_filename, render_index, render_markdown
 from .writer import atomic_write
 
+# Claude Code's request-replay records. Each re-sends the whole prompt, so they
+# dominate session size (~80% observed) and pushed one raw copy past GitHub's
+# 100 MB file limit, blocking every push. The parser never reads them.
+REQUEST_LOG_TYPES = frozenset({"api-request", "api-request-blob", "api-request-shape"})
+# GitHub rejects any file over 100 MB; a raw copy above this is skipped, not
+# committed, so one oversized session can never stall the whole archive.
+RAW_MAX_BYTES = 95 * 1024 * 1024
+
 
 @dataclass
 class PipelineResult:
@@ -40,6 +49,7 @@ class PipelineResult:
     sessions_dropped: int = 0
     files_written: int = 0
     redactions: Counter = field(default_factory=Counter)
+    raw_oversize: list[str] = field(default_factory=list)
 
 
 def run(config: Config, now: datetime | None = None) -> PipelineResult:
@@ -76,9 +86,14 @@ def run(config: Config, now: datetime | None = None) -> PipelineResult:
             _remove_archive_file(md_dir, prev["md_filename"])  # rename cleanup
 
         raw_text = path.read_text(encoding="utf-8", errors="replace")
-        atomic_write(raw_dir / f"{sid}.jsonl", redactor.redact(raw_text))
+        raw_out = redactor.redact(_strip_request_logs(raw_text))
+        if len(raw_out.encode("utf-8")) > RAW_MAX_BYTES:
+            result.raw_oversize.append(sid)  # keep any prior copy; markdown still written
+        else:
+            atomic_write(raw_dir / f"{sid}.jsonl", raw_out)
+            result.files_written += 1
         atomic_write(md_dir / md_name, redactor.redact(render_markdown(conv)))
-        result.files_written += 2
+        result.files_written += 1
         result.sessions_processed += 1
 
         manifest[sid] = {
@@ -118,6 +133,20 @@ def commit_message(now: datetime | None = None) -> str:
 
 
 # --- helpers -----------------------------------------------------------
+
+def _strip_request_logs(raw_text: str) -> str:
+    """Drop REQUEST_LOG_TYPES records; keep every other line (malformed ones too)."""
+    kept = []
+    for line in raw_text.splitlines(keepends=True):
+        if "api-request" in line:  # cheap pre-filter before parsing
+            try:
+                if json.loads(line).get("type") in REQUEST_LOG_TYPES:
+                    continue
+            except (ValueError, AttributeError):
+                pass
+        kept.append(line)
+    return "".join(kept)
+
 
 def _heal_missing_markdown(config: Config, manifest: dict, redactor: Redactor) -> tuple[int, int]:
     """Ensure every manifest entry's markdown exists.
