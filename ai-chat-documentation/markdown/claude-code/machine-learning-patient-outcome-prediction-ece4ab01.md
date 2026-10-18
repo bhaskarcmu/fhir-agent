@@ -4286,8 +4286,10 @@ The server holds the patient twice, and the identifier is there, so it's the sea
 
 By patient ID the agent succeeds 5 of 5 on the real stack. By name it never does: 3 not-found, 2 asking which patient. Checking whether the model mangles the name or the search itself fails:
 
+Re-measuring by name on the real stack:
+
 <details>
-<summary>Execution details — 843 tool events</summary>
+<summary>Execution details — 845 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6422,6 +6424,14 @@ import c…`
 - **Bash** `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:1 python3 - 2>&1 <<'EOF' | grep -vE "export|Transient|UNAVAILABLE"
 from fhir_clinical_client import FHIRClient
 c = FHIRClient("http://localhost:8080/fhir")…`
+- **Bash** `cd /workspaces/fhir-agent/outcome-prediction-agent && python3 - <<'EOF'
+from pathlib import Path
+p = Path("src/outcome_prediction_agent/agent.py"); s = p.read_text()
+old = s[s.index("# A patient id th…`
+- **Bash** `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:1 python3 - 2>&1 <<'EOF' | grep -vE "export|Transient|UNAVAILABLE"
+import collections
+from agent_platform.providers import OpenAICompatibleProvider
+from ou…`
 
 </details>
 
@@ -6432,6 +6442,6 @@ c = FHIRClient("http://localhost:8080/fhir")…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 19:02 UTC
+- **Last updated:** 18 October 2026, 19:03 UTC
 - **Turns:** 59
 - **Status:** Complete
