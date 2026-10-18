@@ -4278,8 +4278,10 @@ Cleaned up. Reading M9's scope and how the repo's existing e2e suites are built 
 
 The demo guide is organised by audience, and Phase 3 added its own section (5a). Reading that section as the model for a Phase 8 one:
 
+**Git:** worktree `/workspaces/fhir-agent`, from `main`, new branch `feature/phase8-m9-acceptance`.
+
 <details>
-<summary>Execution details — 835 tool events</summary>
+<summary>Execution details — 837 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6386,6 +6388,15 @@ M8 adds a new…`
 import json, glob, collections
 for f in sorted(glob.glob("*Information*.json")) + sorted(glob…`
 - **Bash** `cd /workspaces/fhir-agent && grep -n "^def generate_command" -A12 outcome-prediction-service/src/outcome_prediction/etl/synthea.py; grep -n "def main" -A12 outcome-prediction-service/src/outcome_predi…`
+- **Bash** `git switch -q -c feature/phase8-m9-acceptance && git branch --show-current && python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-service/src/outcome_prediction/etl/synthea.py"); s…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-service/pyproject.toml"); s = p.read_text()
+old = '''    "uvicorn[standard]>=0.29",
+    "opentelemetry-sdk>=1.27",'''
+new = '''…`
 
 </details>
 
@@ -6396,6 +6407,6 @@ for f in sorted(glob.glob("*Information*.json")) + sorted(glob…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 18:51 UTC
+- **Last updated:** 18 October 2026, 18:52 UTC
 - **Turns:** 59
 - **Status:** Complete
