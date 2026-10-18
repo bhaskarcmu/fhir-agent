@@ -3935,8 +3935,12 @@ The loader sorts filenames, and the uppercase patient files sort *before* `hospi
 
 All 10 patients loaded cleanly. Checking how HAPI presents them: assigned IDs, reference format and paging links:
 
+Now the methods, plus a paging helper that only new methods use. Existing methods stay byte-for-byte unchanged:
+
+Running the new methods against the live HAPI across all 10 patients, to check they parse real server output end to end, including multi-page results:
+
 <details>
-<summary>Execution details — 629 tool events</summary>
+<summary>Execution details — 634 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5490,6 +5494,27 @@ g = lambda p: json.loads(urllib.request.urlopen("http://localhost:8090/fhir" + p
 pats = g("/Patient?_count=20&_eleme…`
 - **Edit** `/workspaces/fhir-agent/client/clinical/src/fhir_clinical_client/fhir_client.py`
 - **Edit** `/workspaces/fhir-agent/client/clinical/src/fhir_clinical_client/fhir_client.py`
+- **Edit** `/workspaces/fhir-agent/client/clinical/src/fhir_clinical_client/fhir_client.py`
+- **Bash** `cat >> client/clinical/src/fhir_clinical_client/fhir_client.py <<'EOF'
+
+    # -- care history (Phase 8) ---------------------------------------------
+
+    _US_CORE_RACE = "http://hl7.org/fhir/us/core/…`
+- **Bash** `python3 - <<'EOF'
+import collections
+from fhir_clinical_client import FHIRClient
+c = FHIRClient("http://localhost:8090/fhir")
+import json, urllib.request
+ids = [e["resource"]["id"] for e in json.loads…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("client/clinical/src/fhir_clinical_client/fhir_client.py"); s = p.read_text()
+def sub(old, new):
+    global s; assert s.count(old) == 1, old[:60]; s…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("client/clinical/tests/record_care_history.py"); s = p.read_text()
+s = s.replace('''Every request the client makes and the server's exact response b…`
 
 </details>
 
@@ -5500,6 +5525,6 @@ pats = g("/Patient?_count=20&_eleme…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 16:20 UTC
+- **Last updated:** 18 October 2026, 16:21 UTC
 - **Turns:** 52
 - **Status:** Complete
