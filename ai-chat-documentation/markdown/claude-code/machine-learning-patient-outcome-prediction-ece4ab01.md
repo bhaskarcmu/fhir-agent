@@ -4442,8 +4442,10 @@ Proceed with M12
 
 Cleaned up. M12 is the biggest remaining milestone, so before planning I'll map exactly what the promoted `nonobstetric-v2` model consumes: its feature contract, and the lab code it was built with.
 
+The tables now live in the service, and the lab's re-export works (HFRS still has its 109 codes). Next, `MissingnessAugmenter` moves to a new service module, along with the comparison model v2 needs:
+
 <details>
-<summary>Execution details — 914 tool events</summary>
+<summary>Execution details — 919 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6760,6 +6762,14 @@ def cat3(code):
     if c.is_icd10(code): return c.normalise(code)[:3]
     t = [x for x in…`
 - **AskUserQuestion** `{"questions": [{"question": "Which model should the conversational agent's risk tool use once both are served? (The design forbids a tool that lets the agent pick a model, so one has to be the agent's…`
+- **Bash** `git switch -q -c feature/phase8-m12-first-promotion && git branch --show-current && wc -l outcome-prediction-lab/src/outcome_prediction_lab/knowledge.py && grep -n "^def \|^[A-Z_]* = " outcome-predict…`
+- **Bash** `grep -rhoE "knowledge\.[A-Za-z_]+" outcome-prediction-lab/src | sort | uniq -c; sed -n 1,30p outcome-prediction-lab/src/outcome_prediction_lab/knowledge.py; sed -n 760,783p outcome-prediction-lab/src/…`
+- **Bash** `git mv outcome-prediction-lab/src/outcome_prediction_lab/knowledge.py outcome-prediction-service/src/outcome_prediction/knowledge.py && cat > outcome-prediction-lab/src/outcome_prediction_lab/knowledg…`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/model/portable.py`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-lab/src/outcome_prediction_lab/features.py"); s = p.read_text()
+start = s.index("class MissingnessAugmenter(BaseEstimator, Trans…`
 
 </details>
 
@@ -6770,6 +6780,6 @@ def cat3(code):
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 21:30 UTC
+- **Last updated:** 18 October 2026, 21:31 UTC
 - **Turns:** 63
 - **Status:** Complete
