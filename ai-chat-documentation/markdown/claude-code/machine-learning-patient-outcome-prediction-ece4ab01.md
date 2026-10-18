@@ -4520,8 +4520,14 @@ Cleaned up. Starting the documentation review with an inventory of every Markdow
 
 PR #62 updated Phase 6's design and milestone plan but **not its README**, which is the canonical status. So the status contradicts the milestone plan's own record. Reading both to reconcile them:
 
+Collected per suite. I'll count e2e per file (parametrised cases expand) and read which suites each CI job actually runs, so the testing guide states facts rather than guesses:
+
+To settle FR-D7 ("round-3 items: exclude or test separately"), checking how the lab handled MEPS round-3 survey items:
+
+The PRD's own header still says "DRAFT — first planning pass… No code written yet". Fixing that, then checking the acceptance-criteria section, which should now say whether each criterion is met:
+
 <details>
-<summary>Execution details — 988 tool events</summary>
+<summary>Execution details — 997 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6995,6 +7001,28 @@ M12…`
 - **Bash** `sed -n 32,183p docs/testing-guide.md`
 - **Bash** `for p in client/clinical/tests triage-service/src/triage/tests mcp-agent/tests claims-agent/tests data/scripts agent-platform/tests provider-registry-service/src/provider_registry/tests data/scripts/p…`
 - **Bash** `for m in claims-service rxclaim-emulator epic-emulator fhir-service; do echo "$m $(grep -rho "@Test\b" $m/src/test 2>/dev/null | wc -l)"; done; ls e2e/; grep -c "def test_" e2e/*.py; grep -n "^  [a-z0…`
+- **Bash** `for f in e2e/test_golden_paths.py e2e/test_epic_emulator_acceptance.py e2e/test_outcome_prediction_acceptance.py; do echo "$f $(python -m pytest $f --collect-only -q -p no:cacheprovider 2>/dev/null |…`
+- **Bash** `grep -nE "\| In — M[0-9]+|not yet|planned|sketch|unvalidated|will be|M[0-9]+ (will|builds|adds)|TODO|to be (confirmed|decided|checked)|In progress|in progress" docs/phase8/prd.md docs/phase8/design.md…`
+- **Bash** `sed -n 130,225p docs/phase8/prd.md`
+- **Bash** `grep -nE "round-3|round 3|RSNINHOS|survey-only|SURVEY|tuned|grid|search space" outcome-prediction-lab/rounds/001-what-and-how/report.md | head -12; grep -n "FR-" outcome-prediction-lab/rounds/*/report…`
+- **Bash** `grep -niE "round.?3|rd3|round-3|_3\b|3\"" outcome-prediction-lab/src/outcome_prediction_lab/data.py | head -8; grep -niE "round.?3|round-3" docs/phase8/prototype-baseline.md docs/phase8/design.md outc…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("docs/phase8/prd.md"); s = p.read_text()
+def sub(old, new):
+    global s; assert s.count(old) == 1, old[:70]; s = s.replace(old, new)
+sub("""The pro…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("docs/phase8/prd.md"); s = p.read_text()
+old = """**Status:** DRAFT — first planning pass. Synthesised from a hand-off of a research prototype
+built…`
+- **Bash** `grep -n "top10_ppv\|top 10%" outcome-prediction-lab/rounds/003-portable-contract/report.md | head -3; python3 -c "
+import json; d=json.load(open('outcome-prediction-lab/rounds/003-portable-contract/ru…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("docs/phase8/prd.md"); s = p.read_text()
+old = """Later-milestone targets (M10–M11), carried over from the prototype's plan: MEPS test AUROC ≥ 0.78…`
 
 </details>
 
@@ -7005,6 +7033,6 @@ M12…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 22:09 UTC
+- **Last updated:** 18 October 2026, 22:11 UTC
 - **Turns:** 65
 - **Status:** Complete
