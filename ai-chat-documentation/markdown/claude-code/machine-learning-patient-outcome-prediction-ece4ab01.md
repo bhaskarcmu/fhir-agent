@@ -2624,8 +2624,10 @@ MLflow 3 has retired its file-based store, and the "skinny" package can't use th
 
 The first attempt only installed partly; this time everything installed. Re-testing SQLite tracking:
 
+All 11 finalists are logged. Now the **one** look at the test panels, then the explanations stage:
+
 <details>
-<summary>Execution details — 351 tool events</summary>
+<summary>Execution details — 354 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3409,6 +3411,14 @@ def rep(o,n):
     global s
     assert s.count(o)==1,o[:60]; s=s.replace(o,n)
 rep('''def _run_bina…`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-lab/rounds/001-what-and-how/README.md`
+- **Bash** `python3 - <<'EOF'
+import json
+from pathlib import Path
+from outcome_prediction_lab import holdout
+m = json.loads(Path('outcome-prediction-lab/rounds/001-what-and-how/metrics.json').read_text())
+for ca…`
+- **Bash** `set -o pipefail && MLFLOW_DISABLE_AGENT_HINT=1 python -W ignore -m outcome_prediction_lab.round_001 confirm explain 2>&1 | grep -vE "^\s*$|Warning|warn\(|INFO"`
 
 </details>
 
@@ -3419,6 +3429,6 @@ rep('''def _run_bina…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 00:38 UTC
+- **Last updated:** 18 October 2026, 00:40 UTC
 - **Turns:** 32
 - **Status:** Complete
