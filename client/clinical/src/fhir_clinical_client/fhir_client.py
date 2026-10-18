@@ -27,10 +27,11 @@ Usage:
 """
 
 import json
+import urllib.parse
 import urllib.request
 import urllib.error
-from dataclasses import dataclass
-from datetime import date
+from dataclasses import dataclass, field
+from datetime import date, datetime
 from typing import Optional
 
 
@@ -105,6 +106,114 @@ class Condition:
     recorded_date: Optional[date] = None
 
 
+# Care history (Phase 8): what a risk model reads about a patient's past use of care.
+# Times are datetimes because stays are counted in nights; they keep the source's time zone.
+
+@dataclass
+class Demographics:
+    """
+    The demographic facts a population-health model needs about a patient.
+
+    Derived from a FHIR Patient resource. `race` and `ethnicity` come from the US Core
+    race and ethnicity extensions (category names, e.g. "White", "Hispanic or Latino").
+    """
+    patient_id: str
+    gender: str                             # "male", "female", "other", "unknown"
+    birth_date: Optional[date] = None
+    deceased: bool = False
+    deceased_date: Optional[date] = None    # None if alive, or if only "deceased: yes" is recorded
+    state: Optional[str] = None             # As recorded, usually a US postal code ("AZ")
+    postal_code: Optional[str] = None
+    race: list[str] = field(default_factory=list)
+    ethnicity: Optional[str] = None
+    external_ids: list[str] = field(default_factory=list)   # Identifiers from source systems (e.g. an MRN)
+
+
+@dataclass
+class Encounter:
+    """
+    One contact with the health system: a visit, an emergency-room attendance, a hospital stay.
+
+    `setting` is one of "ambulatory", "emergency", "inpatient", "home_health", "virtual",
+    "short_stay", "observation" or "other". A record's own type (e.g. "Well child visit")
+    is kept in `type_display`, because settings are broad.
+    """
+    id: str
+    setting: str
+    status: str                             # "finished", "in-progress", ...
+    start: Optional[datetime] = None
+    end: Optional[datetime] = None          # None while the encounter is still open
+    type_code: str = ""                     # SNOMED CT, e.g. "185345009"
+    type_display: str = ""
+    admitted_from_emergency: Optional[bool] = None   # Hospital stays only; None if not recorded
+    reason_codes: list[str] = field(default_factory=list)
+
+
+@dataclass
+class Prescription:
+    """
+    A prescription (medication order) in the patient's history, current or past.
+
+    Derived from a FHIR MedicationRequest. Unlike get_medications(), the history includes
+    stopped and completed prescriptions. Refill and supply details are often not recorded.
+    """
+    id: str
+    code: str                               # RxNorm code
+    display: str
+    status: str                             # "active", "stopped", "completed", ...
+    authored_on: Optional[datetime] = None
+    valid_from: Optional[date] = None       # The period the prescription may be dispensed in
+    valid_until: Optional[date] = None
+    refills_allowed: Optional[int] = None
+    supply_days: Optional[float] = None     # Expected days of supply per fill
+    quantity: Optional[float] = None        # Quantity per fill
+    encounter_id: Optional[str] = None      # The encounter it was written in
+
+
+@dataclass
+class Dispense:
+    """A medication handed to the patient by a pharmacy (a fill or refill)."""
+    id: str
+    code: str                               # RxNorm code
+    display: str
+    status: str                             # "completed", ...
+    dispensed_at: Optional[datetime] = None
+    quantity: Optional[float] = None
+    supply_days: Optional[float] = None
+    prescription_id: Optional[str] = None
+
+
+@dataclass
+class CareCost:
+    """
+    The cost of one billed episode of care, from the payer's explanation of benefit.
+
+    `category` is "professional", "institutional", "pharmacy", "oral" or "vision". Amounts
+    are in the claim's currency: `billed` is what was submitted, `paid` what the payer paid.
+    """
+    id: str
+    category: str
+    service_start: Optional[datetime] = None
+    service_end: Optional[datetime] = None
+    billed: Optional[float] = None
+    paid: Optional[float] = None
+    currency: Optional[str] = None
+    payer: Optional[str] = None             # e.g. "Medicare", or an insurer's name
+    encounter_ids: list[str] = field(default_factory=list)
+    medication_codes: list[str] = field(default_factory=list)   # RxNorm codes billed (pharmacy)
+
+
+@dataclass
+class InsuranceCoverage:
+    """A period of insurance cover for the patient."""
+    id: str
+    payer: Optional[str] = None
+    plan_type: Optional[str] = None         # e.g. "Medicaid", "PPO"
+    status: str = ""
+    start: Optional[date] = None
+    end: Optional[date] = None              # None if open-ended
+
+
 # ---------------------------------------------------------------------------
 # Exceptions
 # ---------------------------------------------------------------------------
@@ -139,6 +248,8 @@ class FHIRClient:
     All methods raise FHIRClientError (or a subclass) on failure.
     They never return raw FHIR JSON.
     """
+
+    SEARCH_PAGE_SIZE = 100      # results per page for the care-history methods, which read every page
 
     def __init__(self, gateway_url: str, api_key: Optional[str] = None):
         """
@@ -444,6 +555,115 @@ class FHIRClient:
         ]
 
     # -----------------------------------------------------------------------
+    # Care history (Phase 8) — complete histories, so every page is read
+    # -----------------------------------------------------------------------
+
+    def get_demographics(self, patient_id: str) -> Demographics:
+        """
+        Return the patient's demographics: gender, birth and death dates, state, race,
+        ethnicity and source-system identifiers.
+
+        Raises:
+            NotFoundError if the patient does not exist.
+            FHIRClientError on other failures.
+        """
+        status, body = self._request(f"/Patient/{patient_id}")
+        if status != 200:
+            raise FHIRClientError(
+                f"Failed to retrieve patient {patient_id} (got {status}).", status, body
+            )
+        return self._parse_demographics(body)
+
+    def get_encounters(self, patient_id: str, since: Optional[date] = None) -> list[Encounter]:
+        """
+        Return the patient's encounters — visits, emergency attendances, hospital stays.
+
+        Args:
+            patient_id: The patient's ID.
+            since:      If given, only encounters on or after this date.
+
+        Returns:
+            Every matching encounter (all pages), in the server's order.
+        """
+        query = {"patient": patient_id}
+        if since:
+            query["date"] = f"ge{since.isoformat()}"
+        return [self._parse_encounter(r) for r in self._search_all("Encounter", query)]
+
+    def get_medication_history(self, patient_id: str) -> list[Prescription]:
+        """
+        Return every prescription in the patient's history, whatever its status
+        (active, stopped, completed, ...). get_medications() is unchanged: active only.
+        """
+        return [
+            self._parse_prescription(r)
+            for r in self._search_all("MedicationRequest", {"patient": patient_id})
+        ]
+
+    def get_medication_dispenses(self, patient_id: str) -> list[Dispense]:
+        """
+        Return the medications pharmacies have handed to the patient (fills and refills).
+        Many systems don't record dispenses; then the list is empty.
+        """
+        return [
+            self._parse_dispense(r)
+            for r in self._search_all("MedicationDispense", {"patient": patient_id})
+        ]
+
+    def get_care_costs(self, patient_id: str, since: Optional[date] = None) -> list[CareCost]:
+        """
+        Return the billed cost of the patient's care, one entry per claim.
+
+        Args:
+            patient_id: The patient's ID.
+            since:      If given, only claims processed on or after this date.
+        """
+        query = {"patient": patient_id}
+        if since:
+            query["created"] = f"ge{since.isoformat()}"
+        return [
+            self._parse_care_cost(r)
+            for r in self._search_all("ExplanationOfBenefit", query)
+        ]
+
+    def get_coverage(self, patient_id: str) -> list[InsuranceCoverage]:
+        """
+        Return the patient's recorded insurance cover. Some systems record cover only on
+        claims; then this list is empty and get_care_costs() carries the payer.
+        """
+        return [
+            self._parse_coverage(r)
+            for r in self._search_all("Coverage", {"patient": patient_id})
+        ]
+
+    def _search_all(self, resource_type: str, query: dict, max_pages: int = 200) -> list[dict]:
+        """Run a search and follow every 'next' page; return the matching resources.
+
+        Servers write 'next' links with their own host, which may not be reachable through
+        the gateway, so only the link's query string is replayed against this client's base.
+        """
+        path = f"/{resource_type}?" + urllib.parse.urlencode({**query, "_count": self.SEARCH_PAGE_SIZE})
+        resources = []
+        for _ in range(max_pages):
+            status, body = self._request(path)
+            if status != 200:
+                raise FHIRClientError(
+                    f"{resource_type} search failed (got {status}).", status, body
+                )
+            resources += [
+                entry["resource"] for entry in body.get("entry", [])
+                if entry.get("resource", {}).get("resourceType") == resource_type
+            ]
+            next_url = next(
+                (link.get("url") for link in body.get("link", []) if link.get("relation") == "next"),
+                None,
+            )
+            if not next_url:
+                return resources
+            path = "?" + urllib.parse.urlsplit(next_url).query
+        raise FHIRClientError(f"{resource_type} search exceeded {max_pages} pages.")
+
+    # -----------------------------------------------------------------------
     # Future stubs
     # -----------------------------------------------------------------------
 
@@ -550,4 +770,206 @@ class FHIRClient:
             onset_date=FHIRClient._parse_date(resource.get("onsetDateTime")),
             abatement_date=FHIRClient._parse_date(resource.get("abatementDateTime")),
             recorded_date=FHIRClient._parse_date(resource.get("recordedDate")),
+        )
+
+    # -- care history (Phase 8) ---------------------------------------------
+
+    _US_CORE_RACE = "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race"
+    _US_CORE_ETHNICITY = "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity"
+    _ENCOUNTER_SETTINGS = {
+        "AMB": "ambulatory", "EMER": "emergency", "IMP": "inpatient", "ACUTE": "inpatient",
+        "NONAC": "inpatient", "HH": "home_health", "VR": "virtual", "SS": "short_stay",
+        "OBSENC": "observation",
+    }
+    _INPATIENT_SETTINGS = ("inpatient", "short_stay", "observation")
+
+    @staticmethod
+    def _parse_datetime(raw: str | None) -> Optional[datetime]:
+        """Parse an ISO 8601 date or datetime. Returns None on failure. Keeps any time zone."""
+        if not raw:
+            return None
+        try:
+            return datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        except ValueError:
+            return None
+
+    @staticmethod
+    def _ref_id(ref: dict | None) -> Optional[str]:
+        """'Encounter/163' or 'urn:uuid:abc' -> '163' / 'abc'."""
+        raw = (ref or {}).get("reference")
+        if not raw:
+            return None
+        return raw.split("/")[-1].removeprefix("urn:uuid:")
+
+    @staticmethod
+    def _first_coding(concept: dict | None) -> dict:
+        codings = (concept or {}).get("coding") or [{}]
+        return codings[0]
+
+    @staticmethod
+    def _duration_days(duration: dict | None) -> Optional[float]:
+        """A FHIR Duration in days (supply durations are recorded in d, wk or mo)."""
+        if not duration or duration.get("value") is None:
+            return None
+        per_day = {"d": 1, "day": 1, "days": 1, "wk": 7, "mo": 30, "a": 365, "h": 1 / 24}
+        unit = duration.get("code") or duration.get("unit") or "d"
+        return float(duration["value"]) * per_day[unit] if unit in per_day else None
+
+    @staticmethod
+    def _parse_demographics(resource: dict) -> Demographics:
+        def us_core(url: str) -> list[str]:
+            for ext in resource.get("extension", []):
+                if ext.get("url") == url:
+                    names = [sub["valueCoding"].get("display", "") for sub in ext.get("extension", [])
+                             if sub.get("url") == "ombCategory" and "valueCoding" in sub]
+                    text = [sub.get("valueString") for sub in ext.get("extension", [])
+                            if sub.get("url") == "text" and sub.get("valueString")]
+                    return names or text
+            return []
+
+        address = (resource.get("address") or [{}])[0]
+        deceased_date = FHIRClient._parse_date(resource.get("deceasedDateTime"))
+        ethnicity = us_core(FHIRClient._US_CORE_ETHNICITY)
+        return Demographics(
+            patient_id=resource.get("id", ""),
+            gender=resource.get("gender", "unknown"),
+            birth_date=FHIRClient._parse_date(resource.get("birthDate")),
+            deceased=bool(resource.get("deceasedBoolean")) or deceased_date is not None,
+            deceased_date=deceased_date,
+            state=address.get("state"),
+            postal_code=address.get("postalCode"),
+            race=us_core(FHIRClient._US_CORE_RACE),
+            ethnicity=ethnicity[0] if ethnicity else None,
+            external_ids=[i["value"] for i in resource.get("identifier", []) if i.get("value")],
+        )
+
+    @staticmethod
+    def _parse_encounter(resource: dict) -> Encounter:
+        setting = FHIRClient._ENCOUNTER_SETTINGS.get(
+            (resource.get("class") or {}).get("code", ""), "other"
+        )
+        type_concept = (resource.get("type") or [{}])[0]
+        type_coding = FHIRClient._first_coding(type_concept)
+        admitted_from_emergency = None
+        admit_source = (resource.get("hospitalization") or {}).get("admitSource")
+        if setting in FHIRClient._INPATIENT_SETTINGS and admit_source:
+            admitted_from_emergency = FHIRClient._first_coding(admit_source).get("code") == "emd"
+        period = resource.get("period") or {}
+        return Encounter(
+            id=resource.get("id", ""),
+            setting=setting,
+            status=resource.get("status", ""),
+            start=FHIRClient._parse_datetime(period.get("start")),
+            end=FHIRClient._parse_datetime(period.get("end")),
+            type_code=type_coding.get("code", ""),
+            type_display=type_concept.get("text") or type_coding.get("display", ""),
+            admitted_from_emergency=admitted_from_emergency,
+            reason_codes=[FHIRClient._first_coding(c).get("code", "")
+                          for c in resource.get("reasonCode", []) if FHIRClient._first_coding(c).get("code")],
+        )
+
+    @staticmethod
+    def _parse_prescription(resource: dict) -> Prescription:
+        concept = resource.get("medicationCodeableConcept") or {}
+        coding = FHIRClient._first_coding(concept)
+        dispense = resource.get("dispenseRequest") or {}
+        validity = dispense.get("validityPeriod") or {}
+        quantity = (dispense.get("quantity") or {}).get("value")
+        return Prescription(
+            id=resource.get("id", ""),
+            code=coding.get("code", ""),
+            display=concept.get("text") or coding.get("display", ""),
+            status=resource.get("status", ""),
+            authored_on=FHIRClient._parse_datetime(resource.get("authoredOn")),
+            valid_from=FHIRClient._parse_date(validity.get("start")),
+            valid_until=FHIRClient._parse_date(validity.get("end")),
+            refills_allowed=dispense.get("numberOfRepeatsAllowed"),
+            supply_days=FHIRClient._duration_days(dispense.get("expectedSupplyDuration")),
+            quantity=float(quantity) if quantity is not None else None,
+            encounter_id=FHIRClient._ref_id(resource.get("encounter")),
+        )
+
+    @staticmethod
+    def _parse_dispense(resource: dict) -> Dispense:
+        concept = resource.get("medicationCodeableConcept") or {}
+        coding = FHIRClient._first_coding(concept)
+        quantity = (resource.get("quantity") or {}).get("value")
+        prescriptions = resource.get("authorizingPrescription") or []
+        return Dispense(
+            id=resource.get("id", ""),
+            code=coding.get("code", ""),
+            display=concept.get("text") or coding.get("display", ""),
+            status=resource.get("status", ""),
+            dispensed_at=FHIRClient._parse_datetime(
+                resource.get("whenHandedOver") or resource.get("whenPrepared")),
+            quantity=float(quantity) if quantity is not None else None,
+            supply_days=FHIRClient._duration_days(resource.get("daysSupply")),
+            prescription_id=FHIRClient._ref_id(prescriptions[0]) if prescriptions else None,
+        )
+
+    @staticmethod
+    def _parse_care_cost(resource: dict) -> CareCost:
+        def amount(category: str) -> tuple[Optional[float], Optional[str]]:
+            for total in resource.get("total", []):
+                if FHIRClient._first_coding(total.get("category")).get("code") == category:
+                    money = total.get("amount") or {}
+                    return money.get("value"), money.get("currency")
+            return None, None
+
+        items = resource.get("item", [])
+        starts, ends = [], []
+        for item in items:
+            period = item.get("servicedPeriod") or {}
+            day = item.get("servicedDate")
+            starts.append(FHIRClient._parse_datetime(period.get("start") or day))
+            ends.append(FHIRClient._parse_datetime(period.get("end") or day))
+        starts, ends = [s for s in starts if s], [e for e in ends if e]
+        if not starts:                       # no service dates on the items: the billing period
+            billable = resource.get("billablePeriod") or {}
+            starts = [s for s in [FHIRClient._parse_datetime(billable.get("start"))] if s]
+            ends = [e for e in [FHIRClient._parse_datetime(billable.get("end"))] if e]
+
+        payer = None
+        for insurance in resource.get("insurance", []):
+            if insurance.get("focal", True):
+                payer = (insurance.get("coverage") or {}).get("display")
+                break
+        if not payer:
+            payer = (resource.get("insurer") or {}).get("display")
+
+        billed, currency = amount("submitted")
+        payment = (resource.get("payment") or {}).get("amount") or {}
+        encounter_ids, medication_codes = [], []
+        for item in items:
+            for ref in item.get("encounter", []):
+                if (eid := FHIRClient._ref_id(ref)) and eid not in encounter_ids:
+                    encounter_ids.append(eid)
+            coding = FHIRClient._first_coding(item.get("productOrService"))
+            if "rxnorm" in coding.get("system", "") and coding.get("code"):
+                medication_codes.append(coding["code"])
+        return CareCost(
+            id=resource.get("id", ""),
+            category=FHIRClient._first_coding(resource.get("type")).get("code", ""),
+            service_start=min(starts) if starts else None,
+            service_end=max(ends) if ends else None,
+            billed=billed,
+            paid=payment.get("value"),
+            currency=currency or payment.get("currency"),
+            payer=payer,
+            encounter_ids=encounter_ids,
+            medication_codes=medication_codes,
+        )
+
+    @staticmethod
+    def _parse_coverage(resource: dict) -> InsuranceCoverage:
+        type_concept = resource.get("type") or {}
+        payors = resource.get("payor") or [{}]
+        period = resource.get("period") or {}
+        return InsuranceCoverage(
+            id=resource.get("id", ""),
+            payer=payors[0].get("display"),
+            plan_type=type_concept.get("text") or FHIRClient._first_coding(type_concept).get("display"),
+            status=resource.get("status", ""),
+            start=FHIRClient._parse_date(period.get("start")),
+            end=FHIRClient._parse_date(period.get("end")),
         )

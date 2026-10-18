@@ -219,6 +219,14 @@ M6**, recording what was found, as Phase 7 does for RxNav (R11):
 | `coverage` | `Coverage`, or `ExplanationOfBenefit.insurance` | Early evidence: Synthea's default R4 export emitted **no `Coverage`** in Phase 2's run (`data/reference/README.md`), so `ExplanationOfBenefit.insurance` is the likely source — confirm in M6 |
 | cost (`totexpy1`) | `ExplanationOfBenefit` payment/total, else `Claim.total` | Charges vs MEPS payments (O25) |
 
+**Checked in M5 against Synthea v4.0.0 FHIR on HAPI v7.2.0 (O64):** encounter classes are folded
+as feared (AMB covers ambulatory, wellness, outpatient and urgent care); there is no `Coverage`,
+no `MedicationDispense` and no `dispenseRequest` (one pharmacy claim per prescription, no fill
+count); no `hospitalization.admitSource`; `address.state` is a postal code. The client methods
+that read each source: `get_demographics`, `get_encounters`, `get_medication_history`,
+`get_medication_dispenses`, `get_care_costs` (ExplanationOfBenefit: amounts, payer, linked
+encounters and medicines), `get_coverage`.
+
 Synthea runs for Phase 8 (O11) override `exporter.csv.export=true` and
 `exporter.years_of_history` on the command line so both formats and enough history come from
 one run; the shared `data/synthea/synthea.properties` is not edited.
