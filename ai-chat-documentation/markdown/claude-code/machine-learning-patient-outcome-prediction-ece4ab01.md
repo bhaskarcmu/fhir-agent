@@ -2602,8 +2602,10 @@ Too slow, and the cause is mine: `_code_documents` loops over people and filters
 
 The `KNOWN_GAPS` edit had already applied before the slow build started. Rewriting `_code_documents` as grouped operations instead of a per-person loop:
 
+Before writing the round script, a quick smoke test. The prototype configuration under leave-one-panel-out cross-validation should give a sensible AUROC, and the honest encoding should behave:
+
 <details>
-<summary>Execution details — 329 tool events</summary>
+<summary>Execution details — 332 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3340,6 +3342,12 @@ def rep(o,n):
     global s
     assert s.count(o)==1,o[:60]; s=s.replace(o,n)
 rep('''    df["DUPERSID"]…`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-lab/src/outcome_prediction_lab/features.py`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-lab/src/outcome_prediction_lab/evaluate.py`
+- **Bash** `time python3 - <<'EOF'
+import joblib, numpy as np
+from outcome_prediction_lab.features import make_model, FEATURE_SETS, honest_frame
+from outcome_prediction_lab.evaluate import cv_predict, binary_metr…`
 
 </details>
 
@@ -3350,6 +3358,6 @@ rep('''    df["DUPERSID"]…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 00:19 UTC
+- **Last updated:** 18 October 2026, 00:20 UTC
 - **Turns:** 31
 - **Status:** Complete
