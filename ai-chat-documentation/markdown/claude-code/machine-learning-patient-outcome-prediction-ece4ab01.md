@@ -3356,7 +3356,7 @@ Understood. I'll do all three as **round 004**, run through the CLI, with the te
 Git: worktree `/workspaces/fhir-agent`, branch `feature/phase8-m3-round-001` (PR #71, target `main`). The code comes first: a `population` config key and the fairness module.
 
 <details>
-<summary>Execution details — 471 tool events</summary>
+<summary>Execution details — 472 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4572,6 +4572,7 @@ p='outcome-prediction-lab/src/outcome_prediction_lab/runs.py'; s=open(p).read()
 def rep(o,n,count=1):
     global s
     assert s.count(o)==count,(o[:70],s.count(o)); s=s.replace(o,n)…`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-lab/src/outcome_prediction_lab/fairness.py`
 
 </details>
 
