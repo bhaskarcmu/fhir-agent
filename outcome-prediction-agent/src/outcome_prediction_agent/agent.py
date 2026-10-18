@@ -51,8 +51,11 @@ NUDGE_PATIENT = "Use the tools: call find_patient with the patient's name from m
 NUDGE_MODEL = "Use the tools: call get_model_card."
 NOT_A_MODEL_QUESTION = "Refused: the question is about a patient. Call find_patient with the patient's name."
 DATE = re.compile(r"\b\d{4}-\d{2}-\d{2}\b")
-# A patient id the clinician typed: FHIR ids here contain a digit ("3208", a UUID); dates are excluded.
-ID_TOKEN = re.compile(r"\b(?:Patient/)?((?=[A-Za-z0-9\-.]*\d)[A-Za-z0-9\-.]{1,64})\b")
+# A patient id the clinician typed: all digits ("3208"), a UUID, or written explicitly as
+# "Patient/<id>" or "id <id>". A word mixing letters and digits is NOT an id — Synthea names
+# ("Beier427") look like that, and a small model passes names as ids (found in M9's live run).
+ID_TOKEN = re.compile(r"(?<![\w-])(\d{1,64})(?![\w-])|\b([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b"
+                      r"|\b(?:Patient/|id[:#]?\s+)([A-Za-z0-9\-.]{1,64})", re.I)
 
 _INSTRUCTIONS = """You help clinicians look up a patient's 12-month hospitalization risk estimate.
 To answer a question about a patient: call find_patient with the patient's name. If the clinician
@@ -81,7 +84,8 @@ class Turn:
         self.as_of = (DATE.findall(question) or [None])[0]
 
     def allowed_ids(self) -> set[str]:
-        return set(self.candidates) | (set(ID_TOKEN.findall(self.question)) - set(DATE.findall(self.question)))
+        typed = {next(g for g in m if g) for m in ID_TOKEN.findall(DATE.sub(" ", self.question))}
+        return set(self.candidates) | typed
 
     def call(self, name: str, args: dict) -> dict:
         with start_span(f"execute_tool {name}", _tracer,

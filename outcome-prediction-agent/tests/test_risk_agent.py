@@ -190,3 +190,22 @@ def test_the_model_card_never_answers_a_patient_question(service):
     assert ("get_model_card", {}) not in service.calls
     assert "about a patient" in str(model.requests[1]["messages"][-1]["content"][0]["content"])
 
+
+@pytest.mark.parametrize("question, allowed", [
+    ("Risk for patient 3208 as of 2024-12-31", {"3208"}),
+    ("Risk for Patient/abc-12", {"abc-12"}),
+    ("Risk for id X9", {"X9"}),
+    ("Risk for e7149b17-d845-b43b-95fb-88a93a213601", {"e7149b17-d845-b43b-95fb-88a93a213601"}),
+    ("Risk for Leeanna836 Beier427 as of 2024-12-31", set()),          # names with digits are not ids
+])
+def test_what_counts_as_an_id_the_clinician_typed(question, allowed):
+    from outcome_prediction_agent.agent import Turn
+    assert Turn(None, question).allowed_ids() == allowed
+
+
+def test_a_name_passed_as_an_id_is_refused_and_redirected(service):
+    reply, model = ask(service, "Risk for Leeanna836 Beier427",
+                       [tool_use("get_hospitalization_risk", {"patient_id": "Beier427"})])
+    assert service.calls == []
+    assert "find_patient" in str(model.requests[1]["messages"][-1]["content"][0]["content"])
+

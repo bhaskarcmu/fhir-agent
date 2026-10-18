@@ -1,6 +1,7 @@
 # Phase 8 Milestone Plan — Patient Outcome Prediction
 
-M1–M13. **M1–M8 built** (verified results below; M3 closed 2026-10-18, O60); M9–M13 planned. M10 and M11 are folded into M3 (O45). Expanded from M1–M11 after a second scope pass added a
+M1–M13. **M1–M9 built** (verified results below; M3 closed 2026-10-18, O60); M12–M13 planned
+(M10, M11 folded into M3). M10 and M11 are folded into M3 (O45). Expanded from M1–M11 after a second scope pass added a
 dedicated experimentation track (`decisions.md` O28–O40): M3 (workbench) and M12 (promotion)
 are new, and the former model-improvement milestones are now rounds of the
 [experimentation protocol](./experimentation-protocol.md).
@@ -319,6 +320,17 @@ encounter dated after `as_of` and showing the score doesn't move.
 **Deliverable:** The e2e suite passes; demo steps documented in `docs/demo-guide.md`.
 
 **Depends on:** M8.
+
+**Verified (M9 built):** `e2e/test_outcome_prediction_acceptance.py` passes — 5 tests, the three
+beats — on the `phase8` stack with the real M2 artifact and 10 seeded Synthea patients: a valid R4
+RiskAssessment (HAPI `$validate`: no errors or warnings) whose `basis` resolves to the patient's own
+encounters, conditions and claims dated on or before `as_of`; a deceased patient gets 422; the
+agent on `llama3.2:1b` returns exactly the API's assessment, every reply line traced to a field of
+it; an encounter added after `as_of` changes nothing (and appears once `as_of` passes it). From cold
+the suite brings up the stack, seeds and starts Ollama itself — 4 minutes, nothing left running
+(O71). `etl/synthea.py seed` (idempotent). Found live: names with digits passed as ids (fixed, O72);
+HAPI's search-result cache and `system|value` identifier search (worked around in the seeder).
+Demo: `docs/demo-guide.md` §5b.
 
 ---
 
