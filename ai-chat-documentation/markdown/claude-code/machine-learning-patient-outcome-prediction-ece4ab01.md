@@ -4526,8 +4526,194 @@ To settle FR-D7 ("round-3 items: exclude or test separately"), checking how the 
 
 The PRD's own header still says "DRAFT — first planning pass… No code written yet". Fixing that, then checking the acceptance-criteria section, which should now say whether each criterion is met:
 
+## Turn 66
+
+### Prompt
+
+This session is being continued from a previous conversation that ran out of context. The summary below covers the earlier portion of the conversation.
+
+Summary:
+1. Primary Request and Intent:
+   - **Earlier milestones (all completed and merged):** proceed through Phase 8 milestones M4, M5, M6, M7, M8, M9, M13 and M12, and after each PR merge delete the associated merged branches (remote and local).
+   - **When blocked:** the user said "Give me multiple choice options if you want me to unblock anything." Decisions made by the user via multiple choice:
+     - M13: use Synthea's bundled SNOMED map ("Synthea map now (Recommended)").
+     - M12: the agent uses the promoted nonobstetric-v2 model.
+     - M12: serve exactly the confirmed model, not a refit.
+   - **MOST RECENT request:** "PR #79 Merged. Delete associated merged branches. Review all documentation, including for Phase 8 and the documentation in the repo that is common to all phases. Bring everything up to date and make things consistent."
+   - Branch `feature/phase8-m12-first-promotion` has been deleted (remote and local). The documentation review is in progress.
+   - **Standing constraints (CLAUDE.md, verbatim essentials):**
+     - "Never commit directly to `main`."
+     - "For any change to `main`-branch work, default to creating a feature branch and opening a PR — do this proactively without asking."
+     - "Never merge branches yourself."
+     - "After a PR is merged, always ask to delete the feature branch — both the `origin` remote branch and the local branch. Delete only after I confirm, and never delete `main` or `ai-chat-history`."
+     - "Before any Git write operation, briefly state: current worktree, current branch, intended target branch."
+     - "Stop and ask before: deleting files, destructive Git operations, changing infra or deployment config, or modifying security-sensitive code. Protect secrets — never expose credentials or commit sensitive information."
+     - "Run one logical operation per state-changing or order-dependent step."
+     - "Never claim tests passed unless they actually ran."
+     - When work completes, report: files changed, validation, branch, commit hash, limitations.
+     - Never commit data or model binaries.
+     - Never send real patient data to LLMs.
+   - **Attribution:** commits end with "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"; PR bodies end with "🤖 Generated with [Claude Code](https://claude.com/claude-code)".
+
+2. Key Technical Concepts:
+   - **Phase 8 overall:**
+     - ML risk prediction on MEPS data, served as a FHIR RiskAssessment.
+     - Two contracts: `meps25-v1` (the prototype; target `hospitalization-12m`) and `meps-portable-v2` (promoted `nonobstetric-v2`; target `nonobstetric-admission-12m`, the agent's model).
+   - **Promotion and serving:**
+     - `PROMOTION.json` is bound to the manifest checksums; the service refuses unpromoted artifacts.
+     - Occlusion reasons; race is never given as a reason (O50).
+   - **ETL and data:**
+     - Canonical tables (person, coverage with a `payer` column, encounter, condition, medication_fill).
+     - `as_of_view` provides scoring-mode leakage protection.
+     - CSV/FHIR parity verifiers.
+     - Data-quality report against MEPS aggregates (`meps_reference.json` with a `typical` block).
+     - Versioned ICD-10-CM prefix code lists, with the Synthea SNOMED map and a majority/tie rule.
+   - **Agent:** templated grounded replies with a grounding gate; Ollama `llama3.2:1b`.
+   - **HAPI quirks:** a one-minute search-result cache (fixed with `Cache-Control: no-cache`); `system|value` identifier search fails.
+   - **E2E:** the suite self-provisions the compose `phase8` profile.
+   - **CI jobs:** ci-config-llm-provider-gate, phase1, phase2-java, phase2-python, phase3-python, phase8-python, phase8-lab, phase8-agent, phase3-terraform. CI does **not** run epic-emulator's or fhir-service's Java tests.
+
+3. Files and Code Sections (doc review, current work):
+   - **`docs/phase8/prd.md`** — EDITED (uncommitted, currently on `main`):
+     - Status legend now reads: "Status: **Done** (built and verified — milestone and decision shown), **Changed**…, **8b**, **Out**. Every milestone M1–M13 is built, so no requirement is still only 'In'."
+     - All "In — M…" rows replaced. Examples: FR-D1–D3 "Done — M1"; FR-D4 "Changed — M3 round 001: built as `admit_nonobstetric_y2`… (O47) — the first promotion (O59)"; FR-D5, D6, D7, M1, M3, M5, E1–E5, X1–X3, X5–X7 all set to Done with evidence.
+     - Header "Status: DRAFT … No code written yet" replaced with "**Status:** built — M1–M13 complete; status is stated once, canonically, in README.md…".
+     - "FHIR mapping sketch" changed to "FHIR mapping".
+   - **Files read; edits still needed:**
+     - **`README.md` (root):** stale. Microservices table lacks Phases 4–8 (epic-emulator is built in Phase 4 but shown as "⏳ Not yet implemented"; athena-emulator really is still a placeholder). Status & future work covers only Phases 1–3. The "Build and test" install line lists only Phase 1 packages. Documentation table covers only Phases 2–3.
+     - **`docs/README.md`:**
+       - Phase 6 line says "M1-M5 built (M5 PR open), M6 next"; actually M1–M6 are built (PRs #61, #62) and M7 is planned.
+       - Phase 8 line says "M1–M2 built; M3 in progress (round 001 done); M4–M13 planned"; actually all are built.
+       - Phase 8 description is outdated: it calls milestone-plan "none started", mentions only round 001, and calls design.md's mapping a "sketch".
+       - "Know what to build next" row is stale.
+       - "Elsewhere in the repo" table lacks the Phase 4/6/8 packages.
+     - **`docs/phase6/README.md`:** canonical status reads "M5 PR open… M6 not started"; it should be M1–M6 built and M7 planned. H range is "H1–H51 as of this note" (needs checking). `docs/phase6/milestone-plan.md` table shows M1 "🔜 Next up" and M2–M6 "⏳ Not started"; all M1–M6 are implemented (design §4.1–4.6 say implemented); M7 is planned.
+     - **`.clinerules`:** out of sync with CLAUDE.md. Missing the project description, build & test, the "default to feature branch & PR proactively" rule, and "How to work"/communication details. Plan: mirror CLAUDE.md's content without changing any rule.
+     - **`CLAUDE.md`:** component table lists only Phase 1 components; update facts only.
+     - **`docs/developer-guide.md`:** §2 "The three phases", §4 repo map (epic-emulator listed as a placeholder), §6 dev loop install line, §6 ports, and §10 where-to-continue all stop at Phase 3. It needs Phases 4–8, including the outcome-prediction packages, port 8005 and agent-platform.
+     - **`docs/testing-guide.md`:** §2 suite list, §3 counts, CI description ("five jobs") and §4 gaps are stale. Actual counts collected:
+
+       | Suite | Tests |
+       |---|---|
+       | `client/clinical/tests` | 59 |
+       | `triage-service` | 48 |
+       | `mcp-agent/tests` | 102 |
+       | `claims-agent` | 8 |
+       | `data/scripts` (incl. provider_ingest's 12) | 31 |
+       | `agent-platform/tests` | 124 |
+       | `provider-registry-service` | 40 |
+       | `provider_ingest` | 12 |
+       | `provider-curation-agent` | 13 |
+       | `provider-mcp-server` | 14 |
+       | `provider-search-agent` | 10 |
+       | `outcome-prediction-service` | 235 |
+       | `outcome-prediction-lab` | 31 |
+       | `outcome-prediction-agent` | 45 |
+       | e2e: `test_golden_paths` | 7 |
+       | e2e: `test_epic_emulator_acceptance` | 2 |
+       | e2e: `test_outcome_prediction_acceptance` | 9 |
+       | Java `@Test`: claims-service | 58 |
+       | Java `@Test`: rxclaim-emulator | 8 |
+       | Java `@Test`: epic-emulator | 24 |
+       | Java `@Test`: fhir-service | 71 |
+
+       The gaps section should note that epic-emulator and fhir-service Java tests are not in CI.
+     - **`docs/phase8/experimentation-protocol.md`** line 5: "Phase 8's milestones are complete (`decisions.md` O28). Milestone M3 builds…" — needs checking.
+     - **`docs/phase8/design.md`:** line 3 "technical sketches"; line 118 "`meps25-v2` (M10) pairs the contract with `label_unplanned_12m`…" (stale; actually `meps-portable-v2` / `admit_nonobstetric_y2`); line 215 "planned by the prototype, now load-bearing" (fine). Check §1 layout lists (lab `targets.py`, `search.py`, `scorecard.py`, `modelcard.py`, `promote.py` as planned names vs actual `runs.py`/`cli.py`).
+     - **`docs/phase8/README.md`:** line 35 "the FHIR mapping sketch"; check overall status coherence. It already says "All Phase 8 milestones are built; Phase 8b next".
+     - **`docs/phase8/prediction-targets.md`:** may need an update saying the nonobstetric model is now served (M12, O59/O77).
+     - Phase 7 README is accurate (no code; athena placeholder). Phase 4 E16 safety bug is still open (accurate). Phase 5 is reserved (accurate).
+   - **Acceptance-criteria results table:** about to be added to the PRD §9. Data gathered for the promoted `nonobstetric-v2` model: test auroc 0.795, auprc 0.276, brier 0.065, mean_pred 0.080 vs rate 0.079, top10_ppv 0.303, top10_sensitivity 0.382, auroc_65plus 0.701.
+     - Criteria 1–12 are all met. Evidence:
+       - M1 exact counts.
+       - M2 0.769 / 0.708 exact.
+       - M4.
+       - Leakage tests (CSV, FHIR, v2).
+       - Parity 19/26 identical, with all differences explained.
+       - M7 HAPI `$validate` with no errors or warnings.
+       - M8 live grounding over 25 runs.
+       - E2E: 9 tests pass from cold.
+       - phase1 job green.
+       - Round 000 reproduced bit-for-bit.
+       - M12 promotion.
+     - Later-milestone targets:
+       - AUROC ≥ 0.78: met (0.795 on the nonobstetric label).
+       - 65+ ≥ 0.73: **NOT met** (0.701; the 65+ specialist didn't help, O58).
+       - Mean predicted within 1pp: met (0.080 vs 0.079).
+       - Top-decile PPV: 30.3% vs QAdmissions' 42% (different outcome, UK emergency admissions).
+
+4. Errors and fixes (recent):
+   - "## Supersession notes" heading was dropped twice (M3, M5) and restored. Inserts now anchor on that heading and assert it survives.
+   - Duplicate test filenames renamed:
+     - `test_api.py` → `test_scoring_api.py`;
+     - agent tests → `test_risk_agent.py`, `test_risk_explain.py`.
+   - HAPI `system|value` identifier search returned nothing; the seeder now searches by value and filters by system.
+   - HAPI search cache caused duplicate seeding and stale scoring reads. Fixes: `Cache-Control: no-cache` in the seeder, and `client/clinical._search_all` sends `NO_CACHE`; `_request` gained an optional `headers` parameter.
+   - ID_TOKEN accepted Synthea names with digits as patient ids. Fixed (O72): ids must be digits, a UUID, or `Patient/…` / `id …`.
+   - Synthea multi-target map produced artefacts (CKD read as hypertension, rhinitis as asthma). Fixed with the majority/tie rule.
+   - `portable_rows` failed with a KeyError on empty input. Fixed with explicit columns.
+   - Lab `MissingnessAugmenter` pickles: resolved by moving the class to the service and re-exporting it from the lab.
+
+5. Problem Solving:
+   Phase 8 is complete: M1–M13 are built and merged. The documentation review found significant drift in the common docs, Phase 6 status, `.clinerules` sync and testing-guide counts, as listed above.
+
+6. All user messages (since the earlier summary):
+   - "PR #71 merged. Delete associated merged branches. ============ I have done a data sceince + AI + ML certification from MIT... Can you please explain, at a high level, what ML concepts have been applied in this phase so far?"
+   - "Proceed to M4. Give me multiple choice options if you want me to unblock anything"
+   - "Merged PR #72. Delete associated merged branches. Proceed to M5"
+   - "PR #73 merged. Delete associated merged branches. Proceed with M6"
+   - "PR #74 merged. Delete the associated merged branches. Proceed to M7"
+   - "PR #75 merged. Delete associated merged branches. Proceed to M8"
+   - "resume the work, you should now have a new API key to charge for this session" (sent twice)
+   - "PR #76 merged. Delete merged branches. Proceed to M9"
+   - "PR #77 Merged. Delete the associated merged branches. Proceed to the next milestone that makes logical sense after this one"
+   - Multiple-choice answers: M13 map = "Synthea map now (Recommended)"; M12 agent model = "Promoted nonobstetric-v2 (Recommended)"; M12 release fit = "Exactly the confirmed one (Recommended)".
+   - "Merged PR #78. Delete the associated merged branches. Proceed with M12"
+   - "PR #79 Merged. Delete associated merged branches. Review all documentation, including for Phase 8 and the documentation in the repo that is common to all phases. Bring everything up to date and make things consistent"
+
+7. Pending Tasks:
+   - Complete the documentation review and consistency pass:
+     - root `README.md`;
+     - `docs/README.md`;
+     - Phase 6 README and milestone table;
+     - `CLAUDE.md` component table (facts only), with `.clinerules` synced to mirror CLAUDE.md and no rule changes;
+     - developer-guide (Phases 4–8);
+     - testing-guide (counts, CI jobs, gaps including the Java CI gap);
+     - Phase 8 PRD §9 results table;
+     - Phase 8 design stale lines (§1 layout names, line 118);
+     - Phase 8 README "sketch" wording;
+     - experimentation-protocol line 5;
+     - prediction-targets (served status);
+     - service, lab and agent READMEs, checked for consistency.
+   - Then: create a feature branch (the doc edits are currently uncommitted on `main` — do NOT commit to main), commit, push, open a PR, watch CI, and report.
+
+8. Current Work:
+   Doc review in progress. The uncommitted `docs/phase8/prd.md` edits (status legend, all FR statuses set to Done/Changed, header fixed) sit on branch `main`. The last action gathered the promoted model's confirmed metrics (`auroc 0.795`, `mean_pred 0.08` vs `rate 0.079`, `top10_ppv 0.303`, `auroc_65plus 0.701`). These are for adding an acceptance-criteria results table to PRD §9, which states that criteria 1–12 are met with evidence and that the prototype's later targets are partly met (the 65+ target ≥ 0.73 is NOT met at 0.701).
+
+9. Optional Next Step:
+   Continue the user's request: "Review all documentation, including for Phase 8 and the documentation in the repo that is common to all phases. Bring everything up to date and make things consistent."
+   1. **Create the branch first.** Before any further commits, create the feature branch, e.g. `docs/repo-wide-refresh`. State first: worktree `/workspaces/fhir-agent`, current branch `main`, target new branch → PR to `main`.
+   2. Add the PRD §9 results table.
+   3. Update, in order: root README, `docs/README.md`, Phase 6 README and milestone table, the CLAUDE.md component table plus `.clinerules` mirror, developer-guide, testing-guide, and the remaining Phase 8 stale lines.
+   4. Commit, push, open a PR, watch CI, and report files changed, validation, branch, commit and limitations.
+
+If you need specific details from before compaction (like exact code snippets, error messages, or content you generated), read the full transcript at: /home/vscode/.claude/projects/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4.jsonl
+Continue the conversation from where it left off without asking the user any further questions. Resume directly — do not acknowledge the summary, do not recap what was happening, do not preface with "I'll continue" or similar. Pick up the last task as if the break never happened.
+
+The messages after this summary are the most recent messages from before compaction, kept verbatim. The summary was written without seeing them, so something it says has not happened yet may already have happened in them.
+
+### Claude response
+
+Worktree `/workspaces/fhir-agent`, current branch `main`, target: new branch `docs/repo-wide-refresh` → PR to `main`.
+
+Now update Phase 6 README and milestone table.
+
+Component READMEs are already current. Now the common guides.
+
+Now rewriting the testing guide: the test counts, the CI job list, and the gaps.
+
 <details>
-<summary>Execution details — 997 tool events</summary>
+<summary>Execution details — 1019 tool events</summary>
 
 ### Turn 1 activity
 
@@ -7024,6 +7210,54 @@ from pathlib import Path
 p = Path("docs/phase8/prd.md"); s = p.read_text()
 old = """Later-milestone targets (M10–M11), carried over from the prototype's plan: MEPS test AUROC ≥ 0.78…`
 
+### Turn 66 activity
+
+- **Bash** `git switch -c docs/repo-wide-refresh && git status --short`
+- **Bash** `cat README.md && echo ======== && cat docs/README.md`
+- **Read** `/home/vscode/.claude/projects/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/tool-results/bbsgt905r.txt`
+- **Bash** `sed -n 1,60p docs/phase6/README.md; echo =====; grep -n "Status\|🔜\|⏳\|✅" docs/phase6/milestone-plan.md | head -30; echo ====; grep -n "^## \|^### 4\.\|implemented\|Implemented" docs/phase6/design.md…`
+- **Bash** `git log --oneline --all | grep -i "phase6\|phase 6\|H4[5-9]\|H5" | head -20; ls agent-platform/src/agent_platform 2>/dev/null; grep -n "ollama\|OLLAMA\|host.docker" docker-compose.yml | head`
+- **Bash** `sed -n 1,40p docs/phase6/milestone-plan.md; grep -n "^## \|^### " docs/phase6/milestone-plan.md; grep -o "^| \*\*H[0-9]*" docs/phase6/decisions.md | tail -2; grep -n "^| \*\*\?H[0-9]" docs/phase6/deci…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("docs/phase6/README.md"); s = p.read_text()
+start = s.index("> **🚧 M1-M5 implemented"); end = s.index("> *This is the one canonical status statement…`
+- **Bash** `grep -oE "\bR[0-9]{1,2}\b" docs/phase6/prd.md | sort -t R -k1.2 -n | uniq | tail -3; sed -n 1,30p docs/phase4/README.md; echo ====; sed -n 1,25p docs/phase7/README.md; echo ===; sed -n 1,45p docs/phas…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+def rep(path, pairs):
+    p = Path(path); s = p.read_text()
+    for old, new in pairs:
+        assert s.count(old) == 1, (path, old); s = s.replace(old, new)…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("docs/phase8/README.md"); s = p.read_text()
+old = """references to the FHIR resources the estimate was derived from.
+"""
+new = """references to the…`
+- **Bash** `sed -n 1,75p docs/phase8/design.md; echo ...; sed -n 105,125p docs/phase8/design.md; ls outcome-prediction-lab/src/*/ outcome-prediction-service/src/outcome_prediction/ outcome-prediction-service/src/…`
+- **Bash** `for f in outcome-prediction-lab/src/outcome_prediction_lab/*.py outcome-prediction-service/src/outcome_prediction/{scoring,knowledge,observability,settings}.py outcome-prediction-service/src/outcome_p…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("docs/phase8/design.md"); s = p.read_text()
+pairs = [
+("Architecture, component breakdown, and the technical sketches `milestone-plan.md` builds\nag…`
+- **Bash** `sed -n 32,58p docs/phase8/prediction-targets.md`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("docs/phase8/prediction-targets.md"); s = p.read_text()
+pairs = [("| **2026-10-18** | **First promotion chosen; M3 closed** | Non-obstetric hospital…`
+- **Bash** `wc -l docs/developer-guide.md docs/testing-guide.md docs/demo-guide.md CLAUDE.md .clinerules; grep -n "^#" docs/developer-guide.md docs/testing-guide.md`
+- **Bash** `sed -n 1,80p docs/developer-guide.md; echo ......; sed -n 145,280p docs/developer-guide.md; echo .....; sed -n 381,411p docs/developer-guide.md`
+- **Bash** `python3 -c "
+import yaml;d=yaml.safe_load(open('docker-compose.yml'))
+for n,s in d['services'].items(): print(n, s.get('profiles'), s.get('ports'))
+"; ls; ls agent-platform; grep -n "^  [a-z0-9-]*:$"…`
+- **Bash** `ls core observability docker athena-emulator epic-emulator; grep -n "port\|8081\|8082\|server.port" epic-emulator/README.md epic-emulator/src/main/resources/application*.y* 2>/dev/null | head -8; grep…`
+- **Bash** `sed -n 19,105p .github/workflows/tests.yml | grep -v "^\s*#" ; sed -n 175,255p .github/workflows/tests.yml | grep -n "run:\|pytest\|pip install\|name:"; sed -n 9,30p pytest.ini`
+- **Bash** `sed -n 127,175p .github/workflows/tests.yml | grep -A6 "pytest\|pip install"; sed -n 30,183p docs/testing-guide.md`
+- **Bash** `for f in $(find claims-service/src/test -name "*Test.java"); do echo "$(grep -c "@Test" $f) $(basename $f .java)"; done | sort -rn; for d in epic-emulator fhir-service; do echo "$d $(grep -r "@Test" $…`
+
 </details>
 
 ---
@@ -7033,6 +7267,6 @@ old = """Later-milestone targets (M10–M11), carried over from the prototype's 
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 22:11 UTC
-- **Turns:** 65
+- **Last updated:** 18 October 2026, 22:14 UTC
+- **Turns:** 66
 - **Status:** Complete
