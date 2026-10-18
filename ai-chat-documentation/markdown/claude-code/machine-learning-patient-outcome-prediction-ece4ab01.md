@@ -2598,8 +2598,12 @@ I have the tables, weights and MIT licence text. Creating the lab package, start
 
 The guard caught real name drift: in Panel 21 (HC-202), the BMI and VR-12 summary variables have different names. I'll look up their actual names in each panel instead of assuming:
 
+Too slow, and the cause is mine: `_code_documents` loops over people and filters the full CCSR table for each one, which is quadratic. Stopping it and vectorising:
+
+The `KNOWN_GAPS` edit had already applied before the slow build started. Rewriting `_code_documents` as grouped operations instead of a per-person loop:
+
 <details>
-<summary>Execution details — 324 tool events</summary>
+<summary>Execution details — 326 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3317,6 +3321,10 @@ def rep(o,n):
     global s
     assert s.count(o)==1,o[:60]; s=s.replace(o,n)
 rep('''SURVEY = ["RTHLTH1…`
+- **TaskStop** `{"task_id": "bdwpmllp7"}`
+- **Bash** `grep -c "KNOWN_GAPS" outcome-prediction-lab/src/outcome_prediction_lab/data.py && python3 - <<'EOF'
+p='outcome-prediction-lab/src/outcome_prediction_lab/data.py'; s=open(p).read()
+old=s[s.index("    p…`
 
 </details>
 
@@ -3327,6 +3335,6 @@ rep('''SURVEY = ["RTHLTH1…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 00:06 UTC
+- **Last updated:** 18 October 2026, 00:17 UTC
 - **Turns:** 31
 - **Status:** Complete
