@@ -2800,8 +2800,10 @@ MEPS's Stata files carry labels only for the missing-value codes, not the class 
 
 pandas' HTML reader needs `lxml`, and adding a dependency just for this would be wasteful. Python's built-in HTML parser is enough:
 
+Coverage is effectively complete. One flagged item to inspect: `U07`, the emergency-use category that holds COVID-19. My check may just be matching the "19" in its name:
+
 <details>
-<summary>Execution details — 396 tool events</summary>
+<summary>Execution details — 399 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3739,6 +3741,22 @@ v = build_vocabulary(); t = joblib.load("outcome-prediction-service/data/process
 - **Bash** `S=/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad/icd; mkdir -p $S && curl -sS -o $S/desc.zip "https://ftp.cdc.gov/pub/Health_Statistics/NCHS/Publications/ICD10…`
 - **Bash** `S=/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad/icd; sha256sum $S/desc.zip | cut -c1-64; cd /workspaces/fhir-agent && python3 - <<EOF
 import zipfile, joblib,…`
+- **Bash** `python3 - <<'EOF'
+p='outcome-prediction-lab/src/outcome_prediction_lab/vocabulary.py'; s=open(p).read()
+def rep(o,n):
+    global s
+    assert s.count(o)==1,o[:60]; s=s.replace(o,n)
+rep('''Labels are m…`
+- **Bash** `python3 -c "
+from outcome_prediction_lab.vocabulary import build_vocabulary, name_token
+v = build_vocabulary(); print(name_token('icdU07', v))"`
+- **Bash** `python3 - <<'EOF'
+def edit(p,pairs):
+    s=open(p).read()
+    for o,n in pairs:
+        assert s.count(o)==1,(p,o[:60],s.count(o)); s=s.replace(o,n)
+    open(p,'w').write(s)
+L='outcome-prediction-lab/…`
 
 </details>
 
@@ -3749,6 +3767,6 @@ import zipfile, joblib,…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 01:10 UTC
+- **Last updated:** 18 October 2026, 01:11 UTC
 - **Turns:** 35
 - **Status:** Complete
