@@ -4,8 +4,9 @@ Phase 8's machine-learning service: builds the training data from AHRQ MEPS, and
 milestones) trains, evaluates and serves the 12-month hospitalization model as FHIR
 `RiskAssessment`s. Planning, decisions and status: [`docs/phase8/`](../docs/phase8/README.md).
 
-**Built so far:** M1 (MEPS acquisition, dataset build, variable dictionary) and M2 (training,
-evaluation, model artifact). No API or compose service yet.
+**Built so far:** M1 (MEPS acquisition, dataset build, variable dictionary), M2 (training,
+evaluation, model artifact) and M4 (Synthea CSV harness, `as_of` scoring mode, leakage test). No API
+or compose service yet.
 
 ## Install
 
@@ -53,6 +54,26 @@ worktrees at one cache with `OUTCOME_PREDICTION_DATA_DIR=/path/to/data`.
 **Checksums.** The first download records each `.dta`'s SHA-256 in
 `data/raw/meps/checksums.json`; every later run verifies it and stops with `ChecksumMismatch`
 if a file changed. Delete the file to re-download deliberately.
+
+## Synthea harness (M4)
+
+A mechanical pipeline check, **never evidence of accuracy**: simulated patients flow through the same
+ETL and model as real ones.
+
+```bash
+# Synthea v4.0.0 (downloaded once, SHA-256 verified), seed 42, 3,000 Arizona adults, CSV only (~15 min)
+python -m outcome_prediction.etl.synthea generate
+#    -> data/raw/synthea/az-3000-s42/csv/
+# Contract rows for year 1 = 2023 (+ 2024 label), sanity checks, pipeline-check score with M2's artifact
+python -m outcome_prediction.etl.synthea rows --year 2023
+#    -> data/processed/synthea_rows_2023.csv, data/reports/synthea_2023.json
+```
+
+Code path: `etl/extract/synthea_csv.py` (reading only) → `etl/canonical.py` (five canonical tables;
+`as_of_view` is the scoring-mode boundary) → `etl/transform/to_contract.py` (`scoring_rows(canon,
+as_of)`; `training_rows(canon, year)` = scoring rows as of 31 December + the label). The prototype's
+mapping is kept as `prototype_training_rows` — reference only, defects marked — so the leakage test
+can show it catches them (`docs/phase8/design.md` §6, §11; decisions O61, O62).
 
 ## Data manifest and private mirror
 
@@ -122,7 +143,9 @@ be undone. Flip it deliberately once `mirror verify` passes.
 pytest outcome-prediction-service/src/outcome_prediction/tests -q -rs
 ```
 
-Unit tests use tiny synthetic Stata files and a synthetic modelling table. Tests that need
+Unit tests use tiny synthetic Stata files, a synthetic modelling table and a committed Synthea
+fixture (`tests/fixtures/synthea_csv/`: 7 adults from a 20-patient v4.0.0 run, seed 42, columns
+trimmed to what the extractor reads — no Java or download needed). Tests that need
 real data or the GCS emulator **populate what's missing instead of skipping**
 (`docs/phase8/decisions.md` O44), whether you run one test, a file, or everything:
 
@@ -142,3 +165,6 @@ test and caches the original zips, keyed on the manifest.
 MEPS public-use files are free US government data; whether their terms allow commercial use
 of trained models is unconfirmed (`docs/phase8/decisions.md` O23,
 [`data/reference/README.md`](../data/reference/README.md)). No PHI is ever used here.
+
+Synthea (Apache 2.0, MITRE) generates synthetic patients only; the committed fixture is its output,
+with identifier-like columns (names, SSNs, addresses) dropped.

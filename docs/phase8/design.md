@@ -186,6 +186,17 @@ scoring mode contain nothing dated after `as_of`. Records that *span* `as_of` (a
 active across it, an inpatient stay admitted before and discharged after) are truncated at
 `as_of` — never extrapolated from their eventual end.
 
+**Built in M4** (`etl/canonical.py` `as_of_view`, `etl/transform/to_contract.py`): training mode
+*is* scoring mode with `as_of` = 31 December of year 1, plus the label — one feature code path, so
+the two can't drift. Values only final when a record ends become unknown while it runs (O62):
+
+| Running at `as_of` | Counted as |
+|---|---|
+| Prescription (no stop yet, or stops later) | Fills elapsed inside the window at the fill rate of the same person's last *ended* record of the same drug, else one a month; cost = fills × per-fill price (known at the start) |
+| Inpatient stay | One stay; nights up to `as_of`; no cost (the claim isn't final) |
+| Coverage | Counts if it overlaps the window |
+| Death after `as_of` | Unknown — the person is alive at `as_of` |
+
 **Mandatory test** (planned by the prototype, now load-bearing): for a fixture patient,
 add and remove records dated after `as_of` — including a long-running prescription whose stop
 date and dispense count are only known later — and assert identical contract rows.
@@ -278,13 +289,14 @@ Recorded here so M4–M7 fix them **after** the reproduction (O6), each with a t
 1. **Prescription-fill leakage** (prototype Synthea ETL, `prototype-baseline.md` §6.3): a missing medication `STOP` is filled with
    the end of year 2, and `DISPENSES` (a lifetime total known only later) is prorated across
    that span — so year-1 `rxtoty1` and `totexpy1` depend on future data. Fixed by §6.
+   **Fixed in M4**; the leakage test fails on the reproduced code (`prototype_training_rows`).
 2. **Comparison model not saved** (prototype training step): only the GBM is pickled, yet FR-S2 needs
    both scores. Fixed by O18.
 3. **Unknown state → South** (prototype Synthea ETL): contradicts the contract's `0 if unknown`.
-   Fixed in `to_contract.py`; no effect on the Arizona reproduction run.
+   Fixed in `to_contract.py`; no effect on the Arizona reproduction run. **Fixed in M4.**
 4. **Categorical handling differs between training and scoring**: training clips categoricals
    at 0; the prototype's scoring step doesn't. Moot once the API rejects negatives, but `to_contract.py` applies
-   one rule for both modes.
+   one rule for both modes. **Fixed in M4** (`encode_categoricals`).
 5. **Reported metrics belong to a different model object**: the release model is refit on all
    panels, so its own held-out performance is unknown. `metadata.json` says so explicitly and
    carries the validation model's metrics labelled as such.

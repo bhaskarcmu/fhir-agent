@@ -1,6 +1,6 @@
 # Phase 8 Milestone Plan — Patient Outcome Prediction
 
-M1–M13. **M1–M3 built** (verified results below; M3 closed 2026-10-18, O60); M4–M13 planned. M10 and M11 are folded into M3 (O45). Expanded from M1–M11 after a second scope pass added a
+M1–M13. **M1–M4 built** (verified results below; M3 closed 2026-10-18, O60); M5–M13 planned. M10 and M11 are folded into M3 (O45). Expanded from M1–M11 after a second scope pass added a
 dedicated experimentation track (`decisions.md` O28–O40): M3 (workbench) and M12 (promotion)
 are new, and the former model-improvement milestones are now rounds of the
 [experimentation protocol](./experimentation-protocol.md).
@@ -182,6 +182,15 @@ Synthea fixture for CI; keep the `coronary` regression test.
 fails on the reproduced (unfixed) code — proving it tests something.
 
 **Depends on:** M2 (needs a model to score with).
+
+**Verified (M4 built):** Synthea v4.0.0 (pinned by SHA-256, O61), the prototype's population: 2,916
+adults alive at the end of 2023. Reproduced as-is (`prototype_training_rows`), the profile matches the
+prototype's run (`prototype-baseline.md` §6.4): 2,913 adults there; pipeline-check AUROC 0.656 (0.656
+there), mean predicted 10.2% (10.5%), coronary 24.1% (25.1%), arthritis 11.9% (12%), mean fills 33.9
+(33.8), any home health 0.45% (0.4%); year-2 stay rate 6.0% (4.7%). **Never evidence of accuracy.**
+Fixed mapping (O62): schema and sanity checks pass in both modes; only `rxtoty1`, `totexpy1` and
+`ipngtdy1` change (stays crossing 31 December now count nights up to it); AUROC 0.655. The leakage test
+passes, and fails on the reproduced code. Committed fixture: 7 adults, 172 KB. Tests: 18 new.
 
 ---
 

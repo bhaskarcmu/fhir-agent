@@ -50,3 +50,30 @@ class Canonical:
 
     def tables(self) -> dict[str, pd.DataFrame]:
         return {name: getattr(self, name) for name in COLUMNS}
+
+
+# Values that are only final once a record has ended — unknown while it is still running.
+KNOWN_AT_END = {"encounter": ["cost"], "medication_fill": ["dispenses", "total_cost"]}
+
+
+def as_of_view(canon: Canonical, as_of: pd.Timestamp) -> Canonical:
+    """What was knowable at the end of day `as_of` (design.md §6, O10) — the scoring-mode boundary.
+
+    Records starting after `as_of` are dropped. Records spanning it are truncated at `as_of`, and
+    the values only known once they end (a prescription's total fills and cost, a stay's claim)
+    become unknown — never extrapolated from their eventual end. A death after `as_of` is unknown.
+    """
+    cut = pd.Timestamp(as_of).normalize() + pd.Timedelta(days=1)          # exclusive
+    person = canon.person[canon.person.birth_date < cut].copy()
+    person.loc[person.death_date >= cut, "death_date"] = pd.NaT
+    out = {"person": person}
+    for name in ("coverage", "encounter", "condition", "medication_fill"):
+        t = getattr(canon, name)
+        t = t[t.start < cut].copy()
+        running = t.stop.isna() | (t.stop >= cut)
+        t.loc[running, "stop"] = cut
+        for col in KNOWN_AT_END.get(name, []):
+            t[col] = t[col].astype(float)
+            t.loc[running, col] = float("nan")
+        out[name] = t
+    return Canonical(**out)
