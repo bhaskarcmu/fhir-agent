@@ -2631,7 +2631,7 @@ All 92 service tests pass. Wiring the lab into CI, `pytest.ini`, and the install
 All cross-validation, confirmation and explanation results are in. Writing the round report, which is the committed record of this iteration:
 
 <details>
-<summary>Execution details — 361 tool events</summary>
+<summary>Execution details — 364 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3454,6 +3454,14 @@ def edit(p,pairs):
     open(p,'w').write(s)
 edit('.github/workflows/te…`
 - **Write** `/workspaces/fhir-agent/outcome-prediction-lab/rounds/001-what-and-how/report.md`
+- **Bash** `python3 - <<'EOF'
+p='outcome-prediction-lab/rounds/001-what-and-how/report.md'; s=open(p).read()
+def rep(o,n):
+    global s
+    assert s.count(o)==1,o[:60]; s=s.replace(o,n)
+rep("| 0.786 — nearly LSA,…`
+- **Bash** `grep -n "^### M3\|^### M10\|^### M11\|^### M12\|^M1–M13\|M1–M2 built" docs/phase8/milestone-plan.md | head; grep -n "^| O44\|^## Supersession" docs/phase8/decisions.md | cut -c1-40`
+- **Bash** `sed -n 103,130p docs/phase8/milestone-plan.md; sed -n 234,240p docs/phase8/milestone-plan.md; sed -n 258,262p docs/phase8/milestone-plan.md; sed -n 94,104p docs/phase8/decisions.md | cut -c1-120`
 
 </details>
 
@@ -3464,6 +3472,6 @@ edit('.github/workflows/te…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 00:47 UTC
+- **Last updated:** 18 October 2026, 00:48 UTC
 - **Turns:** 32
 - **Status:** Complete
