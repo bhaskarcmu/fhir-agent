@@ -3664,8 +3664,10 @@ Recording your answers: the scores in the repo, O59 for the promotion choice, O6
 
 Before running `promote`, I'm checking what M12 (the promotion milestone) owns, so M3 doesn't take over its work:
 
+That "Still open" paragraph now lists resolved items, which reads badly. Rewriting it:
+
 <details>
-<summary>Execution details — 531 tool events</summary>
+<summary>Execution details — 533 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5019,6 +5021,16 @@ S = Path(sys.argv[1])
 for r, n in [("003-…`
 - **Bash** `grep -n "^### M12" -A22 docs/phase8/milestone-plan.md; sed -n 286,296p docs/phase8/milestone-plan.md; sed -n 284,290p docs/phase8/prd.md`
 - **Bash** `sed -n 1,12p docs/phase8/milestone-plan.md | head -12; sed -n 150,166p docs/phase8/milestone-plan.md; sed -n 5,10p docs/phase8/README.md`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+def sub(path, old, new):
+    p = Path(path); s = p.read_text(); assert s.count(old) == 1, (path, old[:70]); p.write_text(s.replace(old, new))
+D = "docs/phase…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("docs/phase8/prd.md"); s = p.read_text()
+old = """Still open: O23 (MEPS commercial use, a legal question), O24 (qualitative bands), O25
+(non-portabl…`
 
 </details>
 
