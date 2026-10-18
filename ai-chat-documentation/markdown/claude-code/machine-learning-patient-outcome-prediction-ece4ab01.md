@@ -4716,8 +4716,16 @@ Testing guide is done. Now the developer guide: phases overview, repo map, dev l
 
 Developer guide is done. Next are the docs index, the root README, and CLAUDE.md/.clinerules.
 
+Still accurate. Updating the root README.
+
+Now a sweep for leftover stale phrases across all docs.
+
+Validating that the links in the changed files resolve:
+
+Worktree `/workspaces/fhir-agent`, branch `docs/repo-wide-refresh`, target: PR to `main`. Committing:
+
 <details>
-<summary>Execution details — 1030 tool events</summary>
+<summary>Execution details — 1043 tool events</summary>
 
 ### Turn 1 activity
 
@@ -7292,6 +7300,57 @@ def rep(old, new):
     assert s.count(old) == 1, old; s = s.replace(old, new)
 rep("| **Know why Ph…`
 - **Bash** `grep -n "image: hapiproject\|hapi" docker-compose.yml | head -3; grep -n "<version>8\|hapi.fhir.version\|<parent>" -A2 fhir-service/pom.xml | head -8`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("README.md"); s = p.read_text()
+def rep(old, new):
+    global s
+    assert s.count(old) == 1, old; s = s.replace(old, new)
+rep("""| **Know why** Pha…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("README.md"); s = p.read_text()
+for old, new in [
+("│   - Future: EHR sandboxes (Epic, Athena) or emulators         │",
+ "│   - EHR emulators: Epic…`
+- **Bash** `sed -n 60,125p .clinerules`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("CLAUDE.md"); s = p.read_text()
+def rep(old, new):
+    global s
+    assert s.count(old) == 1, old; s = s.replace(old, new)
+rep("""Request flow: **mc…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+s = Path("CLAUDE.md").read_text()
+rest = s[s.index("## What this project is"):]
+header = """# Cline Project Rules
+
+Guidance for Cline working in this reposit…`
+- **Bash** `grep -rn --include=*.md -i "M5 PR open\|M6 next\|M6 not started\|three phases\|all three phases\|M3 in progress\|M4–M13 planned\|epic-emulator.*placeholder\|placeholder.*epic-emulator\|to be served in…`
+- **Bash** `sed -n 140,150p fhir-service/README.md; sed -n 615,625p docs/phase2/plan.md`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("fhir-service/README.md"); s = p.read_text()
+old = """| `rxclaim-emulator` | Simulated legacy claims core — internal only, never touches FHIR | ✅ Ru…`
+- **Bash** `python3 - <<'EOF'
+import re, subprocess
+from pathlib import Path
+files = subprocess.check_output(["git","diff","--name-only"]).decode().split()
+bad = []
+for f in files:
+    if not f.endswith(".md"): c…`
+- **Bash** `git add -A && git commit -q -F - <<'EOF'
+docs: bring repo-wide and Phase 6/8 documentation up to date
+
+- Root README, docs/README, developer and testing guides now cover Phases 4–8
+  (components, port…`
+- **Bash** `git push -u origin docs/repo-wide-refresh 2>&1 | tail -2`
+- **Bash** `gh pr create --base main --head docs/repo-wide-refresh --title "docs: bring repo-wide and Phase 6/8 documentation up to date" --body "$(cat <<'EOF'
+## Summary
+A documentation-only consistency pass aft…`
+- **Bash** `gh pr checks 80 --watch --interval 30 2>&1 | tail -15`
 
 </details>
 
@@ -7302,6 +7361,6 @@ rep("| **Know why Ph…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 22:16 UTC
+- **Last updated:** 18 October 2026, 22:18 UTC
 - **Turns:** 66
 - **Status:** Complete
