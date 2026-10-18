@@ -2636,6 +2636,96 @@ Final checks: both test suites, the duplicate-filename rule, and a look at exact
 
 I'll watch CI on the new PR in the background, especially the `phase8` job, which now also runs the lab's tests:
 
+Iteration 1 is done and is in PR #71 (https://github.com/bhaskarcmu/fhir-agent/pull/71). Every choice was made by cross-validation within training panels 21–25. The untouched test panels (26–27) were scored once, for 11 finalists named in advance and logged in the holdout ledger first. The full write-up is in `outcome-prediction-lab/rounds/001-what-and-how/report.md`.
+
+## 1. What to predict, beyond the prototype
+
+Rates are for year 2:
+
+| Target | Rate | Why |
+|---|---|---|
+| **Non-obstetric admission** | 7.9% | The prototype's label counts childbirth. This one means what a care manager means. **Recommended as the headline label.** |
+| Admission via the ER | 4.9% | The closest MEPS gets to "unplanned" |
+| Any ED visit; number of ED visits | 15.5%; mean 0.24 | The same question predicted two ways: yes/no, and as a count |
+| High-cost member; total spending | top 10%; mean $9,783 | Budgeting and risk contracts; yes/no and as a spending estimate |
+| Death; loss of insurance | 1.1%; 1.0% | **Learning only.** Never to be promoted to the service from MEPS-only work. |
+
+## 2. The prototype's objective: how much better
+
+Same people, same split; the prototype reproduces exactly at 0.769:
+
+| | AUROC | AUPRC | Top-10% PPV | Top-10% catches |
+|---|---|---|---|---|
+| Prototype | 0.769 | 0.265 | 29% | 33% of admissions |
+| **New model** | **0.788** (+0.019, 95% CI +0.011 to +0.027) | **0.307** | **33%** | **38%** |
+
+**But most of that gain is the model spotting pregnancies.** Year-1 codes such as Z34 ("supervision of normal pregnancy") predict childbirth admissions the following year. On non-obstetric admissions, and among men, the code features add only about +0.002. The 65+ group is barely helped: +0.010, and the confidence interval includes zero.
+
+## 3. New targets: how well they perform
+
+All beat their simple baselines on the test panels:
+- **High-cost member:** AUROC 0.850 vs 0.826. The best discrimination of any target. But last year's spending alone already finds most of the biggest spenders.
+- **Non-obstetric admission:** 0.795 vs 0.756.
+- **Admission via the ER:** 0.788 vs 0.754.
+- **Any ED visit:** 0.739 vs 0.682. The **largest gain over its baseline**; nearly half the top 10% go on to visit the ED.
+- **ED visit count:** a modest ranking (Spearman 0.30).
+- **Death:** 0.881, mostly explained by age.
+- **Loss of insurance:** 0.871.
+
+## 4. Your concepts: what helped
+
+- **TF-IDF: yes, the biggest gain.** Each patient's codes treated as a document. Compressing it with LSA beat feeding it in raw. Mostly via pregnancy codes, though.
+- **Autoencoders: they worked, but no better than the simpler LSA, at 8× the cost.** The denoising version added nothing.
+- **Random forest: equal to gradient boosting.** Your explanation idea is a misconception for forests: a forest can't be "read" like one tree. The SHAP-based explanations, which work for both, made per-patient narratives possible. One example:
+
+  > "Estimated 57% risk, model baseline 6%. Codes driving it: PRG029, Z34."
+
+  That is how the pregnancy effect was caught. A single readable decision tree costs 0.056 AUROC.
+- **Missing values: augmentation fixes it.** Training with values deliberately hidden fully recovered performance when income and spending were missing. Median imputation, the common default, was the worst option. The "Record household income: the estimate ranges from 23% to 28%" prompts work.
+- **Feature importance:** the learned code pattern dominates, followed by age, spending, the number of body systems with conditions, and Medicare status. Every direction matches expectation.
+- **Comparison concepts:**
+  - The **frailty, Charlson and Elixhauser scores** helped a little: LSA learned the same signal from the raw codes.
+  - **Tuning** and **monotonic constraints** made almost no difference.
+  - **Survey items** added +0.003, but aren't available in medical records.
+
+## 5. How a healthcare business could use these
+
+- **Monthly care-management worklist** (non-obstetric admission). Care managers get the top 10%. About 3 in 10 of them would otherwise be admitted, and the list catches about 37% of all such admissions. Each name comes with templated reasons and data-gap prompts.
+- **ED-diversion outreach** (any ED visit). Offer same-day access and after-hours options to likely ED users.
+- **Finance and risk-contract planning** (high cost, spending). Calibrated spending estimates for sizing reserves and staffing, plus referral to complex care.
+- **Learning only for now:** re-enrolment help for people likely to lose coverage, and serious-illness conversations. Both need governance before any real use.
+
+## Changes and validation
+
+- **New package `outcome-prediction-lab/`**: the round's report, metrics, pre-registration and holdout ledger.
+- **21 more MEPS files** in the manifest, each verified by its contents.
+- **Decisions O45–O48:**
+  - **O45:** M10 and M11 folded into M3.
+  - **O46:** MLflow uses a local SQLite store, as an optional extra.
+  - **O47:** non-obstetric admission recommended as the headline label.
+  - **O48:** death and loss of insurance are learning-only targets.
+- **Tests:** service 92 passed, lab 11 passed. No data or model files committed.
+- **Branch and commit:** `feature/phase8-m3-round-001` @ `f2b05858`. CI is running, and I'll report when it finishes.
+
+## Problems found and fixed along the way
+
+- **MEPS person IDs changed format over the years.** Before I normalised them, Panel 22 silently had no condition or drug codes at all.
+- **One panel used a different health-survey instrument**, so its scores are treated as missing rather than mixed in.
+- **A bug of mine** briefly made the missing-values test show no effect. I caught it because the numbers matched to four decimal places, fixed it and re-ran.
+
+## Not done in this iteration
+
+- **Lab tooling:** the planned command-line tools, the scorecard and model-card generators, and the notebook check. A round script stands in for now.
+- **Drug classes** still show as numeric codes rather than names.
+- **Experiments not tried yet:** TF-IDF on code descriptions, character n-grams on drug names, and "potentially preventable admissions". The last needs full ICD-10 codes, which MEPS doesn't release.
+
+## Options for iteration 2, if you want one
+
+1. Switch to **non-obstetric admission** and concentrate on the 65+ group.
+2. **Text concepts:** TF-IDF on code descriptions, and character n-grams on drug names (which also gives the drug classes readable names).
+3. **The rest of the lab tooling:** command-line tools, scorecard and model cards.
+4. **A PyTorch autoencoder**, as a deeper learning exercise.
+
 <details>
 <summary>Execution details — 375 tool events</summary>
 
@@ -3518,6 +3608,6 @@ The first iteration…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 00:51 UTC
+- **Last updated:** 18 October 2026, 00:52 UTC
 - **Turns:** 32
 - **Status:** Complete
