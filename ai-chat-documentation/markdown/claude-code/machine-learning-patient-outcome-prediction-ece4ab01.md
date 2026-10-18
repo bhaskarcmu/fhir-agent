@@ -4015,7 +4015,7 @@ Still 504 KB. Finding where the bulk is:
 All 14 pass on the first try, which makes me suspicious, so I'm checking the fixture parity isn't vacuous:
 
 <details>
-<summary>Execution details — 693 tool events</summary>
+<summary>Execution details — 694 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5754,6 +5754,11 @@ from test_etl_fhir import *
 e = fhir.read(Replay(), l…`
 - **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/etl/quality.py`
 - **Bash** `cd /workspaces/fhir-agent && PYTHONWARNINGS=ignore python -m outcome_prediction.etl.quality reference && du -h outcome-prediction-service/src/outcome_prediction/etl/meps_reference.json && PYTHONWARNIN…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-service/src/outcome_prediction/etl/quality.py"); s = p.read_text()
+def sub(old, new):
+    global s; assert s.count(old) == 1, ol…`
 
 </details>
 
@@ -5764,6 +5769,6 @@ e = fhir.read(Replay(), l…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 16:59 UTC
+- **Last updated:** 18 October 2026, 17:00 UTC
 - **Turns:** 53
 - **Status:** Complete
