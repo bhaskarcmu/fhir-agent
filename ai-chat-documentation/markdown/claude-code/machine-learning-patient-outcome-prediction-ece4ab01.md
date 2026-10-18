@@ -2796,8 +2796,12 @@ Also, for each patient generate a sentence or two explaining why the prediction 
 
 Before starting, I'll confirm where things stand: which branch I'm on, whether PR #71 is still open, and whether my uncommitted Python 3.12 CI fix is still pending.
 
+MEPS's Stata files carry labels only for the missing-value codes, not the class names. The documentation and codebooks I archived earlier may hold them, so I'll search those:
+
+pandas' HTML reader needs `lxml`, and adding a dependency just for this would be wasteful. Python's built-in HTML parser is enough:
+
 <details>
-<summary>Execution details — 383 tool events</summary>
+<summary>Execution details — 387 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3694,6 +3698,26 @@ s=s.replace(old,"## Install\n\nNeeds **Python 3.12+** (`shap` ≥ 0.52 requires 
 ### Turn 35 activity
 
 - **Bash** `git branch --show-current && git status --short && git log --oneline -3 && gh pr view 71 --json state,headRefName --jq '.state+" "+.headRefName' && gh pr checks 71 2>/dev/null | awk -F'\t' '{print $2"…`
+- **Bash** `python3 - <<'EOF'
+from pandas.io.stata import StataReader
+from outcome_prediction.meps.download import fetch
+p = fetch("239a")
+with StataReader(p) as r:
+    r.read(convert_categoricals=False)
+    vl,…`
+- **Bash** `cd /workspaces/fhir-agent/outcome-prediction-service/data/raw/meps/archive && python3 - <<'EOF'
+import re, html
+t = open("h239adoc.shtml", encoding="latin1").read()
+txt = re.sub(r"<[^>]+>", " ", t); t…`
+- **Bash** `cd /workspaces/fhir-agent && python3 - <<'EOF'
+import io, re, pandas as pd
+t = open("outcome-prediction-service/data/raw/meps/archive/h239adoc.shtml", encoding="latin1").read()
+tables = pd.read_html(i…`
+- **Bash** `cd /workspaces/fhir-agent && python3 - <<'EOF'
+from html.parser import HTMLParser
+class T(HTMLParser):
+    def __init__(s): super().__init__(); s.tables=[]; s.row=None; s.cell=None
+    def handle_star…`
 
 </details>
 
@@ -3704,6 +3728,6 @@ s=s.replace(old,"## Install\n\nNeeds **Python 3.12+** (`shap` ≥ 0.52 requires 
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 01:06 UTC
+- **Last updated:** 18 October 2026, 01:08 UTC
 - **Turns:** 35
 - **Status:** Complete
