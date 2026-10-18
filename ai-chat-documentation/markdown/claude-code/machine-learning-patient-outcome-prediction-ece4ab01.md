@@ -3880,7 +3880,7 @@ All 171 pass (153 before plus 18 new). Checking the new test filename is unique 
 All names are unique. **Git:** worktree `/workspaces/fhir-agent`, branch `feature/phase8-m4-synthea-harness`, commit 2 of 2, then push and open a PR to `main`.
 
 <details>
-<summary>Execution details — 602 tool events</summary>
+<summary>Execution details — 604 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5388,6 +5388,11 @@ fix(phase8): M4 scoring mode (as_of), leakage test, prototype defects fixed (O61
 
 - canonical.as_of_view: the scoring-mod…`
 - **Bash** `git push -q -u origin feature/phase8-m4-synthea-harness 2>&1 | grep -v "^remote:" | tail -2; git status -sb | head -1`
+- **Bash** `gh pr create --base main --head feature/phase8-m4-synthea-harness --title "Phase 8 M4: Synthea CSV harness, as_of scoring mode, leakage test" --body-file - <<'EOF' 2>&1 | tail -1
+## Summary
+
+M4 in two…`
+- **Bash** `sleep 20; timeout 1500 gh pr checks 72 --watch --interval 30 >/dev/null 2>&1; gh pr checks 72 2>&1 | awk -F'\t' '{print $2" — "$1}' | sort | uniq -c | sort -rn | head -20`
 
 </details>
 
