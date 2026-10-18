@@ -2627,7 +2627,7 @@ The first attempt only installed partly; this time everything installed. Re-test
 All 11 finalists are logged. Now the **one** look at the test panels, then the explanations stage:
 
 <details>
-<summary>Execution details — 357 tool events</summary>
+<summary>Execution details — 358 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3434,6 +3434,7 @@ for k in ('any_stay/prototype','any_stay/new-portable','any_stay/new-w…`
 import json, joblib
 e = json.load(open('outcome-prediction-lab/rounds/001-what-and-how/explanations.json'))
 gi = sorted(e['global_importance_mean_abs_logodds'].items(), key=lambda kv…`
+- **Bash** `env -u STORAGE_EMULATOR_HOST python -m pytest outcome-prediction-service/src/outcome_prediction/tests -q -p no:cacheprovider 2>&1 | grep -E "FAILED|passed|failed" | cut -c1-200`
 
 </details>
 
