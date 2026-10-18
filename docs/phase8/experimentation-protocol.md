@@ -39,6 +39,24 @@ Don't start a round to tune a number nobody has asked about.
    so its baseline numbers come from the same code and library versions as the new ones.
 6. **Synthea is never evidence of accuracy.** It may appear only as a pipeline check.
 
+## 2a. The command line
+
+Every step below has a command (`outcome-prediction-lab --help`):
+
+| Step | Command |
+|---|---|
+| Run configs (CV, training panels only) | `outcome-prediction-lab run <round> <config> [...]` |
+| Compare a round's runs | `outcome-prediction-lab compare <round>` (writes `comparison.md`) |
+| Confirm a finalist (one logged test look) | `outcome-prediction-lab confirm <round> <config> --record "why"` |
+| Model card / target scorecard | `outcome-prediction-lab card` / `scorecard <round> <config> [--criteria person.json]` |
+| Promote (needs a decision ID) | `outcome-prediction-lab promote <round> <config> --decision O<n>` |
+| Explain patients | `outcome-prediction-lab explain <round> <config> --patient ID / --sample N / --all` |
+| Notebook hygiene | `outcome-prediction-lab notebooks-check` (CI) / `notebooks-strip <file>` |
+
+Configs live in `rounds/<round>/configs/<name>.json` and may only say *what* to model (label, task,
+features, model, text representations, parameters, baseline inputs); any key naming panels or splits
+is refused.
+
 ## 3. Steps
 
 1. **Open the round.** Create `outcome-prediction-lab/rounds/NNN-<slug>/` (next free number)

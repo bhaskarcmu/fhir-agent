@@ -12,6 +12,9 @@ dependencies = [
     "shap==0.54.1",
 ]
 
+[project.scripts]
+outcome-prediction-lab = "outcome_prediction_lab.cli:main"
+
 [project.optional-dependencies]
 dev = ["pytest>=8"]
 # Local run tracking + UI (O30). Optional: heavy, and a round's committed metrics.json is the record.

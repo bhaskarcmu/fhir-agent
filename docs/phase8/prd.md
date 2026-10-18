@@ -9,7 +9,7 @@ the `RiskAssessment` shape, scoring-mode semantics, the FHIR mapping sketch, art
 agent's tool contract, testing, and the prototype defects found in review.
 **Milestone plan:** [`milestone-plan.md`](./milestone-plan.md) — M1–M13, kept as its own
 document, same convention as Phase 6 (`phase6/decisions.md` H23) and Phase 7.
-**Decision index:** [`decisions.md`](./decisions.md) — `O1`–`O48`.
+**Decision index:** [`decisions.md`](./decisions.md) — `O1`–`O51`.
 **Experimentation protocol:** [`experimentation-protocol.md`](./experimentation-protocol.md) —
 the standing runbook for research rounds in `outcome-prediction-lab` (second pass, §12).
 **Prototype baseline:** [`prototype-baseline.md`](./prototype-baseline.md) — data choices,

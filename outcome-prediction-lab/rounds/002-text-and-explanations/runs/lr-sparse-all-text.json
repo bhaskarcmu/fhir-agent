@@ -1,0 +1,48 @@
+{
+  "config": {
+    "name": "lr-sparse-all-text",
+    "label": "admit_nonobstetric_y2",
+    "task": "binary",
+    "features": "portable+knowledge",
+    "model": "lr",
+    "params": null,
+    "baseline_inputs": [
+      "agey1x",
+      "ipdisy1"
+    ],
+    "outcome_phrase": "an overnight hospital stay that isn't related to pregnancy or childbirth",
+    "text": [
+      "tfidf",
+      "desc_tfidf",
+      "drug_char_tfidf"
+    ],
+    "description": "Logistic regression on all three sparse text representations."
+  },
+  "cv": {
+    "n": 44497,
+    "rate": 0.07409488280108771,
+    "auroc": 0.7919205824064831,
+    "auprc": 0.26349271922137807,
+    "brier": 0.061630936922489075,
+    "mean_pred": 0.07331565580003051,
+    "top10_ppv": 0.28365924926949876,
+    "top10_sensitivity": 0.3827722171671216,
+    "auroc_65plus": 0.6871964384264025
+  },
+  "provenance": {
+    "at": "2026-10-18T01:26:40+00:00",
+    "git_commit": "40d0d76af0c772c49d4b8d71c28b6201fe8fd803",
+    "manifest_sha256": "8467b5410f00e9812d9be182dca0eaac23607f92efb0166775d23abed36fd7e6"
+  },
+  "cv_baseline": {
+    "n": 44497,
+    "rate": 0.07409488280108771,
+    "auroc": 0.7477828586446637,
+    "auprc": 0.22492353316721242,
+    "brier": 0.06345611650514164,
+    "mean_pred": 0.07380361898002355,
+    "top10_ppv": 0.24724657226343,
+    "top10_sensitivity": 0.33363663936912347,
+    "auroc_65plus": 0.6467575605056097
+  }
+}

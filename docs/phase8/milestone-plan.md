@@ -132,8 +132,13 @@ predict childbirth admissions; seven new targets, all beating simple baselines; 
 verdicts. Built: lab table (28 MEPS files, IDs normalised), honest missing encoding, code
 "documents", vendored HFRS/Charlson/Elixhauser, pipelines, leave-one-panel-out CV, paired bootstrap,
 holdout ledger with guard, SHAP narratives, surrogate tree, value-of-information action items.
-**Not yet built:** the `run/compare/confirm/card/promote` CLI (a round script stands in), scorecard
-and model-card generators, the notebook check, round 000.
+**Iteration 2 done — round 002** (`outcome-prediction-lab/rounds/002-text-and-explanations/report.md`):
+the `outcome-prediction-lab` CLI (run / compare / confirm / card / scorecard / promote / explain /
+drug-names / notebook check, in CI); every code named in plain language (O49); self-explanatory
+per-patient narratives with comparison groups (O50); TF-IDF on code descriptions (no gain for
+gradient boosting, +0.002 for a linear model); character n-grams for drug names (72.6% vs 68.4% class
+accuracy on unseen names); a drug-class defect fixed (O51). No test look (pre-registered bar not met).
+**Not yet built:** round 000.
 
 ---
 

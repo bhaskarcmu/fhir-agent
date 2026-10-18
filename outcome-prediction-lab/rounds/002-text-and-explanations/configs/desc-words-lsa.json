@@ -1,0 +1,17 @@
+{
+  "name": "desc-words-lsa",
+  "label": "admit_nonobstetric_y2",
+  "task": "binary",
+  "features": "portable+knowledge",
+  "model": "gbm",
+  "params": "tuned",
+  "baseline_inputs": [
+    "agey1x",
+    "ipdisy1"
+  ],
+  "outcome_phrase": "an overnight hospital stay that isn't related to pregnancy or childbirth",
+  "text": [
+    "desc_lsa"
+  ],
+  "description": "Code DESCRIPTIONS as words (TF-IDF, 1\u20132-grams) -> LSA, instead of code tokens."
+}

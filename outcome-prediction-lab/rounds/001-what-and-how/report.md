@@ -139,6 +139,13 @@ per-patient breakdown (SHAP), which works for both.
 
 ## 8. Limitations
 
+> **Correction found in round 002 (2026-10-18):** this round's drug-class tokens used only the third
+> level of the Multum hierarchy (`TC1S1_1`), which is "inapplicable" for classes with no third level —
+> about 34% of fills (e.g. lisinopril, omeprazole) got no class token. Fixed in round 002; the measured
+> effect on non-obstetric admission CV AUROC was nil (0.7993 → 0.7988). The numbers above remain
+> exactly reproducible: `round_001.py` pins the original behaviour (`rx_class_level="level3_only"`).
+
+
 - MEPS is self-report: the published range for self-report models is 0.61–0.74 (Wallace 2014); we are
   above it, so further big AUROC gains on MEPS are unlikely.
 - Condition codes are 3-character and only for conditions linked to a year-1 event; ~8% suppressed.

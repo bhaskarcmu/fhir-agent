@@ -51,7 +51,9 @@ LABEL = "label_hosp_12m"
 
 
 def frames():
-    t = build_lab_table()
+    # Round 001 used the level-3 drug class only (a defect found in round 002); pinned here so the
+    # recorded round-001 numbers stay reproducible.
+    t = build_lab_table(rx_class_level="level3_only")
     h = honest_frame(t)
     proto = t.copy()
     for c in CATEGORICAL:                        # the prototype's own encoding (clip at 0)

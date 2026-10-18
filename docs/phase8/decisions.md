@@ -108,6 +108,15 @@ per-patient explanations, missing values, feature importance). Results:
 | O47 | **Admission labels count stays that *began* in year 2**; the recommended headline label is **non-obstetric admission** (excludes `RSNINHOS` 4–6) | Accepted for the lab; promotion still via O40 | The prototype's label counts year-2 discharges and includes childbirth; round 001 showed most code-feature gain on it is pregnancy codes predicting deliveries. Non-obstetric admission scores higher (test AUROC 0.795) on a label that means what a care manager means. |
 | O48 | **Death and loss of insurance are learning-only targets**: never promoted from MEPS-only work | Accepted | Kept to teach rare-event evaluation. Any real use needs clinical / fairness governance, not just a model. |
 
+
+## Round 002 — text, tooling and narratives
+
+| ID | Decision | Status | Rationale / where it lives |
+|---|---|---|---|
+| O49 | **Codes are named from the pinned sources only:** ICD-10 and CCSR labels from AHRQ's MEPS documentation pages, Multum drug classes from AHRQ's therapeutic-class table, gaps from the CDC/NCHS ICD-10-CM FY2026 release (public domain, pinned by SHA-256). Unnamed CCSR groups are described by body system; AHRQ-truncated labels end in "…"; one documented override (U07 = COVID-19) | Accepted | No extra licences: HCUP's CCSR file was not used because its download terms aren't stated clearly. `outcome_prediction_lab/vocabulary.py`. |
+| O50 | **Patient narratives are templated and self-explanatory:** full names instead of codes; comparisons with OBSERVED next-year rates among comparable adults in the training panels; the marginal-vs-conditional case named explicitly; race/ethnicity never narrated per patient; a patient's actual outcome never shown | Accepted | Repo owner's requirement (no codes to look up; compare with meaningful aggregates). Showing outcomes would make an explanation a test-panel look; narrating race per patient invites misuse — its influence belongs in aggregate fairness reporting. `narrate.py`. |
+| O51 | **Drug classes use the most specific Multum level available** (TC1S1_1 > TC1S1 > TC1). Round 001's level-3-only behaviour stays available, pinned in its script, so its numbers remain reproducible | Accepted | Level 3 is "inapplicable" for classes without a third level: round 001 gave 34% of fills no class. Measured effect on prediction: nil. |
+
 ## Supersession notes
 
 - **O44 supersedes O17's last clause** ("tests that need the MEPS cache self-skip when it's

@@ -304,10 +304,12 @@ The lab trains *many* candidates across outcome × form (O34) — label definiti
 
 | Command | Does | Guard |
 |---|---|---|
-| `run <config>` | Train + panel-grouped CV on training panels; log to MLflow | Refuses configs that name test panels |
+| `run <round> <config>` | Train + panel-grouped CV on training panels; log to MLflow (optional) | Refuses configs with keys naming panels or splits |
 | `compare <round>` | Cross-validated comparison report across a round's runs, incl. subgroups and calibration | — |
 | `confirm <round> <candidate>` | Evaluate one candidate on the test panels | Refuses without a matching `holdout-ledger.md` entry (O32) |
-| `card <run>` | Generate a model card (O39) | — |
+| `card <round> <config>` | Generate a model card (O39) | — |
+| `scorecard <round> <config>` | Target scorecard (O36): ML criteria filled, person-scored criteria marked as owed | — |
+| `explain <round> <config>` | Self-explanatory per-patient narratives (O50) | Never shows outcomes |
 | `promote <run> --decision O<n>` | Write `PROMOTION.json` into a service artifact | Refuses unless the decision ID exists in `decisions.md` and a model card is present (O33) |
 
 **Prediction forms and evaluation** (O34):

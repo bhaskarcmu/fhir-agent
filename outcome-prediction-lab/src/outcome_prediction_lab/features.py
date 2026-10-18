@@ -103,13 +103,44 @@ def tfidf():
     return TfidfVectorizer(token_pattern=r"\S+", lowercase=False, min_df=20, sublinear_tf=True)
 
 
+def word_tfidf():
+    # Plain-language code descriptions ("Heart failure . insulin"): words and word pairs, so
+    # related codes share vocabulary ("heart", "chronic", "kidney").
+    return TfidfVectorizer(analyzer="word", ngram_range=(1, 2), stop_words="english", min_df=20,
+                           sublinear_tf=True)
+
+
+def char_tfidf():
+    # Drug names as character 3–5-grams within words ("insulin glargine" -> " in", "ins", "insu",
+    # …): robust to abbreviations, spelling variants and salt suffixes.
+    return TfidfVectorizer(analyzer="char_wb", ngram_range=(3, 5), min_df=20, sublinear_tf=True)
+
+
+# kind -> (input column, representation factory, output width). Every factory is fitted inside
+# the pipeline, so cross-validation refits vocabulary, weights and axes per training fold.
+TEXT_BLOCKS = {
+    "lsa": ("tokens", lambda: Pipeline([("tfidf", tfidf()), ("svd", TruncatedSVD(32, random_state=0))]), 32),
+    "ae": ("tokens", lambda: Pipeline([("tfidf", tfidf()), ("dense", ToDense()),
+                                        ("ae", AutoencoderEmbedding(denoise=0.0))]), 16),
+    "dae": ("tokens", lambda: Pipeline([("tfidf", tfidf()), ("dense", ToDense()),
+                                         ("ae", AutoencoderEmbedding(denoise=0.2))]), 16),
+    "desc_lsa": ("desc_text", lambda: Pipeline([("tfidf", word_tfidf()),
+                                                 ("svd", TruncatedSVD(32, random_state=0))]), 32),
+    "drug_char_lsa": ("drug_names", lambda: Pipeline([("tfidf", char_tfidf()),
+                                                       ("svd", TruncatedSVD(32, random_state=0))]), 32),
+}
+# Sparse (uncompressed) variants, for the linear model only.
+SPARSE_TEXT = {"tfidf": ("tokens", tfidf), "desc_tfidf": ("desc_text", word_tfidf),
+               "drug_char_tfidf": ("drug_names", char_tfidf)}
+
+
+def _kinds(text) -> list[str]:
+    return [] if not text else ([text] if isinstance(text, str) else list(text))
+
+
 def text_block(kind: str):
-    if kind == "lsa":
-        return Pipeline([("tfidf", tfidf()), ("svd", TruncatedSVD(32, random_state=0))])
-    if kind in ("ae", "dae"):
-        return Pipeline([("tfidf", tfidf()), ("dense", ToDense()),
-                         ("ae", AutoencoderEmbedding(denoise=0.2 if kind == "dae" else 0.0))])
-    raise ValueError(kind)
+    """Kept for callers of the round-001 API: the code-token representation of `kind`."""
+    return TEXT_BLOCKS[kind][1]()
 
 
 GBM_DEFAULT = {"max_iter": 300, "learning_rate": 0.05, "random_state": 0}
@@ -125,22 +156,26 @@ def make_model(model: str, cats: list[str], nums: list[str], text: str | None = 
                                     ("scale", StandardScaler())]), nums),
                   ("cat", Pipeline([("impute", SimpleImputer(strategy="constant", fill_value=-1)),
                                     ("onehot", OneHotEncoder(handle_unknown="ignore"))]), cats)]
-        if text == "tfidf":
-            blocks.append(("tfidf", tfidf(), "tokens"))
+        for kind in _kinds(text):
+            column, factory = SPARSE_TEXT[kind]
+            blocks.append((f"text_{kind}", factory(), column))
         return Pipeline([("cols", ColumnTransformer(blocks)),
                          ("clf", LogisticRegression(C=0.5, max_iter=3000))])
 
     blocks = [("dense", "passthrough", cats + nums)]
-    if text:
-        blocks.append(("codes", text_block(text), "tokens"))
+    for kind in _kinds(text):
+        column, factory, _ = TEXT_BLOCKS[kind]
+        # "codes" keeps round 001's name for its single code-token block (explain.py relies on it)
+        name = "codes" if kind in ("lsa", "ae", "dae") else f"text_{kind}"
+        blocks.append((name, factory(), column))
     cols = ColumnTransformer(blocks)
     is_cat = [True] * len(cats) + [False] * len(nums)
     if model == "rf":
         return Pipeline([("cols", cols), ("clf", RandomForestClassifier(
             n_estimators=400, min_samples_leaf=20, max_features="sqrt", n_jobs=-1, random_state=0))])
 
-    def extended(mask):          # pad masks for appended code columns (32 LSA / 16 AE dims)
-        extra = {None: 0, "lsa": 32, "ae": 16, "dae": 16}[text]
+    def extended(mask):          # pad masks for the appended text columns
+        extra = sum(TEXT_BLOCKS[k][2] for k in _kinds(text))
         return mask + [type(mask[0])() if isinstance(mask[0], bool) else 0] * extra
 
     mono = extended([1 if (monotone and c in MONOTONE_UP) else 0 for c in cats + nums]) if monotone else None

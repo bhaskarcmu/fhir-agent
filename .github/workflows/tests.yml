@@ -208,6 +208,8 @@ jobs:
           pip install -e "outcome-prediction-service[dev]" -e "outcome-prediction-lab[dev]"
       - name: Run the lab's tests
         run: pytest outcome-prediction-lab/src/outcome_prediction_lab/tests -q -rs
+      - name: Notebooks are committed without outputs (decisions.md O38)
+        run: outcome-prediction-lab notebooks-check
 
   # ── Phase 3 Terraform stubs ──────────────────────────────────────────────────
   # `terraform validate` only -- not `plan` or `apply`. Plan needs live GCP provider

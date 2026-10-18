@@ -82,7 +82,21 @@ def _longitudinal_extras(panel: int, file_number: int) -> pd.DataFrame:
     return out
 
 
-def _code_documents(panel: int, year: int) -> pd.DataFrame:
+def _rx_class(rx: pd.DataFrame, level: str) -> pd.Series:
+    """A fill's Multum therapeutic class. 'most_specific' (default since round 002): the deepest of
+    TC1S1_1 > TC1S1 > TC1 that is positive — TC1S1_1 is -1 ('inapplicable') whenever a class has
+    no third level (e.g. lisinopril, omeprazole). 'level3_only' reproduces round 001, which used
+    TC1S1_1 alone and so left ~34% of fills without a class."""
+    num = lambda c: pd.to_numeric(rx[c], errors="coerce")  # noqa: E731
+    if level == "level3_only":
+        return num("TC1S1_1").where(num("TC1S1_1") > 0)
+    out = num("TC1")
+    for c in ("TC1S1", "TC1S1_1"):
+        out = num(c).where(num(c) > 0, out)
+    return out.where(out > 0)
+
+
+def _code_documents(panel: int, year: int, rx_class_level: str = "most_specific") -> pd.DataFrame:
     """Per person: a space-separated 'document' of year-1 codes, plus simple counts and the
     knowledge-based scores. Suppressed codes (-15) are counted, never tokenised."""
     cond = read_meps(CONDITIONS[year])
@@ -95,8 +109,9 @@ def _code_documents(panel: int, year: int) -> pd.DataFrame:
 
     rx = read_meps(PRESCRIBED[year])
     rx = rx[rx.PANEL == panel]
-    rx = rx[pd.to_numeric(rx.TC1S1_1, errors="coerce") > 0].assign(
-        rxc=lambda d: "rx" + pd.to_numeric(d.TC1S1_1).astype(int).astype(str))
+    rx_all = rx
+    cls = _rx_class(rx, rx_class_level)
+    rx = rx[cls.notna()].assign(rxc="rx" + cls[cls.notna()].astype(int).astype(str))
 
     valid_icd = cond[cond.icd.str.match(r"^[A-Z]\d{2}$")]
     icd_sets = valid_icd.groupby("DUPERSID").icd.apply(set)
@@ -113,9 +128,14 @@ def _code_documents(panel: int, year: int) -> pd.DataFrame:
         rx.groupby("DUPERSID").rxc.apply(lambda s: " ".join(s)),          # repeats = fills: real TF
     ], axis=1).fillna("").agg(" ".join, axis=1).str.split().str.join(" ")
     out["tokens"] = tokens
+    # Year-1 drug names as text (Multum generic names, e.g. "INSULIN GLARGINE"), one per distinct
+    # drug, for character n-gram experiments. "-15" = suppressed for confidentiality; skipped.
+    names = rx_all.RXDRGNAM.astype(str).str.strip()
+    names = rx_all.assign(n=names)[~names.isin(["-15", "-9", "-8", "-7", "-1", "", "nan"])]
+    out["drug_names"] = names.groupby("DUPERSID").n.apply(lambda s: " | ".join(sorted(set(s))))
     out["n_rx_classes"] = rx.groupby("DUPERSID").rxc.nunique()
     out["n_suppressed_codes"] = cond[cond.icd == "-15"].groupby("DUPERSID").size()
-    out = out.reindex(columns=["tokens", "hfrs", "charlson_approx", "elixhauser_vw_approx",
+    out = out.reindex(columns=["tokens", "drug_names", "hfrs", "charlson_approx", "elixhauser_vw_approx",
                                "elixhauser_count_approx", "n_icd", "n_ccsr_systems", "n_rx_classes",
                                "n_suppressed_codes"])
     return out.reset_index().assign(panel=panel)
@@ -135,8 +155,10 @@ def _stay_labels(panel: int, year2: int) -> pd.DataFrame:
     return g.reset_index().rename(columns={"DUPERSID": "dupersid"}).assign(panel=panel)
 
 
-def build_lab_table(cache: Path | None = None, rebuild: bool = False) -> pd.DataFrame:
-    path = (cache or processed_dir()) / TABLE
+def build_lab_table(cache: Path | None = None, rebuild: bool = False,
+                    rx_class_level: str = "most_specific") -> pd.DataFrame:
+    suffix = "" if rx_class_level == "most_specific" else f"-{rx_class_level}"
+    path = (cache or processed_dir()) / TABLE.replace(".joblib", f"{suffix}.joblib")
     if path.exists() and not rebuild:
         return joblib.load(path)
 
@@ -145,7 +167,7 @@ def build_lab_table(cache: Path | None = None, rebuild: bool = False) -> pd.Data
     parts_extra, parts_codes, parts_stays = [], [], []
     for panel, n in LONGITUDINAL_PANELS.items():
         parts_extra.append(_longitudinal_extras(panel, n))
-        parts_codes.append(_code_documents(panel, YEAR1[panel]))
+        parts_codes.append(_code_documents(panel, YEAR1[panel], rx_class_level))
         parts_stays.append(_stay_labels(panel, YEAR1[panel] + 1))
     t = (base.merge(pd.concat(parts_extra), on=["dupersid", "panel"], how="left", validate="1:1")
              .merge(pd.concat(parts_codes), on=["dupersid", "panel"], how="left", validate="1:1")
@@ -155,6 +177,7 @@ def build_lab_table(cache: Path | None = None, rebuild: bool = False) -> pd.Data
              "n_ccsr_systems", "n_rx_classes", "n_suppressed_codes"]
     t[fill0] = t[fill0].fillna(0)
     t["tokens"] = t["tokens"].fillna("")
+    t["drug_names"] = t["drug_names"].fillna("")
     for c in ("admit_y2", "admit_nonobstetric_y2", "admit_via_er_y2"):
         t[c] = t[c].fillna(False).astype(int)
     t = add_targets(t)
