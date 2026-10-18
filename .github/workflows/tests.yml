@@ -212,6 +212,39 @@ jobs:
       - name: Notebooks are committed without outputs (decisions.md O38)
         run: outcome-prediction-lab notebooks-check
 
+  # The hospitalization-risk agent (docs/phase8 M8). Its own job because the grounding and
+  # adversarial suites run against the self-hosted model (O16; Phase 6 H45, H50), and Ollama
+  # lives in phase1's job, which must hold Phase 1 packages only. Same model, same cache key.
+  phase8-agent:
+    name: phase8 agent (self-hosted model)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Cache Ollama models
+        uses: actions/cache@v4
+        with:
+          path: ~/.ollama/models
+          key: ollama-models-llama3.2-1b-v1
+      - name: Install and start Ollama
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sh
+          ollama serve &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:11434/api/tags > /dev/null && break
+            sleep 1
+          done
+      - name: Pull the test model (cache hit makes this a fast no-op)
+        run: ollama pull llama3.2:1b
+      - name: Install the agent (no service or model code — it talks to the service over HTTP)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e "agent-platform[dev]" -e "outcome-prediction-agent[dev]"
+      - name: Run the agent's grounding and adversarial suites
+        run: pytest outcome-prediction-agent/tests -q -rs
+
   # ── Phase 3 Terraform stubs ──────────────────────────────────────────────────
   # `terraform validate` only -- not `plan` or `apply`. Plan needs live GCP provider
   # credentials this project doesn't provision (verified, not assumed: the google provider

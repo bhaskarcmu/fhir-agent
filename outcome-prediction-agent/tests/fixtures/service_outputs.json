@@ -1,0 +1,243 @@
+{
+ "estimate": {
+  "outcome": "estimate",
+  "risk_assessment": {
+   "resourceType": "RiskAssessment",
+   "id": "d88adab8-4fe4-4011-a568-5409309585e4",
+   "text": {
+    "status": "generated",
+    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p>Estimated chance of a hospital admission in the 12 months from 2023-12-31: 3.2% (29th percentile of the training population). Inputs raising the estimate most, compared with a typical adult: age.</p><p>12-month planning estimate for population care management, not a diagnosis and not for emergencies. Trained on US MEPS public survey data; not yet validated on this organisation&#x27;s patients. The reasons describe what the model weighed, not what causes admissions.</p></div>"
+   },
+   "status": "final",
+   "subject": {
+    "reference": "Patient/24651"
+   },
+   "occurrenceDateTime": "2023-12-31",
+   "method": {
+    "coding": [
+     {
+      "system": "http://fhir-agent.local/outcome-prediction/model",
+      "code": "gbm-meps25-v1-950d8be12078"
+     }
+    ],
+    "text": "gbm-meps25-v1-950d8be12078"
+   },
+   "basis": [
+    {
+     "reference": "ExplanationOfBenefit/25130"
+    },
+    {
+     "reference": "Encounter/25091"
+    }
+   ],
+   "prediction": [
+    {
+     "outcome": {
+      "coding": [
+       {
+        "system": "http://snomed.info/sct",
+        "code": "32485007",
+        "display": "Hospital admission (procedure)"
+       }
+      ],
+      "text": "Hospital admission"
+     },
+     "probabilityDecimal": 0.0317,
+     "whenPeriod": {
+      "start": "2023-12-31",
+      "end": "2024-12-31"
+     },
+     "rationale": "Inputs raising the estimate most, compared with a typical adult: age.",
+     "extension": [
+      {
+       "url": "http://fhir-agent.local/StructureDefinition/comparison-probability",
+       "valueDecimal": 0.1049
+      },
+      {
+       "url": "http://fhir-agent.local/StructureDefinition/risk-percentile",
+       "valueInteger": 29
+      },
+      {
+       "url": "http://fhir-agent.local/StructureDefinition/contract-version",
+       "valueString": "meps25-v1"
+      },
+      {
+       "url": "http://fhir-agent.local/StructureDefinition/top-reasons",
+       "valueString": "agey1x"
+      }
+     ]
+    }
+   ],
+   "note": [
+    {
+     "text": "12-month planning estimate for population care management, not a diagnosis and not for emergencies. Trained on US MEPS public survey data; not yet validated on this organisation's patients. The reasons describe what the model weighed, not what causes admissions."
+    }
+   ],
+   "extension": [
+    {
+     "url": "http://fhir-agent.local/StructureDefinition/input-warning",
+     "valueString": "povcaty1 defaulted to 4 (middle income): household income not recorded"
+    },
+    {
+     "url": "http://fhir-agent.local/StructureDefinition/input-warning",
+     "valueString": "prescription fills counted from pharmacy claims (no dispense records)"
+    },
+    {
+     "url": "http://fhir-agent.local/StructureDefinition/input-warning",
+     "valueString": "insurance taken from the payer on each claim (no coverage records)"
+    }
+   ]
+  }
+ },
+ "no_estimate": {
+  "outcome": "no_estimate",
+  "detail": "patient 24651 is not an adult alive on 1950-01-01: no estimate is made"
+ },
+ "model_card": {
+  "outcome": "model_card",
+  "model_card": {
+   "model_id": "gbm-meps25-v1-950d8be12078",
+   "contract_version": "meps25-v1",
+   "outcome": "any inpatient discharge in the 12 months after the feature year",
+   "features": [
+    "sex",
+    "racethx",
+    "regiony1",
+    "agey1x",
+    "inscovy1",
+    "povcaty1",
+    "ipdisy1",
+    "ipngtdy1",
+    "ertoty1",
+    "obtotvy1",
+    "optotvy1",
+    "hhtotdy1",
+    "rxtoty1",
+    "totexpy1",
+    "hibpdx",
+    "chddx",
+    "angidx",
+    "midx",
+    "ohrtdx",
+    "strkdx",
+    "emphdx",
+    "diabdx",
+    "arthdx",
+    "asthdx",
+    "choldx"
+   ],
+   "categorical": [
+    "sex",
+    "racethx",
+    "regiony1",
+    "inscovy1",
+    "povcaty1"
+   ],
+   "training": {
+    "panels": [
+     21,
+     22,
+     23,
+     24,
+     25,
+     26,
+     27
+    ],
+    "rows": 56360,
+    "events": 4820
+   },
+   "validation_metrics": {
+    "comparison": {
+     "auprc": 0.2253834619054936,
+     "auprc_ci95": [
+      0.20621876770922365,
+      0.24979180562949246
+     ],
+     "auroc": 0.7076200378839681,
+     "auroc_ci95": [
+      0.6908687319852472,
+      0.7252857267051913
+     ],
+     "brier": 0.0750866564313514,
+     "mean_predicted": 0.09024741815655428
+    },
+    "gbm": {
+     "auprc": 0.2646971976727336,
+     "auprc_ci95": [
+      0.24185749937742732,
+      0.2904388527313831
+     ],
+     "auroc": 0.769008189627725,
+     "auroc_ci95": [
+      0.754237455513191,
+      0.7860632986613846
+     ],
+     "auroc_survey_weighted": 0.7796109177337258,
+     "brier": 0.07247803262282396,
+     "mean_predicted": 0.09172567531071446
+    },
+    "provenance": "Validation metrics come from models trained on panels 21-25 and tested on panels 26-27. This artifact's models are refit on all panels; their own held-out performance is unknown by construction (docs/phase8/design.md \u00a711, defect 5).",
+    "test_panels": [
+     26,
+     27
+    ],
+    "train_panels": [
+     21,
+     22,
+     23,
+     24,
+     25
+    ]
+   },
+   "metrics_note": "Measured on the validation models (trained on panels 21-25, tested on 26-27); the served model is refit on all panels, so its own held-out performance is unknown.",
+   "explanations": "occlusion against a typical MEPS adult; reasons describe what the model weighed, not causes",
+   "versions": {
+    "joblib": "1.6.0",
+    "numpy": "2.5.4",
+    "pandas": "3.0.6",
+    "python": "3.12.3",
+    "scikit-learn": "1.9.1"
+   },
+   "created_at": "2026-10-17T17:29:43+00:00"
+  }
+ },
+ "one_match": {
+  "outcome": "candidates",
+  "found": 1,
+  "candidates": [
+   {
+    "id": "24651",
+    "name": "Jane Doe",
+    "birth_date": null
+   }
+  ],
+  "ambiguous": false,
+  "truncated": false
+ },
+ "two_matches": {
+  "outcome": "candidates",
+  "found": 2,
+  "candidates": [
+   {
+    "id": "24651",
+    "name": "Jane Doe",
+    "birth_date": null
+   },
+   {
+    "id": "9999",
+    "name": "Jane Doe",
+    "birth_date": null
+   }
+  ],
+  "ambiguous": true,
+  "truncated": false
+ },
+ "no_match": {
+  "outcome": "candidates",
+  "found": 0,
+  "candidates": [],
+  "ambiguous": false,
+  "truncated": false
+ },
+ "patient_id": "24651"
+}

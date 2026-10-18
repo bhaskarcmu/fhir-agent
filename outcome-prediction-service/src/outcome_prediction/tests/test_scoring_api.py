@@ -233,3 +233,58 @@ def test_batch_reasons_equal_one_at_a_time(artifact):
     alone = [scorer.score(rows.iloc[[i]])[0] for i in range(len(rows))]
     assert [s.reasons for s in together] == [s.reasons for s in alone]
     assert [round(s.probability, 12) for s in together] == [round(s.probability, 12) for s in alone]
+
+
+# ── the agent's tools (M8, design.md §9) ─────────────────────────────────────────────
+
+AGENT_SNAPSHOT = Path(__file__).resolve().parents[4] / "outcome-prediction-agent" / "tests" / "fixtures" / "service_tools.json"
+
+
+def test_exactly_three_tools_and_none_takes_features_thresholds_or_models(client):
+    defs = client.get("/agent-tools").json()
+    assert [d["name"] for d in defs] == ["find_patient", "get_hospitalization_risk", "get_model_card"]
+    for d in defs:
+        props = set(d["input_schema"]["properties"])
+        assert d["input_schema"]["additionalProperties"] is False
+        assert props <= {"name", "patient_id", "as_of"}, d["name"]
+
+
+def test_the_agents_snapshot_of_the_tools_is_current(client):
+    """outcome-prediction-agent's tests replay this snapshot; drift fails here."""
+    import json
+    assert json.loads(AGENT_SNAPSHOT.read_text()) == client.get("/agent-tools").json()
+
+
+def test_tool_arguments_outside_the_schema_are_refused(client):
+    r = client.post("/agent-tools/get_hospitalization_risk", json={"patient_id": PATIENT, "agey1x": 40})
+    assert r.status_code == 422 and "agey1x" in r.text
+    assert client.post("/agent-tools/rank_patients", json={}).status_code == 404
+    assert client.post("/agent-tools/get_model_card", json={"threshold": 0.2}).status_code == 422
+
+
+def test_risk_tool_returns_the_same_assessment_as_the_api(client):
+    tool = client.post("/agent-tools/get_hospitalization_risk", json={"patient_id": PATIENT, "as_of": AS_OF}).json()
+    direct = client.post("/risk/hospitalization-12m", json={"patient_id": PATIENT, "as_of": AS_OF}).json()
+    assert tool["outcome"] == "estimate"
+    strip = lambda ra: {k: v for k, v in ra.items() if k not in ("id", "text")}  # noqa: E731
+    assert strip(tool["risk_assessment"]) == strip(direct)
+
+
+def test_risk_tool_outcomes_are_explicit(client):
+    early = client.post("/agent-tools/get_hospitalization_risk", json={"patient_id": PATIENT, "as_of": "1950-01-01"}).json()
+    assert early["outcome"] == "no_estimate"
+    card = client.post("/agent-tools/get_model_card", json={}).json()
+    assert card["outcome"] == "model_card" and card["model_card"]["contract_version"] == "meps25-v1"
+
+
+def test_find_patient_returns_candidates_and_never_picks(client):
+    from fhir_clinical_client import Patient
+
+    class Two(Server):
+        def search_patients(self, name):
+            return [Patient(id="1", family_name="Doe", given_name="Jane", gender="female"),
+                    Patient(id="2", family_name="Doe", given_name="Jane", gender="female")]
+    api.app.dependency_overrides[api.get_client] = lambda: Two()
+    body = client.post("/agent-tools/find_patient", json={"name": "Jane Doe"}).json()
+    assert body["outcome"] == "candidates" and body["ambiguous"] is True and len(body["candidates"]) == 2
+    assert "patient_id" not in body

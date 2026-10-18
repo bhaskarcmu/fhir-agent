@@ -91,6 +91,7 @@ curl -X POST localhost:8005/risk/hospitalization-12m \
      -H 'Content-Type: application/json' -d '{"patient_id": "3208", "as_of": "2024-12-31"}'
 curl -X POST localhost:8005/risk/hospitalization-12m/contract-rows \
      -H 'Content-Type: application/json' -d '{"contract_version": "meps25-v1", "rows": [...]}'   # -> Bundle
+curl localhost:8005/agent-tools                                  # the agent's only tools (tools.py, O70)
 ```
 
 The artifact is `OUTCOME_PREDICTION_ARTIFACT`, else the newest `models/gbm-meps25-v1-*`; it is

@@ -178,6 +178,13 @@ per-patient explanations, missing values, feature importance). Results:
 | O67 | **Per-patient reasons (FR-M8) by occlusion against a typical MEPS adult**: re-score with one input at a time set to the training panels' median / most common value (`etl/meps_reference.json` → `typical`); reasons = the inputs whose typical value lowers the estimate most, ≥ 0.5 points, at most 3. **Never a reason:** an input filled by a default (e.g. income not recorded) or race/ethnicity | Accepted | Deterministic, no new dependency (SHAP needs Python 3.12; the service supports 3.11), one batched prediction per request (1,000 rows in ~1 s). Race: O50 — its influence belongs in aggregate fairness reporting (O57); the live check surfaced it as a reason before this rule. Reasons describe what the model weighed, not causes. |
 | O68 | **The service runs on port 8005** in the `phase8` compose profile (`outcome-prediction`), with the models directory mounted read-only; API dependencies are the `api` extra | Accepted | 8000–8004 are taken (Kong, triage, Kong admin, two test registries). Internal only (O14); a host port for local use, like triage's 8001. |
 
+## M8 — the hospitalization-risk agent
+
+| ID | Decision | Status | Rationale / where it lives |
+|---|---|---|---|
+| O69 | **The agent's replies are built in code from the service's output; the model only orchestrates.** The model finds the patient and calls tools; `explain.py` writes every reply from the RiskAssessment (numbers, rationale, warnings, model version, planning-aid note) plus fixed, number-free notices for "adjust", "is that high?" and population questions; `explain.grounded` withholds any reply with a number the service didn't return. The model's own text is never shown | Accepted; **refines design §9** (which had the model narrate under a constrained prompt) | FR-A2 must hold against the self-hosted 1B model (O16), which in M8's live runs invented ids, numbers and tool calls. A prompt can only ask; a template plus a gate guarantee. Same thesis as Phase 6's output gate and this repo's "deterministic services decide". |
+| O70 | **The service publishes the agent's tools** (`GET /agent-tools`, `POST /agent-tools/{name}`, `tools.py`): exactly `find_patient`, `get_hospitalization_risk`, `get_model_card`, every schema closed. The agent guards the rest in code: population questions refused before any call; a risk call only for an id `find_patient` returned or the clinician typed; a single match scored by code; the model card only for questions about the model; one reminder when the model answers in prose | Accepted | Design §1: the agent reaches the service over HTTP only, never its code. Live, `llama3.2:1b` completed 13 of 20 risk questions (up from ~1 in 4 before these guards) and 5 of 5 model questions; **all 25 replies grounded**; the rest end safely, asking which patient is meant. A stronger model is an `LLM_PROVIDER` switch, never needed for safety. |
+
 ## Supersession notes
 
 
@@ -202,6 +209,8 @@ per-patient explanations, missing values, feature importance). Results:
   §7. O21's row is left as written.
 - **O22 is validated** (M7): SNOMED CT `32485007` is active, FSN "Hospital admission (procedure)", parent
   "Admission to establishment" (tx.fhir.org, International edition 2025-02-01). O22's row is left as written.
+- **O69 refines design §9**: replies are templated from the service's output and gated, rather than written by
+  the model under a constrained prompt.
 - **O46 refines O30**: same tool (MLflow), different store (SQLite instead of the retired file
   store), now an optional extra.
 

@@ -1,6 +1,6 @@
 # Phase 8 Milestone Plan — Patient Outcome Prediction
 
-M1–M13. **M1–M7 built** (verified results below; M3 closed 2026-10-18, O60); M8–M13 planned. M10 and M11 are folded into M3 (O45). Expanded from M1–M11 after a second scope pass added a
+M1–M13. **M1–M8 built** (verified results below; M3 closed 2026-10-18, O60); M9–M13 planned. M10 and M11 are folded into M3 (O45). Expanded from M1–M11 after a second scope pass added a
 dedicated experimentation track (`decisions.md` O28–O40): M3 (workbench) and M12 (promotion)
 are new, and the former model-improvement milestones are now rounds of the
 [experimentation protocol](./experimentation-protocol.md).
@@ -294,6 +294,15 @@ risk?", "rank everyone over 20%" must not produce a number or band the service d
 **Deliverable:** Grounding and adversarial suites pass in CI against the self-hosted model.
 
 **Depends on:** M7.
+
+**Verified (M8 built):** `outcome-prediction-agent` (O69, O70) on `agent-platform`, reaching the
+service only over HTTP through its published tools. Grounding and adversarial suites pass against
+the self-hosted `llama3.2:1b` (39 tests, 7 live) and run in CI's new `phase8 agent` job. Live, over
+25 runs: 13 of 20 risk questions ended with the service's estimate, 5 of 5 model questions with
+the model card, **every reply grounded** — "adjust for her new diagnosis", "is that high risk?",
+"what if she were 40" and "rank everyone over 20%" never produced a number or band the service
+didn't return; unfinished turns ask which patient is meant. Service: `tools.py` and the
+`/agent-tools` endpoints (6 new tests).
 
 ---
 
