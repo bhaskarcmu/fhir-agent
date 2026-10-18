@@ -12,9 +12,9 @@ Start with what you're trying to do.
 | **Know why Phase 3 (Provider Search) is built this way** | [`phase3/design.md`](./phase3/design.md) | 30 min |
 | **Know why Phase 4 (Epic Emulator) is built this way** | [`phase4/design.md`](./phase4/design.md) | 15 min |
 | **⚠️ Check the open Phase 4 safety finding before demoing it** | [`phase5/phase4-testing-and-analysis.md`](./phase5/phase4-testing-and-analysis.md) §0 | 5 min |
-| **Know why Phase 6 (Agent Hardening + Observability) is planned this way** | [`phase6/design.md`](./phase6/design.md) | 20 min |
+| **Know why Phase 6 (Agent Hardening + Observability) is built this way** | [`phase6/design.md`](./phase6/design.md) | 20 min |
 | **Know why Phase 7 (Medication Reconciliation) is planned this way** | [`phase7/design.md`](./phase7/design.md) | 20 min |
-| **Know why Phase 8 (Patient Outcome Prediction) is planned this way** | [`phase8/design.md`](./phase8/design.md) | 20 min |
+| **Know why Phase 8 (Patient Outcome Prediction) is built this way** | [`phase8/design.md`](./phase8/design.md) | 20 min |
 | **Audit Phase 2 decisions** (status + supersession) | [`phase2/decisions.md`](./phase2/decisions.md) | 5 min |
 | **Audit Phase 3 decisions** (status + supersession) | [`phase3/decisions.md`](./phase3/decisions.md) | 5 min |
 | **Audit Phase 4 decisions** (status + supersession) | [`phase4/decisions.md`](./phase4/decisions.md) | 5 min |
@@ -22,9 +22,9 @@ Start with what you're trying to do.
 | **Audit Phase 7 decisions** (status + supersession) | [`phase7/decisions.md`](./phase7/decisions.md) | 5 min |
 | **Audit Phase 8 decisions** (status + supersession) | [`phase8/decisions.md`](./phase8/decisions.md) | 5 min |
 | **Run or resume a Phase 8 research round** (model / prediction-target exploration) | [`phase8/experimentation-protocol.md`](./phase8/experimentation-protocol.md) | 10 min |
-| **Check what Phase 5 and Phase 6 are actually reserved for** | [`phase5/README.md`](./phase5/README.md) | 5 min |
+| **Check what Phase 5 is reserved for (and why it isn't Phase 6)** | [`phase5/README.md`](./phase5/README.md) | 5 min |
 | **Know exactly what was agreed** (normative) | [`phase2/requirements.md`](./phase2/requirements.md) | reference |
-| **Know what to build next** | [`phase2/plan.md` §16](./phase2/plan.md#16-future-work) (Phase 2) / [`phase3/README.md`](./phase3/README.md) (Phase 3b) / [`phase5/README.md`](./phase5/README.md) (Phase 5) / [`phase6/milestone-plan.md`](./phase6/milestone-plan.md) (Phase 6, M6 next, M1-M5 built) / [`phase7/milestone-plan.md`](./phase7/milestone-plan.md) (Phase 7, planned, M1 next) / [`phase8/milestone-plan.md`](./phase8/milestone-plan.md) (Phase 8, M1–M2 built, M3 in progress) | 5 min |
+| **Know what to build next** | [`phase2/plan.md` §16](./phase2/plan.md#16-future-work) (Phase 2b) / [`phase3/README.md`](./phase3/README.md) (Phase 3b) / [`phase4/README.md`](./phase4/README.md) (fix E16) / [`phase5/README.md`](./phase5/README.md) (reserved) / [`phase6/milestone-plan.md`](./phase6/milestone-plan.md) (M1–M6 built, M7 next) / [`phase7/milestone-plan.md`](./phase7/milestone-plan.md) (planned, M1 next) / [`phase8/README.md`](./phase8/README.md) (M1–M13 built, Phase 8b next) | 5 min |
 
 ## The guides
 
@@ -43,7 +43,7 @@ e2e tests here. Its case study — how a dead clinical-safety check passed every
 milestones — is the most useful thing in this folder.
 
 **[Gateway runbook](./gateway-runbook.md)** — the single operational source of truth for the Kong
-edge across **both** phases: why two gateways exist, which one owns which route in each strangler
+edge across Phases 1 and 2 (later phases add no edge routes): why two gateways exist, which one owns which route in each strangler
 state (S0/S1/S2), exact local procedures (including the template→generated config flow), the
 cloud position, the migration and its rollback, and troubleshooting.
 
@@ -107,7 +107,7 @@ timeline exists yet. See [`phase5/README.md`](./phase5/README.md) for the canoni
   multi-record patient rather than the existing small demo fixture.
 
 **[`phase6/`](./phase6/README.md)** — Agent Platform Hardening + Overall Observability.
-**M1-M5 built (M5 PR open), M6 next, M7 planned.** Hardening the LLM-agent tier
+**M1–M6 built, M7 next (planned).** Hardening the LLM-agent tier
 (`mcp-agent`, later `claims-agent`): output-safety enforcement, observability (also closing
 Phase 2's R15), memory/session management, deployment resilience, and a multi-provider seam
 (reworked post-review to default to a self-hosted model — see `phase6/decisions.md` H45).
@@ -121,7 +121,7 @@ Phase 2's R15), memory/session management, deployment resilience, and a multi-pr
   kept as its own document rather than folded into `design.md` (see `decisions.md` H23).
 - **[`telemetry-schema.md`](./phase6/telemetry-schema.md)** — the custom span-attribute
   dictionary, by architectural tier, plus the configurable-depth (`TELEMETRY_VERBOSITY`) model.
-- **[`decisions.md`](./phase6/decisions.md)** — the ADR-style index (H1–H27), same convention.
+- **[`decisions.md`](./phase6/decisions.md)** — the ADR-style index (H1–H56), same convention.
 
 **[`phase7/`](./phase7/README.md)** — Medication Reconciliation. **Planning complete (scope
 expanded twice), no code yet.** Retrieves the medication list from each connected source
@@ -145,23 +145,23 @@ capable of touching the fail-closed gate**; the alternative is a formal, immutab
 - **[`decisions.md`](./phase7/decisions.md)** — the ADR-style index (R1–R23), same convention.
 
 **[`phase8/`](./phase8/README.md)** — Patient Outcome Prediction (12-month hospitalization
-risk). **M1–M2 built; M3 in progress (round 001 done); M4–M13 planned.** The platform's first machine-learned
-capability: a model trained on free, open US data (AHRQ MEPS) estimates an adult's probability
-of an inpatient stay in the next 12 months and returns it as a FHIR `RiskAssessment`, beside a
-hand-checkable comparison score. Seeded by a research prototype from an earlier session,
-whose planned work became milestones M1–M13 plus a deferred Phase 8b. A permanent
-experimentation workbench (`outcome-prediction-lab`) explores which outcomes and prediction
-forms are worth serving, through a standing protocol that outlives the phase. **M1–M2 built**
-(MEPS dataset and model reproduced exactly); M3 in progress — round 001 improved the prototype's
-own objective (AUROC 0.769 → 0.788) and added seven new targets.
+risk). **M1–M13 built; Phase 8b (cloud, recalibration, monitoring) next.** The platform's first
+machine-learned capability: models trained on free, open US data (AHRQ MEPS) estimate an adult's
+probability of a hospital stay in the next 12 months and return it as a FHIR `RiskAssessment`,
+beside a hand-checkable comparison score and the records used. Two are served: the reproduced
+research prototype (any stay) and the first promoted model — a stay not related to pregnancy or
+childbirth, built only on inputs real records supply (O59), which the agent uses. A permanent
+experimentation workbench (`outcome-prediction-lab`) explores which outcomes are worth serving,
+through a standing protocol that outlives the phase; rounds 000–004 narrowed the focus to four
+predictions (O55).
 
 - **[`README.md`](./phase8/README.md)** — the canonical status statement for Phase 8.
 - **[`prd.md`](./phase8/prd.md)** — problem, goals/non-goals, functional requirements (the
   prototype's IDs kept, with status), acceptance criteria, and every deviation from its plan.
 - **[`design.md`](./phase8/design.md)** — `outcome-prediction-service/` layout, the feature
-  contract, the `RiskAssessment` shape, training vs scoring mode, the FHIR mapping sketch, the
+  contract, the `RiskAssessment` shape, training vs scoring mode, the FHIR mapping, the
   agent's tool contract, prototype defects found in review, and the experimentation workbench.
-- **[`milestone-plan.md`](./phase8/milestone-plan.md)** — M1–M13, none started.
+- **[`milestone-plan.md`](./phase8/milestone-plan.md)** — M1–M13, each with what was verified.
 - **[`prediction-targets.md`](./phase8/prediction-targets.md)** — the four focus predictions (O55), how
   they were chosen, and where all parked work lives.
 - **[`decisions.md`](./phase8/decisions.md)** — the ADR-style index (O1–O78), same convention.
@@ -181,9 +181,10 @@ own objective (AUROC 0.769 → 0.788) and added seven new targets.
 - **Service-level READMEs** (`claims-service/`, `triage-service/`, `provider-registry-service/`,
   `gateway/`, `data/`, …) cover that component's own detail. The guides link to them rather than
   restating them.
-- **Phase 3 terminology:** internal work is tracked as **milestones** (M1, M2, …), never
-  "Phase 3.x". "Phase" is reserved for top-level phases — Phase 1, Phase 2, Phase 3, and
-  **Phase 3b** (the future live-deployment phase, mirroring Phase 2b).
+- **Terminology (every phase since Phase 3):** internal work is tracked as **milestones** (M1,
+  M2, …), never "Phase 3.x". "Phase" is reserved for top-level phases, including the deferred
+  live-deployment phases **Phase 2b**, **Phase 3b** and **Phase 8b**.
+- **Each phase states its status once**, in its own `README.md`; other documents link there.
 
 ## Elsewhere in the repo
 
@@ -199,3 +200,8 @@ own objective (AUROC 0.769 → 0.788) and added seven new targets.
 | [`../provider-mcp-server/README.md`](../provider-mcp-server/README.md) | The real, hand-built MCP server |
 | [`../provider-search-agent/README.md`](../provider-search-agent/README.md) | The real MCP client/host |
 | [`../provider-curation-agent/README.md`](../provider-curation-agent/README.md) | Ingestion run-summary agent |
+| [`../epic-emulator/README.md`](../epic-emulator/README.md) | Phase 4's Epic-behaving proxy: auth, extensions, quirks |
+| [`../agent-platform/`](../agent-platform/) | Phase 6's shared agent layer (design in [`phase6/design.md`](./phase6/design.md)) |
+| [`../outcome-prediction-service/README.md`](../outcome-prediction-service/README.md) | Phase 8's data, model, ETL and scoring API |
+| [`../outcome-prediction-lab/README.md`](../outcome-prediction-lab/README.md) | Phase 8's research workbench and its CLI |
+| [`../outcome-prediction-agent/README.md`](../outcome-prediction-agent/README.md) | Phase 8's grounded risk agent |

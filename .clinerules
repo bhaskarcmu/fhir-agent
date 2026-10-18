@@ -1,126 +1,129 @@
 # Cline Project Rules
-#
-# A Claude Code mirror of these rules lives in CLAUDE.md at the repo root.
-# Keep the two in sync when either changes.
 
-## Repository Overview
+Guidance for Cline working in this repository. This is a mirror of `CLAUDE.md`
+(the Claude Code copy) — keep the two in sync when either changes.
 
-This repository uses two separate Git worktrees.
+## What this project is
 
-Main development worktree
-Location:
-/workspaces/fhir-agent
+An agentic healthcare workflow platform. A clinician asks a natural-language
+question; an LLM/MCP layer fetches FHIR data, evaluates clinical risk, and
+returns a structured recommendation. Reference workflow: **prescription refill
+risk triage** (drug-allergy conflict detection).
 
-Purpose:
-- Application source code
-- Feature branches
-- Pull Requests
-- Code reviews
+Request flow: **mcp-agent → triage-service → fhir-service**, fronted by a Kong
+gateway. Later phases add claims adjudication (2), provider search over MCP (3),
+an Epic emulator (4), agent hardening + observability (6) and ML outcome
+prediction (8); Phase 5 is reserved and Phase 7 planned. Each phase's status
+lives in `docs/phaseN/README.md` (index: `docs/README.md`). Key components:
 
-AI archive worktree
-Location:
-/workspaces/.ai-chat-history
+| Path | What it is | Language |
+|---|---|---|
+| `fhir-service/` | HAPI FHIR JPA R4 server (H2 local, Neon PostgreSQL cloud) | Java 21 / Spring Boot |
+| `triage-service/` | FastAPI service; drug-allergy rule engine → FHIR `RiskAssessment` | Python |
+| `mcp-agent/` | Tool-use CLI/API orchestrator, self-hosted Ollama by default (**no clinical logic**) | Python |
+| `client/clinical/` | Domain-abstracted FHIR client library (shared by agents, triage, outcome prediction) | Python |
+| `client/platform/` | Direct FHIR-server integration tests | Python |
+| `gateway/` | Kong config (key-auth, rate limiting) for GKE | YAML / Helm |
+| `data/scripts/` | Synthea data generation + demo seeding | Python |
+| `claims-service/`, `rxclaim-emulator/`, `claims-agent/` | Phase 2 claims adjudication | Java 21 / Python |
+| `provider-*/` | Phase 3 provider registry, MCP server and agents | Python |
+| `epic-emulator/` | Phase 4 Epic-behaving FHIR proxy | Java 21 |
+| `agent-platform/` | Phase 6 shared agent layer (output gate, telemetry, sessions, providers) | Python |
+| `outcome-prediction-{service,lab,agent}/` | Phase 8 MEPS model + scoring API, research lab, grounded agent | Python |
 
-Branch:
-ai-chat-history
+Conventions to preserve: the agent orchestrates but holds no clinical logic
+(rules live in `triage-service/src/triage/rules.py`); `client/clinical` speaks
+clinical domain terms, never raw FHIR bundles; the two `client/` subfolders
+serve different audiences and should not modify each other's code.
 
-Purpose:
-- AI conversation archive
-- Export scripts
-- Archive tooling
-- Human-readable conversation history
+## Build & test
 
-Treat these as two independent development environments.
+```
+# Python packages (editable installs + test tooling — see .ona/automations.yaml)
+python -m pip install -e "client/clinical[dev]" -e "agent-platform[dev]" -e "triage-service[dev]" -e "mcp-agent[dev]" -e "provider-registry-service[dev]" -e "provider-curation-agent[dev]" -e "provider-mcp-server[dev]" -e "provider-search-agent[dev]" -e "outcome-prediction-service[dev,api]" -e "outcome-prediction-lab[dev]" -e "outcome-prediction-agent[dev]"
+pytest <path>                       # run focused tests for the changed package
 
----
+# provider-registry-service's DB-backed tests need a local Postgres; they self-skip
+# (not error) when one isn't reachable at TEST_DATABASE_URL — see
+# provider-registry-service/src/provider_registry/tests/conftest.py.
 
-## Terminal Execution
+# FHIR service (Java). Unset SPRING_DATASOURCE_URL / NEON_* first so tests use H2;
+# otherwise MdmTest boots against a live DB and fails on auth (env issue, not code).
+cd fhir-service && ./mvnw clean verify        # full build + tests
+cd fhir-service && ./mvnw spring-boot:run     # run locally on :8080 (H2)
+```
 
-- Execute only one logical shell operation per execute_command call.
-- Never combine inspection, modification, testing, committing and pushing into one shell command.
-- Avoid chaining commands with && or semicolons.
-- Avoid interactive commands.
-- Use non-interactive Git flags whenever possible.
-- After every execute_command, inspect the result before continuing.
-- If the UI marks any command as "Skipped", stop immediately.
-- Never assume a skipped command executed successfully.
-- Report the skipped command and wait for me to reload Cline.
+The mcp-agent accepts `ANTHROPIC_API_KEY` or `CLAUDE_API_KEY` (the Ona secret name).
 
----
+Run only the tests relevant to a change when practical. Never claim tests
+passed unless they actually ran; if they can't run, say why.
 
-## Git Rules — Application Code
+## Repository layout — two worktrees
 
-Applies only to:
+This project intentionally uses two Git worktrees. Treat them as independent
+environments and never confuse them:
 
-/workspaces/fhir-agent
+- `/workspaces/fhir-agent` — branch `main`. Application code, features, tests,
+  pull requests, code review.
+- `/workspaces/.ai-chat-history` — branch `ai-chat-history`. AI conversation
+  archive, export scripts, archive tooling.
 
-- Never commit directly to main.
-- Always work on a feature branch.
-- Push the branch to origin.
-- Never merge yourself.
-- Create or update a Pull Request when requested.
-- Summarise files changed and tests executed before asking for review.
-- After a PR is merged, always ask to delete the feature branch — both the
-  origin remote branch and the local branch. Delete only after confirmation,
-  and never delete main or ai-chat-history.
+Before any Git write operation, briefly state: **current worktree, current
+branch, intended target branch.** Refuse to run Git commands if the intended
+worktree is ambiguous.
 
----
+## Git rules
 
-## Git Rules — AI Archive
+**Application code (`/workspaces/fhir-agent`)**
+- Never commit directly to `main`.
+- For any change to `main`-branch work, **default to creating a feature branch
+  and opening a PR** — do this proactively without asking. Don't ask ambiguous
+  "should I branch?" questions each time; just branch and push, then report.
+  Only skip the branch/PR if I explicitly say to.
+- Never merge branches yourself. Prepare work for GitHub review; keep the PR
+  up to date as work continues.
+- After a PR is merged, **always ask to delete the feature branch** — both the
+  `origin` remote branch and the local branch. Delete only after I confirm, and
+  never delete `main` or `ai-chat-history`.
 
-Applies only to:
+**AI archive (`/workspaces/.ai-chat-history`)**
+- Work only on `ai-chat-history`.
+- Never open a PR; never merge `ai-chat-history` into `main`.
+- Commit directly after successful testing and push to `origin/ai-chat-history`.
+- Keep archive commits isolated from application history.
 
-/workspaces/.ai-chat-history
+## Terminal usage
 
-- Never create a Pull Request.
-- Never merge ai-chat-history into main.
-- Never ask me to review archive-tooling changes through GitHub PRs.
-- Commit directly to the ai-chat-history branch after testing.
-- Push directly to origin/ai-chat-history.
-- Archive commits should remain isolated from application development.
+- Run one logical operation per state-changing or order-dependent step, and
+  inspect its result before the next. Do **not** chain inspect + modify + test +
+  commit + push into a single `&&`/`;` command.
+- Batching **independent read-only** commands in one turn is fine and preferred.
+- Avoid interactive commands; use non-interactive Git flags.
+- If a command is denied or the UI marks it **Skipped**: stop, report it, and
+  wait — never assume a skipped/denied command succeeded.
 
----
+## How to work
 
-## Testing
+Behave like a pragmatic senior engineer. Optimise for working software:
 
-- Run tests before proposing a commit.
-- Never claim tests passed unless they were executed.
-- Report failures immediately.
+- Make reasonable assumptions when risk is low; state them briefly if helpful
+  and continue rather than stopping for clarification.
+- Implement the smallest useful solution. Don't over-engineer; avoid premature
+  optimisation and unnecessary abstractions. Match the existing codebase.
+- Refactor only when it clearly improves maintainability or saves real future
+  effort. Don't expand scope unless asked.
+- Reserve deep architectural analysis for changes that are hard to reverse or
+  touch production reliability, **security, privacy, healthcare compliance, or
+  data integrity.**
 
----
-
-## Safety
-
-- Ask before destructive operations.
-- Never delete files unless requested.
-- Never overwrite important files without understanding their purpose.
-
----
-
-## Large Tasks
-
-- Break large work into small milestones.
-- Report progress after each milestone.
-- Stop if confidence becomes low.
-- Ask for clarification rather than guessing.
-
----
+Stop and ask before: deleting files, destructive Git operations, changing infra
+or deployment config, or modifying security-sensitive code. Protect secrets —
+never expose credentials or commit sensitive information.
 
 ## Communication
 
-- Briefly explain your implementation plan before making major changes.
-- When finished, provide:
-  - files changed
-  - tests run
-  - commit hashes
-  - branch name
-  - any limitations
+Keep responses concise: briefly explain the approach, do the work, summarise the
+result. Don't narrate every small action.
 
-## Repository Awareness
-
-Before executing any Git command:
-
-- Determine which worktree is active.
-- Confirm which branch is currently checked out.
-- State which repository and branch will be modified.
-- Refuse to run Git commands if the intended worktree is ambiguous.  
+When work is complete, report: files changed, validation performed, branch name,
+commit hash (if committed), and any known limitations.

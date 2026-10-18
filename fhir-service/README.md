@@ -138,13 +138,14 @@ Present topology — what consumes this service today:
 | `claims-service` | Phase 2 adjudication façade — persists the decision artefact graph here | ✅ Running (`--profile phase2`) |
 | `claims-agent` | Phase 2 explanation agent (non-authoritative) | ✅ Running (`--profile phase2`) |
 | `rxclaim-emulator` | Simulated legacy claims core — internal only, never touches FHIR | ✅ Running (`--profile phase2`) |
+| `epic-emulator` | Phase 4 proxy in front of this server: Epic-style auth, extensions and quirks (`:8092`) | ✅ Built — open safety finding, see `docs/phase4/README.md` |
+| `outcome-prediction-service` | Phase 8 risk scoring; reads patients' records from this server via `client/clinical` | ✅ Running (`--profile phase8`) |
 
 Roadmap — not built:
 
 | Module | Intended role | Status |
 |--------|------|--------|
-| `epic-emulator` | Epic-specific auth stubs, custom profiles, proprietary extensions | ⏳ Placeholder |
-| `athena-emulator` | Athena-specific customisations | ⏳ Placeholder |
+| `athena-emulator` | Athena-specific customisations (Phase 7 M1) | ⏳ Placeholder |
 
 ## Kubernetes Deployment
 

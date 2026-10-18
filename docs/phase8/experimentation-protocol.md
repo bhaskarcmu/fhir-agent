@@ -2,8 +2,8 @@
 
 The standing procedure for exploring models and prediction targets with
 `outcome-prediction-lab/`. It applies to **every** round, by anyone, at any time, long after
-Phase 8's milestones are complete (`decisions.md` O28). Milestone M3 builds the tooling this
-document refers to; M10 and M11 are the first two rounds run under it.
+Phase 8's milestones are complete (`decisions.md` O28). Milestone M3 built the tooling this
+document refers to and ran rounds 000–004 under it (M10 and M11 were folded into M3, O45).
 
 > **This document is a runbook, not a status page.** Phase 8's status lives in
 > [`README.md`](./README.md); a round's results live in its own committed directory (§3).

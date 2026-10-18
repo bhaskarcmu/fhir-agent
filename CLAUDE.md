@@ -11,17 +11,25 @@ returns a structured recommendation. Reference workflow: **prescription refill
 risk triage** (drug-allergy conflict detection).
 
 Request flow: **mcp-agent → triage-service → fhir-service**, fronted by a Kong
-gateway. Key components:
+gateway. Later phases add claims adjudication (2), provider search over MCP (3),
+an Epic emulator (4), agent hardening + observability (6) and ML outcome
+prediction (8); Phase 5 is reserved and Phase 7 planned. Each phase's status
+lives in `docs/phaseN/README.md` (index: `docs/README.md`). Key components:
 
 | Path | What it is | Language |
 |---|---|---|
 | `fhir-service/` | HAPI FHIR JPA R4 server (H2 local, Neon PostgreSQL cloud) | Java 21 / Spring Boot |
 | `triage-service/` | FastAPI service; drug-allergy rule engine → FHIR `RiskAssessment` | Python |
-| `mcp-agent/` | Anthropic tool-use CLI orchestrator (**no clinical logic**) | Python |
-| `client/clinical/` | Domain-abstracted FHIR client library (shared by agent + triage) | Python |
+| `mcp-agent/` | Tool-use CLI/API orchestrator, self-hosted Ollama by default (**no clinical logic**) | Python |
+| `client/clinical/` | Domain-abstracted FHIR client library (shared by agents, triage, outcome prediction) | Python |
 | `client/platform/` | Direct FHIR-server integration tests | Python |
 | `gateway/` | Kong config (key-auth, rate limiting) for GKE | YAML / Helm |
 | `data/scripts/` | Synthea data generation + demo seeding | Python |
+| `claims-service/`, `rxclaim-emulator/`, `claims-agent/` | Phase 2 claims adjudication | Java 21 / Python |
+| `provider-*/` | Phase 3 provider registry, MCP server and agents | Python |
+| `epic-emulator/` | Phase 4 Epic-behaving FHIR proxy | Java 21 |
+| `agent-platform/` | Phase 6 shared agent layer (output gate, telemetry, sessions, providers) | Python |
+| `outcome-prediction-{service,lab,agent}/` | Phase 8 MEPS model + scoring API, research lab, grounded agent | Python |
 
 Conventions to preserve: the agent orchestrates but holds no clinical logic
 (rules live in `triage-service/src/triage/rules.py`); `client/clinical` speaks

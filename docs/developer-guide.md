@@ -6,8 +6,7 @@ work without breaking it. Read this before your first change.
 - **New to the project?** Read §1–§3, then run the demo ([`demo-guide.md`](./demo-guide.md)).
 - **About to write code?** §4 (where things live) and §5 (invariants) are the load-bearing ones.
 - **Something behaving weirdly?** §7 is a list of traps that have already cost real hours.
-- **Looking for what to build next?** [`phase2/plan.md` §16](./phase2/plan.md#16-future-work)
-  (Phase 2) or [`phase3/README.md`](./phase3/README.md) (Phase 3b).
+- **Looking for what to build next?** §10, which links each phase's canonical status.
 
 ---
 
@@ -16,8 +15,9 @@ work without breaking it. Read this before your first change.
 A clinician (or a claims reviewer) asks a question in plain language. An **LLM agent
 orchestrates** — it decides which tools to call and how to phrase the answer. It never decides
 anything clinical or financial. Those decisions come from **deterministic services**: a rules
-engine, a legacy adjudication core, and a clinical-safety rule engine. Every decision is
-written to a FHIR server as an auditable artefact graph.
+engine, a legacy adjudication core, a clinical-safety rule engine, and (Phase 8) a promoted,
+version-pinned machine-learned risk model. Every decision is written to, or returned as, an
+auditable FHIR artefact.
 
 Two sentences carry most of the design:
 
@@ -26,11 +26,13 @@ Two sentences carry most of the design:
 
 If a change would violate either, it is almost certainly the wrong change.
 
-## 2. The three phases
+## 2. The phases
 
-The repo contains three related systems. Phase 1 and Phase 2 share a FHIR server and a triage
-service; Phase 3 shares neither — it has its own Postgres registry and touches `fhir-service`
-not at all.
+The repo contains several related systems, each added without changing the ones before it.
+Phase 1 and Phase 2 share a FHIR server and a triage service; Phase 3 shares neither — it has
+its own Postgres registry and touches `fhir-service` not at all. Phases 4, 6 and 8 build on
+Phase 1's pieces; Phase 5 is reserved and Phase 7 is planned (summaries at the end of this
+section).
 
 **Phase 1 — Prescription refill risk triage.** A clinician asks *"Check refill risk for Kristle
 Mraz"*. The agent resolves the patient, pulls medications and allergies, and the triage service
@@ -77,6 +79,43 @@ routes at all). It is also the first genuine MCP protocol boundary in the repo:
 `provider-search-agent` discovers `provider-mcp-server`'s tools live via a real `tools/list`
 call rather than hardcoding them, unlike `mcp-agent`'s in-process tool dispatch. Full detail:
 [`phase3/design.md`](./phase3/design.md).
+
+**Phase 4 — Epic emulator.** `epic-emulator` is a Spring Boot proxy in front of `fhir-service`
+that behaves like Epic: simulated SMART Backend Services auth, Epic-style extensions, and three
+quirks (paginated results with an opaque continuation, required search parameters, Epic-shaped
+`OperationOutcome` errors). The refill-triage scenario gives identical results direct or through
+it — **but a post-merge safety finding is open** (decisions E16): see
+[`phase4/README.md`](./phase4/README.md) before demoing it.
+
+**Phase 5 — reserved** for decomposing `epic-emulator`; nothing is built
+([`phase5/README.md`](./phase5/README.md)).
+
+**Phase 6 — Agent platform hardening + observability.** A shared layer, `agent-platform/`, that
+the agents build on: a code-validated output contract with fail-closed `REVIEW`, OpenTelemetry
+platform-wide (Jaeger, Prometheus, Grafana under the `observability` profile), a context budget
+and Postgres session store (`mcp-agent-api`, `phase6` profile), resilience and cost controls, a
+provider seam that **defaults to a free, self-hosted Ollama model** (H45), and policy,
+knowledge-base citations and an LLM judge. M1–M6 built; M7 planned
+([`phase6/README.md`](./phase6/README.md)).
+
+**Phase 7 — Medication reconciliation.** Planned, no code
+([`phase7/README.md`](./phase7/README.md)).
+
+**Phase 8 — Patient outcome prediction.** Models trained on public AHRQ MEPS data estimate an
+adult's 12-month chance of a hospital stay and return it as a FHIR `RiskAssessment`, with the
+records used as its `basis`.
+
+```
+outcome-prediction-agent ──HTTP──▶ outcome-prediction-service ──▶ client/clinical ──▶ fhir-service
+   (grounded narration only,        (ETL → contract rows → promoted
+    agent-platform, Ollama)          model → RiskAssessment; :8005)
+
+outcome-prediction-lab ──imports──▶ outcome-prediction-service   (research rounds; never the reverse)
+```
+
+The service serves only **promoted** artifacts, and the agent's tools can't pass feature values,
+thresholds or a model choice. All milestones (M1–M13) are built; Phase 8b (cloud, monitoring)
+is next ([`phase8/README.md`](./phase8/README.md)).
 
 ## 3. Request lifecycle of one claim
 
@@ -152,7 +191,7 @@ boundary the search agent uses for queries.
 | `claims-service/` | Phase 2 adjudication façade: ACL + rules + Decision Contract | Java 21 |
 | `rxclaim-emulator/` | Simulated legacy IBM i / RxClaim core (DDS records, DB2/SQL400 tables, `ADJRXCLM`) | Java 21 |
 | `claims-agent/` | Phase 2 explanation agent (**non-authoritative**) | Python |
-| `client/clinical/` | Domain-abstracted FHIR client library (shared: agent + triage) | Python |
+| `client/clinical/` | Domain-abstracted FHIR client library (shared: agents, triage, outcome prediction) | Python |
 | `client/platform/` | Direct FHIR-server integration tests | Python |
 | `gateway/` | Kong config — KIC (Phase 1, GKE) and DB-less (Phase 2) | YAML / Helm |
 | `data/payer-kb/` | Curated formulary / PA / plan fixtures | CSV / JSON |
@@ -164,8 +203,14 @@ boundary the search agent uses for queries.
 | `provider-mcp-server/` | The real, hand-built MCP server — first genuine protocol boundary in the repo | Python |
 | `provider-search-agent/` | The real MCP client/host; discovers tools live, no `--no-llm` fallback | Python |
 | `provider-curation-agent/` | Phase 3's non-authoritative ingestion-narration agent (mirrors `claims-agent`) | Python |
+| `epic-emulator/` | Phase 4 Epic-behaving proxy in front of `fhir-service` (auth, extensions, quirks) | Java 21 |
+| `agent-platform/` | Phase 6 shared agent layer: output contract, observability, sessions, providers, policy, judge | Python |
+| `observability/` | Prometheus config and Grafana dashboards (`observability` profile) | YAML / JSON |
+| `outcome-prediction-service/` | Phase 8: MEPS data, model training, ETL, scoring API → `RiskAssessment` | Python |
+| `outcome-prediction-lab/` | Phase 8 research workbench: rounds, holdout ledger, promotion | Python |
+| `outcome-prediction-agent/` | Phase 8 conversational agent (**narrates only**) | Python |
 | `<service>/infra/main.tf` | Per-service Cloud Run **stubs** — `claims-service`, `rxclaim-emulator`, and all four Phase 3 services have one; `infra/terraform/` is a **root module composing the Phase 3 stubs only** (M7) — Phase 1/2 still has no root module and nothing has been applied anywhere ([gap](./phase2/plan.md#6-workstreams--milestones)) | HCL |
-| `epic-emulator/`, `athena-emulator/` | Placeholders — EHR-specific customisations, not yet implemented | — |
+| `athena-emulator/` | Placeholder — to be built in Phase 7 M1 | — |
 
 ### Boundaries that are deliberate
 
@@ -244,7 +289,11 @@ schemas are flat objects, not `oneOf` unions — see §7 — and cross-field val
 ```bash
 # Python packages (editable installs + test tooling)
 python -m pip install -e "client/clinical[dev]" -e "triage-service[dev]" -e "mcp-agent[dev]" -e "claims-agent[dev]" \
-  -e "provider-registry-service[dev]" -e "provider-curation-agent[dev]" -e "provider-mcp-server[dev]" -e "provider-search-agent[dev]"
+  -e "provider-registry-service[dev]" -e "provider-curation-agent[dev]" -e "provider-mcp-server[dev]" -e "provider-search-agent[dev]" \
+  -e "agent-platform[dev]" -e "outcome-prediction-service[dev,api]" -e "outcome-prediction-lab[dev]" -e "outcome-prediction-agent[dev]"
+
+# The self-hosted model the agents default to (no API key, no cost)
+ollama serve & ollama pull llama3.2:1b
 
 # Java services
 mvn -f claims-service/pom.xml test          # fast: unit + contract tests, no stack needed
@@ -258,6 +307,13 @@ python3 data/scripts/seed_claims_demo.py    # seeds FHIR fixtures + drives the g
 docker compose --profile phase3 up --build -d postgres provider-registry
 docker compose --profile phase3 run --rm -T provider-curation-agent --states NC --no-llm  # seeds real data; -T: see §7
 docker compose --profile phase3 run --rm provider-search-agent --query "find an endocrinologist near 27514"
+
+# Phase 6: session-backed agent API + Postgres; telemetry stack
+docker compose --profile phase6 up --build -d
+docker compose --profile observability up -d                # Jaeger :16686, Prometheus :9090, Grafana :3000
+
+# Phase 8: scoring service (needs promoted model artifacts — see demo-guide.md §5b)
+docker compose --profile phase8 up --build -d fhir outcome-prediction
 ```
 
 Running a Java service directly against the compose stack (faster than rebuilding the image on
@@ -272,8 +328,10 @@ java -jar claims-service/target/claims-service-0.1.0.jar \
 ```
 
 Ports: FHIR `8080`, triage `8001`, claims-service `8090`, rxclaim-emulator `8091` (internal
-only), Kong proxy `8000` (`gateway` profile), Phase 3 Postgres `5432`, provider-registry-service
-`8002`. `provider-mcp-server` has no port — it's spawned as a stdio child process, never a
+only), epic-emulator `8092` (no compose service — run its jar, see `epic-emulator/README.md`), Kong proxy
+`8000` (`gateway` profile), Phase 3 Postgres `5432`, provider-registry-service `8002`, Phase 6
+agent Postgres `5433` and `mcp-agent-api` `8010`, outcome-prediction-service `8005` (with a GCS
+emulator on `4443`), Jaeger `16686`, Prometheus `9090`, Grafana `3000`, Ollama `11434`. `provider-mcp-server` has no port — it's spawned as a stdio child process, never a
 standing compose service.
 
 ## 7. Traps that have already cost hours
@@ -405,7 +463,20 @@ run (only NC/CA/MT are curated today), and the stdio→network transport switch
 `provider-mcp-server` would need to run as a standing service. See
 [`phase3/README.md`](./phase3/README.md) and [`phase3/design.md` §13.1](./phase3/design.md).
 
+**Phase 4:** M1–M5 complete; the open safety finding (E16) is the first thing to fix —
+[`phase4/README.md`](./phase4/README.md).
+
+**Phase 6:** M1–M6 complete; M7 (strong model in production) is next —
+[`phase6/README.md`](./phase6/README.md). The compose `mcp-agent` services still lack
+host-Ollama networking (a known gap from M5).
+
+**Phase 7:** planned, M1 (`athena-emulator`) next — [`phase7/README.md`](./phase7/README.md).
+
+**Phase 8:** M1–M13 complete; the next three promotions and **Phase 8b** (cloud deployment,
+recalibration, monitoring) are next — [`phase8/README.md`](./phase8/README.md).
+
 Design rationale, if you need to know *why* rather than *what*:
 [`phase2/requirements.md`](./phase2/requirements.md) / [`phase2/plan.md`](./phase2/plan.md) for
 Phase 2, [`phase3/prd.md`](./phase3/prd.md) / [`phase3/design.md`](./phase3/design.md) /
-[`phase3/decisions.md`](./phase3/decisions.md) for Phase 3.
+[`phase3/decisions.md`](./phase3/decisions.md) for Phase 3; each later phase's `prd.md` /
+`design.md` / `decisions.md` under [`docs/`](./README.md).

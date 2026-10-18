@@ -47,12 +47,10 @@ Everything is indexed in **[`docs/`](docs/README.md)**. Start with what you're d
 | **Understand the code** and change it safely | [`docs/developer-guide.md`](docs/developer-guide.md) |
 | **Run the tests**, or write good ones | [`docs/testing-guide.md`](docs/testing-guide.md) |
 | **Operate the gateway** (local, cloud, migration) | [`docs/gateway-runbook.md`](docs/gateway-runbook.md) |
-| **Know why** Phase 2 is built this way | [`docs/phase2/plan.md`](docs/phase2/plan.md) |
-| **Know why** Phase 3 (Provider Search) is built this way | [`docs/phase3/design.md`](docs/phase3/design.md) |
-| **Audit Phase 2 decisions** (status + supersession) | [`docs/phase2/decisions.md`](docs/phase2/decisions.md) |
-| **Audit Phase 3 decisions** (status + supersession) | [`docs/phase3/decisions.md`](docs/phase3/decisions.md) |
-| **Know what was agreed** (normative requirements) | [`docs/phase2/requirements.md`](docs/phase2/requirements.md) |
-| **Know what to build next** | [`docs/phase2/plan.md` §16](docs/phase2/plan.md#16-future-work) |
+| **Know why** a phase is built this way, or audit its decisions | Each phase's folder — `docs/phase2/` … `docs/phase8/`, indexed in [`docs/README.md`](docs/README.md) |
+| **Know a phase's status** | That phase's `README.md` — the one canonical statement (summary [below](#status--future-work)) |
+| **Know what was agreed** for Phase 2 (normative requirements) | [`docs/phase2/requirements.md`](docs/phase2/requirements.md) |
+| **Know what to build next** | [Status & future work](#status--future-work) |
 
 Working agreements (git rules, the two worktrees, how to work here): [`CLAUDE.md`](CLAUDE.md).
 
@@ -91,7 +89,7 @@ The platform is built as a collection of microservices, designed to be cloud-agn
 ┌─────────────────────────────────────────────────────────────────┐
 │                        FHIR Servers                            │
 │   - Generic FHIR R4 server (development & testing)            │
-│   - Future: EHR sandboxes (Epic, Athena) or emulators         │
+│   - EHR emulators: Epic (Phase 4); Athena planned (Phase 7)   │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -100,8 +98,8 @@ The platform is built as a collection of microservices, designed to be cloud-agn
 | Service | Purpose | Status |
 |---|---|---|
 | **fhir-service** | Generic FHIR R4 server (HAPI JPA). Used for local development and as the FHIR data source for the MCP agent. | ✅ Running (H2 local, Neon PostgreSQL cloud) |
-| **epic-emulator** | Placeholder — will add Epic-specific customisations (auth stubs, custom profiles, proprietary extensions). | ⏳ Not yet implemented |
-| **athena-emulator** | Placeholder — will add Athena-specific customisations. | ⏳ Not yet implemented |
+| **epic-emulator** *(Phase 4)* | Spring Boot proxy in front of `fhir-service` that behaves like Epic: simulated SMART Backend Services auth, Epic-style extensions, pagination / required-parameter / error quirks. | ✅ Built (`:8092`, run from its jar) — ⚠️ open safety finding, see [`docs/phase4/README.md`](docs/phase4/README.md) |
+| **athena-emulator** *(Phase 7)* | Placeholder — Athena-specific behaviour, planned as Phase 7 M1. | ⏳ Not yet implemented |
 | **triage-service** | FastAPI drug-allergy rule engine → FHIR `RiskAssessment` (HIGH/MODERATE/LOW) with audit trail. | ✅ Running (local + Docker Compose) |
 | **mcp-agent** | LLM-powered orchestration layer that composes FHIR + triage tools. Self-hosted Ollama by default (no API key, no cost); Anthropic and other OpenAI-compatible providers available via explicit opt-in (`docs/phase6/decisions.md` H45). | ✅ Running (local + Docker Compose) |
 | **rxclaim-emulator** *(Phase 2)* | Simulated legacy IBM i / RxClaim adjudication core: fixed-width DDS-style records, DB2/SQL400-style tables, RPG/CL-style `ADJRXCLM`. Internal-only. | ✅ Running (`--profile phase2`) |
@@ -111,15 +109,20 @@ The platform is built as a collection of microservices, designed to be cloud-agn
 | **provider-mcp-server** *(Phase 3)* | The platform's first real, hand-built MCP server — genuine `initialize`/`tools/list`/`tools/call`, stdio transport. Thin adapter over `provider-registry-service`. | ✅ Running (local child process; no compose service — see [`docs/phase3/README.md`](docs/phase3/README.md)) |
 | **provider-curation-agent** *(Phase 3)* | Non-authoritative agent that orchestrates real NPPES/NUCC/ZCTA ingestion and narrates the run. | ✅ Running (`--profile phase3`) |
 | **provider-search-agent** *(Phase 3)* | Real MCP client/host: turns a natural-language clinical request into ranked, traceable providers by discovering and calling `provider-mcp-server`'s tools live. | ✅ Running (`--profile phase3`) |
+| **agent-platform** *(Phase 6)* | Shared library the agents build on: output contract + fail-closed gate, OpenTelemetry, context budget, Postgres sessions, resilience, provider seam, policy, knowledge citations, LLM judge. | ✅ Library (used by `mcp-agent`, `outcome-prediction-agent`) |
+| **mcp-agent-api** *(Phase 6)* | `mcp-agent` over HTTP with persistent sessions (Postgres `agent-db`). | ✅ Running (`--profile phase6`, `:8010`) |
+| **observability** *(Phase 6)* | Jaeger, Prometheus and Grafana dashboards for the whole platform. | ✅ Running (`--profile observability`) |
+| **outcome-prediction-service** *(Phase 8)* | Trains on public AHRQ MEPS data and scores a patient's 12-month hospital-stay risk from their FHIR records → FHIR `RiskAssessment`; serves only promoted models. Internal-only. | ✅ Running (`--profile phase8`, `:8005`) |
+| **outcome-prediction-lab** *(Phase 8)* | Research workbench: config-driven rounds, a holdout ledger, model cards, promotion. | ✅ CLI (research only; never imported by the service) |
+| **outcome-prediction-agent** *(Phase 8)* | Grounded risk agent: looks a patient up, fetches the `RiskAssessment`, narrates it — can't re-score or adjust. Self-hosted model. | ✅ CLI |
 
 ---
 
 ## Current Status
 
-**This section covers Phase 1 (the original walking skeleton) specifically.** Phase 2
-(claims adjudication) and Phase 3 (provider search) are also complete and run locally —
-see their own sections below, or [Status & future work](#status--future-work) for the
-full picture across all three.
+**This section covers Phase 1 (the original walking skeleton) specifically.** Phases 2 and 3
+have their own sections below; [Status & future work](#status--future-work) gives the full
+picture across every phase.
 
 The end-to-end walking skeleton runs locally and via Docker Compose:
 **mcp-agent → triage-service → fhir-service**. A natural-language clinician query
@@ -133,7 +136,7 @@ The FHIR R4 server is built on the **official HAPI FHIR JPA starter (8.8.0)**. I
 - Cloud deployment with Neon serverless PostgreSQL (environment-variable-based configuration)
 - FHIR `CapabilityStatement` at `GET /fhir/metadata`
 
-The server is intentionally generic — it does not emulate any specific EHR. The agent and MCP tooling are built against a standard FHIR R4 endpoint first, ensuring portability. EHR-specific authentication, profiles, and extensions will be added later in the emulator modules.
+The server is intentionally generic — it does not emulate any specific EHR. The agent and MCP tooling are built against a standard FHIR R4 endpoint first, ensuring portability. EHR-specific authentication, extensions and quirks live in the emulator modules instead (`epic-emulator`, Phase 4).
 
 ---
 
@@ -326,7 +329,11 @@ The project uses a **devcontainer** to ensure a consistent environment across al
 
 ```bash
 # Python packages (editable installs + test tooling via the [dev] extras)
-python -m pip install -e "client/clinical[dev]" -e "agent-platform[dev]" -e "triage-service[dev]" -e "mcp-agent[dev]"
+python -m pip install -e "client/clinical[dev]" -e "agent-platform[dev]" -e "triage-service[dev]" -e "mcp-agent[dev]" \
+  -e "claims-agent[dev]" -e "provider-registry-service[dev]" -e "provider-curation-agent[dev]" \
+  -e "provider-mcp-server[dev]" -e "provider-search-agent[dev]" \
+  -e "outcome-prediction-service[dev,api]" -e "outcome-prediction-lab[dev]" -e "outcome-prediction-agent[dev]"
+pytest <path>                       # focused: the package you changed (see docs/testing-guide.md §2)
 pytest                              # runs all Python suites (config in pytest.ini)
 pytest agent-platform/tests -q      # separate invocation -- see pytest.ini's own comment on why
 
@@ -365,6 +372,23 @@ cd fhir-service && ./mvnw clean verify
   actually run the Phase 3 suite against a real Postgres service container. Runs end to end
   locally, including through the real Docker images. Design/decisions:
   [`docs/phase3/`](docs/phase3/README.md).
+- ✅ **Phase 4 (M1–M5)** — `epic-emulator`: SMART-style auth, Epic extensions, three quirks; the
+  refill-triage acceptance case gives identical results direct and via the emulator.
+  **⚠️ One safety finding open (E16)** — a multi-record patient can come back falsely "safe"
+  through the pagination quirk. [`docs/phase4/`](docs/phase4/README.md).
+- ⏸️ **Phase 5** — reserved for decomposing `epic-emulator`; nothing built.
+  [`docs/phase5/`](docs/phase5/README.md).
+- ✅ **Phase 6 (M1–M6)** — `agent-platform`: fail-closed output contract, platform-wide
+  observability (closes Phase 2's R15), sessions, resilience and cost control, a provider seam
+  defaulting to self-hosted Ollama, policy/knowledge/judge. M7 planned.
+  [`docs/phase6/`](docs/phase6/README.md).
+- 📝 **Phase 7** — medication reconciliation: planned, no code.
+  [`docs/phase7/`](docs/phase7/README.md).
+- ✅ **Phase 8 (M1–M13)** — patient outcome prediction: MEPS data and the research prototype's
+  model reproduced exactly, a research lab (rounds 000–004), a records-portable contract, and the
+  first promoted model (non-obstetric hospital stay, test AUROC 0.795) served as a FHIR
+  `RiskAssessment` with its evidence, narrated by a grounded agent.
+  [`docs/phase8/`](docs/phase8/README.md).
 
 ### Next
 Phase 2's prioritised backlog lives in
@@ -381,8 +405,12 @@ provider reports `unknown`, honestly, rather than guessing), and a taxonomy-matc
 pass (found real: `resolve_specialty("endocrinologist")` returns `ambiguous` against the full
 NUCC code set — see [`docs/phase3/design.md` §14](docs/phase3/design.md#14-risks)).
 
-Longer-standing: EHR emulators (`epic-emulator/`, `athena-emulator/` are placeholders),
-drug-drug interaction rules, and load testing.
+For Phase 4: fix the E16 safety finding. Phase 6: M7 (strong model in production), and
+host-Ollama networking for the compose `mcp-agent` services. Phase 7: M1 (`athena-emulator`).
+Phase 8: the next three promotions and **Phase 8b** (cloud deployment, recalibration,
+monitoring).
+
+Longer-standing: drug-drug interaction rules, running the e2e suites in CI, and load testing.
 
 ### Known issues
 - Versioned profile URL fallback (`VersionedUrlFallbackValidationSupport`) is a workaround for a

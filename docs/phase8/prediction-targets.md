@@ -38,6 +38,7 @@ the *financial* view. Three can be validated by any customer; high cost needs cl
 | Round 000 | M2's model reproduced through the lab, bit for bit | The lab and the service agree exactly | [round 000 report](../../outcome-prediction-lab/rounds/000-baseline-reproduction/report.md) |
 | Round 004 | Readiness of the four: ER-admission production model, fairness, 65+ | All four have production models; fairness findings recorded (uninsured rarely flagged — labels measure use, not need); general models beat 65+ specialists | [round 004 report](../../outcome-prediction-lab/rounds/004-focus-four-readiness/report.md), O56–O58 |
 | **2026-10-18** | **First promotion chosen; M3 closed** | Non-obstetric hospital stay goes first (M12) | **O59, O60** |
+| M12 | The first promotion served | `nonobstetric-v2` is served as `nonobstetric-admission-12m` beside `meps25-v1`; the agent uses it | O75–O78 |
 
 ## 3. What changes now
 
@@ -48,8 +49,9 @@ the *financial* view. Three can be validated by any customer; high cost needs cl
   performance; no separate 65+ model (O58).
 - **O40 decided (O59):** the first promotion is **non-obstetric hospital stay** (`nonobstetric-v2`);
   the other three follow as later promotions.
-- **Service work (M6, M7, M12)** builds the four labels' inputs on `meps-portable-v2`; any-stay
-  (`meps25-v1`) stays only as the reproduced reference model from M2.
+- **Service work (M6, M7, M12)** built the four labels' inputs on `meps-portable-v2`; the first
+  promoted model is served since M12 (O75–O78). Any-stay (`meps25-v1`) stays only as the
+  reproduced reference model from M2, served beside it.
 
 ## 4. Parked work — kept, not deleted
 

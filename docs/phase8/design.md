@@ -1,7 +1,7 @@
 # Phase 8 Design — Patient Outcome Prediction
 
-Architecture, component breakdown, and the technical sketches `milestone-plan.md` builds
-against. Status and requirements live in [`README.md`](./README.md) and [`prd.md`](./prd.md).
+Architecture, component breakdown, and the technical design `milestone-plan.md` was built
+against, updated to the code as built. Status and requirements live in [`README.md`](./README.md) and [`prd.md`](./prd.md).
 The research prototype's method, data facts and reproduction numbers are in
 [`prototype-baseline.md`](./prototype-baseline.md); where the two disagree, this document
 wins.
@@ -15,6 +15,7 @@ outcome-prediction-service/       # NEW (O2) — training pipeline, ETL, scoring
   src/outcome_prediction/
     meps/
       download.py                 # FR-D1: fetch h{n}dta.zip, extract with zipfile, record SHA-256
+      manifest.py, mirror.py      # the committed data manifest and private mirrors (O41, O42; §13)
       build.py                    # FR-D2: modelling table + label(s)
       dictionary.py               # FR-D3: variable dictionary (not inspect.py: would shadow stdlib `inspect`)
     model/
@@ -23,12 +24,18 @@ outcome-prediction-service/       # NEW (O2) — training pipeline, ETL, scoring
       train.py                    # FR-M1–M4: evaluate, refit, write artifact + reports
       evaluate.py                 # FR-E1–E6: metrics.json + model_report.md
       artifact.py                 # write/verify artifact dir + SHA-256 manifest (O17); percentiles
-    contract.py                   # feature contracts (meps25-v1, later v2), Pydantic, feature order
+      portable.py                 # building blocks of served meps-portable-v2 models (M12)
+      promotion.py                # PROMOTION.json: write once, verify against the manifest (O33, O75)
+    contract.py                   # feature contracts (meps25-v1, meps-portable-v2), feature order
+    knowledge.py                  # HFRS, Charlson and Elixhauser tables as data
+    scoring.py                    # score contract rows with a verified, promoted artifact
     etl/
       canonical.py                # the five canonical tables (§7)
       extract/synthea_csv.py      # reproduction/parity harness (O8)
       extract/fhir.py             # NEW vs. the prototype: canonical tables from client/clinical (M6)
-      transform/to_contract.py    # canonical → contract rows; training vs scoring mode (§6)
+      transform/to_contract.py    # canonical → contract rows (v1 and v2); training vs scoring mode (§6)
+      synthea.py                  # M4 harness: pinned population → rows → scores
+      parity.py, quality.py       # M6: CSV ↔ FHIR parity and the data-quality report
       codelists/                  # M13: versioned ICD-10-CM prefix lists per flag + the SNOMED map (O73)
     fhir/
       risk_assessment.py          # Phase 8's own RiskAssessment/Bundle models + builder (O3, §4)
@@ -42,13 +49,12 @@ outcome-prediction-service/       # NEW (O2) — training pipeline, ETL, scoring
 outcome-prediction-lab/           # NEW (O28, O29) — experimentation workbench; research-only deps
   pyproject.toml                  # depends on outcome-prediction-service; MLflow pinned (O30)
   src/outcome_prediction_lab/
-    cli.py                        # run / compare / confirm / card / promote (§12)
-    targets.py                    # label definitions: outcome × form (O34)
-    search.py                     # panel-grouped CV + hyperparameter search on training panels only
+    cli.py                        # run / compare / confirm / card / scorecard / promote / explain / fairness (§12)
+    runs.py                       # config-driven runs: targets (O34), panel-grouped CV, scorecards (O36),
+                                  #   model cards (O39), the promotion record (O33)
+    data.py, features.py          # the enriched person-level table; feature sets and pipelines
+    evaluate.py, explain.py, fairness.py, narrate.py   # metrics, interpretation, subgroup reports (O57)
     holdout.py                    # ledger check — refuses unlogged test-panel evaluation (O32)
-    scorecard.py                  # target scorecard template + ML-criteria fill (O36)
-    modelcard.py                  # model card from tracked metadata (O39)
-    promote.py                    # writes the promotion record the service requires (O33)
   rounds/NNN-<slug>/              # COMMITTED: README (pre-registration), configs/, report.md, metrics.json, scorecards
   holdout-ledger.md               # COMMITTED, append-only
   notebooks/                      # optional; committed with outputs stripped (O38)
@@ -58,6 +64,8 @@ outcome-prediction-agent/         # NEW (O15) — conversational layer, own top-
   src/outcome_prediction_agent/
     agent.py                      # tool-use loop on agent-platform (Phase 6)
     explain.py                    # grounded narration of a RiskAssessment (FR-A2, FR-A3)
+    service.py                    # the agent's only connection out: the service's published tools
+    policy.md                     # the agent's system policy
 
 client/clinical/                  # extended additively (O9, FR-F1)
 e2e/test_outcome_prediction_acceptance.py   # M9
@@ -115,8 +123,9 @@ Two interpretation changes, both from review (§11):
 - `regiony1 = 0` for an unknown or non-US state, as the contract always said; the prototype's
   default to South (3) is not carried over.
 
-`meps25-v2` (M10) pairs the contract with `label_unplanned_12m`; feature changes from O25/FR-D5
-arrive as a new contract version, never as an edit to an existing one. The service serves one
+Feature changes arrive as a new contract version, never as an edit to an existing one: the
+second, `meps-portable-v2` (M3 round 003, O52/O53), drops what customer records can't supply,
+adds diagnosis-code features, and pairs with the `admit_nonobstetric_y2` label (O47, O59). The service serves one
 contract version per loaded artifact and rejects requests that name another.
 
 ## 4. The `RiskAssessment` (O3)

@@ -1,11 +1,12 @@
 # Phase 8 PRD — Patient Outcome Prediction (12-Month Hospitalization Risk)
 
-**Status:** DRAFT — first planning pass. Synthesised from a hand-off of a research prototype
-built in an earlier session (restated in `prototype-baseline.md`; the raw hand-off documents
-are not kept in the repo — O5) and reconciled with this repo's conventions. No code written
-yet.
+**Status:** built — M1–M13 complete; status is stated once, canonically, in
+[`README.md`](./README.md). Synthesised from a hand-off of a research prototype built in an
+earlier session (restated in `prototype-baseline.md`; the raw hand-off documents are not kept in
+the repo — O5) and reconciled with this repo's conventions; requirement statuses below record
+what was built.
 **Companion doc:** [`design.md`](./design.md) — repo layout, components, the feature contract,
-the `RiskAssessment` shape, scoring-mode semantics, the FHIR mapping sketch, artifacts, the
+the `RiskAssessment` shape, scoring-mode semantics, the FHIR mapping, artifacts, the
 agent's tool contract, testing, and the prototype defects found in review.
 **Milestone plan:** [`milestone-plan.md`](./milestone-plan.md) — M1–M13, kept as its own
 document, same convention as Phase 6 (`phase6/decisions.md` H23) and Phase 7.
@@ -128,31 +129,32 @@ hand-checkable comparison score** and its top reasons, and every reported metric
 
 ## 6. Functional requirements
 
-The prototype's requirement IDs are **kept** for traceability. Status: **In** (this phase,
-milestone shown), **Changed** (in, but altered — see §11), **8b** (deferred to Phase 8b),
-**Out**. New, repo-specific requirements use the `FR-F*` (FHIR) and `FR-A*` (agent) prefixes.
+The prototype's requirement IDs are **kept** for traceability. Status: **Done** (built and
+verified — milestone and decision shown), **Changed** (built, but altered — see §11), **8b**
+(deferred to Phase 8b), **Out**. Every milestone M1–M13 is built, so no requirement is still only
+"In". New, repo-specific requirements use the `FR-F*` (FHIR) and `FR-A*` (agent) prefixes.
 
 ### Data (MEPS)
 
 | ID | Requirement | Status |
 |---|---|---|
-| FR-D1 | Download MEPS longitudinal panels 21–27 from AHRQ, cache locally, record SHA-256s; never commit raw data | In — M1 |
-| FR-D2 | Build the modelling table: 25 features, label, panel, person ID, survey design variables | In — M1 |
-| FR-D3 | Variable dictionary for any MEPS Stata file | In — M1 |
-| FR-D4 | Unplanned-stay label `label_unplanned_12m` excluding childbirth/pregnancy (`RSNINHOS` 4/5/6), optionally planned stays | In — M10 |
-| FR-D5 | Condition and drug features (Medical Conditions, Prescribed Medicines files) | In — M11 |
-| FR-D6 | Optional survey-only feature group (function, PHQ-2, K6, VR-12, BMI) | In — M11, as a separately reported experiment; never in the FHIR contract |
-| FR-D7 | Exclude or separately test round-3 items (leakage risk) | In — M10 |
+| FR-D1 | Download MEPS longitudinal panels 21–27 from AHRQ, cache locally, record SHA-256s; never commit raw data | Done — M1 |
+| FR-D2 | Build the modelling table: 25 features, label, panel, person ID, survey design variables | Done — M1 |
+| FR-D3 | Variable dictionary for any MEPS Stata file | Done — M1 |
+| FR-D4 | Unplanned-stay label `label_unplanned_12m` excluding childbirth/pregnancy (`RSNINHOS` 4/5/6), optionally planned stays | Changed — M3 round 001: built as `admit_nonobstetric_y2` (stays that began in year 2, `RSNINHOS` 4–6 excluded; O47) — the first promotion (O59) |
+| FR-D5 | Condition and drug features (Medical Conditions, Prescribed Medicines files) | Done — M3 rounds 001–003: ICD-10, CCSR and Multum features; the portable subset is in `meps-portable-v2` (O52) |
+| FR-D6 | Optional survey-only feature group (function, PHQ-2, K6, VR-12, BMI) | Done — M3 round 001, reported separately (`portable+knowledge+survey`); never in the FHIR contract |
+| FR-D7 | Exclude or separately test round-3 items (leakage risk) | Done — M3: year-1 survey items come from rounds 1–2 only |
 
 ### Model
 
 | ID | Requirement | Status |
 |---|---|---|
-| FR-M1 | `HistGradientBoostingClassifier` (300 iter, lr 0.05, seed 0, 5 native categoricals) | In — M2 |
+| FR-M1 | `HistGradientBoostingClassifier` (300 iter, lr 0.05, seed 0, 5 native categoricals) | Done — M2 |
 | FR-M2 | Comparison model: logistic regression on age + any year-1 stay | Changed — M2: also persisted in the artifact (O18) |
-| FR-M3 | Temporal validation: train panels 21–25, test 26–27 | In — M2 |
+| FR-M3 | Temporal validation: train panels 21–25, test 26–27 | Done — M2 |
 | FR-M4 | Release model on all panels, with feature list, categories, library versions, data hash | Changed — M2: plus SHA-256 manifest verified before load (O17) |
-| FR-M5 | Panel-grouped CV tuning on training panels only | In — M11 |
+| FR-M5 | Panel-grouped CV tuning on training panels only | Done — M3 round 001: a 16-point panel-grouped grid (gain negligible) |
 | FR-M6 | Separate or specially tuned model for 65+ | Done — M3 round 004: checked; general models win, no separate 65+ model (O58) |
 | FR-M7 | Recalibration on a customer's own data | 8b — needs customer outcomes |
 | FR-M8 | Per-patient explanations (top contributing features) | Done — M7: occlusion against a typical adult (O67) |
@@ -161,11 +163,11 @@ milestone shown), **Changed** (in, but altered — see §11), **8b** (deferred t
 
 | ID | Requirement | Status |
 |---|---|---|
-| FR-E1 | AUROC, AUPRC, Brier, mean predicted vs actual, PPV/sensitivity at top 5/10/20% with bootstrap 95% CIs | In — M2 |
-| FR-E2 | Calibration by risk decile | In — M2 |
-| FR-E3 | Subgroup AUROC by age band, sex, prior hospitalization | In — M2 |
-| FR-E4 | Permutation importance on test panels | In — M2 |
-| FR-E5 | Survey-weighted AUROC (`LONGWT`) | In — M2 |
+| FR-E1 | AUROC, AUPRC, Brier, mean predicted vs actual, PPV/sensitivity at top 5/10/20% with bootstrap 95% CIs | Done — M2 |
+| FR-E2 | Calibration by risk decile | Done — M2 |
+| FR-E3 | Subgroup AUROC by age band, sex, prior hospitalization | Done — M2 |
+| FR-E4 | Permutation importance on test panels | Done — M2 |
+| FR-E5 | Survey-weighted AUROC (`LONGWT`) | Done — M2 |
 | FR-E6 | Fairness metrics by race/ethnicity and insurance type | Done — M3 round 004: on every focus model card (O57) |
 
 ### ETL
@@ -210,13 +212,13 @@ milestone shown), **Changed** (in, but altered — see §11), **8b** (deferred t
 
 | ID | Requirement | Status |
 |---|---|---|
-| FR-X1 | `outcome-prediction-lab` runs candidates from committed configs (label, form, contract version, model family, search space, seeds) and tracks every run locally with data checksums, code commit and metrics | In — M3 |
-| FR-X2 | Exploration evaluates only by panel-grouped CV on training panels; the CLI refuses configs that name test panels | In — M3 |
-| FR-X3 | Test-panel confirmation requires a holdout-ledger entry; the CLI refuses otherwise | In — M3 |
+| FR-X1 | `outcome-prediction-lab` runs candidates from committed configs (label, form, contract version, model family, search space, seeds) and tracks every run locally with data checksums, code commit and metrics | Done — M3 |
+| FR-X2 | Exploration evaluates only by panel-grouped CV on training panels; the CLI refuses configs that name test panels | Done — M3 |
+| FR-X3 | Test-panel confirmation requires a holdout-ledger entry; the CLI refuses otherwise | Done — M3 |
 | FR-X4 | Each round leaves a committed directory: pre-registration, configs, report, summary metrics, scorecards | Done — M3 rounds 000–004; every later round |
-| FR-X5 | Target scorecard covering the O36 criteria, ML criteria filled automatically, non-ML criteria with written rationale | In — M3 |
-| FR-X6 | Model card for every candidate and promoted model | In — M3 |
-| FR-X7 | Outcome × form study with a recorded decision on what to take forward | In — M10 |
+| FR-X5 | Target scorecard covering the O36 criteria, ML criteria filled automatically, non-ML criteria with written rationale | Done — M3 (person-scored criteria recorded, O59) |
+| FR-X6 | Model card for every candidate and promoted model | Done — M3; promoted models carry theirs (O75) |
+| FR-X7 | Outcome × form study with a recorded decision on what to take forward | Done — M3: round 001, the four-target focus (O55) and the first promotion (O59) |
 | FR-X8 | The service refuses artifacts without a promotion record naming a decision | Done — M12 (O75) |
 
 ## 7. Non-functional requirements
@@ -277,6 +279,27 @@ milestone shown), **Changed** (in, but altered — see §11), **8b** (deferred t
 Later-milestone targets (M10–M11), carried over from the prototype's plan: MEPS test AUROC ≥ 0.78
 (all adults) and ≥ 0.73 (65+); mean predicted within 1 percentage point of actual; top-decile
 PPV on the unplanned label reported against QAdmissions' 42% with the outcome difference stated.
+
+**Results.** All twelve criteria are met (evidence in `milestone-plan.md`, each milestone's
+"Verified" note):
+
+| # | Met by | Evidence |
+|---|---|---|
+| 1, 3 | M1 | 56,360 rows, 4,820 events, every per-panel count; HC-252 dictionary exact |
+| 2 | M2 | AUROC 0.769 / 0.708 — exact to every reported digit |
+| 4, 5 | M4 (+ M6, M12) | Schema checks pass; the leakage test passes for CSV, FHIR and `meps-portable-v2` rows, and fails on the prototype's code |
+| 6 | M6 | 19 of 26 columns identical; every other difference explained and verified (O65) |
+| 7 | M7 | HAPI `$validate`: no errors or warnings; every `basis` reference resolves |
+| 8 | M8 | Every reply grounded across 25 live runs on the self-hosted model (O69, O70) |
+| 9, 12 | M9, M12 | The acceptance suite — both targets — passes from cold (9 tests); unpromoted artifacts refused (O75) |
+| 10 | every PR | CI's `phase1 (independence)` job |
+| 11 | M3 | Round 000 reproduces M2 bit for bit; the CLI guards are tested |
+
+Against the later targets, on the promoted non-obstetric model (test panels, round 003): AUROC
+**0.795** (≥ 0.78 met); 65+ **0.701** (≥ 0.73 **not met** — a 65+ specialist did worse, O58);
+mean predicted 0.080 vs 0.079 actual (met); top-decile PPV **30%** against QAdmissions' 42%,
+for a different outcome (any non-obstetric stay in the US MEPS population, not UK emergency
+admissions).
 
 ## 10. Open questions
 

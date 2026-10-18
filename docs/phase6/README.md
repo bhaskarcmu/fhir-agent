@@ -2,31 +2,31 @@
 
 > ## Canonical status
 >
-> **🚧 M1-M5 implemented (M5 PR open, unmerged as of this note). M6 not started. M7 planned,
-> not started.**
+> **🚧 M1–M6 implemented and merged. M7 planned, not started.**
 >
 > M1 (Output Contract & Fail-Closed Enforcement), M2 (Observability, Platform-Wide), M3 (Context,
-> Memory & Session Transport), M4 (Deploy Resilience & Cost Control), and M5 (Provider
-> Abstraction & Cross-Model Follow-ups) are all built, tested, and live-validated — see
-> [`milestone-plan.md`](./milestone-plan.md) for each milestone's real implementation detail. M5
-> was substantially reworked after a design-review pass (the default provider flipped from
-> Anthropic to self-hosted Ollama, among other changes — see
+> Memory & Session Transport), M4 (Deploy Resilience & Cost Control), M5 (Provider Abstraction &
+> Cross-Model Follow-ups) and M6 (Policy, Knowledge & Judge) are all built, tested, and
+> live-validated — see [`milestone-plan.md`](./milestone-plan.md) for each milestone's real
+> implementation detail. M5 was substantially reworked after a design-review pass (the default
+> provider flipped from Anthropic to self-hosted Ollama, among other changes — see
 > [`decisions.md` H45-H51](./decisions.md)). **M7 ("Strong Model in Production") was added to the
 > build order after M5** to carry the fuller production-safety design M5's minimal
 > `DEPLOYMENT_ENV=production` guardrail was deliberately left as a stopgap for — see
 > [`milestone-plan.md` M7](./milestone-plan.md#m7--strong-model-in-production-planned-not-yet-implemented).
-> **M6 (Policy, Knowledge & Judge) starts next**, once M5 merges.
+> **M7 is next.** One known deferred gap: the docker-compose `mcp-agent` services have no
+> host-Ollama networking yet, so the compose demo needs an explicit Anthropic opt-in (M5).
 >
 > *This is the one canonical status statement. Other documents link here rather than restate it.*
 >
-> - [`prd.md`](./prd.md) — problem statement, goals/non-goals, functional requirements (R1–R19),
+> - [`prd.md`](./prd.md) — problem statement, goals/non-goals, functional requirements (R1–R21),
 >   success metrics.
 > - [`design.md`](./design.md) — target architecture (`agent-platform/`), the five topics,
 >   cross-cutting principles, per-topic deep dives, testing strategy.
 > - [`milestone-plan.md`](./milestone-plan.md) — M1–M7, short and long story for each, dependency
 >   order, status table. **Kept as its own document, not folded into `design.md`** — see
 >   [`decisions.md` H23](./decisions.md).
-> - [`decisions.md`](./decisions.md) — ADR-style index of every decision (H1–H51 as of this note),
+> - [`decisions.md`](./decisions.md) — ADR-style index of every decision (H1–H56 as of this note),
 >   same status-and-supersession convention as Phase 2/3/4.
 > - [`telemetry-schema.md`](./telemetry-schema.md) — the custom span-attribute dictionary:
 >   `fhir_agent.layer`/`.component` grounded in each service's real package structure, the
