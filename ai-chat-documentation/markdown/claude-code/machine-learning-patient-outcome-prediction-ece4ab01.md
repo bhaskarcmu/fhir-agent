@@ -4451,7 +4451,7 @@ A second promotion is refused, but with a raw "File exists" error. Better to ref
 All 31 lab tests pass. Now the real promotion, under decision O59. Then I'll prove the service can load the artifact **with the lab made unimportable**:
 
 <details>
-<summary>Execution details — 933 tool events</summary>
+<summary>Execution details — 936 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6816,6 +6816,12 @@ from pathlib import Path
 p = Path("outcome-prediction-service/src/outcome_prediction/etl/codelists/__init__.py"); s = p.read_text()
 old = '''def versions() -> dict[str, dict]:'''
 new…`
+- **Bash** `grep -n "^def scoring_rows" outcome-prediction-service/src/outcome_prediction/etl/transform/to_contract.py`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-service/src/outcome_prediction/etl/transform/to_contract.py"); s = p.read_text()
+anchor = "def scoring_rows(canon: Canonical, as…`
+- **Read** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/scoring.py`
 
 </details>
 
