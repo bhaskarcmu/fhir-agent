@@ -37,9 +37,12 @@ the other service agree. §6 is a true story about exactly that costing several 
 # Python — all suites (config in pytest.ini)
 pytest
 
-# Java — the two Phase 2 services
+pytest agent-platform/tests -q               # separate invocation (see pytest.ini's comment)
+
+# Java — the Phase 2 services and the Phase 4 emulator
 mvn -f claims-service/pom.xml test
 mvn -f rxclaim-emulator/pom.xml test
+mvn -f epic-emulator/pom.xml test
 ```
 
 **A single level or suite:**
@@ -57,6 +60,12 @@ pytest provider-curation-agent/tests                            # Phase 3 ingest
 pytest provider-mcp-server/tests                                # Phase 3 real MCP handshake
 pytest provider-search-agent/tests                              # Phase 3 MCP client + groundedness eval
 
+pytest agent-platform/tests                                     # Phase 6 shared agent platform
+
+pytest outcome-prediction-service/src/outcome_prediction/tests  # Phase 8 data, model, ETL, scoring API
+pytest outcome-prediction-lab/src/outcome_prediction_lab/tests  # Phase 8 research workbench
+pytest outcome-prediction-agent/tests                           # Phase 8 agent (needs Ollama, see below)
+
 mvn -f claims-service/pom.xml test -Dtest=RulesEngineTest        # one class
 mvn -f claims-service/pom.xml test -Dtest=HttpTriageClientTest   # the contract test
 ```
@@ -65,7 +74,9 @@ Several Phase 3 suites need a local Postgres (`docker compose --profile phase3 u
 then `TEST_DATABASE_URL=postgresql://provider_registry:provider_registry@localhost:5432/provider_registry`)
 and self-skip — not error — when it's unreachable, same convention as the rest of this project.
 `provider-search-agent`'s groundedness eval additionally self-skips without an Anthropic key,
-since it makes real, billed API calls.
+since it makes real, billed API calls. The agent suites (`mcp-agent`, `outcome-prediction-agent`)
+run against the free self-hosted model — `ollama serve` with `llama3.2:1b` pulled — and
+self-skip their live tests without it.
 
 **End-to-end** (needs the stack; self-skips if it is not up, so it is safe to collect anywhere):
 
@@ -75,7 +86,9 @@ pytest e2e/
 ```
 
 `e2e/conftest.py` seeds the FHIR fixtures itself — you do **not** need to run the demo seeder
-first. This matters: the demo FHIR server is in-memory, so it boots empty every time.
+first. `e2e/test_epic_emulator_acceptance.py` (Phase 4) needs `fhir-service`, `triage-service`
+and `epic-emulator` running; `e2e/test_outcome_prediction_acceptance.py` (Phase 8) brings up the
+compose `phase8` profile itself and tears it down afterwards. This matters: the demo FHIR server is in-memory, so it boots empty every time.
 
 **Phase 1 independence** (the R9 guarantee — reproduce CI locally):
 
@@ -102,11 +115,13 @@ python3 client/platform/integration_test.py   # direct FHIR-server integration
 
 ## 3. What is tested today
 
-**Java — our services (60 tests)**
+Counts as of the end of Phase 8 (re-count with `pytest --collect-only -q <path>`).
+
+**Java — our services (90 tests)**
 
 | Suite | Tests | Level | Covers |
 |---|---:|---|---|
-| `ClaimIntakeContractTest` | 14 | interface/contract | The R17.6 error taxonomy's three disjoint classes: malformed → 400 + `OperationOutcome` with nothing adjudicated; decision → 200 (a denial is not an error); system error → 503 |
+| `ClaimIntakeContractTest` | 15 | interface/contract | The R17.6 error taxonomy's three disjoint classes: malformed → 400 + `OperationOutcome` with nothing adjudicated; decision → 200 (a denial is not an error); system error → 503 |
 | `RulesEngineTest` | 12 | unit + white box | Every rule; precedence (R17.3); deterministic ordering (R17.4); fail-closed `UNKNOWN` → PEND |
 | `HttpTriageClientTest` | 9 | interface/contract | Real HTTP round-trip to a stub triage: request body carries `patient_id`; every failure mode → `UNKNOWN` |
 | `AdjudicationPipelineTest` | 8 | component | The R8 golden paths at decision level; patient id reaches triage; unavailable check pends |
@@ -114,27 +129,34 @@ python3 client/platform/integration_test.py   # direct FHIR-server integration
 | `LegacyAdapterTest` | 3 | unit + white box | Fixed-width legacy record parsing (the ACL boundary) |
 | `FilePayerKbTest` | 2 | unit | Formulary lookup via the C3 repository seam |
 | `AdjudicationServiceTest` | 1 | component | Intake idempotency — resubmit returns the prior decision, persists once (R18.3) |
+| `SpanTagsTest`, `TracePropagationTest` | 5 | unit + component | Phase 6 M2 telemetry: span attributes and trace-ID propagation |
+| `epic-emulator` | 24 | unit + integration | Phase 4: pass-through proxy, simulated SMART auth, extensions, the three quirks |
 | `rxclaim-emulator` (`LegacyRecordTest`, `RxClaimCoreTest`) | 8 | unit + white box | DDS record layout; `ADJRXCLM` legacy adjudication |
 
-**Python (113 tests)**
+**Python — Phases 1, 2 and 6 (360 tests)**
 
 | Suite | Tests | Covers |
 |---|---:|---|
-| `triage-service/src/triage/tests` | 40 | Drug-allergy rules + the FastAPI contract |
-| `client/clinical/tests` | 35 | FHIR parsing into clinical domain types |
-| `data/scripts` | 19 | Bundle loading/validation logic (server-independent) |
-| `mcp-agent/tests` | 11 | Phase 1 agent tool-use and demo flow |
+| `mcp-agent/tests` | 102 | Phase 1 agent tool-use and demo flow, plus Phase 6's output gate, sessions, providers and judge wiring |
+| `agent-platform/tests` | 124 | Phase 6 shared layer: output contract, fail-closed, observability, context budget, session store, resilience, providers, policy, knowledge, judge |
+| `client/clinical/tests` | 59 | FHIR parsing into clinical domain types, and Phase 8's care-history methods |
+| `triage-service/src/triage/tests` | 48 | Drug-allergy rules + the FastAPI contract |
+| `data/scripts` (excluding `provider_ingest`) | 19 | Bundle loading/validation logic (server-independent) |
 | `claims-agent/tests` | 8 | Explanation rendering and tools |
 
-**End-to-end (7 tests)** — `e2e/test_golden_paths.py`: the six golden paths (approved, pended,
-routed, denied-inactive, denied-multi-reason, denied-clinical-safety) plus idempotent resubmit,
-against the live stack.
+**End-to-end (18 tests)**
+
+| Suite | Tests | Covers |
+|---|---:|---|
+| `e2e/test_golden_paths.py` | 7 | The six Phase 2 golden paths (approved, pended, routed, denied-inactive, denied-multi-reason, denied-clinical-safety) plus idempotent resubmit, against the live stack |
+| `e2e/test_epic_emulator_acceptance.py` | 2 | Phase 4: identical triage outcomes direct vs. through `epic-emulator` (HIGH and LOW cases) |
+| `e2e/test_outcome_prediction_acceptance.py` | 9 | Phase 8, from cold: both models served and promoted; seeded patients get valid `RiskAssessment`s whose basis is their own pre-`as_of` records; no estimate after death; the agent narrates only the assessment; a later record changes nothing |
 
 **FHIR service** — 78 `@Test` methods inherited from the HAPI FHIR JPA starter, plus our
 `VersionedUrlFallbackValidationSupportTest`. Mostly upstream coverage; we own the validation
 fallback and the custom bean/interceptor tests.
 
-**Python — Phase 3 (89 tests, on top of the 113 above — 202 total)**
+**Python — Phase 3 (89 tests)**
 
 | Suite | Tests | Level | Covers |
 |---|---:|---|---|
@@ -144,17 +166,36 @@ fallback and the custom bean/interceptor tests.
 | `provider-curation-agent` | 13 | unit + component | Deterministic summary rendering (no DB); ingestion-tool orchestration, mixed mocked-subprocess and DB-backed (self-skip) |
 | `provider-search-agent` | 10 | unit + end-to-end (real LLM) | 7 tool-use-loop tests, Anthropic client and MCP session both mocked; **3 real groundedness-eval tests** making genuine, billed Claude API calls through the full real stack |
 
-**CI** (`.github/workflows/tests.yml`) — five jobs: `phase1` (independence: Phase 1 suites pass
-with no Phase 2 packages installed, and the default compose stack is unchanged), `phase2-java`,
-`phase2-python`, `phase3-python` (the full Phase 3 suite against a real Postgres service
-container — DB-backed tests actually run in CI, not just self-skip locally), `phase3-terraform`
-(`terraform validate` in a matrix across all four Phase 3 Terraform stubs).
+**Python — Phase 8 (311 tests)**
+
+| Suite | Tests | Covers |
+|---|---:|---|
+| `outcome-prediction-service` | 235 | MEPS download, manifest and mirrors; the exact M1/M2 reproduction; artifacts and promotion records; Synthea and FHIR ETL with the leakage tests; parity and data quality; code lists; the scoring API and its `RiskAssessment`s |
+| `outcome-prediction-lab` | 31 | Runs, the holdout ledger, model cards, scorecards, fairness, notebook hygiene |
+| `outcome-prediction-agent` | 45 | Grounded replies, the grounding gate, and adversarial prompts, live on the self-hosted model |
+
+**CI** (`.github/workflows/tests.yml`) — nine jobs:
+
+| Job | What it proves |
+|---|---|
+| `ci-config-llm-provider-gate` | No CI config pins a paid LLM provider (Phase 6 H50) |
+| `phase1` (independence) | Phase 1 suites and `agent-platform` pass with no Phase 2+ packages installed, on the self-hosted model; the default compose stack is unchanged |
+| `phase2-java` | `rxclaim-emulator` and `claims-service` |
+| `phase2-python` | `claims-agent` |
+| `phase3-python` | The full Phase 3 suite against a real Postgres service container (DB-backed tests run, not self-skip), plus the repo-wide duplicate-test-filename check |
+| `phase8-python` | `outcome-prediction-service`, with the MEPS files cached on the committed manifest |
+| `phase8-lab` | `outcome-prediction-lab` on Python 3.12, and committed notebooks have no outputs (O38) |
+| `phase8-agent` | `outcome-prediction-agent` on the self-hosted model |
+| `phase3-terraform` | `terraform validate` in a matrix across every Terraform directory (Phase 3's four and `outcome-prediction-service/infra`) |
+
+A separate workflow (`secret-scan.yml`) runs `gitleaks` secret scanning on pushes and PRs.
 
 ## 4. What is *not* tested — known gaps
 
 Documenting these honestly is part of the test strategy. Each is a real hole, not a shrug.
 
-- **CI does not run the e2e suite.** No job brings up the stack. This is the highest-value gap:
+- **CI does not run the e2e suite.** No job brings up the stack — none of the three e2e files
+  (Phase 2, 4 or 8) runs in CI. This is the highest-value gap:
   it is precisely why the regression in §6 reached `main`. Fixing it needs a compose-based CI
   job (proposed in [`phase2/plan.md` §16](./phase2/plan.md#16-future-work)).
 - **No non-regression snapshots.** R19 requires stored `ClaimResponse` snapshots so catalogue
@@ -163,6 +204,13 @@ Documenting these honestly is part of the test strategy. Each is a real hole, no
   assert the R18.2 graph (`Claim`/`ClaimResponse`/`Task`/`Provenance`/`RiskAssessment`) landed
   in FHIR. `FhirArtifactBuilderTest` checks the graph is *built* correctly; nothing checks it is
   *stored* correctly.
+- **CI does not run `epic-emulator`'s or `fhir-service`'s Java tests**, nor
+  `data/scripts`' non-ingestion tests. They pass locally; nothing stops a regression reaching `main`.
+- **Phase 4's open safety bug (E16) has no regression test yet.** A multi-record patient through
+  `epic-emulator`'s pagination quirk can come back falsely "safe"; see
+  [`phase5/phase4-testing-and-analysis.md`](./phase5/phase4-testing-and-analysis.md) §0.
+- **Phase 8's accuracy evidence is MEPS only.** Synthea tests the pipeline, never accuracy
+  (Phase 8 O8), and no real customer data has been scored.
 - **The `gateway` profile is not exercised in CI.** Kong key-auth and rate limiting are verified
   manually.
 - **No load, performance, or soak tests**, and no chaos/failure-injection beyond the unit-level

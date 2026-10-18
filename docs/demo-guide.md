@@ -568,3 +568,5 @@ look past `as_of`.
   [`phase2/plan.md`](./phase2/plan.md)
 - Why Phase 3 is built this way → [`phase3/prd.md`](./phase3/prd.md),
   [`phase3/design.md`](./phase3/design.md)
+- Why Phase 8 is built this way → [`phase8/prd.md`](./phase8/prd.md),
+  [`phase8/design.md`](./phase8/design.md)

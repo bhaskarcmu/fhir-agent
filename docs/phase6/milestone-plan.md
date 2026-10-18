@@ -14,13 +14,13 @@ Order is by dependency, **not** by the topic numbering in [`design.md` §2](./de
 
 | # | Status | Milestone | Topic(s) | Depends on |
 |---|---|---|---|---|
-| **M1** | 🔜 Next up | Output Contract & Fail-Closed Enforcement | 5 | — |
-| **M2** | ⏳ Not started | Observability, Platform-Wide | 2, 3 | M1 |
-| **M3** | ⏳ Not started | Context, Memory & Session Transport | 1, 4 | M2 |
-| **M4** | ⏳ Not started | Deploy Resilience & Cost Control | 2 | M2, M3 |
-| **M5** | ⏳ Not started | Provider Abstraction & Cross-Model Follow-ups | 4 | M1, M3 |
-| **M6** | ⏳ Not started | Policy, Knowledge & Judge | 5 | M1, M5 |
-| **M7** | 📋 Planned, not started | Strong Model in Production | 4 | M5 |
+| **M1** | ✅ Implemented | Output Contract & Fail-Closed Enforcement | 5 | — |
+| **M2** | ✅ Implemented | Observability, Platform-Wide | 2, 3 | M1 |
+| **M3** | ✅ Implemented | Context, Memory & Session Transport | 1, 4 | M2 |
+| **M4** | ✅ Implemented | Deploy Resilience & Cost Control | 2 | M2, M3 |
+| **M5** | ✅ Implemented (reworked post-review) | Provider Abstraction & Cross-Model Follow-ups | 4 | M1, M3 |
+| **M6** | ✅ Implemented | Policy, Knowledge & Judge | 5 | M1, M5 |
+| **M7** | 🔜 Next — planned, not started | Strong Model in Production | 4 | M5 |
 
 **Minimal-viable-cut re-examination is deliberately deferred to the end of M2**, not decided now
 ([`decisions.md` H23](./decisions.md)). M2's scope grew substantially once it took on closing

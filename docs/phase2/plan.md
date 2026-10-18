@@ -618,4 +618,5 @@ always deferred.
   clinical list needs a triage change, which would touch Phase 1 (R9 — think before doing it).
 - **PHI in gateway logs** — Kong `file-log` records request URIs with identifiers; scrub or
   treat as restricted (R14). Applies to Phase 1 today.
-- **`epic-emulator/` and `athena-emulator/`** are empty placeholders.
+- **`epic-emulator/` and `athena-emulator/`** were empty placeholders; `epic-emulator` was built
+  in Phase 4 (`docs/phase4/`), `athena-emulator` is planned for Phase 7 M1.

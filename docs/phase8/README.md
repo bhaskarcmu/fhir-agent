@@ -9,7 +9,7 @@
 > `meps-portable-v2`, and production models for **all four** (test AUROC: ER admission 0.785,
 > non-obstetric stay 0.795, any ER visit 0.740, high cost 0.834), each with a subgroup fairness report
 > and a 65+ check (no separate 65+ model needed). **First promotion (O59): non-obstetric hospital
-> stay**, to be served in M12.
+> stay**, served since M12.
 > M10/M11 folded into M3 (O45). **M4 built** — the Synthea CSV harness, `as_of` scoring mode and the
 > leakage test (O61, O62). **M5 built** — care-history methods in `client/clinical` (O63, O64).
 > **M6 built** — FHIR extractor, CSV ↔ FHIR parity and data-quality report (O65, O66).
@@ -32,7 +32,7 @@
 >   requirements (the prototype's `FR-*` IDs kept, with status), acceptance criteria, and §11:
 >   every deviation from the prototype's plan.
 > - [`design.md`](./design.md) — repo layout, components, the `meps25-v1` feature contract, the
->   `RiskAssessment` shape, training vs scoring mode, the FHIR mapping sketch, model artifacts,
+>   `RiskAssessment` shape, training vs scoring mode, the FHIR mapping, model artifacts,
 >   the agent's tool contract, testing, the prototype defects found in review, and the
 >   experimentation workbench (§12).
 > - [`prediction-targets.md`](./prediction-targets.md) — the four focus predictions, the decision path
@@ -54,7 +54,10 @@ The platform's first **machine-learned** clinical capability. Given an adult pat
 `fhir-service` and an as-of date, estimate the probability of at least one inpatient stay in
 the next 12 months, and return it as a FHIR `RiskAssessment` — with a simple, hand-checkable
 comparison score beside it, a population percentile, the top contributing features, and
-references to the FHIR resources the estimate was derived from.
+references to the FHIR resources the estimate was derived from. Two models are served side by
+side: the prototype's (`hospitalization-12m`, contract `meps25-v1`) and the first promoted one
+(`nonobstetric-admission-12m` — a stay not related to pregnancy or childbirth, contract
+`meps-portable-v2`), which is the one the agent uses (O59, O75–O78).
 
 The model is trained only on free, open, US data — AHRQ's Medical Expenditure Panel Survey
 (MEPS) longitudinal panels 21–27 — so every reported number can be reproduced from public
