@@ -2596,8 +2596,10 @@ MIT-licensed, which is fine for commercial use. Before relying on it, I need two
 
 I have the tables, weights and MIT licence text. Creating the lab package, starting with the vendored `knowledge.py`, generated from the extracted tables with the licence and attribution embedded:
 
+The guard caught real name drift: in Panel 21 (HC-202), the BMI and VR-12 summary variables have different names. I'll look up their actual names in each panel instead of assuming:
+
 <details>
-<summary>Execution details — 320 tool events</summary>
+<summary>Execution details — 324 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3295,6 +3297,26 @@ pkg = types.ModuleType("comorbidipy"); pkg.__pat…`
 - **Bash** `mkdir -p outcome-prediction-lab/src/outcome_prediction_lab/tests && python3 - <<'EOF'
 import json, pprint
 t = json.load(open('/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936…`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-lab/src/outcome_prediction_lab/data.py`
+- **Bash** `cat > outcome-prediction-lab/pyproject.toml <<'EOF'
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "outcome-prediction-lab"
+version = "…`
+- **Bash** `python3 - <<'EOF'
+import pandas as pd
+from pandas.io.stata import StataReader
+for n in (202,210,217,225,234,244,252):
+    with StataReader(f'outcome-prediction-service/data/raw/meps/h{n}.dta') as r:…`
+- **Bash** `python3 - <<'EOF'
+p='outcome-prediction-lab/src/outcome_prediction_lab/data.py'; s=open(p).read()
+def rep(o,n):
+    global s
+    assert s.count(o)==1,o[:60]; s=s.replace(o,n)
+rep('''SURVEY = ["RTHLTH1…`
 
 </details>
 
@@ -3305,6 +3327,6 @@ t = json.load(open('/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 00:05 UTC
+- **Last updated:** 18 October 2026, 00:06 UTC
 - **Turns:** 31
 - **Status:** Complete
