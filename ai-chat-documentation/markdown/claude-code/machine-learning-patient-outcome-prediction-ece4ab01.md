@@ -4364,7 +4364,7 @@ Cleaned up. The remaining milestones are M12 (first promotion into the service) 
 Every draft prefix exists in the CDC FY2026 release. Creating the branch. **Git:** worktree `/workspaces/fhir-agent`, from `main`, new branch `feature/phase8-m13-code-lists`.
 
 <details>
-<summary>Execution details — 876 tool events</summary>
+<summary>Execution details — 882 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6584,6 +6584,27 @@ from pathlib import Path
 from outcome_prediction.meps.download import obtain_original
 from outcome_prediction.meps.manifest import archive_dir
 url = "https:/…`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/etl/codelists/__init__.py`
+- **Bash** `cat > outcome-prediction-service/src/outcome_prediction/etl/codelists/__main__.py <<'EOF'
+from outcome_prediction.etl.codelists import main
+
+main()
+EOF
+python -m outcome_prediction.etl.codelists build…`
+- **Bash** `grep -n "cond = view.condition" -A6 outcome-prediction-service/src/outcome_prediction/etl/transform/to_contract.py`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-service/src/outcome_prediction/etl/transform/to_contract.py"); s = p.read_text()
+old = '''    cond = view.condition[view.conditi…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-service/src/outcome_prediction/tests/test_etl_fhir.py"); s = p.read_text()
+old = '''"code": {"coding": [{"code": "38341003", "di…`
+- **Bash** `PYTHONWARNINGS=ignore python3 - <<'EOF'
+import pandas as pd
+from outcome_prediction.etl import codelists
+from outcome_prediction.etl.transform.to_contract import DX_PATTERNS
+c = pd.read_csv("outcome-p…`
 
 </details>
 
@@ -6594,6 +6615,6 @@ url = "https:/…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 20:48 UTC
+- **Last updated:** 18 October 2026, 20:49 UTC
 - **Turns:** 61
 - **Status:** Complete
