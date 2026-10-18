@@ -9,6 +9,9 @@ implementation, not a fork (O29). Nothing in the service imports the lab.
 
 ## Install
 
+Needs **Python 3.12+** (`shap` ≥ 0.52 requires it); the service it imports still supports 3.11.
+CI runs the lab in its own `phase8 lab (python 3.12)` job.
+
 ```bash
 python -m pip install -e "outcome-prediction-service[dev]" -e "outcome-prediction-lab[dev]"
 python -m pip install -e "outcome-prediction-lab[tracking]"   # optional: MLflow (local SQLite store)

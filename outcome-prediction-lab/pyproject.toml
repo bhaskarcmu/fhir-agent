@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "outcome-prediction-lab"
 version = "0.1.0"
 description = "Phase 8 experimentation workbench: research rounds for outcome prediction (docs/phase8/experimentation-protocol.md)"
-requires-python = ">=3.11"
+requires-python = ">=3.12"   # shap >= 0.52 requires Python 3.12
 dependencies = [
     "outcome-prediction-service",   # pip install -e outcome-prediction-service — one implementation, not a fork (O29)
     "shap==0.54.1",
