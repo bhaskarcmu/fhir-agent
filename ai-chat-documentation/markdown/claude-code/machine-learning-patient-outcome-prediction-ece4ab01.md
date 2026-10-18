@@ -4004,8 +4004,10 @@ Same 33 patients as M4's trial. Loading into HAPI once it's ready, hospitals and
 
 Two large patients are still loading. Meanwhile, the client fix: `get_medication_history()` resolves `medicationReference` by asking the server to include the referenced Medication:
 
+The load finished. Checking the result:
+
 <details>
-<summary>Execution details — 672 tool events</summary>
+<summary>Execution details — 675 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5688,6 +5690,9 @@ from pathlib import Path
 p = Path("client/clinical/src/fhir_clinical_client/fhir_client.py"); s = p.read_text()
 def sub(old, new):
     global s; assert s.count(old) == 1, old[:60]; s…`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/etl/extract/fhir.py`
+- **Bash** `cat /tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/tasks/ba3vc2fn3.output`
+- **Bash** `grep -n "def contract_rows" -A75 outcome-prediction-service/src/outcome_prediction/etl/transform/to_contract.py`
 
 </details>
 
@@ -5698,6 +5703,6 @@ def sub(old, new):
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 16:50 UTC
+- **Last updated:** 18 October 2026, 16:51 UTC
 - **Turns:** 53
 - **Status:** Complete
