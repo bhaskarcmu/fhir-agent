@@ -3829,7 +3829,7 @@ Now `to_contract.py`. I'm rewriting it around one `contract_rows(view, as_of)` u
 Simplifying the poverty-year expression I just wrote (it's just the `as_of` year), then running the tests:
 
 <details>
-<summary>Execution details — 579 tool events</summary>
+<summary>Execution details — 580 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5266,6 +5266,10 @@ import pandas as pd
 from outcome_prediction.etl.extract import synthea_csv
 c = synthea_csv.read('outcome-prediction-service/src/outcome_prediction/tests/fixtures/synthea_csv')
 m = c.medic…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-service/src/outcome_prediction/etl/transform/to_contract.py"); s = p.read_text()
+old = '''    # Prescriptions (§11.1 fixed). End…`
 
 </details>
 
@@ -5276,6 +5280,6 @@ m = c.medic…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 15:46 UTC
+- **Last updated:** 18 October 2026, 15:47 UTC
 - **Turns:** 50
 - **Status:** Complete
