@@ -186,7 +186,9 @@ fallback and the custom bean/interceptor tests.
 | `phase8-python` | `outcome-prediction-service`, with the MEPS files cached on the committed manifest |
 | `phase8-lab` | `outcome-prediction-lab` on Python 3.12, and committed notebooks have no outputs (O38) |
 | `phase8-agent` | `outcome-prediction-agent` on the self-hosted model |
-| `phase3-terraform` | `terraform validate` in a matrix across the Phase 3 Terraform directories |
+| `phase3-terraform` | `terraform validate` in a matrix across every Terraform directory (Phase 3's four and `outcome-prediction-service/infra`) |
+
+A separate workflow (`secret-scan.yml`) runs `gitleaks` secret scanning on pushes and PRs.
 
 ## 4. What is *not* tested — known gaps
 
