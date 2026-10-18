@@ -4366,7 +4366,7 @@ Every draft prefix exists in the CDC FY2026 release. Creating the branch. **Git:
 All 22 pass. Now the one-definition refactor: the lab imports the CDC pin from the service instead of keeping its own copy (O29):
 
 <details>
-<summary>Execution details — 892 tool events</summary>
+<summary>Execution details — 894 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6631,6 +6631,11 @@ p = Path("outcome-prediction-lab/src/outcome_prediction_lab/vocabulary.py"); s =
 old = '''ICD10CM = {   # CDC/NCHS ICD-10-CM FY2026 code descri…`
 - **Bash** `cp outcome-prediction-agent/tests/fixtures/service_outputs.json /tmp/claude-1000/so_before.json 2>/dev/null || cp outcome-prediction-agent/tests/fixtures/service_outputs.json /tmp/so_before.json; OTEL…`
 - **Bash** `git checkout -- outcome-prediction-agent/tests/fixtures/service_outputs.json && docker compose --profile phase8 up -d --build fhir outcome-prediction 2>&1 | tail -1; docker run -d --rm --name phase8-m…`
+- **Bash** `curl -s -X POST localhost:8005/risk/hospitalization-12m -H 'Content-Type: application/json' -d '{"patient_id": "3208", "as_of": "2024-12-31"}' | python3 -c "import json,sys; print([b['reference'] for…`
+- **Bash** `python3 - <<'EOF'
+from outcome_prediction.etl import codelists as c
+for snomed, targets in c.snomed_map().items():
+    kept = [t for t in targets if not t.startswith(c.CONTEXT_CHAPTERS)] or targets…`
 
 </details>
 
@@ -6641,6 +6646,6 @@ old = '''ICD10CM = {   # CDC/NCHS ICD-10-CM FY2026 code descri…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 20:52 UTC
+- **Last updated:** 18 October 2026, 20:56 UTC
 - **Turns:** 61
 - **Status:** Complete
