@@ -155,6 +155,13 @@ RiskAssessment
   `triage-service` already uses for its code systems); formal `StructureDefinition`s are not written this phase.
 - `rationale` text is **templated** from `top_reasons`, never model-generated — same principle
   as Phase 7 R20.
+- **Built in M7** (`fhir/risk_assessment.py`). Also carries a generated `text` narrative (the
+  probability, percentile and rationale, HTML-escaped) so the resource passes R4 validation with
+  no warnings (`dom-6`). Outcome code `32485007` checked against tx.fhir.org (O22).
+- **Top reasons (FR-M8, O67)** come from occlusion: the patient is re-scored with each input set
+  to a typical MEPS adult's value (`etl/meps_reference.json`); the inputs whose typical value would
+  lower the estimate most (≥ 0.5 points, at most 3) are the reasons. Defaulted inputs and
+  race/ethnicity (O50) are never reasons.
 - Batches return a FHIR `Bundle` of type `collection`.
 
 ## 5. API
@@ -168,9 +175,16 @@ Matches `triage-service`'s route style (no `/v1` prefix; `/health` at root):
 | `POST /risk/hospitalization-12m` | Trigger A: `{patient_id, as_of?}` → fetch via `client/clinical`, transform, score → `RiskAssessment` |
 | `POST /risk/hospitalization-12m/contract-rows` | Trigger B: `{contract_version, rows: [{patient_ref, features}]}` (1–1,000) → `Bundle` |
 
-Internal-only, no Kong route (O14). Port: the next free one in the `800x` range, assigned in M7.
-Compose: a `phase8` profile service that depends on `fhir`, plus a read-only volume for the
-artifact directory.
+Internal-only, no Kong route (O14). **Port 8005** (8000–8004 are taken; O68). Compose: the
+`outcome-prediction` service in the `phase8` profile, depending on `fhir`, with
+`outcome-prediction-service/models/` mounted read-only — artifacts never enter the image (O17).
+
+Built in M7 (`api.py`). The patient endpoint reads the 400 days before `as_of` (window + margin)
+plus all conditions, through the M6 extractor; a patient who isn't an adult alive on `as_of` gets
+422, not an estimate; FHIR read failures are 502. Contract rows: exactly the 25 features, MEPS
+codes, no negatives (422 lists every problem); `regiony1 = 0` is accepted with a warning.
+Measured (M7, compose stack): one contract row in **26 ms median / 46 ms p95** over HTTP; a
+1,000-row batch in 0.98 s; one Synthea patient ~220 ms, dominated by FHIR reads.
 
 ## 6. Training mode vs scoring mode (O10)
 

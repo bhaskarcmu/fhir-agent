@@ -171,6 +171,13 @@ per-patient explanations, missing values, feature importance). Results:
 | O65 | **The FHIR → canonical mapping rules** (`etl/extract/fhir.py`, `design.md` §7): encounter classes that FHIR folds are counted as office (AMB), inpatient (IMP) and home health (HH); fills = dispenses if recorded, **else one per pharmacy claim** (with a note); insurance = Coverage if recorded, **else the payer on each claim**; encounter cost = billed total of its claims; conditions read in full (paged). Parity with the CSV path holds with every difference explained and **verified by code** (`etl/parity.py`) | Accepted; **resolves O21** | Checked on one Synthea run exported both ways (20 adults, years 2022 and 2023): 19–20 of 26 columns identical. What can't be recovered from Synthea's FHIR — the outpatient/SNF/hospice split, fill counts, stop dates — is a property of the export, not of the rules; a customer's EHR may carry `MedicationDispense` and `Coverage`, which the rules use first. `meps-portable-v2` already treats fills as claims-only (O52). |
 | O66 | **Missing income → `povcaty1` = 4 ("middle income", MEPS's median category) with a warning**, for `meps25-v1` rows | Accepted | FHIR never carries income. The mode (5) is the lowest-risk group and would quietly understate risk; before M6 the code silently produced 5. The warning travels with the row (`to_contract`'s `explain=True`). Production `meps-portable-v2` models need no default — they learned to score without income (O53). |
 
+## M7 — the scoring service
+
+| ID | Decision | Status | Rationale / where it lives |
+|---|---|---|---|
+| O67 | **Per-patient reasons (FR-M8) by occlusion against a typical MEPS adult**: re-score with one input at a time set to the training panels' median / most common value (`etl/meps_reference.json` → `typical`); reasons = the inputs whose typical value lowers the estimate most, ≥ 0.5 points, at most 3. **Never a reason:** an input filled by a default (e.g. income not recorded) or race/ethnicity | Accepted | Deterministic, no new dependency (SHAP needs Python 3.12; the service supports 3.11), one batched prediction per request (1,000 rows in ~1 s). Race: O50 — its influence belongs in aggregate fairness reporting (O57); the live check surfaced it as a reason before this rule. Reasons describe what the model weighed, not causes. |
+| O68 | **The service runs on port 8005** in the `phase8` compose profile (`outcome-prediction`), with the models directory mounted read-only; API dependencies are the `api` extra | Accepted | 8000–8004 are taken (Kong, triage, Kong admin, two test registries). Internal only (O14); a host port for local use, like triage's 8001. |
+
 ## Supersession notes
 
 
@@ -193,6 +200,8 @@ per-patient explanations, missing values, feature importance). Results:
   named are real in Synthea v4.0.0. M6 still validates each mapping rule. O21's row is left as written.
 - **O65 resolves O21**: the FHIR mapping sketch is validated and replaced by the rules in `design.md`
   §7. O21's row is left as written.
+- **O22 is validated** (M7): SNOMED CT `32485007` is active, FSN "Hospital admission (procedure)", parent
+  "Admission to establishment" (tx.fhir.org, International edition 2025-02-01). O22's row is left as written.
 - **O46 refines O30**: same tool (MLflow), different store (SQLite instead of the retired file
   store), now an optional extra.
 

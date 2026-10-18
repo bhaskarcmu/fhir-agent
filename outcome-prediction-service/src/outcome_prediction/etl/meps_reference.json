@@ -101,5 +101,32 @@
    "p90": 16480.0
   }
  },
- "source": "MEPS longitudinal panels 21-25, adults, unweighted (outcome-prediction-service M1 table)"
+ "source": "MEPS longitudinal panels 21-25, adults, unweighted (outcome-prediction-service M1 table)",
+ "typical": {
+  "sex": 2,
+  "racethx": 2,
+  "regiony1": 3,
+  "agey1x": 49,
+  "inscovy1": 1,
+  "povcaty1": 5,
+  "ipdisy1": 0,
+  "ipngtdy1": 0,
+  "ertoty1": 0,
+  "obtotvy1": 3,
+  "optotvy1": 0,
+  "hhtotdy1": 0,
+  "rxtoty1": 4,
+  "totexpy1": 1572,
+  "hibpdx": 0,
+  "chddx": 0,
+  "angidx": 0,
+  "midx": 0,
+  "ohrtdx": 0,
+  "strkdx": 0,
+  "emphdx": 0,
+  "diabdx": 0,
+  "arthdx": 0,
+  "asthdx": 0,
+  "choldx": 0
+ }
 }
