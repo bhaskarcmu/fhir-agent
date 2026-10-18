@@ -3814,8 +3814,10 @@ The checksum matches GitHub's published digest, so I'll pin it. Checking v4.0.0'
 
 Running a 20-patient trial with both exports, to check the v4.0.0 CSV schema, timing and output size before the full run:
 
+The generator is running. Meanwhile I'm reading the rest of the contract's field reference, for the sanity checks:
+
 <details>
-<summary>Execution details — 556 tool events</summary>
+<summary>Execution details — 558 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5213,6 +5215,10 @@ p = Path(sys.argv[1]); s = p.read_text(…`
 - **Bash** `unzip -p synthea-4.0.0.jar synthea.properties | grep -nE "years_of_history|exporter.csv|split_records|^generate.default_population|exporter.fhir.export|exporter.fhir.use_us_core|csv.included|append" |…`
 - **Bash** `rm -rf trial2 && SECONDS=0; timeout 600 java -Xmx4g -jar synthea-4.0.0.jar -s 42 -cs 42 -p 20 -a 18-90 -e 20241231 --exporter.baseDirectory=./trial2/ --exporter.csv.export=true --exporter.fhir.export=…`
 - **Bash** `rm -rf trial2 trial2.log && java -Xmx6g -jar synthea-4.0.0.jar -s 42 -cs 42 -p 3000 -a 18-90 -e 20241231 --exporter.baseDirectory=./az-3000-s42/ --exporter.csv.export=true --exporter.fhir.export=false…`
+- **Bash** `cd /workspaces/fhir-agent && sed -n 326,350p docs/phase8/prototype-baseline.md; cut -d, -f3 outcome-prediction-service/data/raw/synthea/trial/csv/payers.csv | sort | uniq -c; cut -d, -f8 outcome-predi…`
+- **Bash** `cd /workspaces/fhir-agent/outcome-prediction-service/data/raw/synthea/trial/csv && python3 - <<'EOF'
+import pandas as pd, numpy as np
+p = pd.read_csv("patients.csv", usecols=["Id","BIRTHDATE","DEATHDA…`
 
 </details>
 
@@ -5223,6 +5229,6 @@ p = Path(sys.argv[1]); s = p.read_text(…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 15:40 UTC
+- **Last updated:** 18 October 2026, 15:41 UTC
 - **Turns:** 50
 - **Status:** Complete
