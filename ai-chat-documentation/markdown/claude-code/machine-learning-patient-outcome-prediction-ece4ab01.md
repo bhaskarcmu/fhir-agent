@@ -3828,8 +3828,37 @@ Now `to_contract.py`. I'm rewriting it around one `contract_rows(view, as_of)` u
 
 Simplifying the poverty-year expression I just wrote (it's just the `as_of` year), then running the tests:
 
+All 17 pass. Passing tests alone don't prove the perturbations bite, so I'm checking that each `as_of` really has running records to rewrite and that the perturbed patient is in the population:
+
+18 pass. While the population finishes generating, here's the service README so I can document the harness in its style:
+
+Still generating. Meanwhile, the design-doc updates, which don't depend on the results:
+
+Everything else that doesn't depend on the run is done. Loading the Monitor tool so I can wait for the generator to finish:
+
+I won't use Monitor after all. The generator is a background job, and its finish notification will bring me back to finish M4.
+
+**Done so far** (branch `feature/phase8-m4-synthea-harness`):
+- **Commit `9523af5d`, the prototype's mapping reproduced as-is:** the five standard tables every source is read into, a reader that loads Synthea CSV into them, and the prototype's rules with their defects marked. A small runner downloads Synthea v4.0.0 (checksum matches GitHub's published one), generates the patients and scores them. A 172 KB test fixture of 7 synthetic adults is committed.
+- **Not yet committed, the fixes:**
+  - **One cut-off date for all records.** Nothing dated after `as_of` is used. Training is the same calculation with `as_of` set to 31 December, so the two modes can't drift apart.
+  - **The prescription leak is fixed.** A prescription still running at `as_of` has its fills estimated from that patient's own earlier record for the same drug, or one a month if there is none.
+  - **Smaller fixes:** an unknown state now maps to 0 instead of South, and all categories get one encoding rule.
+- **Leakage test:** it passes on the fixed code and fails on the prototype's code, so it really catches the leak. 18 tests pass.
+
+**Still to do:**
+- Run both versions on the 3,000-patient population once it finishes, with schema checks and a scoring check against the trained model.
+- Record two decisions in the docs and fix O11's wording.
+- Commit, push, open the PR and watch CI.
+
+**Two choices I made rather than ask you (both easy to reverse):**
+- **The generation run exports CSV only.** O11 says both formats should come from one run, but a full-history FHIR export would be about 26 GB. A trial run showed the same seed gives the same patients either way, so M6 can rebuild the FHIR later for the same people.
+- **I'm using Synthea v4.0.0.** O11 calls it "the repo's pinned" version, but the repo's own generation script pins 3.3.0. I've followed O11's intent without touching that shared script, and I'll correct the wording.
+
+Nothing needs your input yet.
+
 <details>
-<summary>Execution details — 580 tool events</summary>
+<summary>Execution details — 587 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5270,6 +5299,30 @@ m = c.medic…`
 from pathlib import Path
 p = Path("outcome-prediction-service/src/outcome_prediction/etl/transform/to_contract.py"); s = p.read_text()
 old = '''    # Prescriptions (§11.1 fixed). End…`
+- **Bash** `cat >> outcome-prediction-service/src/outcome_prediction/tests/test_etl_synthea.py <<'EOF'
+
+
+# ── scoring mode and the leakage test (design.md §6, §11; prd.md §9 criterion 5) ───────────────
+
+def _fut…`
+- **Bash** `python3 -c "
+import pandas as pd
+from outcome_prediction.etl.extract import synthea_csv
+from outcome_prediction.etl.transform import to_contract as t
+c = synthea_csv.read('outcome-prediction-service/s…`
+- **Bash** `cat >> outcome-prediction-service/src/outcome_prediction/tests/test_etl_synthea.py <<'EOF'
+
+
+def test_a_stay_spanning_as_of_counts_nights_so_far_and_no_final_claim(canon):
+    as_of = pd.Timestamp("20…`
+- **Bash** `grep -n "^#" outcome-prediction-service/README.md; sed -n 1,30p outcome-prediction-service/README.md`
+- **Bash** `pgrep -fa "synthea-4.0.0.jar" | cut -c1-80; ls /workspaces/fhir-agent/outcome-prediction-service/data/raw/synthea/az-3000-s42/csv 2>/dev/null; du -sh /workspaces/fhir-agent/outcome-prediction-service/…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+def sub(path, old, new):
+    p = Path(path); s = p.read_text(); assert s.count(old) == 1, (path, old[:70]); p.write_text(s.replace(old, new))
+D = "docs/phase…`
+- **ToolSearch** `select:Monitor`
 
 </details>
 
@@ -5280,6 +5333,6 @@ old = '''    # Prescriptions (§11.1 fixed). End…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 15:47 UTC
+- **Last updated:** 18 October 2026, 15:49 UTC
 - **Turns:** 50
 - **Status:** Complete
