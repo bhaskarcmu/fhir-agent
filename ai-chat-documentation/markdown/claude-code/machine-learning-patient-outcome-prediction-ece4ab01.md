@@ -2630,8 +2630,12 @@ All 92 service tests pass. Wiring the lab into CI, `pytest.ini`, and the install
 
 All cross-validation, confirmation and explanation results are in. Writing the round report, which is the committed record of this iteration:
 
+Identical output, so it's deterministic. Next, licence records (O13): an attribution for the vendored comorbidipy tables in `NOTICE`, and the lab's extra MEPS files in the data catalog.
+
+Final checks: both test suites, the duplicate-filename rule, and a look at exactly what would be committed (no data, models or tracking database):
+
 <details>
-<summary>Execution details — 364 tool events</summary>
+<summary>Execution details — 372 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3462,6 +3466,36 @@ def rep(o,n):
 rep("| 0.786 — nearly LSA,…`
 - **Bash** `grep -n "^### M3\|^### M10\|^### M11\|^### M12\|^M1–M13\|M1–M2 built" docs/phase8/milestone-plan.md | head; grep -n "^| O44\|^## Supersession" docs/phase8/decisions.md | cut -c1-40`
 - **Bash** `sed -n 103,130p docs/phase8/milestone-plan.md; sed -n 234,240p docs/phase8/milestone-plan.md; sed -n 258,262p docs/phase8/milestone-plan.md; sed -n 94,104p docs/phase8/decisions.md | cut -c1-120`
+- **Bash** `python3 - <<'EOF'
+def edit(p,pairs):
+    s=open(p).read()
+    for o,n in pairs:
+        assert s.count(o)==1,(p,o[:60],s.count(o)); s=s.replace(o,n)
+    open(p,'w').write(s)
+D='docs/phase8/'
+s=open(D+…`
+- **Bash** `python3 - <<'EOF'
+p='docs/README.md'; s=open(p).read()
+old="""**M1–M2 built**
+(MEPS dataset and model reproduced exactly); M3 (experimentation workbench) is next."""
+assert s.count(old)==1
+s=s.replace…`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-lab/README.md`
+- **Bash** `python3 - <<'EOF'
+def edit(p,pairs):
+    s=open(p).read()
+    for o,n in pairs:
+        assert s.count(o)==1,(p,o[:60],s.count(o)); s=s.replace(o,n)
+    open(p,'w').write(s)
+L='outcome-prediction-lab/…`
+- **Bash** `cp outcome-prediction-lab/rounds/001-what-and-how/explanations.json /tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad/expl_before.json && set -o pipefail && MLFLO…`
+- **Bash** `tail -12 NOTICE; grep -n "AHRQ MEPS longitudinal" data/reference/README.md | cut -c1-80`
+- **Bash** `python3 - <<'EOF'
+p='NOTICE'; s=open(p).read()
+marker = "========================================================================\nFULL LICENCE TEXTS"
+assert s.count(marker)==1
+block = """------------…`
+- **Bash** `env -u STORAGE_EMULATOR_HOST python -m pytest outcome-prediction-service/src/outcome_prediction/tests -q -p no:cacheprovider 2>&1 | tail -1; python -m pytest outcome-prediction-lab/src/outcome_predict…`
 
 </details>
 
@@ -3472,6 +3506,6 @@ rep("| 0.786 — nearly LSA,…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 00:48 UTC
+- **Last updated:** 18 October 2026, 00:49 UTC
 - **Turns:** 32
 - **Status:** Complete
