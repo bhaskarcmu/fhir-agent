@@ -26,9 +26,9 @@ PATIENT = next(iter(LINK))
 
 
 class Server(Replay):
-    def _request(self, path, method="GET", body=None):
+    def _request(self, path, method="GET", body=None, headers=None):
         path = re.sub(r"(date|created)=ge\d{4}-\d{2}-\d{2}", rf"\1=ge{RECORDING['since']}", path)
-        return super()._request(path, method, body)
+        return super()._request(path, method, body, headers)
 
     def search_patients(self, name):
         one = Patient(id=PATIENT, family_name="Doe", given_name="Jane", gender="female")

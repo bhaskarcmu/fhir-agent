@@ -55,7 +55,7 @@ Every step below has a command (`outcome-prediction-lab --help`):
 | Compare a round's runs | `outcome-prediction-lab compare <round>` (writes `comparison.md`) |
 | Confirm a finalist (one logged test look) | `outcome-prediction-lab confirm <round> <config> --record "why"` |
 | Model card / target scorecard | `outcome-prediction-lab card` / `scorecard <round> <config> [--criteria person.json]` |
-| Promote (needs a decision ID) | `outcome-prediction-lab promote <round> <config> --decision O<n>` |
+| Promote (needs a decision ID) — writes the service artifact and its `PROMOTION.json` | `outcome-prediction-lab promote <round> <config> --decision O<n>` |
 | Explain patients | `outcome-prediction-lab explain <round> <config> --patient ID / --sample N / --all` |
 | Subgroup fairness of a confirmed model (one logged test look) | `outcome-prediction-lab fairness <round> <config> --record "why"` |
 | Notebook hygiene | `outcome-prediction-lab notebooks-check` (CI) / `notebooks-strip <file>` |

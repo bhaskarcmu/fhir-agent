@@ -16,7 +16,9 @@ from fastapi.testclient import TestClient
 from outcome_prediction import api, scoring
 from outcome_prediction.fhir import risk_assessment as ra
 from outcome_prediction.model import FEATURES
+from outcome_prediction.model.promotion import write_promotion
 from outcome_prediction.model.train import train
+from outcome_prediction.tests.synthetic_portable import build_portable_artifact
 from outcome_prediction.tests.conftest import synthetic_table
 from outcome_prediction.tests.test_etl_fhir import LINK, RECORDING, Replay
 
@@ -29,9 +31,9 @@ class Server(Replay):
     days, so its `since` is mapped onto the recorded one — the recording starts earlier, and
     scoring only uses the 12 months before as_of."""
 
-    def _request(self, path, method="GET", body=None):
+    def _request(self, path, method="GET", body=None, headers=None):
         path = re.sub(r"(date|created)=ge\d{4}-\d{2}-\d{2}", rf"\1=ge{RECORDING['since']}", path)
-        return super()._request(path, method, body)
+        return super()._request(path, method, body, headers)
 
 
 @pytest.fixture(scope="module")
@@ -40,12 +42,18 @@ def artifact(tmp_path_factory) -> Path:
     table = root / "table.csv"
     synthetic_table(per_panel=200, seed=1).to_csv(table, index=False)
     directory, _ = train(table, root / "models", root / "reports")
+    write_promotion(directory, "O2", note="test")
     return directory
 
 
+@pytest.fixture(scope="module")
+def portable_artifact(tmp_path_factory) -> Path:
+    return build_portable_artifact(tmp_path_factory.mktemp("m12") / "models")
+
+
 @pytest.fixture
-def client(artifact, monkeypatch):
-    monkeypatch.setenv("OUTCOME_PREDICTION_ARTIFACT", str(artifact))
+def client(artifact, portable_artifact, monkeypatch):
+    monkeypatch.setenv("OUTCOME_PREDICTION_ARTIFACTS", f"{artifact},{portable_artifact}")
     api.app.dependency_overrides[api.get_client] = lambda: Server()
     with TestClient(api.app) as c:
         yield c
@@ -60,15 +68,20 @@ def _row(**overrides) -> dict:
 
 # ── metadata ─────────────────────────────────────────────────────────────────────────
 
-def test_health_reports_the_verified_artifact(client, artifact):
+def test_health_reports_both_verified_promoted_models(client, artifact, portable_artifact):
     body = client.get("/health").json()
-    assert body == {"status": "ok", "model_id": artifact.name, "artifact_verified": True}
+    assert body["status"] == "ok" and body["artifact_verified"] is True
+    assert body["models"] == {"hospitalization-12m": {"model_id": artifact.name, "promoted_by": "O2"},
+                              "nonobstetric-admission-12m": {"model_id": portable_artifact.name, "promoted_by": "O59"}}
+    assert body["model_id"] == portable_artifact.name                 # the agent's model (O77)
 
 
 def test_model_metadata_labels_its_metrics(client):
-    body = client.get("/model").json()
-    assert body["contract_version"] == "meps25-v1" and body["features"] == FEATURES
-    assert "validation models" in body["metrics_note"] and "auroc" in body["validation_metrics"]["gbm"]
+    cards = {c["target"]: c for c in client.get("/models").json()}
+    v1 = cards["hospitalization-12m"]
+    assert v1["contract_version"] == "meps25-v1" and v1["features"] == FEATURES
+    assert "validation models" in v1["metrics_note"] and "auroc" in v1["validation_metrics"]["gbm"]
+    assert client.get("/model").json()["contract_version"] == "meps-portable-v2"
 
 
 def test_a_tampered_artifact_stops_the_service(artifact, monkeypatch, tmp_path):
@@ -121,7 +134,7 @@ def test_unknown_patient_is_404(client):
     from fhir_clinical_client import NotFoundError
 
     class Missing(Server):
-        def _request(self, path, method="GET", body=None):
+        def _request(self, path, method="GET", body=None, headers=None):
             raise NotFoundError("gone", 404)
     api.app.dependency_overrides[api.get_client] = lambda: Missing()
     assert client.post("/risk/hospitalization-12m", json={"patient_id": "nope"}).status_code == 404
@@ -152,7 +165,7 @@ def test_contract_rows_return_a_bundle(client):
 
 
 @pytest.mark.parametrize("change, message", [
-    ({"contract_version": "meps25-v2"}, "serves contract meps25-v1"),
+    ({"contract_version": "meps25-v2"}, "served on contract meps25-v1"),
     ({"rows": [_row(sex=-1)]}, "negative"),
     ({"rows": [_row(racethx=9)]}, "racethx"),
     ({"rows": [{"patient_ref": "x", "features": {"sex": 1}}]}, "missing"),
@@ -264,7 +277,7 @@ def test_tool_arguments_outside_the_schema_are_refused(client):
 
 def test_risk_tool_returns_the_same_assessment_as_the_api(client):
     tool = client.post("/agent-tools/get_hospitalization_risk", json={"patient_id": PATIENT, "as_of": AS_OF}).json()
-    direct = client.post("/risk/hospitalization-12m", json={"patient_id": PATIENT, "as_of": AS_OF}).json()
+    direct = client.post("/risk/nonobstetric-admission-12m", json={"patient_id": PATIENT, "as_of": AS_OF}).json()
     assert tool["outcome"] == "estimate"
     strip = lambda ra: {k: v for k, v in ra.items() if k not in ("id", "text")}  # noqa: E731
     assert strip(tool["risk_assessment"]) == strip(direct)
@@ -274,7 +287,7 @@ def test_risk_tool_outcomes_are_explicit(client):
     early = client.post("/agent-tools/get_hospitalization_risk", json={"patient_id": PATIENT, "as_of": "1950-01-01"}).json()
     assert early["outcome"] == "no_estimate"
     card = client.post("/agent-tools/get_model_card", json={}).json()
-    assert card["outcome"] == "model_card" and card["model_card"]["contract_version"] == "meps25-v1"
+    assert card["outcome"] == "model_card" and card["model_card"]["contract_version"] == "meps-portable-v2"
 
 
 def test_find_patient_returns_candidates_and_never_picks(client):

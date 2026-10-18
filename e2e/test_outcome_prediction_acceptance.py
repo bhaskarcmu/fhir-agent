@@ -1,7 +1,8 @@
 """
-Phase 8 M9 acceptance case (prd.md §9 criterion 9): the hospitalization-risk path, live, under the
-`phase8` compose profile — the FHIR server, the scoring service with the real M2 artifact, the
-agent on the self-hosted model. The three demo beats of docs/demo-guide.md §5b:
+Phase 8 acceptance case (prd.md §9 criteria 9 and 12): the hospitalization-risk path, live, under
+the `phase8` compose profile — the FHIR server, the scoring service with BOTH promoted models
+(M2's `meps25-v1` and M12's `meps-portable-v2` non-obstetric model, O59), the agent on the
+self-hosted model. The three demo beats of docs/demo-guide.md §5b, for each served target:
 
 1. A seeded Synthea patient scored through the API — a valid R4 RiskAssessment whose `basis`
    resolves to that patient's own encounters, conditions and claims, none dated after `as_of`.
@@ -40,6 +41,8 @@ OLLAMA_IMAGE = "ollama/ollama:0.6.5"
 AS_OF = "2024-12-31"                     # the end of the pinned Synthea run (etl/synthea.py RUN)
 DEMO_PATIENT = "e7149b17-d845-b43b-95fb-88a93a213601"     # Synthea ID of the richest living demo adult
 AGENT_ATTEMPTS = 6                       # the 1B model completes ~60% of turns; every attempt is checked
+TARGETS = ["hospitalization-12m", "nonobstetric-admission-12m"]     # meps25-v1, meps-portable-v2 (M12)
+AGENT_TARGET = "nonobstetric-admission-12m"                         # the agent's model (O77)
 NO_CACHE = {"Cache-Control": "no-cache"}
 
 
@@ -84,10 +87,11 @@ def stack():
         _wait(f"{FHIR_URL}/metadata", "the FHIR server")
     if not _up(f"{SERVICE_URL}/health"):
         models = REPO / "outcome-prediction-service" / "models"
-        if not any(models.glob("gbm-meps25-v1-*")):
-            pytest.fail("no trained artifact in outcome-prediction-service/models/ — train one first: "
-                        "python -m outcome_prediction.meps.download && python -m outcome_prediction.meps.build "
-                        "&& python -m outcome_prediction.model.train", pytrace=False)
+        if not any(models.glob("gbm-meps25-v1-*")) or not any(models.glob("gbm-meps-portable-v2-*")):
+            pytest.fail("both promoted artifacts are needed in outcome-prediction-service/models/: meps25-v1 "
+                        "(python -m outcome_prediction.model.train, then python -m outcome_prediction.model.promotion "
+                        "retrofit <dir> --decision O2) and meps-portable-v2 (outcome-prediction-lab promote "
+                        "003-portable-contract nonobstetric-v2 --decision O59)", pytrace=False)
         _compose("up", "-d", "--build", "outcome-prediction")
         started.append("outcome-prediction")
         _wait(f"{SERVICE_URL}/health", "the scoring service")
@@ -127,8 +131,8 @@ def ollama():
         subprocess.run(["docker", "stop", container], capture_output=True)
 
 
-def _score(patient_id: str, as_of: str = AS_OF) -> dict:
-    r = httpx.post(f"{SERVICE_URL}/risk/hospitalization-12m", json={"patient_id": patient_id, "as_of": as_of},
+def _score(patient_id: str, as_of: str = AS_OF, target: str = "hospitalization-12m") -> dict:
+    r = httpx.post(f"{SERVICE_URL}/risk/{target}", json={"patient_id": patient_id, "as_of": as_of},
                    timeout=120)
     assert r.status_code == 200, r.text
     return r.json()
@@ -141,8 +145,16 @@ def _comparable(ra: dict) -> dict:
 
 # ── beat 1: a seeded patient through the API ─────────────────────────────────────────
 
-def test_beat_1_a_seeded_patient_gets_a_valid_risk_assessment(patient):
-    ra = _score(patient["id"])
+def test_both_models_are_served_and_promoted(stack):
+    health = httpx.get(f"{SERVICE_URL}/health", timeout=30).json()
+    assert set(health["models"]) == set(TARGETS)
+    assert health["models"]["nonobstetric-admission-12m"]["promoted_by"] == "O59"
+    assert health["models"]["hospitalization-12m"]["promoted_by"] == "O2"
+
+
+@pytest.mark.parametrize("target", TARGETS)
+def test_beat_1_a_seeded_patient_gets_a_valid_risk_assessment(patient, target):
+    ra = _score(patient["id"], target=target)
     outcome = httpx.post(f"{FHIR_URL}/RiskAssessment/$validate", json=ra, timeout=60,
                          headers={"Content-Type": "application/fhir+json"}).json()
     problems = [i for i in outcome["issue"] if i["severity"] in ("error", "fatal", "warning")]
@@ -153,8 +165,9 @@ def test_beat_1_a_seeded_patient_gets_a_valid_risk_assessment(patient):
     assert "qualitativeRisk" not in p
 
 
-def test_beat_1_basis_resolves_to_this_patients_own_records_before_as_of(patient):
-    ra = _score(patient["id"])
+@pytest.mark.parametrize("target", TARGETS)
+def test_beat_1_basis_resolves_to_this_patients_own_records_before_as_of(patient, target):
+    ra = _score(patient["id"], target=target)
     refs = [b["reference"] for b in ra["basis"]]
     kinds = {r.split("/")[0] for r in refs}
     assert {"Encounter", "Condition"} <= kinds and kinds <= {"Encounter", "Condition", "ExplanationOfBenefit"}
@@ -222,7 +235,7 @@ def test_beat_2_the_agent_narrates_only_the_risk_assessment(patient, ollama):
         if reply.outcome is Outcome.ESTIMATE:
             break
     assert reply.outcome is Outcome.ESTIMATE, f"no estimate in {AGENT_ATTEMPTS} attempts: {outcomes}"
-    ra = _score(patient["id"])
+    ra = _score(patient["id"], target=AGENT_TARGET)
     agent_ra = next(e["result"]["risk_assessment"] for e in reply.evidence if e["tool"] == "get_hospitalization_risk")
     assert _comparable(agent_ra) == _comparable(ra)                   # the agent saw exactly what the API returns
     traced = _trace(reply.text, ra)
@@ -232,8 +245,9 @@ def test_beat_2_the_agent_narrates_only_the_risk_assessment(patient, ollama):
 
 # ── beat 3: an encounter after as_of doesn't move the score ──────────────────────────
 
-def test_beat_3_a_record_after_as_of_changes_nothing(patient):
-    before = _score(patient["id"])
+@pytest.mark.parametrize("target", TARGETS)
+def test_beat_3_a_record_after_as_of_changes_nothing(patient, target):
+    before = _score(patient["id"], target=target)
     stay = {"resourceType": "Encounter", "status": "finished",
             "class": {"system": "http://terminology.hl7.org/CodeSystem/v3-ActCode", "code": "IMP"},
             "type": [{"coding": [{"system": "http://snomed.info/sct", "code": "32485007",
@@ -245,11 +259,11 @@ def test_beat_3_a_record_after_as_of_changes_nothing(patient):
     assert created.status_code == 201, created.text
     new_ref = f"Encounter/{created.json()['id']}"
     try:
-        after = _score(patient["id"])
+        after = _score(patient["id"], target=target)
         assert _comparable(after) == _comparable(before)                      # not one field moves
         assert new_ref not in [b["reference"] for b in after["basis"]]
         # The server really has it: scored as of a date after the stay, it counts.
-        later = _score(patient["id"], "2025-12-31")
+        later = _score(patient["id"], "2025-12-31", target=target)
         assert new_ref in [b["reference"] for b in later["basis"]]
     finally:
         httpx.delete(f"{FHIR_URL}/{new_ref}", timeout=60)

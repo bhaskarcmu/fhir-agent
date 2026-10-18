@@ -67,6 +67,12 @@ def _pct(decimal: float) -> str:
     return f"{decimal * 100:.2f}%"
 
 
+def _outcome(prediction: dict) -> str:
+    """What is predicted, in the service's own words (its outcome text), lower-cased to fit a sentence."""
+    text = (prediction.get("outcome") or {}).get("text") or "hospital admission"
+    return text[0].lower() + text[1:]
+
+
 def narrate_estimate(ra: dict, question: str, patient: dict | None = None) -> str:
     p = ra["prediction"][0]
     when = p["whenPeriod"]
@@ -78,7 +84,7 @@ def narrate_estimate(ra: dict, question: str, patient: dict | None = None) -> st
     born = f"born {patient['birth_date']}, " if patient and patient.get("birth_date") else ""
     who = f"{patient['name']} ({born}{ref})" if patient else ref
     lines = [
-        f"{who}: estimated chance of a hospital admission between {when['start']} and {when['end']} — "
+        f"{who}: estimated chance of a {_outcome(p)} between {when['start']} and {when['end']} — "
         f"{_pct(p['probabilityDecimal'])}.",
         f"Percentile among the adults the model was trained on: {percentile}.",
         f"A simpler comparison model (age and any prior hospital stay) gives {_pct(comparison)}.",
@@ -96,7 +102,7 @@ def narrate_estimate(ra: dict, question: str, patient: dict | None = None) -> st
 
 def narrate_model_card(card: dict) -> str:
     v = card["validation_metrics"]
-    gbm, comp = v.get("gbm", {}), v.get("comparison", {})
+    gbm, comp = v.get("model") or v.get("gbm") or {}, v.get("comparison") or {}   # meps-portable-v2 / meps25-v1
     return "\n".join([
         f"Model {card['model_id']} (contract {card['contract_version']}): {card['outcome']}.",
         f"Inputs: {', '.join(card['features'])}.",

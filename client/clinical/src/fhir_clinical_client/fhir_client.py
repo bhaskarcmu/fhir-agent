@@ -214,6 +214,9 @@ class InsuranceCoverage:
     end: Optional[date] = None              # None if open-ended
 
 
+NO_CACHE = {"Cache-Control": "no-cache"}     # care-history searches: never a cached result
+
+
 # ---------------------------------------------------------------------------
 # Exceptions
 # ---------------------------------------------------------------------------
@@ -282,12 +285,15 @@ class FHIRClient:
     # Internal HTTP helper
     # -----------------------------------------------------------------------
 
-    def _request(self, path: str, method: str = "GET", body: dict = None) -> tuple[int, dict]:
-        """Send an authenticated FHIR request. Returns (status_code, parsed_body)."""
+    def _request(self, path: str, method: str = "GET", body: dict = None,
+                 headers: Optional[dict] = None) -> tuple[int, dict]:
+        """Send an authenticated FHIR request. Returns (status_code, parsed_body).
+        `headers` adds request headers (the care-history searches send Cache-Control)."""
         url = f"{self._base}{path}"
         headers = {
             "Content-Type": "application/fhir+json",
             "Accept":       "application/fhir+json",
+            **(headers or {}),
         }
         if self._api_key:
             headers["apikey"] = self._api_key
@@ -657,11 +663,14 @@ class FHIRClient:
         Servers write 'next' links with their own host, which may not be reachable through
         the gateway, so only the link's query string is replayed against this client's base.
         Resources the search `_include`s are put in `included`, keyed "Type/id".
+
+        Every page asks the server not to answer from a cache: HAPI reuses a search's results for
+        about a minute, so a record written just before would be missing (found in Phase 8 M12).
         """
         path = f"/{resource_type}?" + urllib.parse.urlencode({**query, "_count": self.SEARCH_PAGE_SIZE})
         resources = []
         for _ in range(max_pages):
-            status, body = self._request(path)
+            status, body = self._request(path, headers=NO_CACHE)
             if status != 200:
                 raise FHIRClientError(
                     f"{resource_type} search failed (got {status}).", status, body

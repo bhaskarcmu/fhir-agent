@@ -6,6 +6,7 @@
       metadata.json       contract, features, data checksums, versions, validation metrics,
                           training-score quantiles (for percentiles)
       MANIFEST.sha256     sha256 of every other file; verified BEFORE anything is deserialised
+      PROMOTION.json      the decision that approved serving it; bound to the manifest (promotion.py)
 
 joblib/pickle loading executes code, so integrity comes first: a missing, changed or unlisted
 file means the artifact is refused, not loaded.
@@ -24,6 +25,7 @@ MODEL = "model.joblib"
 COMPARISON = "comparison.joblib"
 METADATA = "metadata.json"
 MANIFEST = "MANIFEST.sha256"
+PROMOTION = "PROMOTION.json"     # see model/promotion.py
 
 
 class ArtifactIntegrityError(RuntimeError):
@@ -63,7 +65,8 @@ def verify_artifact(directory: Path) -> None:
             raise ArtifactIntegrityError(f"{directory}: malformed manifest line {line!r}")
         listed[name] = digest
 
-    present = {p.name for p in directory.iterdir() if p.is_file() and p.name != MANIFEST}
+    # PROMOTION.json is written after the manifest and verified on its own (model/promotion.py).
+    present = {p.name for p in directory.iterdir() if p.is_file() and p.name not in (MANIFEST, PROMOTION)}
     if unlisted := present - listed.keys():
         raise ArtifactIntegrityError(f"{directory}: files not in manifest: {sorted(unlisted)}")
     if missing := {MODEL, COMPARISON, METADATA} - listed.keys():

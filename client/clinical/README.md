@@ -119,7 +119,9 @@ print(patient.gender)         # "female"
 
 ### Care history (added for Phase 8's risk models)
 
-Complete histories: these methods read every page of results, not just the first.
+Complete histories: these methods read every page of results, not just the first, and ask the
+server not to answer from a cache (HAPI otherwise reuses a search's results for about a minute, so a
+record written just before would be missed).
 
 | Method | Returns | Description |
 |---|---|---|

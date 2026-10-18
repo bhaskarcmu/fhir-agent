@@ -30,6 +30,7 @@ from sklearn.linear_model import LinearRegression, LogisticRegression, PoissonRe
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
+from outcome_prediction.contract import CONTRACT_VERSION as CONTRACT_V2
 from outcome_prediction_lab import holdout
 from outcome_prediction_lab.evaluate import (
     TEST_PANELS, TRAIN_PANELS, binary_metrics, cost_metrics, count_metrics, cv_predict,
@@ -438,9 +439,24 @@ def scorecard(round_id: str, name: str, criteria: Path | None = None) -> Path:
     return out
 
 
-def promote(round_id: str, name: str, decision: str) -> Path:
-    """Write the promotion record (O33) — only for a confirmed, carded, non-learning-only run whose
-    promotion is backed by an existing decisions.md entry."""
+def _versions() -> dict:
+    import platform
+
+    import sklearn
+    return {"python": platform.python_version(), "scikit-learn": sklearn.__version__, "pandas": pd.__version__,
+            "numpy": np.__version__, "joblib": joblib.__version__}
+
+
+def promote(round_id: str, name: str, decision: str, frame: pd.DataFrame | None = None) -> Path:
+    """Promote a confirmed run into a SERVICE artifact (O33, M12): the very model that was scored
+    on the test panels, its comparison model, percentiles and a typical adult for reasons, and a
+    PROMOTION.json naming the decision. Only for a confirmed, carded, non-learning-only binary run
+    on the production contract (O52), backed by an existing decisions.md entry."""
+    from outcome_prediction.model.artifact import score_quantiles, write_artifact
+    from outcome_prediction.model.portable import comparison_model
+    from outcome_prediction.model.promotion import write_promotion
+    from outcome_prediction.settings import models_dir
+
     if not re.fullmatch(r"O\d+", decision):
         raise PromotionRefused(f"decision must look like O49, got {decision!r}")
     if f"| {decision} |" not in DECISIONS.read_text():
@@ -448,18 +464,63 @@ def promote(round_id: str, name: str, decision: str) -> Path:
     r, c = _load(round_id, name, "run"), _load(round_id, name, "confirm")
     if c is None:
         raise PromotionRefused(f"{name} has no test-panel confirmation")
-    if r["config"].get("learning_only"):
+    cfg = r["config"]
+    if cfg.get("learning_only"):
         raise PromotionRefused(f"{name} is a learning-only target (O48)")
+    if not cfg["features"].startswith("portable-v2") or cfg["task"] != "binary":
+        raise PromotionRefused(f"{name}: only binary models on the production contract (portable-v2) are "
+                               f"served (O52, O3); this one uses {cfg['features']!r}, task {cfg['task']!r}")
     card_path = round_dir(round_id) / "cards" / f"{name}.md"
     if not card_path.exists():
         raise PromotionRefused(f"{name} has no model card — run `card` first")
-    model = fitted_path(round_id, name)
-    if hashlib.sha256(model.read_bytes()).hexdigest() != c["fitted_model_sha256"]:
-        raise PromotionRefused(f"{model} does not match the model that was confirmed")
-    record = {"round": round_id, "run": name, "decision": decision, "label": r["config"]["label"],
-              "model_sha256": c["fitted_model_sha256"],
-              "model_card_sha256": hashlib.sha256(card_path.read_bytes()).hexdigest(),
-              "promoted_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
-    out = model.with_suffix(".PROMOTION.json")
-    out.write_text(json.dumps(record, indent=2) + "\n")
-    return out
+    path = fitted_path(round_id, name)
+    if hashlib.sha256(path.read_bytes()).hexdigest() != c["fitted_model_sha256"]:
+        raise PromotionRefused(f"{path} does not match the model that was confirmed")
+
+    target = models_dir() / f"gbm-{CONTRACT_V2}-{name}-{c['fitted_model_sha256'][:12]}"
+    if target.exists():
+        raise PromotionRefused(f"{target.name} exists — a confirmed model is promoted once")
+    # The confirmed model itself. Unpickling resolves its augmentation step to the service's class
+    # (the lab re-exports it), so the served file references no lab code; prove it scores identically.
+    model = joblib.load(path)
+    df = lab_frame() if frame is None else frame
+    hook = _scoring_hook(cfg) or (lambda X: X)
+    test = df[df.panel.isin(TEST_PANELS).to_numpy() & _in_population(df, cfg)]
+    train = df[df.panel.isin(TRAIN_PANELS).to_numpy() & _in_population(df, cfg)]
+    cats, nums = FEATURE_SETS[cfg["features"]]
+    from outcome_prediction_lab.features import TEXT_BLOCKS
+    text_cols = [TEXT_BLOCKS[k][0] for k in (cfg.get("text") or [])]
+    inputs = list(cats) + list(nums) + text_cols
+    y_train = train[cfg["label"]].to_numpy().astype(int)
+    comparison = comparison_model(cfg["baseline_inputs"]).fit(train[cfg["baseline_inputs"]], y_train)
+    typical = {f: (float(train[f].mode().iloc[0]) if f in cats else float(train[f].median())) for f in cats + nums}
+    typical.update({col: "" for col in text_cols})                     # no recorded diagnoses
+    metadata = {
+        "model_id": target.name,
+        "contract_version": CONTRACT_V2, "label": cfg["label"], "outcome": cfg.get("outcome_phrase", cfg["label"]),
+        "features": inputs, "categorical": list(cats), "text_columns": text_cols,
+        "blank_at_scoring": list(cfg.get("simulate_missing_at_scoring") or []),
+        "comparison_inputs": cfg["baseline_inputs"],
+        "training": {"panels": sorted(int(p) for p in train.panel.unique()), "rows": int(len(train)),
+                     "events": int(y_train.sum())},
+        "validation_metrics": {"model": c["test"], "comparison": c.get("test_baseline")},
+        "metrics_note": ("Measured once on test panels 26-27 (holdout ledger); the served model IS the "
+                         "confirmed model, trained on panels 21-25 — not a refit."),
+        "training_score_quantiles": score_quantiles(model.predict_proba(hook(train))[:, 1]),
+        "typical": typical, "round": round_id, "run": name,
+        "versions": {**_versions(), "confirmed_model_sha256": c["fitted_model_sha256"]},
+        "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    }
+    directory = write_artifact(models_dir() / metadata["model_id"], model, comparison, metadata)
+    # The file as written must stand alone and score exactly as confirmed; otherwise it stays
+    # unpromoted — and the service refuses an unpromoted artifact.
+    written = directory / "model.joblib"
+    if b"outcome_prediction_lab" in written.read_bytes():
+        raise PromotionRefused(f"{written} still references lab code; the service can't load it")
+    if not np.array_equal(joblib.load(written).predict_proba(hook(test))[:, 1],
+                          joblib.load(path).predict_proba(hook(test))[:, 1]):
+        raise PromotionRefused(f"{written} doesn't score exactly as the confirmed model")
+    return write_promotion(directory, decision, round=round_id, run=name,
+                           confirmed_model_sha256=c["fitted_model_sha256"],
+                           model_card_sha256=hashlib.sha256(card_path.read_bytes()).hexdigest(),
+                           verified=f"scores identically to the confirmed model on {len(test):,} test rows")

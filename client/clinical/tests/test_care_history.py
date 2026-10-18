@@ -32,7 +32,7 @@ class ReplayClient(FHIRClient):
         super().__init__("http://gateway.test:8000")
         self.paths = []
 
-    def _request(self, path, method="GET", body=None):
+    def _request(self, path, method="GET", body=None, headers=None):
         self.paths.append(path)
         if path not in RECORDING["responses"]:
             raise AssertionError(f"unrecorded request: {path}")
@@ -197,7 +197,7 @@ class TestEdgeCases:
 
     def test_paging_stops_at_the_page_limit(self):
         class Endless(FHIRClient):
-            def _request(self, path, method="GET", body=None):
+            def _request(self, path, method="GET", body=None, headers=None):
                 return 200, {"entry": [], "link": [{"relation": "next", "url": "http://x/fhir?_getpages=a"}]}
         with pytest.raises(FHIRClientError, match="exceeded"):
             Endless("http://x")._search_all("Encounter", {"patient": "1"}, max_pages=3)
@@ -208,7 +208,7 @@ class TestExistingBehaviourUnchanged:
     def test_get_medications_still_requests_active_only_first_page(self):
         class Spy(FHIRClient):
             paths = []
-            def _request(self, path, method="GET", body=None):
+            def _request(self, path, method="GET", body=None, headers=None):
                 self.paths.append(path)
                 return 200, {}
         Spy("http://x").get_medications("p1")
@@ -223,7 +223,7 @@ class TestHistoryCompleteness:
 
         class OnePage(FHIRClient):
             paths = []
-            def _request(self, path, method="GET", body=None):
+            def _request(self, path, method="GET", body=None, headers=None):
                 self.paths.append(path)
                 return 200, page
         history = OnePage("http://x").get_medication_history("p")
@@ -242,8 +242,31 @@ class TestHistoryCompleteness:
     def test_get_conditions_is_unchanged(self):
         class Spy(FHIRClient):
             paths = []
-            def _request(self, path, method="GET", body=None):
+            def _request(self, path, method="GET", body=None, headers=None):
                 self.paths.append(path)
                 return 200, {}
         Spy("http://x").get_conditions("p1")
         assert Spy.paths == ["/Condition?patient=p1&_count=100"]
+
+
+class TestNoCachedSearches:
+    """Phase 8 M12: HAPI reuses a search's results for about a minute, so a record written just
+    before a care-history read would be missing. Those searches ask for no cache."""
+
+    def test_care_history_searches_ask_for_no_cache(self):
+        class Spy(FHIRClient):
+            sent = []
+            def _request(self, path, method="GET", body=None, headers=None):
+                self.sent.append(headers)
+                return 200, {}
+        Spy("http://x").get_encounters("p1")
+        assert Spy.sent == [{"Cache-Control": "no-cache"}]
+
+    def test_existing_methods_send_no_extra_headers(self):
+        class Spy(FHIRClient):
+            sent = []
+            def _request(self, path, method="GET", body=None, headers=None):
+                self.sent.append(headers)
+                return 200, {}
+        Spy("http://x").get_medications("p1")
+        assert Spy.sent == [None]

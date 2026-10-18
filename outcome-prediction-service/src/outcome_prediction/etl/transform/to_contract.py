@@ -274,6 +274,84 @@ def contract_rows(view: Canonical, as_of: pd.Timestamp, explain: bool = False):
     return rows, (pd.concat(basis, ignore_index=True) if basis else pd.DataFrame(columns=cols)), warnings
 
 
+# ── meps-portable-v2 (M12): the promoted production contract ─────────────────────────
+
+WARN_NO_INCOME_V2 = "household income not recorded: the model scores without it (O53)"
+PORTABLE_DROPPED = ("rxtoty1", "hhtotdy1", "totexpy1")       # claims-only / not portable: not records-tier inputs
+
+
+def _active(table: pd.DataFrame, lo: pd.Timestamp, hi: pd.Timestamp) -> pd.DataFrame:
+    """Records running at any point in the window [lo, hi)."""
+    return table[(table.start < hi) & (table.stop.isna() | (table.stop >= lo))]
+
+
+def portable_rows(view: Canonical, as_of: pd.Timestamp, explain: bool = False):
+    """`meps-portable-v2` rows (records tier; contract.py) for adults alive at `as_of`.
+
+    Shares `contract_rows`' code path, with the contract's honest encoding: an input the record
+    doesn't carry is MISSING, never a default — the model was trained to score without it (O53).
+    Code features come from conditions active in the 12-month window, each mapped to one ICD-10-CM
+    category (`codelists.icd10_category`); MEPS's equivalent is the year-1 conditions file.
+    """
+    from outcome_prediction import contract, knowledge
+    rows, basis, warnings = contract_rows(view, as_of, explain=True)
+    hi = pd.Timestamp(as_of).normalize() + pd.Timedelta(days=1)
+    lo = hi - pd.DateOffset(years=1)
+    ids = pd.Index(rows.patient_ref)
+    person = view.person.set_index("person_id").reindex(ids)
+    out = rows.set_index("patient_ref").drop(columns=list(PORTABLE_DROPPED)).astype(float)
+    out.loc[person.income.isna().to_numpy(), "povcaty1"] = np.nan
+    out.loc[out.regiony1 == UNKNOWN_REGION, "regiony1"] = np.nan
+    extra = []
+
+    def cite(feature, records):
+        if explain and len(records):
+            extra.append(pd.DataFrame({"patient_ref": records.person_id.to_numpy(), "feature": feature,
+                                       "source_ref": records.source_ref.to_numpy()}))
+
+    cov = _active(view.coverage[view.coverage.person_id.isin(ids)], lo, hi)
+    payer = cov.payer.fillna("").str.lower()
+    for feature, words in (("mcrevy1", ("medicare", "dual eligible")), ("mcdevy1", ("medicaid", "dual eligible"))):
+        hits = cov[payer.str.contains("|".join(words))]
+        cite(feature, hits)
+        out[feature] = ids.isin(hits.person_id.unique()).astype(float)
+
+    cond = _active(view.condition[view.condition.person_id.isin(ids)], lo, hi)
+    cond = cond.assign(category=cond.code.map(codelists.icd10_category)).dropna(subset=["category"])
+    categories = cond.groupby("person_id").category.agg(set).reindex(ids).apply(
+        lambda v: v if isinstance(v, set) else set())
+    out["n_icd"] = categories.map(len).astype(float)
+    out["n_icd_chapters"] = categories.map(lambda cs: len({contract.icd10_chapter(c) for c in cs} - {None})).astype(float)
+    score_cols = ["hfrs", "charlson_approx", "elixhauser_vw_approx", "elixhauser_count_approx"]
+    scores = pd.DataFrame([knowledge.scores(cs) for cs in categories], index=ids, columns=score_cols)
+    for col in score_cols:                           # explicit columns: no adults -> an empty frame, not an error
+        out[col] = scores[col].astype(float)
+    out[contract.TEXT_COLUMN] = categories.map(lambda cs: " ".join("icd" + c for c in sorted(cs)))
+    for feature in ("n_icd", "n_icd_chapters", "hfrs", "charlson_approx", "elixhauser_vw_approx",
+                    "elixhauser_count_approx", contract.TEXT_COLUMN):
+        cite(feature, cond)
+
+    meds = _active(view.medication_fill[view.medication_fill.person_id.isin(ids)], lo, hi)
+    cite("n_distinct_drugs", meds)
+    out["n_distinct_drugs"] = meds.groupby("person_id").code.nunique().reindex(ids, fill_value=0).astype(float)
+
+    columns = contract.names(contract.DEFAULT_TIERS) + [contract.TEXT_COLUMN]
+    out = out[columns]
+    out.index.name = "patient_ref"
+    rows = out.reset_index()
+    if not explain:
+        return rows
+    keep = basis[~basis.feature.isin(PORTABLE_DROPPED)]
+    basis = pd.concat([keep, *extra], ignore_index=True)
+    warnings = warnings.assign(warning=warnings.warning.replace({WARN_INCOME: WARN_NO_INCOME_V2}))
+    return rows, basis, warnings
+
+
+def portable_scoring_rows(canon: Canonical, as_of: pd.Timestamp, explain: bool = False):
+    """Scoring mode for `meps-portable-v2`: applies the as-of boundary, like `scoring_rows`."""
+    return portable_rows(as_of_view(canon, as_of), as_of, explain=explain)
+
+
 def scoring_rows(canon: Canonical, as_of: pd.Timestamp, explain: bool = False):
     """Scoring mode: features as of `as_of`, no label. Applies the as-of boundary itself, so a
     caller can't pass records from after `as_of` by mistake. `explain` as in `contract_rows`."""

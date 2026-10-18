@@ -3,10 +3,10 @@
   "outcome": "estimate",
   "risk_assessment": {
    "resourceType": "RiskAssessment",
-   "id": "d88adab8-4fe4-4011-a568-5409309585e4",
+   "id": "6231d413-df17-41b6-ae31-31cdb0cb8bca",
    "text": {
     "status": "generated",
-    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p>Estimated chance of a hospital admission in the 12 months from 2023-12-31: 3.2% (29th percentile of the training population). Inputs raising the estimate most, compared with a typical adult: age.</p><p>12-month planning estimate for population care management, not a diagnosis and not for emergencies. Trained on US MEPS public survey data; not yet validated on this organisation&#x27;s patients. The reasons describe what the model weighed, not what causes admissions.</p></div>"
+    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p>Estimated chance of a hospital admission not related to pregnancy or childbirth in the 12 months from 2023-12-31: 6.1% (62nd percentile of the training population). Inputs raising the estimate most, compared with a typical adult: age, Medicare cover and frailty indicated by the diagnoses.</p><p>12-month planning estimate for population care management, not a diagnosis and not for emergencies. Trained on US MEPS public survey data; not yet validated on this organisation&#x27;s patients. The reasons describe what the model weighed, not what causes admissions.</p></div>"
    },
    "status": "final",
    "subject": {
@@ -17,10 +17,10 @@
     "coding": [
      {
       "system": "http://fhir-agent.local/outcome-prediction/model",
-      "code": "gbm-meps25-v1-950d8be12078"
+      "code": "gbm-meps-portable-v2-nonobstetric-v2-e8f466f43f88"
      }
     ],
-    "text": "gbm-meps25-v1-950d8be12078"
+    "text": "gbm-meps-portable-v2-nonobstetric-v2-e8f466f43f88"
    },
    "basis": [
     {
@@ -28,6 +28,27 @@
     },
     {
      "reference": "Encounter/25091"
+    },
+    {
+     "reference": "Condition/24665"
+    },
+    {
+     "reference": "Condition/24671"
+    },
+    {
+     "reference": "Condition/24677"
+    },
+    {
+     "reference": "Condition/24844"
+    },
+    {
+     "reference": "Condition/24981"
+    },
+    {
+     "reference": "Condition/25043"
+    },
+    {
+     "reference": "Condition/25092"
     }
    ],
    "prediction": [
@@ -40,30 +61,38 @@
         "display": "Hospital admission (procedure)"
        }
       ],
-      "text": "Hospital admission"
+      "text": "Hospital admission not related to pregnancy or childbirth"
      },
-     "probabilityDecimal": 0.0317,
+     "probabilityDecimal": 0.0606,
      "whenPeriod": {
       "start": "2023-12-31",
       "end": "2024-12-31"
      },
-     "rationale": "Inputs raising the estimate most, compared with a typical adult: age.",
+     "rationale": "Inputs raising the estimate most, compared with a typical adult: age, Medicare cover and frailty indicated by the diagnoses.",
      "extension": [
       {
        "url": "http://fhir-agent.local/StructureDefinition/comparison-probability",
-       "valueDecimal": 0.1049
+       "valueDecimal": 0.1053
       },
       {
        "url": "http://fhir-agent.local/StructureDefinition/risk-percentile",
-       "valueInteger": 29
+       "valueInteger": 62
       },
       {
        "url": "http://fhir-agent.local/StructureDefinition/contract-version",
-       "valueString": "meps25-v1"
+       "valueString": "meps-portable-v2"
       },
       {
        "url": "http://fhir-agent.local/StructureDefinition/top-reasons",
        "valueString": "agey1x"
+      },
+      {
+       "url": "http://fhir-agent.local/StructureDefinition/top-reasons",
+       "valueString": "mcrevy1"
+      },
+      {
+       "url": "http://fhir-agent.local/StructureDefinition/top-reasons",
+       "valueString": "hfrs"
       }
      ]
     }
@@ -76,11 +105,7 @@
    "extension": [
     {
      "url": "http://fhir-agent.local/StructureDefinition/input-warning",
-     "valueString": "povcaty1 defaulted to 4 (middle income): household income not recorded"
-    },
-    {
-     "url": "http://fhir-agent.local/StructureDefinition/input-warning",
-     "valueString": "prescription fills counted from pharmacy claims (no dispense records)"
+     "valueString": "household income not recorded: the model scores without it (O53)"
     },
     {
      "url": "http://fhir-agent.local/StructureDefinition/input-warning",
@@ -96,24 +121,24 @@
  "model_card": {
   "outcome": "model_card",
   "model_card": {
-   "model_id": "gbm-meps25-v1-950d8be12078",
-   "contract_version": "meps25-v1",
-   "outcome": "any inpatient discharge in the 12 months after the feature year",
+   "target": "nonobstetric-admission-12m",
+   "model_id": "gbm-meps-portable-v2-nonobstetric-v2-e8f466f43f88",
+   "contract_version": "meps-portable-v2",
+   "outcome": "an overnight hospital stay that isn't related to pregnancy or childbirth",
    "features": [
     "sex",
     "racethx",
     "regiony1",
-    "agey1x",
     "inscovy1",
     "povcaty1",
+    "agey1x",
+    "mcrevy1",
+    "mcdevy1",
     "ipdisy1",
     "ipngtdy1",
     "ertoty1",
     "obtotvy1",
     "optotvy1",
-    "hhtotdy1",
-    "rxtoty1",
-    "totexpy1",
     "hibpdx",
     "chddx",
     "angidx",
@@ -124,7 +149,15 @@
     "diabdx",
     "arthdx",
     "asthdx",
-    "choldx"
+    "choldx",
+    "n_icd",
+    "n_icd_chapters",
+    "n_distinct_drugs",
+    "hfrs",
+    "charlson_approx",
+    "elixhauser_vw_approx",
+    "elixhauser_count_approx",
+    "tokens_icd"
    ],
    "categorical": [
     "sex",
@@ -139,66 +172,47 @@
      22,
      23,
      24,
-     25,
-     26,
-     27
+     25
     ],
-    "rows": 56360,
-    "events": 4820
+    "rows": 44497,
+    "events": 3297
    },
    "validation_metrics": {
     "comparison": {
-     "auprc": 0.2253834619054936,
-     "auprc_ci95": [
-      0.20621876770922365,
-      0.24979180562949246
-     ],
-     "auroc": 0.7076200378839681,
-     "auroc_ci95": [
-      0.6908687319852472,
-      0.7252857267051913
-     ],
-     "brier": 0.0750866564313514,
-     "mean_predicted": 0.09024741815655428
+     "auprc": 0.24123299851730493,
+     "auroc": 0.7563954794262537,
+     "auroc_65plus": 0.638921224166282,
+     "brier": 0.06685147099785257,
+     "mean_pred": 0.08121626733577474,
+     "n": 11863,
+     "rate": 0.07915367107814213,
+     "top10_ppv": 0.260539629005059,
+     "top10_sensitivity": 0.329073482428115
     },
-    "gbm": {
-     "auprc": 0.2646971976727336,
-     "auprc_ci95": [
-      0.24185749937742732,
-      0.2904388527313831
-     ],
-     "auroc": 0.769008189627725,
-     "auroc_ci95": [
-      0.754237455513191,
-      0.7860632986613846
-     ],
-     "auroc_survey_weighted": 0.7796109177337258,
-     "brier": 0.07247803262282396,
-     "mean_predicted": 0.09172567531071446
-    },
-    "provenance": "Validation metrics come from models trained on panels 21-25 and tested on panels 26-27. This artifact's models are refit on all panels; their own held-out performance is unknown by construction (docs/phase8/design.md \u00a711, defect 5).",
-    "test_panels": [
-     26,
-     27
-    ],
-    "train_panels": [
-     21,
-     22,
-     23,
-     24,
-     25
-    ]
+    "model": {
+     "auprc": 0.27609374396229497,
+     "auroc": 0.7947374034329158,
+     "auroc_65plus": 0.700610131194473,
+     "brier": 0.06472934349454611,
+     "mean_pred": 0.07991388926829383,
+     "n": 11863,
+     "rate": 0.07915367107814213,
+     "top10_ppv": 0.30269814502529513,
+     "top10_sensitivity": 0.38232161874334397
+    }
    },
-   "metrics_note": "Measured on the validation models (trained on panels 21-25, tested on 26-27); the served model is refit on all panels, so its own held-out performance is unknown.",
+   "metrics_note": "Measured once on test panels 26-27 (holdout ledger); the served model IS the confirmed model, trained on panels 21-25 \u2014 not a refit.",
+   "promoted_by": "O59",
    "explanations": "occlusion against a typical MEPS adult; reasons describe what the model weighed, not causes",
    "versions": {
+    "confirmed_model_sha256": "e8f466f43f883e8247689e7cd454caa4d9c11a13b1ed5a42d536d5a06d9ccb9a",
     "joblib": "1.6.0",
     "numpy": "2.5.4",
     "pandas": "3.0.6",
     "python": "3.12.3",
     "scikit-learn": "1.9.1"
    },
-   "created_at": "2026-10-17T17:29:43+00:00"
+   "created_at": "2026-10-18T21:35:13+00:00"
   }
  },
  "one_match": {

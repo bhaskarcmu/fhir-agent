@@ -68,5 +68,6 @@ def test_candidates_list_ids_and_never_choose():
 def test_model_card_states_validation_metrics_as_given():
     card = OUTPUTS["model_card"]["model_card"]
     text = explain.narrate_model_card(card)
-    assert str(card["validation_metrics"]["gbm"]["auroc"]) in text and card["metrics_note"] in text
+    metrics = card["validation_metrics"].get("model") or card["validation_metrics"]["gbm"]
+    assert str(metrics["auroc"]) in text and card["metrics_note"] in text
     assert explain.grounded(text, [{"result": OUTPUTS["model_card"]}]) == []

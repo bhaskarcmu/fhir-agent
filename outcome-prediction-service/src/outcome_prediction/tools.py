@@ -31,9 +31,10 @@ DEFINITIONS = [
     },
     {
         "name": "get_hospitalization_risk",
-        "description": ("The service's 12-month hospitalization risk estimate for ONE patient, as a FHIR "
-                        "RiskAssessment. Takes only the patient id (and optionally the as-of date). It cannot "
-                        "be adjusted, re-scored with different inputs, or classified as high/low."),
+        "description": ("The service's 12-month estimate, for ONE patient, of a hospital admission not related "
+                        "to pregnancy or childbirth, as a FHIR RiskAssessment. Takes only the patient id (and "
+                        "optionally the as-of date). It cannot be adjusted, re-scored with different inputs, or "
+                        "classified as high/low."),
         "input_schema": {"type": "object", "additionalProperties": False, "required": ["patient_id"],
                          "properties": {"patient_id": {"type": "string"},
                                         "as_of": {"type": "string", "description": "YYYY-MM-DD; default today"}}},

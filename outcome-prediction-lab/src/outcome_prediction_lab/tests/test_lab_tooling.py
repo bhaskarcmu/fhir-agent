@@ -103,6 +103,9 @@ def _frame(n_per_panel=160, seed=0):
     t["tokens"] = [" ".join(rng.choice(vocab, 4)) for _ in range(len(t))]
     t["desc_text"] = t["tokens"].str.replace("icd", "condition ", regex=False)
     t["drug_names"] = "ASPIRIN | METFORMIN"
+    t["tokens_icd"] = [" ".join(tok for tok in d.split() if tok.startswith("icd")) for d in t["tokens"]]
+    t["n_icd_chapters"] = rng.poisson(2, len(t)).astype(float)
+    t["n_distinct_drugs"] = rng.poisson(3, len(t)).astype(float)
     t["admit_nonobstetric_y2"] = t["label_hosp_12m"]
     return t
 
@@ -137,7 +140,8 @@ def test_configs_cannot_name_panels_or_splits(lab):
 
 def test_run_compare_confirm_card_scorecard_promote(lab, tmp_path):
     frame = _frame()
-    lab("m", text=["lsa"])
+    lab("m", features="portable-v2", text=["icd_lsa"], augment_missing={"povcaty1": 0.5},
+        simulate_missing_at_scoring=["povcaty1"])
     r = runs.run("r1", "m", frame=frame)
     assert 0.5 < r["cv"]["auroc"] <= 1 and "cv_baseline" in r
     assert "`m`" in runs.compare("r1")
@@ -149,15 +153,37 @@ def test_run_compare_confirm_card_scorecard_promote(lab, tmp_path):
     assert c["test"]["n"] == 2 * 160 and runs.fitted_path("r1", "m").exists()
 
     with pytest.raises(runs.PromotionRefused, match="model card"):
-        runs.promote("r1", "m", "O99")
+        runs.promote("r1", "m", "O99", frame=frame)
     card = runs.card("r1", "m").read_text()
     assert "Uplift / impactability is not assessable" in card and "Test performance" in card
     sc = runs.scorecard("r1", "m").read_text()
     assert "_TO BE SCORED BY A PERSON_" in sc and "Worklist value" in sc
     with pytest.raises(runs.PromotionRefused, match="not in"):
-        runs.promote("r1", "m", "O12345")
-    rec = json.loads(runs.promote("r1", "m", "O99").read_text())
-    assert rec["decision"] == "O99" and rec["model_sha256"] == c["fitted_model_sha256"]
+        runs.promote("r1", "m", "O12345", frame=frame)
+    path = runs.promote("r1", "m", "O99", frame=frame)
+    rec = json.loads(path.read_text())
+    assert rec["decision"] == "O99" and rec["confirmed_model_sha256"] == c["fitted_model_sha256"]
+    # A service artifact the service can verify and serve: same checksums, contract, typical adult.
+    from outcome_prediction.model.artifact import load_artifact
+    from outcome_prediction.model.promotion import verify_promotion
+    art = load_artifact(path.parent)
+    assert verify_promotion(path.parent)["decision"] == "O99"
+    assert art.metadata["contract_version"] == "meps-portable-v2" and art.metadata["blank_at_scoring"] == ["povcaty1"]
+    assert set(art.metadata["typical"]) == set(art.metadata["features"]) and art.metadata["typical"]["tokens_icd"] == ""
+    assert b"outcome_prediction_lab" not in (path.parent / "model.joblib").read_bytes()
+    with pytest.raises(Exception, match="once"):
+        runs.promote("r1", "m", "O99", frame=frame)                   # a promotion happens once
+
+
+def test_research_features_are_never_promoted(lab):
+    frame = _frame()
+    lab("research", text=["lsa"])
+    runs.run("r1", "research", frame=frame)
+    holdout.record("r1", "research", "unit test")
+    runs.confirm("r1", "research", frame=frame)
+    runs.card("r1", "research")
+    with pytest.raises(runs.PromotionRefused, match="production contract"):
+        runs.promote("r1", "research", "O99", frame=frame)
 
 
 def test_learning_only_runs_are_never_promoted(lab):

@@ -107,6 +107,24 @@ def flags_for_code(code: str | None) -> set[str]:
     claimed = {f for f, n in counts.items() if n}
     return half if len(half) == 1 and claimed == half else set()
 
+def icd10_category(code: str | None) -> str | None:
+    """The 3-character ICD-10-CM category of one condition code — what MEPS releases, and what
+    `meps-portable-v2`'s code features count (M12). ICD-10-CM: its first three characters. SNOMED:
+    the category most of its (non-context) targets share; None when they don't agree — chronic
+    kidney disease spans E09–E13, I12, I13, N18, and a guess would feed the comorbidity scores."""
+    if not code:
+        return None
+    if is_icd10(code):
+        return normalise(code)[:3]
+    targets = snomed_map().get(code.strip(), [])
+    kept = [t for t in targets if not t.startswith(CONTEXT_CHAPTERS)] or targets
+    if not kept:
+        return None
+    from collections import Counter
+    category, n = Counter(t[:3] for t in kept).most_common(1)[0]
+    return category if n * 2 > len(kept) else None
+
+
 def versions() -> dict[str, dict]:
     """What a report or a model card cites: each list's version and review status, and the map."""
     meta = json.loads(MAP_FILE.read_text())["source"]
