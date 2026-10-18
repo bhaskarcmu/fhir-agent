@@ -594,10 +594,24 @@ class FHIRClient:
         """
         Return every prescription in the patient's history, whatever its status
         (active, stopped, completed, ...). get_medications() is unchanged: active only.
+
+        A prescription may name its medicine by reference to a separate record (common for
+        medicines given in hospital); those records are fetched with the search.
+        """
+        medicines: dict = {}
+        found = self._search_all("MedicationRequest",
+                                 {"patient": patient_id, "_include": "MedicationRequest:medication"},
+                                 included=medicines)
+        return [self._parse_prescription(r, medicines) for r in found]
+
+    def get_condition_history(self, patient_id: str) -> list[Condition]:
+        """
+        Return every condition in the patient's history (all pages). get_conditions() is
+        unchanged and returns at most the first 100.
         """
         return [
-            self._parse_prescription(r)
-            for r in self._search_all("MedicationRequest", {"patient": patient_id})
+            self._parse_condition(r)
+            for r in self._search_all("Condition", {"patient": patient_id})
         ]
 
     def get_medication_dispenses(self, patient_id: str) -> list[Dispense]:
@@ -636,11 +650,13 @@ class FHIRClient:
             for r in self._search_all("Coverage", {"patient": patient_id})
         ]
 
-    def _search_all(self, resource_type: str, query: dict, max_pages: int = 200) -> list[dict]:
+    def _search_all(self, resource_type: str, query: dict, max_pages: int = 200,
+                    included: Optional[dict] = None) -> list[dict]:
         """Run a search and follow every 'next' page; return the matching resources.
 
         Servers write 'next' links with their own host, which may not be reachable through
         the gateway, so only the link's query string is replayed against this client's base.
+        Resources the search `_include`s are put in `included`, keyed "Type/id".
         """
         path = f"/{resource_type}?" + urllib.parse.urlencode({**query, "_count": self.SEARCH_PAGE_SIZE})
         resources = []
@@ -654,6 +670,11 @@ class FHIRClient:
                 entry["resource"] for entry in body.get("entry", [])
                 if entry.get("resource", {}).get("resourceType") == resource_type
             ]
+            if included is not None:
+                for entry in body.get("entry", []):
+                    r = entry.get("resource", {})
+                    if r.get("resourceType") and r.get("resourceType") != resource_type:
+                        included[f"{r['resourceType']}/{r.get('id', '')}"] = r
             next_url = next(
                 (link.get("url") for link in body.get("link", []) if link.get("relation") == "next"),
                 None,
@@ -869,8 +890,11 @@ class FHIRClient:
         )
 
     @staticmethod
-    def _parse_prescription(resource: dict) -> Prescription:
-        concept = resource.get("medicationCodeableConcept") or {}
+    def _parse_prescription(resource: dict, medicines: Optional[dict] = None) -> Prescription:
+        concept = resource.get("medicationCodeableConcept")
+        if concept is None:                       # named by reference to a Medication record
+            ref = (resource.get("medicationReference") or {}).get("reference", "")
+            concept = ((medicines or {}).get(ref) or {}).get("code") or {}
         coding = FHIRClient._first_coding(concept)
         dispense = resource.get("dispenseRequest") or {}
         validity = dispense.get("validityPeriod") or {}

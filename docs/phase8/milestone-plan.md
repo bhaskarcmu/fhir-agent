@@ -1,6 +1,6 @@
 # Phase 8 Milestone Plan — Patient Outcome Prediction
 
-M1–M13. **M1–M5 built** (verified results below; M3 closed 2026-10-18, O60); M6–M13 planned. M10 and M11 are folded into M3 (O45). Expanded from M1–M11 after a second scope pass added a
+M1–M13. **M1–M6 built** (verified results below; M3 closed 2026-10-18, O60); M7–M13 planned. M10 and M11 are folded into M3 (O45). Expanded from M1–M11 after a second scope pass added a
 dedicated experimentation track (`decisions.md` O28–O40): M3 (workbench) and M12 (promotion)
 are new, and the former model-improvement milestones are now rounds of the
 [experimentation protocol](./experimentation-protocol.md).
@@ -237,6 +237,18 @@ as data, not surprise.
 on the FHIR extractor too; data-quality report generated.
 
 **Depends on:** M4, M5.
+
+**Verified (M6 built):** `etl/extract/fhir.py` (O65) on one Synthea v4.0.0 run exported as CSV and
+FHIR and loaded into HAPI v7.2.0 (33 patients, 0 load errors). **Parity holds** (`etl/parity.py`):
+year 1 = 2023, 20 adults, 19 of 26 columns identical; the rest — income default, office/outpatient
+merged, hospice, a year-2 SNF stay, fills and prescription costs from claims — each explained and
+verified by code (2022: 20 identical). Leakage test passes on the FHIR path (records after `as_of`
+injected into the server's responses change nothing). Every feature value cites its records
+(FR-F4, `explain=True`). Data-quality report (`etl/quality.py`, FR-T6) against committed MEPS
+aggregates: Synthea's coronary disease 24.1% vs 5.4% flagged, with 9 other alerts (one state,
+asthma, arthritis, spending ×9, fills ×3 …). Missing income now defaults to 4 with a warning (O66),
+not silently to 5. Client additions found necessary: `get_condition_history` (paged) and referenced
+medicines in `get_medication_history`. Tests: 18 new (service), 3 new (client).
 
 ---
 

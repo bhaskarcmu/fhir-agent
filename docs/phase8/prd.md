@@ -9,7 +9,7 @@ the `RiskAssessment` shape, scoring-mode semantics, the FHIR mapping sketch, art
 agent's tool contract, testing, and the prototype defects found in review.
 **Milestone plan:** [`milestone-plan.md`](./milestone-plan.md) — M1–M13, kept as its own
 document, same convention as Phase 6 (`phase6/decisions.md` H23) and Phase 7.
-**Decision index:** [`decisions.md`](./decisions.md) — `O1`–`O64`.
+**Decision index:** [`decisions.md`](./decisions.md) — `O1`–`O66`.
 **Experimentation protocol:** [`experimentation-protocol.md`](./experimentation-protocol.md) —
 the standing runbook for research rounds in `outcome-prediction-lab` (second pass, §12).
 **Prototype baseline:** [`prototype-baseline.md`](./prototype-baseline.md) — data choices,
@@ -177,16 +177,16 @@ milestone shown), **Changed** (in, but altered — see §11), **8b** (deferred t
 | FR-T3 | Training mode (builds label) separate from scoring mode (no label, no future data) | Done — M4: scoring mode defined by `as_of`, with a mandatory leakage test (O10, O62) |
 | FR-T4 | Versioned code lists from the NLM SNOMED CT → ICD-10-CM map, 3-character | In — M13 |
 | FR-T5 | FHIR R4 US Core and claims-file adapters into one transform | Changed — FHIR via `fhir-service` in M6 (FR-F1–F4); claims-file adapter deferred (§8) |
-| FR-T6 | Data-quality report: missing/impossible values, unknown codes, drift vs MEPS | In — M6 |
+| FR-T6 | Data-quality report: missing/impossible values, unknown codes, drift vs MEPS | Done — M6 (O65) |
 
 ### FHIR path (new)
 
 | ID | Requirement | Status |
 |---|---|---|
 | FR-F1 | `client/clinical` gains domain methods for encounters, medication history and claim/EOB cost, additively; every existing test passes unmodified | Done — M5 (O63) |
-| FR-F2 | A FHIR extractor builds the canonical tables (`design.md` §7) from `client/clinical` for one patient and an `as_of` date | In — M6 |
-| FR-F3 | For patients generated in one Synthea run, the FHIR path and the CSV path produce identical contract rows, or every difference is listed and explained | In — M6 |
-| FR-F4 | Every derived feature records which FHIR resources contributed, so the `RiskAssessment.basis` can cite them | In — M6 |
+| FR-F2 | A FHIR extractor builds the canonical tables (`design.md` §7) from `client/clinical` for one patient and an `as_of` date | Done — M6 (O65) |
+| FR-F3 | For patients generated in one Synthea run, the FHIR path and the CSV path produce identical contract rows, or every difference is listed and explained | Done — M6 (O65) |
+| FR-F4 | Every derived feature records which FHIR resources contributed, so the `RiskAssessment.basis` can cite them | Done — M6 (O65) |
 
 ### Service
 

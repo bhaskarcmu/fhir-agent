@@ -213,3 +213,37 @@ class TestExistingBehaviourUnchanged:
                 return 200, {}
         Spy("http://x").get_medications("p1")
         assert Spy.paths == ["/MedicationRequest?patient=p1&status=active&_count=100"]
+
+
+class TestHistoryCompleteness:
+    """Added in Phase 8 M6: medicines named by reference, and condition histories over 100."""
+
+    def test_referenced_medicines_are_resolved(self):
+        page = json.loads((Path(__file__).parent / "fixtures" / "medication_reference_page.json").read_text())
+
+        class OnePage(FHIRClient):
+            paths = []
+            def _request(self, path, method="GET", body=None):
+                self.paths.append(path)
+                return 200, page
+        history = OnePage("http://x").get_medication_history("p")
+        assert "_include=MedicationRequest%3Amedication" in OnePage.paths[0]
+        by_reference = [e["resource"] for e in page["entry"]
+                        if e["resource"]["resourceType"] == "MedicationRequest" and "medicationReference" in e["resource"]]
+        assert by_reference                                   # the recorded page really uses references
+        assert len(history) == 5 and all(p.code and p.display for p in history)
+
+    def test_condition_history_reads_every_page(self, client):
+        history = client.get_condition_history(PID)
+        assert sum(p.startswith("?_getpages=") for p in client.paths) == 3      # 32 conditions, 10 a page
+        assert len(history) == 32 and len({c.id for c in history}) == 32
+        assert all(c.code and c.display for c in history)
+
+    def test_get_conditions_is_unchanged(self):
+        class Spy(FHIRClient):
+            paths = []
+            def _request(self, path, method="GET", body=None):
+                self.paths.append(path)
+                return 200, {}
+        Spy("http://x").get_conditions("p1")
+        assert Spy.paths == ["/Condition?patient=p1&_count=100"]

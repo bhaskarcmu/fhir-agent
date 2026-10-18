@@ -65,6 +65,7 @@ def main(base_url: str, synthea_id: str) -> None:
     client.get_demographics(patient_id)
     client.get_encounters(patient_id, since=SINCE)
     client.get_medication_history(patient_id)
+    client.get_condition_history(patient_id)
     client.get_medication_dispenses(patient_id)
     client.get_care_costs(patient_id, since=SINCE)
     client.get_coverage(patient_id)

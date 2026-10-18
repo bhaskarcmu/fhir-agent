@@ -201,33 +201,32 @@ the two can't drift. Values only final when a record ends become unknown while i
 add and remove records dated after `as_of` — including a long-running prescription whose stop
 date and dispense count are only known later — and assert identical contract rows.
 
-## 7. Canonical model and the FHIR mapping sketch (O21 — unvalidated)
+## 7. Canonical model and the FHIR mapping (O21 → validated in M5–M6: O64, O65)
 
 Canonical tables carried over from the prototype's design (`person`, `coverage`,
 `encounter`, `condition`, `medication_fill`), with one added column on each: `source_ref` (the
 FHIR `Type/id`, or the CSV row ID) — what makes FR-F4's `basis` possible.
 
-The FHIR extractor's sketch — **every row to be confirmed against real Synthea v4.0.0 output in
-M6**, recording what was found, as Phase 7 does for RxNav (R11):
+The FHIR extractor (`etl/extract/fhir.py`, built in M6) — each rule **checked against Synthea
+v4.0.0 FHIR on HAPI v7.2.0**, the same run's CSV as the reference (O65), as Phase 7 does for
+RxNav (R11):
 
-| Canonical | FHIR source (via `client/clinical`) | Known risk |
-|---|---|---|
-| `person` | `Patient` (gender, birthDate, deceased, address.state; race/ethnicity from US Core extensions) | Income and household size absent → `povcaty1` defaulted with a warning; ZIP-level income is a later contract version |
-| `encounter` | `Encounter.class` + `period` | Synthea maps several CSV classes to `AMB`; office vs hospital-outpatient (`obtotvy1` vs `optotvy1`) may need `Encounter.type`/`serviceType`, or a documented merge |
-| `condition` | `Condition` code (SNOMED) + onset | Description regex (prototype) until M13's code lists |
-| `medication_fill` | `MedicationDispense` if present; else `MedicationRequest` + `dispenseRequest`, truncated at `as_of` | Synthea's FHIR may not carry a dispense count; the fallback rule is decided and documented in M6 |
-| `coverage` | `Coverage`, or `ExplanationOfBenefit.insurance` | Early evidence: Synthea's default R4 export emitted **no `Coverage`** in Phase 2's run (`data/reference/README.md`), so `ExplanationOfBenefit.insurance` is the likely source — confirm in M6 |
-| cost (`totexpy1`) | `ExplanationOfBenefit` payment/total, else `Claim.total` | Charges vs MEPS payments (O25) |
+| Canonical | FHIR source (via `client/clinical`) | Found in Synthea v4.0.0 | Rule |
+|---|---|---|---|
+| `person` | `get_demographics`: Patient gender, birthDate, deceasedDateTime, address.state, US Core race / ethnicity | All present; state is a postal code; **no income** | State code → name; `povcaty1` defaulted to 4 with a warning (O66) |
+| `encounter` | `get_encounters`: class + period; cost from `get_care_costs` | Matches CSV one-to-one (ID, start). Class folds CSV classes: AMB = ambulatory + wellness + **outpatient** + urgent care; IMP = inpatient + **SNF**; HH = home + **hospice**. Neither `type` nor place of service separates them | Counted as office / inpatient / home health. Cost = billed total of the encounter's claims (equals the CSV cost for all 4,307) |
+| `condition` | `get_condition_history` (paged — 6% of people have > 100) | Onset matches; description = SNOMED display | Onset, else recorded date; description regex until M13 |
+| `medication_fill` | `get_medication_dispenses`; else `get_care_costs` pharmacy claims | **No `MedicationDispense`, no `dispenseRequest`, no stop date**; one pharmacy claim per prescription | One fill per dispense; else one fill per pharmacy claim, priced at its billed amount, with a note. Fills undercount by ~6× on Synthea |
+| `coverage` | `get_coverage`; else the payer on each claim | **No `Coverage`** | Claim payer for the claim's service period; payer name → ownership (Medicare / Medicaid / Dual Eligible → government; `NO_INSURANCE`; else private) |
 
-**Checked in M5 against Synthea v4.0.0 FHIR on HAPI v7.2.0 (O64):** encounter classes are folded
-as feared (AMB covers ambulatory, wellness, outpatient and urgent care); there is no `Coverage`,
-no `MedicationDispense` and no `dispenseRequest` (one pharmacy claim per prescription, no fill
-count); no `hospitalization.admitSource`; `address.state` is a postal code. The client methods
-that read each source: `get_demographics`, `get_encounters`, `get_medication_history`,
-`get_medication_dispenses`, `get_care_costs` (ExplanationOfBenefit: amounts, payer, linked
-encounters and medicines), `get_coverage`.
+**Parity (FR-F3), year 1 = 2023, 20 adults, same run both ways:** 19 of 26 columns identical
+(demographics, insurance, every stay and ER count, all 11 diagnosis flags); every other
+difference explained *and verified* by `etl/parity.py` — income default (`povcaty1`), office +
+outpatient merged (their sum is equal), hospice as home health, a year-2 SNF stay in the label,
+prescription fills and costs from claims (the encounter part of spending is equal). Same for
+year 1 = 2022.
 
-Synthea runs for Phase 8 (O11) override `exporter.csv.export=true` and
+Synthea runs for Phase 8 (O11) overrideSynthea runs for Phase 8 (O11) override `exporter.csv.export=true` and
 `exporter.years_of_history` on the command line so both formats and enough history come from
 one run; the shared `data/synthea/synthea.properties` is not edited.
 

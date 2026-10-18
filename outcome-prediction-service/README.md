@@ -5,8 +5,8 @@ milestones) trains, evaluates and serves the 12-month hospitalization model as F
 `RiskAssessment`s. Planning, decisions and status: [`docs/phase8/`](../docs/phase8/README.md).
 
 **Built so far:** M1 (MEPS acquisition, dataset build, variable dictionary), M2 (training,
-evaluation, model artifact) and M4 (Synthea CSV harness, `as_of` scoring mode, leakage test). No API
-or compose service yet.
+evaluation, model artifact), M4 (Synthea CSV harness, `as_of` scoring mode, leakage test) and M6 (FHIR
+extractor, CSV ↔ FHIR parity, data-quality report). No API or compose service yet.
 
 ## Install
 
@@ -74,6 +74,24 @@ Code path: `etl/extract/synthea_csv.py` (reading only) → `etl/canonical.py` (f
 as_of)`; `training_rows(canon, year)` = scoring rows as of 31 December + the label). The prototype's
 mapping is kept as `prototype_training_rows` — reference only, defects marked — so the leakage test
 can show it catches them (`docs/phase8/design.md` §6, §11; decisions O61, O62).
+
+## FHIR path, parity and data quality (M6)
+
+```bash
+pip install -e client/clinical                    # the FHIR extractor reads through it
+# CSV <-> FHIR parity: the same Synthea run, both extractors (needs a FHIR server loaded with that run)
+python -m outcome_prediction.etl.parity --csv <run>/csv --fhir http://localhost:8090/fhir --year 2023
+#    -> data/reports/parity_2023.{md,json}         (fails unless every difference is explained)
+# Data-quality report vs MEPS (missing / impossible values, unknown codes, drift)
+python -m outcome_prediction.etl.quality csv <run>/csv --year 2023
+python -m outcome_prediction.etl.quality fhir http://localhost:8090/fhir --year 2023
+python -m outcome_prediction.etl.quality reference  # rebuild meps_reference.json (aggregates only) from MEPS
+```
+
+`etl/extract/fhir.py` maps FHIR to the same canonical tables as the CSV reader; the rules, and
+what Synthea's FHIR does and doesn't carry, are in `docs/phase8/design.md` §7 (O65).
+`to_contract.scoring_rows(..., explain=True)` also returns each feature's source records (the
+`RiskAssessment.basis`, FR-F4) and the defaults applied.
 
 ## Data manifest and private mirror
 
