@@ -3660,8 +3660,12 @@ A real (small) bug: `confirm` assumed `run` had already created `runs/`. Fixing 
 
 Round 000 is done and tested. Writing its report and updating the docs:
 
+Recording your answers: the scores in the repo, O59 for the promotion choice, O60 for closing M3. Then I'll regenerate the scorecards and run the promotion.
+
+Before running `promote`, I'm checking what M12 (the promotion milestone) owns, so M3 doesn't take over its work:
+
 <details>
-<summary>Execution details — 528 tool events</summary>
+<summary>Execution details — 531 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5009,6 +5013,12 @@ import json, sys; from pathlib import Path
 S = Path(sys.argv[1])
 reg = {"score": "No…`
 - **AskUserQuestion** `{"questions": [{"question": "O36 needs a person to score each focus model's non-ML criteria. I drafted them; should I adopt the drafts as your scores?", "header": "Scorecards", "multiSelect": false, "…`
+- **Bash** `S=/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad && python3 - "$S" <<'EOF'
+import json, sys; from pathlib import Path
+S = Path(sys.argv[1])
+for r, n in [("003-…`
+- **Bash** `grep -n "^### M12" -A22 docs/phase8/milestone-plan.md; sed -n 286,296p docs/phase8/milestone-plan.md; sed -n 284,290p docs/phase8/prd.md`
+- **Bash** `sed -n 1,12p docs/phase8/milestone-plan.md | head -12; sed -n 150,166p docs/phase8/milestone-plan.md; sed -n 5,10p docs/phase8/README.md`
 
 </details>
 
@@ -5019,6 +5029,6 @@ reg = {"score": "No…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 14:49 UTC
+- **Last updated:** 18 October 2026, 14:53 UTC
 - **Turns:** 48
 - **Status:** Complete
