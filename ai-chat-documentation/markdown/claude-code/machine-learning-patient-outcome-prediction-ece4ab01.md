@@ -3091,6 +3091,82 @@ Tell me a bit about considerations for patients for whom we have to run the ETL 
 
 The answer is "it depends on what the FHIR records contain", so I'll test your high-cost idea directly before answering. A quick, cross-validation-only experiment (training panels only, no test-panel look) measures how much the models really depend on last year's spending, and on the other features that don't carry over well:
 
+## What's missing, and what's merely different
+
+You're mostly right. More precisely, last year's spending will be **missing or mean something different**, depending on what the customer's FHIR contains:
+
+| Customer's FHIR source | Spending available? |
+|---|---|
+| Records only (EHR) | **Missing.** Records hold no payment amounts. |
+| Records with billing data (`Claim`/`ExplanationOfBenefit`; Synthea produces these) | **Different meaning.** These are *charges*, and only from this health system. MEPS spending is *payments*, from every payer, at every provider. |
+| Payer claims | Closest to MEPS, but only for that one payer. |
+
+So converting it would be shaky at best. It's safer to treat spending as unavailable.
+
+## Finding high-cost patients without last year's spending
+
+**Yes, it works.** I just measured it with cross-validation on the training panels (no test-panel look):
+
+| Target | All features | **Without last year's spending** | Also without prescription fills and home-health days |
+|---|---|---|---|
+| High-cost patient | AUROC 0.860, top-10% hit rate 49.6% | **0.852**, 46.5% | 0.845, 44.6% |
+| Non-obstetric hospital stay | 0.799 | **0.800** (no loss) | 0.799 |
+| Any ER visit | 0.734 | **0.735** (no loss) | 0.734 |
+
+- **High cost loses a little:** about 0.008 AUROC and 3 points of hit rate. It still clearly beats the simple rule of age plus last year's spending (0.826), which wouldn't even exist in practice.
+- **The other targets lose nothing.** Spending was standing in for things the model already sees: admissions, ER visits, conditions, drug classes such as insulin, and frailty.
+- **Dropping prescription fills and home-health days as well** costs high-cost a bit more (0.845) and the others nothing.
+
+The important principle: **if a feature will *always* be missing in production, don't fill it in. Retrain without it.**
+- Filling in a missing value can't add information. The fill-in is calculated from the other features, so it carries nothing new.
+- Worse, a model trained on real spending but fed estimated values gets **miscalibrated** without anyone noticing.
+- The missingness-augmentation trick from round 001 is for features that are *sometimes* missing, like income. It isn't for features that never exist.
+
+That's my recommendation for the open O25 decision: **drop spending from every production model**. Keep prescription fills only if they can come from real dispensing records.
+
+## Other things to consider when converting FHIR records
+
+**1. Measures that look the same but aren't**
+- **Diagnoses:** MEPS records self-reported "ever told you have…" answers, while EHRs record coded problem lists. Problem lists can be incomplete or stale, and clinicians and survey respondents code different things.
+- **Prescriptions:** MEPS counts *fills*. EHRs usually have *orders* (`MedicationRequest`), and fills (`MedicationDispense`) are often absent. An order isn't a fill.
+- **Visit types:** office and hospital-outpatient visits may arrive under the same FHIR encounter class (the M6 risk). An ER visit that led to an admission may be counted differently too.
+
+**2. Care that happens elsewhere doesn't show up**
+- A health system's records miss admissions and ER visits at other hospitals. Those are exactly the strongest predictors.
+- Records-only customers will therefore look healthier than they are, and **predictions will run low**. Claims data fixes this (O26). Otherwise, recalibration on the customer's own data is essential (Phase 8b).
+
+**3. Validating a target needs data that can observe it**
+- To check or recalibrate a model on a customer's data, the customer must be able to see the outcome.
+- **High cost needs claims.** A records-only customer can never verify a high-cost model.
+- Admissions and ER visits are visible in records, but only within that system.
+- This is the scorecard's "measurable in customer data" criterion, and it argues for leading with the admission and ER targets.
+
+**4. Mapping code systems**
+- **Diagnoses:** FHIR uses SNOMED, so it needs a SNOMED → ICD-10 mapping to 3 characters (M13).
+- **Drugs:** FHIR uses RxNorm, but the model uses Multum classes, which are proprietary. That needs the free NLM RxClass instead, plus retraining on those classes (the portability risk I flagged).
+- **CCSR groups:** these need AHRQ's mapping file, whose download terms are unclear.
+
+**5. Time windows and leakage**
+- Features must come from the **12 months before an explicit as-of date** (O10).
+- Nothing dated after that date may be read: no later diagnoses, no future dispenses, and no stays that started before but ended after.
+- MEPS uses calendar years, so a rolling window shifts things slightly, for example by season.
+
+**6. Demographics and social factors**
+- **Income and household size** are almost never recorded, so the poverty category is usually missing. That's handled by augmentation and by the "worth recording" prompt.
+- **Race and ethnicity** coding varies between systems. Ages over 85 are top-coded in MEPS.
+- **Insurance** may sit in `Coverage` or only inside billing data, and region comes from the address.
+
+**7. A data-quality report on every run (M6)**
+- It should flag impossible values, duplicate encounters, deceased patients, dates in the future, and how far each feature's distribution sits from MEPS.
+- Drift tells the care team when the model is being used outside the world it learned from.
+
+## Recommendation
+
+- **Define a "portable" feature contract**, e.g. `meps-portable-v2`. It would contain only features the FHIR side can supply reliably, each tagged with its source and a reliability level: always, usually, or claims only.
+- **Train the production models on that contract**, not on the full MEPS set.
+- **Today's evidence:** that costs nothing for admissions and ER visits, and about 0.008 AUROC for high cost.
+- **Next steps:** record this as the answer to O25, plus a new decision on the portable contract. Then build it in M3's remaining work or at the start of M6. Should I go ahead?
+
 <details>
 <summary>Execution details — 443 tool events</summary>
 
