@@ -3939,8 +3939,12 @@ Now the methods, plus a paging helper that only new methods use. Existing method
 
 Running the new methods against the live HAPI across all 10 patients, to check they parse real server output end to end, including multi-page results:
 
+The one failure is the request I'd flagged as unrecorded. The test should use the recorded `since` window:
+
+Every cost links to a recorded encounter (31 of 31), so I'm tightening that assertion to require all of them. Then the M5 gate: `triage-service` and `mcp-agent` must pass unmodified.
+
 <details>
-<summary>Execution details — 634 tool events</summary>
+<summary>Execution details — 638 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5515,6 +5519,16 @@ def sub(old, new):
 from pathlib import Path
 p = Path("client/clinical/tests/record_care_history.py"); s = p.read_text()
 s = s.replace('''Every request the client makes and the server's exact response b…`
+- **Write** `/workspaces/fhir-agent/client/clinical/tests/test_care_history.py`
+- **Bash** `python -m pytest client/clinical/tests -q -p no:cacheprovider 2>&1 | tail -15`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("client/clinical/tests/test_care_history.py"); s = p.read_text()
+old = '''        encounter_ids = {e.id for e in client.get_encounters(PID)}  # unre…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("client/clinical/tests/test_care_history.py"); s = p.read_text()
+old = '''        assert sum(eid in encounter_ids for eid in linked) / len(linked) >…`
 
 </details>
 
@@ -5525,6 +5539,6 @@ s = s.replace('''Every request the client makes and the server's exact response 
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 16:21 UTC
+- **Last updated:** 18 October 2026, 16:22 UTC
 - **Turns:** 52
 - **Status:** Complete
