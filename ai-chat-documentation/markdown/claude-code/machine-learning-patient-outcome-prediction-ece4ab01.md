@@ -4372,7 +4372,7 @@ Recording the crosswalk's licence in both established places (O13): `NOTICE` for
 The wheel now carries all 13 data files (11 lists, the map and the MEPS aggregates). Final checks:
 
 <details>
-<summary>Execution details — 903 tool events</summary>
+<summary>Execution details — 904 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6663,6 +6663,7 @@ p = Path("outcome-prediction-service/pyproject.toml"); s = p.read_text()…`
 from pathlib import Path
 p = Path("outcome-prediction-service/src/outcome_prediction/tests/test_etl_fhir.py"); s = p.read_text()
 old = '''    assert set(rep["unknown_codes"].values()…`
+- **Bash** `git add NOTICE data/reference/README.md docs outcome-prediction-lab/src/outcome_prediction_lab/vocabulary.py outcome-prediction-service && git status --short | grep -cE "^A|^M" && git commit -q -F - <…`
 
 </details>
 
@@ -6673,6 +6674,6 @@ old = '''    assert set(rep["unknown_codes"].values()…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 21:03 UTC
+- **Last updated:** 18 October 2026, 21:05 UTC
 - **Turns:** 61
 - **Status:** Complete
