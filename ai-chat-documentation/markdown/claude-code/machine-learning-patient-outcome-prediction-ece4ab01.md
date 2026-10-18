@@ -3661,7 +3661,7 @@ A real (small) bug: `confirm` assumed `run` had already created `runs/`. Fixing 
 Round 000 is done and tested. Writing its report and updating the docs:
 
 <details>
-<summary>Execution details — 524 tool events</summary>
+<summary>Execution details — 528 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4999,6 +4999,16 @@ old = '''    (round_dir(round_id) / "runs" / f"{name}.confirm.json")…`
 import json
 for n in ['meps25-v1','meps25-v1-comparison']:
     r=json.load(open(f'outcome-prediction-lab/rounds/000-baseline-reproduction/runs/{n}.json'))['cv']; print(n, {k:round(v,4) fo…`
+- **Bash** `cat > outcome-prediction-lab/rounds/000-baseline-reproduction/report.md <<'EOF'
+# Round 000 report — M2's model reproduced through the lab
+
+**Status:** complete — **passed**. **Pre-registration:** [`R…`
+- **Bash** `sed -i 's/^| FR-X4 | \(.*\) | In — M3 (round 000), then every round |$/| FR-X4 | \1 | Done — M3 rounds 000–004; every later round |/' docs/phase8/prd.md && sed -i 's/\*\*M3 in progress:\*\* rounds 001…`
+- **Bash** `S=/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad && python3 - "$S" <<'EOF'
+import json, sys; from pathlib import Path
+S = Path(sys.argv[1])
+reg = {"score": "No…`
+- **AskUserQuestion** `{"questions": [{"question": "O36 needs a person to score each focus model's non-ML criteria. I drafted them; should I adopt the drafts as your scores?", "header": "Scorecards", "multiSelect": false, "…`
 
 </details>
 
@@ -5009,6 +5019,6 @@ for n in ['meps25-v1','meps25-v1-comparison']:
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 14:48 UTC
+- **Last updated:** 18 October 2026, 14:49 UTC
 - **Turns:** 48
 - **Status:** Complete
