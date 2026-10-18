@@ -126,6 +126,13 @@ per-patient explanations, missing values, feature importance). Results:
 | O53 | **Always-missing inputs are dropped and the model retrained — never imputed; sometimes-missing inputs stay, with missingness augmentation** (a pipeline step that hides them for half of training rows, never at scoring). Income is the sometimes-missing case: models are scored with it blanked, as production will be | Accepted | An imputed value is a function of the other inputs, so it adds no information — only silent miscalibration. Augmentation keeps calibration with income blanked (mean prediction 0.0741 vs rate 0.0741, CV). |
 | O54 | **A target is only offered to a customer who can observe its outcome**: admissions and ER visits from records (within the system) or claims; high cost **from claims only** — its production model is the claims-tier one, and the model card states it | Accepted | Without the outcome, a customer can neither validate nor recalibrate the model (scorecard criterion "measurable in customer data", O36). `contract.LABEL_OBSERVABILITY`. |
 
+
+## Focus
+
+| ID | Decision | Status | Rationale / where it lives |
+|---|---|---|---|
+| O55 | **Phase 8 focuses on four predictions only, unless the repo owner explicitly says otherwise:** (1) admission through the emergency room, (2) hospital stay not related to pregnancy or childbirth, (3) any emergency-room visit, (4) being a high-cost patient. All other targets are **parked, not deleted** | Accepted (repo owner, 2026-10-18); **narrows O40** to a choice among these four | All four are event probabilities (native `RiskAssessment`, O3); three are validatable from records, high cost from claims (O54). The decision path and every parked item's location: [`prediction-targets.md`](./prediction-targets.md). |
+
 ## Supersession notes
 
 - **O44 supersedes O17's last clause** ("tests that need the MEPS cache self-skip when it's
@@ -136,6 +143,8 @@ per-patient explanations, missing values, feature importance). Results:
 - **O52 and O53 resolve O25**: last-year spending is not portable and is dropped from every
   production model (not imputed); prescription fills and home-health days are claims-only inputs,
   used only in the `portable-v2+claims` tier. O25's row is left as written, for the record.
+- **O55 narrows O40**: the first promotion is chosen among the four focus predictions (O40 stays
+  open for that choice; the recommendation is non-obstetric admission). O40's row is left as written.
 - **O46 refines O30**: same tool (MLflow), different store (SQLite instead of the retired file
   store), now an optional extra.
 

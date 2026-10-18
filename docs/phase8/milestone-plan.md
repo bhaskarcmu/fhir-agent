@@ -144,6 +144,12 @@ portable feature contract `meps-portable-v2` (O52) with "drop, don't impute" and
 augmentation (O53), and outcome observability (O54); O25 resolved. Production-contract models on the
 test panels: non-obstetric admission 0.795, any ER visit 0.740, high cost 0.834 (with claims).
 **M6 and M7 now build against `meps-portable-v2`**, not `meps25-v1`.
+
+**Focus (O55, 2026-10-18):** four predictions — admission through the ER, non-obstetric hospital stay,
+any ER visit, high-cost patient ([`prediction-targets.md`](./prediction-targets.md)). Remaining M3 work
+applies to these four: a production-contract model for **admission through the ER** (not yet built),
+fairness metrics and a 65+ check for all four, the person-scored scorecard criteria, and choosing
+the first promotion among them (O40). Round 000 stays.
 **Not yet built:** round 000.
 
 ---

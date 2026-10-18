@@ -9,7 +9,7 @@ the `RiskAssessment` shape, scoring-mode semantics, the FHIR mapping sketch, art
 agent's tool contract, testing, and the prototype defects found in review.
 **Milestone plan:** [`milestone-plan.md`](./milestone-plan.md) — M1–M13, kept as its own
 document, same convention as Phase 6 (`phase6/decisions.md` H23) and Phase 7.
-**Decision index:** [`decisions.md`](./decisions.md) — `O1`–`O54`.
+**Decision index:** [`decisions.md`](./decisions.md) — `O1`–`O55`.
 **Experimentation protocol:** [`experimentation-protocol.md`](./experimentation-protocol.md) —
 the standing runbook for research rounds in `outcome-prediction-lab` (second pass, §12).
 **Prototype baseline:** [`prototype-baseline.md`](./prototype-baseline.md) — data choices,
@@ -55,6 +55,7 @@ hand-checkable comparison score** and its top reasons, and every reported metric
 | Input path | FHIR from `fhir-service` via `client/clinical`, this phase (O8, O9). |
 | Agent | New `outcome-prediction-agent/` on `agent-platform`; `mcp-agent` untouched; self-hosted LLM by default (O15, O16). |
 | Exposure | Internal-only; no Kong route (O14). |
+| **Focus (O55)** | Four predictions only, unless the repo owner says otherwise: admission through the ER; hospital stay not related to pregnancy or childbirth; any ER visit; being a high-cost patient. Other targets parked, not deleted — [`prediction-targets.md`](./prediction-targets.md). |
 | **Experimentation track** | **Second pass** — a dedicated workbench, `outcome-prediction-lab/`, built once (M3) and used by every later research round under a standing protocol; milestones are never reopened (O28–O31). |
 | **Holdout and promotion** | **Second pass** — test panels only for logged confirmation (O32); nothing reaches the service without a promotion record and a decision entry (O33). |
 | **Prediction space** | **Second pass** — explore outcome × form: which outcomes, and as probability, count, cost or tier (O34); serving a non-probability form needs a decision revisiting O3 (O35); judged on a scorecard with non-ML criteria (O36). |

@@ -17,6 +17,14 @@ python -m pip install -e "outcome-prediction-service[dev]" -e "outcome-predictio
 python -m pip install -e "outcome-prediction-lab[tracking]"   # optional: MLflow (local SQLite store)
 ```
 
+## Focus
+
+Rounds target the **four focus predictions** (`docs/phase8/decisions.md` O55): admission through the
+ER (`admit_via_er_y2`), hospital stay not related to pregnancy or childbirth
+(`admit_nonobstetric_y2`), any ER visit (`any_ed_y2`) and being a high-cost patient
+(`high_cost_y2`). Every other label stays in the lab table, parked — see
+[`docs/phase8/prediction-targets.md`](../docs/phase8/prediction-targets.md).
+
 ## The command line
 
 ```bash

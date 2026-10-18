@@ -24,6 +24,12 @@ on record. Typical triggers:
 
 Don't start a round to tune a number nobody has asked about.
 
+## 1a. Default scope
+
+Rounds work on the **four focus predictions** (decisions.md O55; `prediction-targets.md`) unless the
+repo owner explicitly asks for another target. Parked targets remain in the lab table and can be
+run with a config — but only on request.
+
 ## 2. The rules every round follows
 
 1. **Training panels only for exploration.** All comparisons use panel-grouped cross-validation
