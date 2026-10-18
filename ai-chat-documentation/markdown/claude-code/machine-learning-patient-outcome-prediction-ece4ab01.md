@@ -3600,8 +3600,10 @@ Checked the report's numbers against the JSON. One row lumps ranges across targe
 
 Now the docs updates: prediction targets, lab README, milestone plan, protocol and design CLI tables, and the Phase README status.
 
+The PRD still indexes O1–O55 and lists FR-M6 and FR-E6 as planned. Updating both:
+
 <details>
-<summary>Execution details — 492 tool events</summary>
+<summary>Execution details — 495 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4871,6 +4873,14 @@ old = "| **Calibration bends toward the average by age and in…`
 - **Bash** `sed -n 135,160p docs/phase8/milestone-plan.md; sed -n 285,305p docs/phase8/milestone-plan.md; grep -n "Status\|status\|round 00\|O55" docs/phase8/README.md | head; grep -n "outcome-prediction-lab \(ex…`
 - **Bash** `sed -n 1,16p docs/phase8/README.md; sed -n 48,64p docs/phase8/experimentation-protocol.md; grep -n "drug-names\|notebooks-check\|explain " docs/phase8/design.md | head`
 - **Bash** `sed -n 305,322p docs/phase8/design.md`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+def sub(path, old, new):
+    p = Path(path); s = p.read_text(); assert old in s, (path, old[:60]); p.write_text(s.replace(old, new, 1))
+
+# design §12 CLI tab…`
+- **Bash** `sed -i 's/`O1`–`O55`\./`O1`–`O58`./' docs/phase8/prd.md && sed -i 's/^| FR-M6 | Separate or specially tuned model for 65+ | In — M11 |/| FR-M6 | Separate or specially tuned model for 65+ | Done — M3 r…`
+- **Bash** `sed -i '167s/(O1–O55)/(O1–O58)/' docs/README.md && sed -n 167p docs/README.md && export MLFLOW_DISABLE_AGENT_HINT=1 PYTHONWARNINGS=ignore && python -m pytest outcome-prediction-lab/src/outcome_predict…`
 
 </details>
 
@@ -4881,6 +4891,6 @@ old = "| **Calibration bends toward the average by age and in…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 14:33 UTC
+- **Last updated:** 18 October 2026, 14:34 UTC
 - **Turns:** 47
 - **Status:** Complete
