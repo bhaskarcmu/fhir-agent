@@ -4366,7 +4366,7 @@ Every draft prefix exists in the CDC FY2026 release. Creating the branch. **Git:
 All 22 pass. Now the one-definition refactor: the lab imports the CDC pin from the service instead of keeping its own copy (O29):
 
 <details>
-<summary>Execution details — 894 tool events</summary>
+<summary>Execution details — 896 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6636,6 +6636,11 @@ old = '''ICD10CM = {   # CDC/NCHS ICD-10-CM FY2026 code descri…`
 from outcome_prediction.etl import codelists as c
 for snomed, targets in c.snomed_map().items():
     kept = [t for t in targets if not t.startswith(c.CONTEXT_CHAPTERS)] or targets…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-service/src/outcome_prediction/etl/codelists/__init__.py"); s = p.read_text()
+old_start = s.index("def flags_for_code(code: str…`
+- **Bash** `docker compose --profile phase8 up -d --build outcome-prediction 2>&1 | tail -1; for i in $(seq 1 60); do [ "$(docker inspect -f '{{.State.Health.Status}}' fhir-agent-outcome-prediction 2>/dev/null)"…`
 
 </details>
 
