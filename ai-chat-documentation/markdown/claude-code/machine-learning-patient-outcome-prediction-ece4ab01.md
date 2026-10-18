@@ -4033,7 +4033,7 @@ The heading is restored, and this time the script asserts it exists exactly once
 All four PRD requirements are marked done and the status is updated. Stopping the throwaway HAPI container, then a final run of the changed suites:
 
 <details>
-<summary>Execution details — 715 tool events</summary>
+<summary>Execution details — 716 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5845,6 +5845,10 @@ def sub(path, old, new):
     p = Path(path); s = p.read_text(); assert s.count(old) == 1, (path, old[:70]); p.write_text(s.replace(old, new))
 for f in ("docs…`
 - **Bash** `docker stop phase8-m6-hapi >/dev/null; PYTHONWARNINGS=ignore MLFLOW_DISABLE_AGENT_HINT=1 python -m pytest outcome-prediction-service client/clinical/tests outcome-prediction-lab/src/outcome_prediction…`
+- **Bash** `git add .github/workflows/tests.yml client/clinical docs outcome-prediction-service && git commit -q -F - <<'EOF'
+feat(phase8): M6 FHIR extractor, CSV<->FHIR parity, data-quality report (O65, O66)
+
+-…`
 
 </details>
 
@@ -5855,6 +5859,6 @@ for f in ("docs…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 17:06 UTC
+- **Last updated:** 18 October 2026, 17:07 UTC
 - **Turns:** 53
 - **Status:** Complete
