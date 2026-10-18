@@ -2627,7 +2627,7 @@ The first attempt only installed partly; this time everything installed. Re-test
 All 11 finalists are logged. Now the **one** look at the test panels, then the explanations stage:
 
 <details>
-<summary>Execution details — 358 tool events</summary>
+<summary>Execution details — 359 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3435,6 +3435,13 @@ import json, joblib
 e = json.load(open('outcome-prediction-lab/rounds/001-what-and-how/explanations.json'))
 gi = sorted(e['global_importance_mean_abs_logodds'].items(), key=lambda kv…`
 - **Bash** `env -u STORAGE_EMULATOR_HOST python -m pytest outcome-prediction-service/src/outcome_prediction/tests -q -p no:cacheprovider 2>&1 | grep -E "FAILED|passed|failed" | cut -c1-200`
+- **Bash** `python3 - <<'EOF'
+def edit(p,pairs):
+    s=open(p).read()
+    for o,n in pairs:
+        assert s.count(o)==1,(p,o[:60],s.count(o)); s=s.replace(o,n)
+    open(p,'w').write(s)
+S='outcome-prediction-serv…`
 
 </details>
 
@@ -3445,6 +3452,6 @@ gi = sorted(e['global_importance_mean_abs_logodds'].items(), key=lambda kv…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 00:44 UTC
+- **Last updated:** 18 October 2026, 00:45 UTC
 - **Turns:** 32
 - **Status:** Complete
