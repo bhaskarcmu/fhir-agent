@@ -3816,8 +3816,10 @@ Running a 20-patient trial with both exports, to check the v4.0.0 CSV schema, ti
 
 The generator is running. Meanwhile I'm reading the rest of the contract's field reference, for the sanity checks:
 
+172 KB, small enough to commit. Now the reproduction code, which is commit 1 of 2: the prototype's rules as-is, defects included, each marked.
+
 <details>
-<summary>Execution details — 558 tool events</summary>
+<summary>Execution details — 564 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5219,6 +5221,15 @@ p = Path(sys.argv[1]); s = p.read_text(…`
 - **Bash** `cd /workspaces/fhir-agent/outcome-prediction-service/data/raw/synthea/trial/csv && python3 - <<'EOF'
 import pandas as pd, numpy as np
 p = pd.read_csv("patients.csv", usecols=["Id","BIRTHDATE","DEATHDA…`
+- **Bash** `cd /workspaces/fhir-agent && F=outcome-prediction-service/src/outcome_prediction/tests/fixtures/synthea_csv && mkdir -p $F && python3 - "$F" <<'EOF'
+import sys, pandas as pd
+from pathlib import Path
+s…`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/etl/canonical.py`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/etl/__init__.py`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/etl/extract/__init__.py`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/etl/transform/__init__.py`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/etl/extract/synthea_csv.py`
 
 </details>
 
@@ -5229,6 +5240,6 @@ p = pd.read_csv("patients.csv", usecols=["Id","BIRTHDATE","DEATHDA…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 15:41 UTC
+- **Last updated:** 18 October 2026, 15:42 UTC
 - **Turns:** 50
 - **Status:** Complete
