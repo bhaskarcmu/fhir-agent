@@ -4712,8 +4712,10 @@ Component READMEs are already current. Now the common guides.
 
 Now rewriting the testing guide: the test counts, the CI job list, and the gaps.
 
+Testing guide is done. Now the developer guide: phases overview, repo map, dev loop, ports, and where to continue.
+
 <details>
-<summary>Execution details — 1019 tool events</summary>
+<summary>Execution details — 1024 tool events</summary>
 
 ### Turn 1 activity
 
@@ -7257,6 +7259,21 @@ for n,s in d['services'].items(): print(n, s.get('profiles'), s.get('ports'))
 - **Bash** `sed -n 19,105p .github/workflows/tests.yml | grep -v "^\s*#" ; sed -n 175,255p .github/workflows/tests.yml | grep -n "run:\|pytest\|pip install\|name:"; sed -n 9,30p pytest.ini`
 - **Bash** `sed -n 127,175p .github/workflows/tests.yml | grep -A6 "pytest\|pip install"; sed -n 30,183p docs/testing-guide.md`
 - **Bash** `for f in $(find claims-service/src/test -name "*Test.java"); do echo "$(grep -c "@Test" $f) $(basename $f .java)"; done | sort -rn; for d in epic-emulator fhir-service; do echo "$d $(grep -r "@Test" $…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("docs/testing-guide.md"); s = p.read_text()
+def rep(old, new):
+    global s
+    assert s.count(old) == 1, old; s = s.replace(old, new)
+
+rep("""# Jav…`
+- **Bash** `grep -n "^def test_" e2e/test_outcome_prediction_acceptance.py; ls mcp-agent/tests agent-platform/tests outcome-prediction-lab/src/outcome_prediction_lab/tests outcome-prediction-agent/tests`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("docs/testing-guide.md"); s = p.read_text()
+old = "| `e2e/test_outcome_prediction_acceptance.py` | 9 | Phase 8: seeded patients scored through the r…`
+- **Bash** `grep -n "epic\|8092\|EPIC" docs/phase4/README.md | sed -n 1,20p | cut -c1-200; grep -n "mcp-agent-api\|8010\|uvicorn" mcp-agent/README.md | head -5; grep -n "^## \|docker compose" docs/demo-guide.md |…`
+- **Bash** `sed -n 433,500p docs/demo-guide.md; sed -n 1,19p docs/demo-guide.md; sed -n 563,570p docs/demo-guide.md`
 
 </details>
 
@@ -7267,6 +7284,6 @@ for n,s in d['services'].items(): print(n, s.get('profiles'), s.get('ports'))
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 22:14 UTC
+- **Last updated:** 18 October 2026, 22:15 UTC
 - **Turns:** 66
 - **Status:** Complete
