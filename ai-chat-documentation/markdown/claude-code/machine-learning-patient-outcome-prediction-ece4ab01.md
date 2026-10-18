@@ -3826,8 +3826,10 @@ First, the boundary filter in `canonical.py`:
 
 Now `to_contract.py`. I'm rewriting it around one `contract_rows(view, as_of)` used by both modes, and keeping the prototype function, renamed, as the reference:
 
+Simplifying the poverty-year expression I just wrote (it's just the `as_of` year), then running the tests:
+
 <details>
-<summary>Execution details — 576 tool events</summary>
+<summary>Execution details — 579 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5250,6 +5252,20 @@ s…`
 - **Read** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/etl/transform/to_contract.py`
 - **Edit** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/etl/canonical.py`
 - **Read** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/etl/transform/to_contract.py`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-service/src/outcome_prediction/etl/transform/to_contract.py"); s = p.read_text()
+def sub(old, new):
+    global s; assert s.count…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-service/src/outcome_prediction/etl/transform/to_contract.py"); s = p.read_text()
+old = 'out["povcaty1"] = _poverty_category(p.in…`
+- **Bash** `python3 -c "
+import pandas as pd
+from outcome_prediction.etl.extract import synthea_csv
+c = synthea_csv.read('outcome-prediction-service/src/outcome_prediction/tests/fixtures/synthea_csv')
+m = c.medic…`
 
 </details>
 
@@ -5260,6 +5276,6 @@ s…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 15:45 UTC
+- **Last updated:** 18 October 2026, 15:46 UTC
 - **Turns:** 50
 - **Status:** Complete
