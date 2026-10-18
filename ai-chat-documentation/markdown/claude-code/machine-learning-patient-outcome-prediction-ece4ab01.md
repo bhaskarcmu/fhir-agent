@@ -3953,8 +3953,12 @@ Now the Phase 8 decision log, design §7 (marking what's confirmed for O21), mil
 
 Now the coordination note in Phase 7's plan (O9 asks the second phase to reuse what the first lands):
 
+All 195 pass (client and service). Checking which CI job runs the client tests, so the new ones aren't silently skipped, and that the new filenames are unique:
+
+The container is gone. **Git:** worktree `/workspaces/fhir-agent`, branch `feature/phase8-m5-clinical-client`, committing then pushing and opening a PR to `main`.
+
 <details>
-<summary>Execution details — 648 tool events</summary>
+<summary>Execution details — 652 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5566,6 +5570,13 @@ from pathlib import Path
 p = Path("docs/phase7/milestone-plan.md"); s = p.read_text()
 old = """**Deliverable:** `client/clinical` supports both emulators' full resource surface;
 `tri…`
+- **Bash** `grep -rn "client/clinical" .github/workflows/*.yml pytest.ini 2>/dev/null | head; git ls-files -co --exclude-standard | grep -cE "/test_care_history.py$|/record_care_history.py$"`
+- **Bash** `docker stop phase8-m5-hapi >/dev/null && docker ps -a --filter name=phase8-m5-hapi --format '{{.Names}}' | wc -l`
+- **Bash** `sleep 3; docker ps -a --filter name=phase8-m5-hapi --format '{{.Names}} {{.Status}}'`
+- **Bash** `git add client/clinical docs && git commit -q -F - <<'EOF'
+feat(phase8): M5 client/clinical care history, additive (O63, O64)
+
+- Six new methods and dataclasses: get_demographics (Demographics), get_e…`
 
 </details>
 
@@ -5576,6 +5587,6 @@ old = """**Deliverable:** `client/clinical` supports both emulators' full resour
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 16:25 UTC
+- **Last updated:** 18 October 2026, 16:26 UTC
 - **Turns:** 52
 - **Status:** Complete
