@@ -1,0 +1,27 @@
+{
+ "flag": "midx",
+ "meaning": "Ever told they had a heart attack (myocardial infarction)",
+ "version": 1,
+ "status": "unreviewed",
+ "status_note": "No clinical owner signs off code lists yet (decisions.md O27).",
+ "code_system": "ICD-10-CM",
+ "release": "CDC/NCHS FY2026",
+ "match": "a diagnosis code starting with any prefix (dots ignored)",
+ "codes": [
+  {
+   "prefix": "I21",
+   "description": "Acute myocardial infarction"
+  },
+  {
+   "prefix": "I22",
+   "description": "Subsequent ST elevation (STEMI) and non-ST elevation (NSTEMI) myocardial infarction"
+  },
+  {
+   "prefix": "I25.2",
+   "description": "Old myocardial infarction"
+  }
+ ],
+ "notes": [
+  "I25 as a whole is chronic coronary disease (chddx); only I25.2 means a past heart attack"
+ ]
+}

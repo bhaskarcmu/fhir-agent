@@ -16,11 +16,11 @@
 > **M7 built** — the scoring API returning FHIR `RiskAssessment`s, port 8005, `phase8` compose profile
 > (O67, O68). **M8 built** — `outcome-prediction-agent`, grounded replies on the self-hosted model
 > (O69, O70). **M9 built** — the end-to-end acceptance suite and the demo (`docs/demo-guide.md` §5b;
-> O71, O72). M12–M13 planned. A research prototype from an earlier session
+> O71, O72). **M13 built** — versioned diagnosis code lists, SNOMED mapped (O73, O74). M12 planned. A research prototype from an earlier session
 > was handed over and reconciled with this repo's conventions; what it established is restated
 > in `prototype-baseline.md`, and the raw hand-off documents are not kept in the repo (O5). A
 > second pass added a permanent **experimentation track** (`outcome-prediction-lab`, O28–O40).
-> `prd.md`, `design.md`, `decisions.md` (`O1`–`O72`), `milestone-plan.md` (M1–M13) and
+> `prd.md`, `design.md`, `decisions.md` (`O1`–`O74`), `milestone-plan.md` (M1–M13) and
 > `experimentation-protocol.md` reflect both passes. Cloud deployment, recalibration and monitoring
 > are reserved for **Phase 8b**.
 >
@@ -35,7 +35,7 @@
 >   experimentation workbench (§12).
 > - [`prediction-targets.md`](./prediction-targets.md) — the four focus predictions, the decision path
 >   that led to them, and where all parked work lives.
-> - [`decisions.md`](./decisions.md) — the ADR-style index (`O1`–`O72`), same convention as
+> - [`decisions.md`](./decisions.md) — the ADR-style index (`O1`–`O74`), same convention as
 >   Phase 2/3/4/6/7.
 > - [`milestone-plan.md`](./milestone-plan.md) — M1–M13, short and long story for each, with the
 >   mapping from the prototype's planned stages.

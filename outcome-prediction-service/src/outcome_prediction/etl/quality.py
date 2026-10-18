@@ -25,6 +25,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from outcome_prediction.etl import codelists
 from outcome_prediction.etl.canonical import Canonical
 from outcome_prediction.etl.transform import to_contract
 from outcome_prediction.model import CATEGORICAL, FEATURES, TRAIN_PANELS
@@ -89,12 +90,29 @@ def unknown_codes(canon: Canonical) -> dict:
             ["ambulatory", "wellness", "urgentcare", "virtual", "outpatient", "emergency", "inpatient", "home",
              "snf", "hospice"])).sum()),
         "coverage with no known payer type": int(cov.ownership.isna().sum()),
-        "conditions with no description (no diagnosis flag possible)": int(canon.condition.description.fillna("").eq("").sum()),
+        "conditions with no description": int(canon.condition.description.fillna("").eq("").sum()),
+        "condition codes not mapped to ICD-10-CM (can't set a diagnosis flag)": int(
+            canon.condition.code.map(lambda c: not codelists.icd10_codes(c)).sum()),
     }
 
 
+def flag_comparison(rows: pd.DataFrame, canon: Canonical, as_of: pd.Timestamp | None = None) -> list[dict]:
+    """Each diagnosis flag's prevalence by the versioned code lists (what rows carry, M13) against
+    the prototype's description patterns, for the same people and conditions up to `as_of`."""
+    ids = set(rows.patient_ref)
+    cond = canon.condition[canon.condition.person_id.isin(ids)]
+    if as_of is not None:
+        cond = cond[cond.start < pd.Timestamp(as_of).normalize() + pd.Timedelta(days=1)]
+    desc = cond.description.fillna("").str.lower()
+    out = []
+    for flag, pattern in to_contract.DX_PATTERNS.items():
+        by_pattern = cond[desc.str.contains(pattern, regex=True)].person_id.nunique()
+        out.append({"flag": flag, "code_lists": float(rows[flag].mean()), "patterns": by_pattern / max(len(ids), 1)})
+    return out
+
+
 def report(rows: pd.DataFrame, warnings: pd.DataFrame, canon: Canonical, source: str,
-           reference: dict | None = None) -> dict:
+           reference: dict | None = None, as_of: pd.Timestamp | None = None) -> dict:
     ref = reference or json.loads(REFERENCE.read_text())
     got = summarise(rows)
     drift = []
@@ -115,6 +133,7 @@ def report(rows: pd.DataFrame, warnings: pd.DataFrame, canon: Canonical, source:
     return {"source": source, "rows": int(len(rows)), "problems": to_contract.check(rows),
             "defaults": {str(k): int(v) for k, v in warnings.warning.value_counts().items()},
             "unknown_codes": unknown_codes(canon), "drift": drift,
+            "flags_before_after": flag_comparison(rows, canon, as_of), "code_lists": codelists.versions()["lists"],
             "alerts": [d["feature"] for d in drift if d["alert"]], "reference": ref["source"]}
 
 
@@ -132,6 +151,12 @@ def markdown(rep: dict) -> str:
     lines += [f"- Default applied: {k} — {v:,} rows" for k, v in rep["defaults"].items()] or ["- No defaults applied."]
     lines += ["", "## Unknown codes", "", "| Check | Records |", "|---|---|"]
     lines += [f"| {k} | {v:,} |" for k, v in rep["unknown_codes"].items()]
+    lines += ["", "## Diagnosis flags: code lists vs the prototype's description patterns", "",
+              "Same people, same conditions (on or before as-of). Code lists are versioned and **unreviewed** "
+              "(O27); patterns are the prototype's rule.", "",
+              "| Flag | Code lists | Patterns | Change |", "|---|---|---|---|"]
+    lines += [f"| `{f['flag']}` | {f['code_lists']:.1%} | {f['patterns']:.1%} | {f['code_lists'] - f['patterns']:+.1%} |"
+              for f in rep.get("flags_before_after", [])]
     lines += ["", f"## Drift vs MEPS ({len(rep['alerts'])} alerts)", "",
               "| Feature | MEPS | This source | Statistic | Alert |", "|---|---|---|---|---|"]
     for d in sorted(rep["drift"], key=lambda d: not d["alert"]):
@@ -169,7 +194,7 @@ def main(argv: list[str] | None = None) -> None:
         canon, name = fhir.read(client, ids).canonical, f"fhir_{args.year}"
         source = f"FHIR ({args.url}), year 1 = {args.year}"
     rows, _, warnings = to_contract.scoring_rows(canon, pd.Timestamp(args.year, 12, 31), explain=True)
-    rep = report(rows, warnings, canon, source)
+    rep = report(rows, warnings, canon, source, as_of=pd.Timestamp(args.year, 12, 31))
     reports_dir().mkdir(parents=True, exist_ok=True)
     (reports_dir() / f"quality_{name}.json").write_text(json.dumps(rep, indent=1, default=str) + "\n")
     (reports_dir() / f"quality_{name}.md").write_text(markdown(rep))

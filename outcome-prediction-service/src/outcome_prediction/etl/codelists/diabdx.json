@@ -1,0 +1,35 @@
+{
+ "flag": "diabdx",
+ "meaning": "Ever told they had diabetes, other than during pregnancy",
+ "version": 1,
+ "status": "unreviewed",
+ "status_note": "No clinical owner signs off code lists yet (decisions.md O27).",
+ "code_system": "ICD-10-CM",
+ "release": "CDC/NCHS FY2026",
+ "match": "a diagnosis code starting with any prefix (dots ignored)",
+ "codes": [
+  {
+   "prefix": "E08",
+   "description": "Diabetes mellitus due to underlying condition"
+  },
+  {
+   "prefix": "E09",
+   "description": "Drug or chemical induced diabetes mellitus"
+  },
+  {
+   "prefix": "E10",
+   "description": "Type 1 diabetes mellitus"
+  },
+  {
+   "prefix": "E11",
+   "description": "Type 2 diabetes mellitus"
+  },
+  {
+   "prefix": "E13",
+   "description": "Other specified diabetes mellitus"
+  }
+ ],
+ "notes": [
+  "O24 (diabetes in pregnancy) and R73 (prediabetes, raised glucose) are excluded"
+ ]
+}

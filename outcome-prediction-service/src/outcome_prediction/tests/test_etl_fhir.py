@@ -118,7 +118,7 @@ def test_records_after_as_of_change_no_feature_on_the_fhir_path():
         f"/Encounter?patient={pid}": [{"resourceType": "Encounter", "id": "late", "status": "finished",
                                        "class": {"code": "IMP"}, "period": {"start": later, "end": "2023-09-09T10:00:00+00:00"}}],
         f"/Condition?patient={pid}": [{"resourceType": "Condition", "id": "late", "onsetDateTime": later,
-                                       "code": {"coding": [{"code": "38341003", "display": "Hypertension"}]}}],
+                                       "code": {"coding": [{"code": "59621000", "display": "Essential hypertension"}]}}],
         f"/ExplanationOfBenefit?patient={pid}": [{"resourceType": "ExplanationOfBenefit", "id": "late",
                                                   "type": {"coding": [{"code": "pharmacy"}]},
                                                   "item": [{"servicedPeriod": {"start": later, "end": later},
@@ -183,7 +183,11 @@ def test_fhir_report_shows_defaults_unknowns_and_drift(extract):
     rep = quality.report(rows, warnings, extract.canonical, "FHIR fixture")
     assert rep["problems"] == []
     assert rep["defaults"] == {to_contract.WARN_INCOME: len(rows)}
-    assert set(rep["unknown_codes"].values()) == {0}
+    unmapped = "condition codes not mapped to ICD-10-CM (can't set a diagnosis flag)"
+    assert rep["unknown_codes"][unmapped] > 0                     # Synthea's social findings, e.g. "employment"
+    assert {k: v for k, v in rep["unknown_codes"].items() if k != unmapped} == dict.fromkeys(
+        [k for k in rep["unknown_codes"] if k != unmapped], 0)
+    assert {f["flag"] for f in rep["flags_before_after"]} == set(to_contract.FLAGS)
     assert {"regiony1", "chddx"} <= set(rep["alerts"])         # one simulated state; Synthea's coronary rate
     assert "Drift vs MEPS" in quality.markdown(rep)
 

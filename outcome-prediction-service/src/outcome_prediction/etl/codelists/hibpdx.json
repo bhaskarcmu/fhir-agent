@@ -1,0 +1,40 @@
+{
+ "flag": "hibpdx",
+ "meaning": "Ever told by a doctor they had high blood pressure (hypertension)",
+ "version": 1,
+ "status": "unreviewed",
+ "status_note": "No clinical owner signs off code lists yet (decisions.md O27).",
+ "code_system": "ICD-10-CM",
+ "release": "CDC/NCHS FY2026",
+ "match": "a diagnosis code starting with any prefix (dots ignored)",
+ "codes": [
+  {
+   "prefix": "I10",
+   "description": "Essential (primary) hypertension"
+  },
+  {
+   "prefix": "I11",
+   "description": "Hypertensive heart disease"
+  },
+  {
+   "prefix": "I12",
+   "description": "Hypertensive chronic kidney disease"
+  },
+  {
+   "prefix": "I13",
+   "description": "Hypertensive heart and chronic kidney disease"
+  },
+  {
+   "prefix": "I15",
+   "description": "Secondary hypertension"
+  },
+  {
+   "prefix": "I16",
+   "description": "Hypertensive crisis"
+  }
+ ],
+ "notes": [
+  "O10–O16 (hypertension in pregnancy): MEPS asks about hypertension outside pregnancy",
+  "P29.2 (neonatal hypertension): a Synthea map target for essential hypertension, not an adult diagnosis"
+ ]
+}

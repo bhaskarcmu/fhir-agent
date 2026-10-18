@@ -120,6 +120,17 @@ what Synthea's FHIR does and doesn't carry, are in `docs/phase8/design.md` §7 (
 `to_contract.scoring_rows(..., explain=True)` also returns each feature's source records (the
 `RiskAssessment.basis`, FR-F4) and the defaults applied.
 
+## Diagnosis code lists (M13)
+
+Each diagnosis flag comes from a versioned ICD-10-CM list in `etl/codelists/<flag>.json` — marked
+**unreviewed** until a clinical owner signs off (decisions O27, O73). SNOMED CT conditions are mapped
+with Synthea v4.0.0's map (`etl/codelists/maps/`).
+
+```bash
+python -m outcome_prediction.etl.codelists check       # every entry exists in CDC ICD-10-CM FY2026
+python -m outcome_prediction.etl.codelists build-map   # re-extract the SNOMED map from the pinned jar
+```
+
 ## Data manifest and private mirror
 
 Data is never committed, but **`meps-manifest.json` is**: the URL and SHA-256 of every original

@@ -111,6 +111,18 @@ outcome-prediction-lab/src/outcome_prediction_lab/knowledge.py reproduces this p
 Hospital Frailty Risk Score, Charlson and Elixhauser (ICD-10, Quan) mapping and weight
 tables verbatim, with the full MIT licence text in the module docstring.
 
+------------------------------------------------------------------------
+Synthea — SNOMED CT to ICD-10-CM condition map (vendored data, not a dependency)
+------------------------------------------------------------------------
+Source:    https://github.com/synthetichealth/synthea (release v4.0.0,
+           synthea-with-dependencies.jar, member export/condition_code_map.json)
+Version:   4.0.0 (jar SHA-256 ed43c20ad40ba5c3bc724503a5af032715fe3c491620b766148e7c2361e6ecc1)
+Licence:   Apache License, Version 2.0 — Copyright The MITRE Corporation
+
+outcome-prediction-service/src/outcome_prediction/etl/codelists/maps/snomed_icd10cm.synthea-4.0.0.json
+is that map's code pairs, normalised (no dots) and with descriptions dropped; regenerate it with
+`python -m outcome_prediction.etl.codelists build-map`.
+
 ========================================================================
 FULL LICENCE TEXTS
 ========================================================================

@@ -9,7 +9,7 @@ the `RiskAssessment` shape, scoring-mode semantics, the FHIR mapping sketch, art
 agent's tool contract, testing, and the prototype defects found in review.
 **Milestone plan:** [`milestone-plan.md`](./milestone-plan.md) — M1–M13, kept as its own
 document, same convention as Phase 6 (`phase6/decisions.md` H23) and Phase 7.
-**Decision index:** [`decisions.md`](./decisions.md) — `O1`–`O72`.
+**Decision index:** [`decisions.md`](./decisions.md) — `O1`–`O74`.
 **Experimentation protocol:** [`experimentation-protocol.md`](./experimentation-protocol.md) —
 the standing runbook for research rounds in `outcome-prediction-lab` (second pass, §12).
 **Prototype baseline:** [`prototype-baseline.md`](./prototype-baseline.md) — data choices,
@@ -175,7 +175,7 @@ milestone shown), **Changed** (in, but altered — see §11), **8b** (deferred t
 | FR-T1 | Synthea CSV → 25-feature schema for a chosen year 1, plus year-2 label in training mode | Done — M4 (reproduction harness, O8; `etl/transform/to_contract.py`) |
 | FR-T2 | Score converted rows with the saved model | Done — M4 (`python -m outcome_prediction.etl.synthea rows`) |
 | FR-T3 | Training mode (builds label) separate from scoring mode (no label, no future data) | Done — M4: scoring mode defined by `as_of`, with a mandatory leakage test (O10, O62) |
-| FR-T4 | Versioned code lists from the NLM SNOMED CT → ICD-10-CM map, 3-character | In — M13 |
+| FR-T4 | Versioned code lists from the NLM SNOMED CT → ICD-10-CM map, 3-character | Changed — M13: versioned ICD-10-CM prefix lists, unreviewed; SNOMED mapped with Synthea's own map for now (O73); the NLM map is the production upgrade |
 | FR-T5 | FHIR R4 US Core and claims-file adapters into one transform | Changed — FHIR via `fhir-service` in M6 (FR-F1–F4); claims-file adapter deferred (§8) |
 | FR-T6 | Data-quality report: missing/impossible values, unknown codes, drift vs MEPS | Done — M6 (O65) |
 

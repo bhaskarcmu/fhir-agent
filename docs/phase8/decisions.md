@@ -192,6 +192,13 @@ per-patient explanations, missing values, feature importance). Results:
 | O71 | **The acceptance suite brings up what it needs and removes only what it started** (`e2e/test_outcome_prediction_acceptance.py`): `fhir` and `outcome-prediction` via the `phase8` compose profile, the pinned demo patients (`etl/synthea.py seed`, idempotent), Ollama in a container if none is reachable. It fails — never skips — when something can't be provided; the one thing it can't make is the MEPS-trained artifact, and it says how to train it | Accepted; **extends O44 to e2e** (Phase 4's e2e suite self-skips) | The same reason as O44: a skipped acceptance test looks like a passing one. Cold run: 4 minutes, nothing left running. |
 | O72 | **What counts as a patient id the clinician typed** (O70's guard): all digits, a UUID, or written as `Patient/<id>` / `id <id>` — not any word with a digit | Accepted; **refines O70** | M9's live run: the 1B model passed Synthea names ("Beier427") as ids, which the M8 rule let through to a not-found. Name questions went from 0 of 5 to 3 of 8 estimates; every reply stayed grounded. |
 
+## M13 — versioned clinical code lists
+
+| ID | Decision | Status | Rationale / where it lives |
+|---|---|---|---|
+| O73 | **Diagnosis flags come from versioned ICD-10-CM code lists** (`etl/codelists/<flag>.json`, one per flag, **unreviewed** until O27 has an owner), not description patterns. Entries are **prefixes** — the 3-character category by default, longer where a category mixes meanings (I25.2 old MI inside I25; Z95.1 bypass graft inside Z95). SNOMED CT conditions are mapped with **Synthea v4.0.0's own map** (repo owner's choice, 2026-10-18; Apache-2.0, extracted from the pinned jar). Because that map lists every code a concept *may* become, a SNOMED code sets a flag when most of its targets — context-only chapters O, P, T dropped — are in the list, or exactly half when no other flag claims a target | Accepted (repo owner chose the Synthea map); **partly resolves FR-T4** — the NLM map is the production upgrade | The patterns over- and under-matched: TMJ disorder as arthritis; gout, fibromyalgia and unstable angina missed. On the 3,000-person Synthea run only coronary disease (+2.1 points: past MI, unstable angina) and arthritis (+2.7: gout, fibromyalgia, minus TMJ) change. "Any target" would call chronic kidney disease hypertension and allergic rhinitis asthma — found by measuring, now tested. The Synthea map covers Synthea's own 574 codes (76.6% of its condition records; the rest are mostly social findings): a real EHR's SNOMED codes go further, so production needs the NLM map. |
+| O74 | **The code lists don't change a contract version.** `meps25-v1`'s flags still mean "ever told by a doctor" (MEPS's questions); M13 changes how a record source *derives* them, for every source at once (`to_contract`). The prototype's patterns stay in `prototype_training_rows`, as the recorded reference | Accepted | A contract version is what a model was trained on (MEPS survey answers), which hasn't changed. The data-quality report shows the before/after per flag for any source. |
+
 ## Supersession notes
 
 
@@ -220,6 +227,8 @@ per-patient explanations, missing values, feature importance). Results:
   the model under a constrained prompt.
 - **O72 refines O70**: an id the clinician typed must look like one (digits, UUID, `Patient/` or
   `id`). O70's row is left as written.
+- **O73 replaces the description patterns** of `prototype-baseline.md` §6.3 for contract rows (the prototype
+  keeps them). FR-T4's NLM map remains the production upgrade.
 - **O46 refines O30**: same tool (MLflow), different store (SQLite instead of the retired file
   store), now an optional extra.
 

@@ -1,6 +1,6 @@
 # Phase 8 Milestone Plan — Patient Outcome Prediction
 
-M1–M13. **M1–M9 built** (verified results below; M3 closed 2026-10-18, O60); M12–M13 planned
+M1–M13. **M1–M9 and M13 built** (verified results below; M3 closed 2026-10-18, O60); M12 planned
 (M10, M11 folded into M3). M10 and M11 are folded into M3 (O45). Expanded from M1–M11 after a second scope pass added a
 dedicated experimentation track (`decisions.md` O28–O40): M3 (workbench) and M12 (promotion)
 are new, and the former model-improvement milestones are now rounds of the
@@ -408,6 +408,15 @@ covers the need. Lists ship marked "unreviewed" until O27 has an owner.
 still pass; flag prevalence on Synthea compared before/after in the data-quality report.
 
 **Depends on:** M6.
+
+**Verified (M13 built):** `etl/codelists/` (O73, O74) — 11 versioned, **unreviewed** lists (71
+ICD-10-CM prefixes, each checked against the CDC FY2026 release, which the lab now imports from here)
+and Synthea v4.0.0's SNOMED map (repo owner's choice; the NLM map is the upgrade). Both extractors use
+them through `to_contract`; the CSV↔FHIR parity, leakage and `coronary` regression tests pass, and the
+M9 acceptance suite passes on the live stack. Data-quality report, 3,000 Synthea adults, same people
+and window: unchanged except coronary disease 24.1% → 26.2% (past MI, unstable angina) and arthritis
+11.9% → 14.6% (gout, fibromyalgia; jaw disorders out). Measuring also showed that reading the map's
+"any target" would call CKD hypertension — the rule that replaced it is tested.
 
 ---
 
