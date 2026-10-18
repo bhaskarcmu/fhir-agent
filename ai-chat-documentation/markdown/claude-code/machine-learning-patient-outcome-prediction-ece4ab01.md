@@ -3876,7 +3876,7 @@ The "Supersession notes" heading is gone from `decisions.md` on `main`. Nothing 
 My M3-closing commit (`befdbb59`) dropped the "## Supersession notes" heading from `decisions.md`. Checking the diff to see how:
 
 <details>
-<summary>Execution details — 595 tool events</summary>
+<summary>Execution details — 599 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5364,6 +5364,20 @@ from pathlib import Path
 def sub(path, old, new):
     p = Path(path); s = p.read_text(); assert s.count(old) == 1, (path, old[:70]); p.write_text(s.replace(old, new))
 D = "docs/phase…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+def sub(path, old, new):
+    p = Path(path); s = p.read_text(); assert s.count(old) == 1, (path, old[:70]); p.write_text(s.replace(old, new))
+P = "docs/phase…`
+- **Bash** `sed -n '/^## Tests/,/^## Data and licence/p' outcome-prediction-service/README.md`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-service/README.md"); s = p.read_text()
+old = "Unit tests use tiny synthetic Stata files and a synthetic modelling table. Tests"…`
+- **Bash** `cat >> outcome-prediction-service/README.md <<'EOF'
+
+Synthea (Apache 2.0, MITRE) generates synthetic patients only; the committed fixture is its output,
+with identifier-like columns (names, SSNs, addr…`
 
 </details>
 
@@ -5374,6 +5388,6 @@ D = "docs/phase…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 15:50 UTC
+- **Last updated:** 18 October 2026, 15:51 UTC
 - **Turns:** 51
 - **Status:** Complete
