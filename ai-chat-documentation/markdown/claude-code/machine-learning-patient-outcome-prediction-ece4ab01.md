@@ -4448,8 +4448,10 @@ Artifact tests still pass. Retrofitting the M2 artifact's record next. Design §
 
 A second promotion is refused, but with a raw "File exists" error. Better to refuse up front with a clear message, before any work is done:
 
+All 31 lab tests pass. Now the real promotion, under decision O59. Then I'll prove the service can load the artifact **with the lab made unimportable**:
+
 <details>
-<summary>Execution details — 930 tool events</summary>
+<summary>Execution details — 931 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6803,6 +6805,7 @@ from pathlib import Path
 p = Path("outcome-prediction-lab/src/outcome_prediction_lab/runs.py"); s = p.read_text()
 old = '''    # The confirmed model itself. Unpickling resolves'''
 ne…`
+- **Bash** `SECONDS=0; MLFLOW_DISABLE_AGENT_HINT=1 PYTHONWARNINGS=ignore outcome-prediction-lab promote 003-portable-contract nonobstetric-v2 --decision O59 2>&1 | tail -2; echo "${SECONDS}s"; D=$(ls -d outcome-p…`
 
 </details>
 
@@ -6813,6 +6816,6 @@ ne…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 21:34 UTC
+- **Last updated:** 18 October 2026, 21:35 UTC
 - **Turns:** 63
 - **Status:** Complete
