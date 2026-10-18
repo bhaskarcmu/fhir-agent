@@ -13,6 +13,7 @@ clinician. Pick the audience first, then run only what serves them.
 | **Architect / developer** | "Is this real engineering or a demo?" | [§4](#4-the-architect--developer-15-minutes) |
 | **Layperson** | "What does this actually do?" | [§5](#5-the-layperson-5-minutes) |
 | **Any audience — provider search** | "Can it find a real doctor who takes this patient?" | [§5a](#5a-provider-search--referral-phase-3-6-minutes) |
+| **Any audience — hospitalization risk** | "Who is likely to end up in hospital, and why does it think so?" | [§5b](#5b-hospitalization-risk-phase-8-8-minutes) |
 
 ---
 
@@ -426,6 +427,121 @@ says so rather than guessing).
   future non-Python or third-party client to plug into without touching agent code.
 - *"Does this connect to the patient's insurance?"* — No — deliberately out of scope. This finds
   a provider; it doesn't check network coverage or benefits.
+
+---
+
+## 5b. Hospitalization risk (Phase 8, 8 minutes)
+
+**A separate story, its own opt-in `phase8` compose profile.** A machine-learning model trained on
+the US government's MEPS survey estimates each patient's chance of a hospital admission in the next
+12 months, and returns it as a standard FHIR `RiskAssessment` — with the records it used.
+
+**Story arc:** *a patient's own records in → a probability out, with the evidence behind it → a
+plain-language answer that says nothing the model didn't → proof it can't peek at the future.*
+
+**Setup (once):** the model artifact is trained from public MEPS files (~1 minute, then cached):
+
+```bash
+pip install -e client/clinical -e "outcome-prediction-service[api]" -e agent-platform -e outcome-prediction-agent
+python -m outcome_prediction.meps.download && python -m outcome_prediction.meps.build \
+  && python -m outcome_prediction.model.train          # -> outcome-prediction-service/models/gbm-meps25-v1-…
+```
+
+**Before each demo** — the FHIR server is in-memory, so seed it (idempotent, ~80 s first time):
+
+```bash
+docker compose --profile phase8 up --build -d fhir outcome-prediction       # scoring service on :8005
+python -m outcome_prediction.etl.synthea seed --fhir http://localhost:8080/fhir
+# Patient/3208   Leeanna836 Beier427   born 1939-09-08
+# Patient/674    Elinor7 Kub800        born 1939-09-08  (deceased — no estimate)    … 10 patients
+ollama serve & ollama pull llama3.2:1b        # or: docker run -d -p 11434:11434 ollama/ollama:0.6.5
+```
+
+The seed prints each patient's id; on a fresh server they come out the same every time.
+
+**Beat 1 — a patient scored through the API, evidence included:**
+
+```bash
+curl -s -X POST localhost:8005/risk/hospitalization-12m -H 'Content-Type: application/json' \
+     -d '{"patient_id": "3208", "as_of": "2024-12-31"}' | python3 -m json.tool
+```
+
+Expect `probabilityDecimal 0.1227`, the 79th percentile, a comparison model's 0.1606, the reasons
+*"age and coronary heart disease"*, and a `basis` of eight references —
+`curl localhost:8080/fhir/Condition/3287` is her *Ischemic heart disease (disorder)*, recorded in
+2007. Scoring a patient who died (`674`) returns **422: no estimate is made**, not a number.
+
+**Beat 2 — the same patient through the agent:**
+
+```bash
+OUTCOME_PREDICTION_URL=http://localhost:8005 outcome-prediction-agent \
+  --query "What is the hospitalization risk for patient 3208 as of 2024-12-31?"
+```
+
+```
+Patient/3208: estimated chance of a hospital admission between 2024-12-31 and 2025-12-31 — 12.27%.
+Percentile among the adults the model was trained on: 79.
+A simpler comparison model (age and any prior hospital stay) gives 16.06%.
+Inputs raising the estimate most, compared with a typical adult: age and coronary heart disease.
+Notes from the service about the inputs: povcaty1 defaulted to 4 (middle income): household income not recorded; …
+Model gbm-meps25-v1-950d8be12078 (contract meps25-v1). 12-month planning estimate for population care management, not a diagnosis …
+[ESTIMATE]
+```
+
+Every line is a field of beat 1's `RiskAssessment` — point at them side by side. Then try to break it:
+*"Is she high risk?"* (the same numbers, plus "no thresholds have been clinically agreed"),
+*"Adjust for her new diabetes"* (the same numbers, plus "can't be adjusted"), *"Rank everyone over
+20%"* (`[OUT_OF_SCOPE]`, no tool called). The local 1B model sometimes answers `[NEEDS_PATIENT]` —
+just ask again; that's the model failing safely, never a wrong number.
+
+**Beat 3 — it can't see the future:** add a hospital stay *after* the as-of date, and re-score.
+
+```bash
+curl -s -X POST localhost:8080/fhir/Encounter -H 'Content-Type: application/fhir+json' -d '{
+  "resourceType": "Encounter", "status": "finished", "subject": {"reference": "Patient/3208"},
+  "class": {"system": "http://terminology.hl7.org/CodeSystem/v3-ActCode", "code": "IMP"},
+  "period": {"start": "2025-03-01T09:00:00Z", "end": "2025-03-06T09:00:00Z"}}'
+```
+
+Re-run beat 1: **identical** — same probability, same basis. Score `"as_of": "2025-12-31"` and the
+new stay appears in `basis`: the server has it; the model just isn't allowed to look past `as_of`.
+
+**Or run all three beats as the acceptance test** (brings up anything missing, ~4 min cold):
+`pytest e2e/test_outcome_prediction_acceptance.py -v`.
+
+**What to say, adapted to whoever's in the room:**
+
+- **Clinician:** "A planning aid for care management, not a diagnosis. It shows *why* — age, her
+  coronary disease — and every reason points to a record you can open. It never says 'high risk':
+  nobody has signed off what high means yet."
+- **Insurer / payer:** "Trained on free US government survey data, returned as a standard FHIR
+  resource with a comparison model and a percentile alongside. Fairness by race, insurance, sex and
+  age is reported on every model card — including where it falls short."
+- **Architect / developer:** "One feature contract for every source: CSV and FHIR produce the same
+  rows, with each difference listed and checked by code. Scoring can't read past `as_of` — beat 3
+  is a test, not a slide. The agent orchestrates; code writes every word you see, and a gate drops
+  any reply with a number the service didn't return."
+- **Layperson:** "It looks at a patient's past year and estimates the chance they'll need a hospital
+  stay next year — and shows its working."
+
+**Volunteer the weaknesses, same discipline as §4:**
+
+- Synthea patients are simulated: these numbers are a pipeline check, **never** evidence of accuracy
+  (Synthea's coronary-disease rate is 4× MEPS's — the data-quality report flags it).
+- The served model is the reproduced prototype (`meps25-v1`); the production candidate
+  (`nonobstetric-v2`, a better label) is promoted in M12. Not yet validated on any real customer.
+- Synthea's FHIR folds hospice into home health, office into outpatient, and carries no fill counts
+  or income — `Encounter/4202` in beat 1's basis is a hospice admission counted as home health, and
+  the input notes say so.
+- The 1B local model completes about 6 turns in 10; a larger model raises that, never the safety.
+
+**They will ask:**
+
+- *"Is 12% high?"* — The service deliberately doesn't say: it gives the probability and the
+  percentile (79th), and leaves the threshold to a clinical decision nobody has made yet (O24).
+- *"Can it use our patients?"* — It reads standard FHIR; it needs recalibrating on your outcomes
+  first (Phase 8b). High-cost prediction needs claims, not just records.
+- *"Does patient data go to an AI company?"* — No. The default model runs on this machine.
 
 ---
 

@@ -187,3 +187,40 @@ def test_a_stay_spanning_as_of_counts_nights_so_far_and_no_final_claim(canon):
     assert short.loc[pid, "ipdisy1"] == before.loc[pid, "ipdisy1"] + 1
     assert short.loc[pid, "ipngtdy1"] == before.loc[pid, "ipngtdy1"] + 4       # 27 Jun 10:00 → 1 Jul 00:00
     assert short.loc[pid, "totexpy1"] == before.loc[pid, "totexpy1"]          # claim not final yet
+
+
+# ── the demo seeder (M9) ─────────────────────────────────────────────────────────────
+
+def test_seed_loads_reference_bundles_first_and_skips_patients_already_there(tmp_path, monkeypatch):
+    import httpx
+    files = ["hospitalInformation1.json", "practitionerInformation1.json", "Ann1_Lee2_aaa.json", "Bo3_Kim4_bbb.json"]
+    for name in files:
+        (tmp_path / name).write_text(name)                                  # each file's bytes name it
+    monkeypatch.setattr(synthea, "ensure_demo_fhir", lambda: tmp_path)
+    # "aaa" is already on the server; "bbb" appears once its bundle is posted.
+    server = {"aaa": {"id": "1", "name": [{"given": ["Ann1"], "family": "Lee2"}], "birthDate": "1950-01-01"}}
+    posted, get_headers = [], []
+
+    def post(url, content, headers, timeout):
+        posted.append(content.decode())
+        if content == b"Bo3_Kim4_bbb.json":
+            server["bbb"] = {"id": "2", "name": [{"given": ["Bo3"], "family": "Kim4"}], "deceasedDateTime": "2020-01-01"}
+        return httpx.Response(200, json={"entry": [{"response": {"status": "201 Created"}}]},
+                              request=httpx.Request("POST", url))
+
+    def get(url, params, timeout, headers):
+        get_headers.append(headers)
+        value = params["identifier"]
+        # Another system's identifier with the same value must not count as the Synthea patient.
+        entries = [{"resource": {"id": "9", "identifier": [{"system": "http://elsewhere", "value": value}]}}]
+        if value in server:
+            entries.append({"resource": {**server[value],
+                                         "identifier": [{"system": synthea.SYNTHEA_ID_SYSTEM, "value": value}]}})
+        return httpx.Response(200, json={"entry": entries}, request=httpx.Request("GET", url))
+
+    monkeypatch.setattr(httpx, "post", post)
+    monkeypatch.setattr(httpx, "get", get)
+    out = synthea.seed("http://fhir.test/fhir")
+    assert posted == ["hospitalInformation1.json", "practitionerInformation1.json", "Bo3_Kim4_bbb.json"]
+    assert get_headers and all(h == {"Cache-Control": "no-cache"} for h in get_headers)   # HAPI's search cache
+    assert [(p["id"], p["name"], p["deceased"]) for p in out] == [("1", "Ann1 Lee2", False), ("2", "Bo3 Kim4", True)]

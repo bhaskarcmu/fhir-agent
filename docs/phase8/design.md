@@ -306,7 +306,7 @@ Carried over from the prototype's test plan, mapped to this repo:
 | Data | Per-panel row counts equal `prototype-baseline.md` §3.1 | CI and local — data populated on demand (O44) |
 | Model | Test AUROC within tolerance; metadata has the 25 features in order | CI and local — data populated on demand (O44) |
 | Agent | Grounding + adversarial ("adjust the score", "call it high risk") | CI with the self-hosted model, same as Phase 6's adversarial suite |
-| End to end | `e2e/test_outcome_prediction_acceptance.py` against the `phase8` stack | Local, like the other e2e suites |
+| End to end | `e2e/test_outcome_prediction_acceptance.py` against the `phase8` stack — brings up what's missing (O71) | Local, like the other e2e suites |
 
 The root `pytest.ini` gains the new test paths; the Phase 1 independence job is unchanged.
 

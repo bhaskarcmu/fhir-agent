@@ -185,6 +185,13 @@ per-patient explanations, missing values, feature importance). Results:
 | O69 | **The agent's replies are built in code from the service's output; the model only orchestrates.** The model finds the patient and calls tools; `explain.py` writes every reply from the RiskAssessment (numbers, rationale, warnings, model version, planning-aid note) plus fixed, number-free notices for "adjust", "is that high?" and population questions; `explain.grounded` withholds any reply with a number the service didn't return. The model's own text is never shown | Accepted; **refines design §9** (which had the model narrate under a constrained prompt) | FR-A2 must hold against the self-hosted 1B model (O16), which in M8's live runs invented ids, numbers and tool calls. A prompt can only ask; a template plus a gate guarantee. Same thesis as Phase 6's output gate and this repo's "deterministic services decide". |
 | O70 | **The service publishes the agent's tools** (`GET /agent-tools`, `POST /agent-tools/{name}`, `tools.py`): exactly `find_patient`, `get_hospitalization_risk`, `get_model_card`, every schema closed. The agent guards the rest in code: population questions refused before any call; a risk call only for an id `find_patient` returned or the clinician typed; a single match scored by code; the model card only for questions about the model; one reminder when the model answers in prose | Accepted | Design §1: the agent reaches the service over HTTP only, never its code. Live, `llama3.2:1b` completed 13 of 20 risk questions (up from ~1 in 4 before these guards) and 5 of 5 model questions; **all 25 replies grounded**; the rest end safely, asking which patient is meant. A stronger model is an `LLM_PROVIDER` switch, never needed for safety. |
 
+## M9 — acceptance and demo
+
+| ID | Decision | Status | Rationale / where it lives |
+|---|---|---|---|
+| O71 | **The acceptance suite brings up what it needs and removes only what it started** (`e2e/test_outcome_prediction_acceptance.py`): `fhir` and `outcome-prediction` via the `phase8` compose profile, the pinned demo patients (`etl/synthea.py seed`, idempotent), Ollama in a container if none is reachable. It fails — never skips — when something can't be provided; the one thing it can't make is the MEPS-trained artifact, and it says how to train it | Accepted; **extends O44 to e2e** (Phase 4's e2e suite self-skips) | The same reason as O44: a skipped acceptance test looks like a passing one. Cold run: 4 minutes, nothing left running. |
+| O72 | **What counts as a patient id the clinician typed** (O70's guard): all digits, a UUID, or written as `Patient/<id>` / `id <id>` — not any word with a digit | Accepted; **refines O70** | M9's live run: the 1B model passed Synthea names ("Beier427") as ids, which the M8 rule let through to a not-found. Name questions went from 0 of 5 to 3 of 8 estimates; every reply stayed grounded. |
+
 ## Supersession notes
 
 
@@ -211,6 +218,8 @@ per-patient explanations, missing values, feature importance). Results:
   "Admission to establishment" (tx.fhir.org, International edition 2025-02-01). O22's row is left as written.
 - **O69 refines design §9**: replies are templated from the service's output and gated, rather than written by
   the model under a constrained prompt.
+- **O72 refines O70**: an id the clinician typed must look like one (digits, UUID, `Patient/` or
+  `id`). O70's row is left as written.
 - **O46 refines O30**: same tool (MLflow), different store (SQLite instead of the retired file
   store), now an optional extra.
 

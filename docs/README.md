@@ -164,7 +164,7 @@ own objective (AUROC 0.769 → 0.788) and added seven new targets.
 - **[`milestone-plan.md`](./phase8/milestone-plan.md)** — M1–M13, none started.
 - **[`prediction-targets.md`](./phase8/prediction-targets.md)** — the four focus predictions (O55), how
   they were chosen, and where all parked work lives.
-- **[`decisions.md`](./phase8/decisions.md)** — the ADR-style index (O1–O70), same convention.
+- **[`decisions.md`](./phase8/decisions.md)** — the ADR-style index (O1–O72), same convention.
 - **[`experimentation-protocol.md`](./phase8/experimentation-protocol.md)** — the standing
   runbook for research rounds in `outcome-prediction-lab`; outlives the phase.
 - **[`prototype-baseline.md`](./phase8/prototype-baseline.md)** — what the research prototype

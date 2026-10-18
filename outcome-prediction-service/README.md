@@ -66,6 +66,8 @@ python -m outcome_prediction.etl.synthea generate
 #    -> data/raw/synthea/az-3000-s42/csv/
 # Contract rows for year 1 = 2023 (+ 2024 label), sanity checks, pipeline-check score with M2's artifact
 python -m outcome_prediction.etl.synthea rows --year 2023
+# Demo patients (5 requested, seed 42) into a FHIR server — idempotent; generates their FHIR once (M9)
+python -m outcome_prediction.etl.synthea seed --fhir http://localhost:8080/fhir
 #    -> data/processed/synthea_rows_2023.csv, data/reports/synthea_2023.json
 ```
 
