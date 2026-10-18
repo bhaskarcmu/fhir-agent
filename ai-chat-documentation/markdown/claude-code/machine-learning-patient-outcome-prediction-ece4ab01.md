@@ -2742,8 +2742,20 @@ All beat their simple baselines on the test panels:
 
 The `phase8 (python)` job failed on PR #71; every other check passed. I need the cause before saying anything else:
 
+A clean install on Python 3.12 works: `shap` 0.54.1 and scikit-learn 1.9.1 install, and all 11 lab tests pass. I'm noting the Python requirement in the lab README, then committing to the PR branch:
+
+Pushed. I'll watch the new run in the background:
+
+CI's `phase8 (python)` job failed on PR #71 because the lab's install step broke, so none of its tests ran. The cause is my mistake: I told you earlier that `shap` 0.54.1 had confirmed wheels for Python 3.11. That was wrong. `shap` 0.52 and later need Python 3.12, and CI runs 3.11. My `pip download --python-version 3.11` check evidently didn't apply the package's minimum-Python rule.
+
+- **Fix (commit `40d0d76a`, pushed to PR #71):** the lab now requires Python 3.12 and runs in its own CI job, `phase8 lab (python 3.12)`. The service stays on 3.11 in `phase8 (python)`. I didn't pin an older `shap`, because that would mean testing a different version from the one that produced the round's results.
+- **Verified:** I rebuilt the new CI job locally in a clean Python 3.12 environment. `shap` 0.54.1 and scikit-learn 1.9.1 installed, and all 11 lab tests passed.
+- **Unaffected:** none of the round 001 results. They were all produced on Python 3.12 in this workspace, and every other check on the PR passed, including `phase1`, `phase3` and the Terraform validations.
+
+CI is re-running now. I'll report when it finishes, especially the new lab job. Iteration 2 and its options are still waiting on your decision.
+
 <details>
-<summary>Execution details — 379 tool events</summary>
+<summary>Execution details — 381 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3626,6 +3638,12 @@ def edit(p,pairs):
         assert s.count(o)==1,(p,o[:60],s.count(o)); s=s.replace(o,n)
     open(p,'w').write(s…`
 - **Bash** `V=/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/scratchpad/ci-lab-venv && rm -rf $V && python3 -m venv $V && $V/bin/python -m pip install -q --upgrade pip && $V/bin/pip…`
+- **Bash** `python3 - <<'EOF'
+p='outcome-prediction-lab/README.md'; s=open(p).read()
+old="## Install\n\n"
+assert s.count(old)==1
+s=s.replace(old,"## Install\n\nNeeds **Python 3.12+** (`shap` ≥ 0.52 requires it);…`
+- **Bash** `sleep 40; for i in $(seq 1 150); do p=$(gh pr checks 71 2>/dev/null | awk -F'\t' '$2=="pending"' | wc -l); t=$(gh pr checks 71 2>/dev/null | wc -l); [ "$t" -gt 0 ] && [ "$p" -eq 0 ] && break; sleep 10…`
 
 </details>
 
