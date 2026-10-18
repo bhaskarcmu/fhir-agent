@@ -4363,8 +4363,10 @@ Cleaned up. The remaining milestones are M12 (first promotion into the service) 
 
 Every draft prefix exists in the CDC FY2026 release. Creating the branch. **Git:** worktree `/workspaces/fhir-agent`, from `main`, new branch `feature/phase8-m13-code-lists`.
 
+All 22 pass. Now the one-definition refactor: the lab imports the CDC pin from the service instead of keeping its own copy (O29):
+
 <details>
-<summary>Execution details — 882 tool events</summary>
+<summary>Execution details — 890 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6605,6 +6607,28 @@ import pandas as pd
 from outcome_prediction.etl import codelists
 from outcome_prediction.etl.transform.to_contract import DX_PATTERNS
 c = pd.read_csv("outcome-p…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-service/src/outcome_prediction/etl/codelists/__init__.py"); s = p.read_text()
+old = '''def flags_for(codes: list[str]) -> set[st…`
+- **Bash** `grep -n "def unknown_codes" -A14 outcome-prediction-service/src/outcome_prediction/etl/quality.py; grep -n "def report" -A6 outcome-prediction-service/src/outcome_prediction/etl/quality.py; grep -n '"…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-service/src/outcome_prediction/etl/quality.py"); s = p.read_text()
+def sub(old, new):
+    global s; assert s.count(old) == 1, ol…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-service/src/outcome_prediction/etl/quality.py"); s = p.read_text()
+def sub(old, new):
+    global s; assert s.count(old) == 1, ol…`
+- **Bash** `sed -n 105,112p outcome-prediction-service/src/outcome_prediction/tests/conftest.py`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/tests/test_codelists.py`
+- **Bash** `PYTHONWARNINGS=ignore python -m pytest outcome-prediction-service/src/outcome_prediction/tests/test_codelists.py -q -p no:cacheprovider 2>&1 | tail -4`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-lab/src/outcome_prediction_lab/vocabulary.py"); s = p.read_text()
+old = '''ICD10CM = {   # CDC/NCHS ICD-10-CM FY2026 code descri…`
 
 </details>
 
@@ -6615,6 +6639,6 @@ c = pd.read_csv("outcome-p…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 20:49 UTC
+- **Last updated:** 18 October 2026, 20:51 UTC
 - **Turns:** 61
 - **Status:** Complete
