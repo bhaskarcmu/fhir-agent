@@ -4372,7 +4372,7 @@ Recording the crosswalk's licence in both established places (O13): `NOTICE` for
 The wheel now carries all 13 data files (11 lists, the map and the MEPS aggregates). Final checks:
 
 <details>
-<summary>Execution details — 902 tool events</summary>
+<summary>Execution details — 903 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6659,6 +6659,10 @@ from pathlib import Path
 p = Path("outcome-prediction-service/pyproject.toml"); s = p.read_text()…`
 - **Bash** `rm -rf /tmp/whl; cd /workspaces/fhir-agent && OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:1 PYTHONWARNINGS=ignore MLFLOW_DISABLE_AGENT_HINT=1 python -m pytest outcome-prediction-service client/clinic…`
 - **Bash** `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:1 PYTHONWARNINGS=ignore MLFLOW_DISABLE_AGENT_HINT=1 python -m pytest outcome-prediction-service client/clinical/tests outcome-prediction-lab/src/outcome_pr…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-service/src/outcome_prediction/tests/test_etl_fhir.py"); s = p.read_text()
+old = '''    assert set(rep["unknown_codes"].values()…`
 
 </details>
 
@@ -6669,6 +6673,6 @@ p = Path("outcome-prediction-service/pyproject.toml"); s = p.read_text()…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 21:01 UTC
+- **Last updated:** 18 October 2026, 21:03 UTC
 - **Turns:** 61
 - **Status:** Complete
