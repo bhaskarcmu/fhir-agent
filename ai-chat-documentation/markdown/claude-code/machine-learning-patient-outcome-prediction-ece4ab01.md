@@ -2824,8 +2824,16 @@ The notebook check is wired into CI. Round 002's nine cross-validation runs are 
 
 Now the round 002 report, the committed record of this iteration:
 
+Next, recording the round's decisions (O49–O51) and updating the runbook, lab README, design and data catalog for the real CLI:
+
+Updating the lab README for the CLI and the new modules, and the milestone plan's M3 entry:
+
+Docs are updated. Next, the result of the full-population narrative run:
+
+It's still running, and there's no output yet. I'll wait for its completion notice rather than poll the file.
+
 <details>
-<summary>Execution details — 432 tool events</summary>
+<summary>Execution details — 435 tool events</summary>
 
 ### Turn 1 activity
 
@@ -3886,6 +3894,22 @@ def edit(p,pairs):
         assert s.count(o)==1,(p,o[:60],s.count(o)); s=s.replace(o,n)
     open(p,'w').write(s)
 edit('outcome-prediction-l…`
+- **Bash** `python3 - <<'EOF'
+def edit(p,pairs):
+    s=open(p).read()
+    for o,n in pairs:
+        assert s.count(o)==1,(p,o[:60],s.count(o)); s=s.replace(o,n)
+    open(p,'w').write(s)
+D='docs/phase8/'
+s=open(D+…`
+- **Bash** `python3 - <<'EOF'
+p='outcome-prediction-lab/README.md'; s=open(p).read()
+start=s.index("## Round 001 — what to predict, and how"); end=s.index("## Data")
+new='''## The command line
+
+```bash
+outcome-pr…`
+- **Bash** `cat /tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/tasks/br7n2m41p.output 2>/dev/null | tail -4`
 
 </details>
 
@@ -3896,6 +3920,6 @@ edit('outcome-prediction-l…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 01:31 UTC
+- **Last updated:** 18 October 2026, 01:32 UTC
 - **Turns:** 36
 - **Status:** Complete
