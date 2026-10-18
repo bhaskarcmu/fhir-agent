@@ -4100,8 +4100,172 @@ Now the API tests. The fixture trains a real artifact from the synthetic table, 
 
 All 23 API tests pass. I'm tidying one assertion whose `and`/`or` precedence reads ambiguously:
 
+Now the docs. Updating design §4 (RiskAssessment shape) and §5 (API, port):
+
+Now the decisions. This time I'm inserting **before** the "Supersession notes" heading and asserting it survives, so I don't repeat the slip from PRs #71 and #73:
+
+The heading is intact. Now the PRD statuses, milestone plan, status page, service README, and the install lines in CLAUDE.md, `.clinerules` and `.ona`, since the new API tests need the `api` extra:
+
+CLAUDE.md says `.clinerules` mirrors it, but `.clinerules` didn't contain that install line. Checking whether it drifted:
+
+`.clinerules` is a shorter file with no install section, so there's nothing to mirror. Final test run across every affected package:
+
+M7 is done and up for review as **PR #75**, with all 13 CI checks passing. I've also deleted the merged M6 branch on GitHub and locally. Nothing blocked me.
+
+**What M7 delivers:** a scoring API, serving the `meps25-v1` model from M2, that returns 12-month hospitalization risk as a FHIR R4 `RiskAssessment`. It is internal only, with no Kong route.
+- **Health check** confirms the model file matches its checksum; if it doesn't, the service refuses to start.
+- **Model info** returns the model's ID, contract and training metrics.
+- **Score a patient by FHIR ID.** If the patient isn't an adult alive on the chosen date, it returns a 422 rather than an estimate.
+- **Score a batch of 1–1,000 contract rows.** Input is checked strictly.
+
+**Checked live:** I ran the compose stack with the real M2 model and loaded 10 Synthea patients.
+- **Valid FHIR:** the 5 adults alive on 2024-12-31 each got a `RiskAssessment` that HAPI's validator passes with no errors or warnings. Every record it cites as evidence resolves on the server. The 5 patients who had died got a 422.
+- **Latency:** one row takes 26 ms median and 46 ms at the 95th percentile, against the 100 ms target. A 1,000-row batch takes about 1 s.
+- **Outcome code:** SNOMED CT `32485007` "Hospital admission (procedure)" is active on the HL7 terminology server (O22).
+
+**Per-patient reasons:** each estimate comes with up to three plain-language reasons. To find them, the patient is re-scored with each input in turn set to a typical adult's value, and the inputs that move the estimate most are reported (O67). Two rules came out of the live check:
+- **Race is never given as a reason.** In the first run, one patient's top reasons included race. The model does use race as an input, but the earlier decision O50 says race belongs in aggregate fairness reports, not in one patient's explanation.
+- **Defaulted inputs, such as a missing income, are never reasons either.**
+
+Explaining each row separately made a 1,000-row batch take 13 s. Doing all rows in one model call brought that down to 1 s, and a test confirms the reasons are identical either way.
+
+**Infra-adjacent changes for you to review.** I made these because M7's plan names them, but please check them:
+- **Compose:** a new `outcome-prediction` service, only in the existing opt-in `phase8` profile, on port 8005 (8000–8004 are taken), with the models folder mounted read-only.
+- **Dockerfile:** a new one, following triage-service's.
+- **Install lines:** the CI job, CLAUDE.md and `.ona` now install the new `api` extra.
+
+**Files changed:**
+- **Code:** `api.py`, `scoring.py`, `fhir/risk_assessment.py`, `observability.py`.
+- **Container:** `Dockerfile`, `docker-compose.yml`.
+- **Tests:** `test_scoring_api.py`.
+- **Config:** `pyproject.toml`, the CI workflow, CLAUDE.md, `.ona`.
+- **Data:** `meps_reference.json` now also stores the typical adult's values.
+- **Docs:** design §4–5, decisions O67–O68, milestone plan, PRD, READMEs.
+
+**Tests:** 272 pass across the service, client and lab, 26 of them new and runnable offline. Triage-service and mcp-agent pass 146; the same 4 tests that need a local Ollama model error as they do on `main`.
+
+**Branch and commit:** `feature/phase8-m7-scoring-service`, commit `fe646207`.
+
+**Limitations:**
+- The validator still prints informational notes for our custom extensions, because their formal definitions haven't been written yet (design §4 deferred them).
+- Scoring a patient takes about 220 ms, mostly reading their FHIR records. That's fine for one-off use, but scoring a whole population would need the batch job planned for Phase 8b.
+
+**Next:** I haven't merged anything. Once you merge PR #75, I'll ask before deleting the branch. M8 is next: the conversational agent.
+
+## Turn 55
+
+### Prompt
+
+PR #75 merged. Delete associated merged branches.
+
+Proceed to M8
+
+### Claude response
+
+Cleaned up. Reading M8's scope, the agent requirements, and the platform it must build on:
+
+The agent must follow the existing `agent-platform` patterns. Finding which packages already build on it, and how they wire providers, tools, the output gate and the live self-hosted-model tests:
+
+The key question for M8 is where the tools run, since design §9 puts `tools.py` in the service. Reading the dependency rules in design §1–2:
+
+If `FHIR_GATEWAY_URL` is unset, creating the client raises a 503 that would escape the tool's outcome contract. Mapping it to `unavailable` too:
+
+Now the service client: the agent's only connection to the outside world, over HTTP with no model code imported.
+
+Cues classify as intended. Now the policy file (loaded into the system prompt, like `mcp-agent`'s) and the agent loop:
+
+The constructor matches. While the model downloads, I'll write the CI job, `phase8 agent`, modelled on `phase1`'s Ollama steps and sharing its model cache key:
+
+The leftover `FakeService` helper in `conftest.py` is now unused, so I'm removing it. Then I'll confirm the model downloaded and run the **whole suite, live tests included**, from the repo root:
+
+Re-measuring against the live model, 5 runs per scenario:
+
+All 39 pass. Now the CI job, `phase8 agent`, inserted after the lab job. It uses Ollama steps like `phase1` and the same cache key, so the model download is shared:
+
+The YAML parses, and the new job sets no LLM provider variable, so the paid-provider gate stays clean. Now the docs. Checking where packages are indexed:
+
+Now the decision log (heading-safe insert), design §9, PRD, milestone plan, status, and the service README's endpoint list:
+
+You've hit your session limit · resets 7:20pm (UTC)
+
+## Turn 56
+
+### Prompt
+
+resume the work, you should now have a new API key to charge for this session
+
+### Claude response
+
+Not logged in · Please run /login
+
+## Turn 57
+
+### Prompt
+
+resume the work, you should now have a new API key to charge for this session
+
+### Claude response
+
+The docs are updated, and the decisions log heading is intact. What's left: stop the throwaway Ollama container, run the final tests, commit, push, open the PR and watch CI.
+
+Pushed. No build artefacts (`egg-info`, `__pycache__`) were staged. Opening the PR:
+
+Waiting for CI on PR #76; I'll report when the checks finish.
+
+## Turn 58
+
+### Prompt
+
+<task-notification>
+<task-id>b0bvh93dh</task-id>
+<tool-use-id>toolu_01VvSSfb9Cxrj5Rzb1Pp2Pm8</tool-use-id>
+<output-file>/tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/tasks/b0bvh93dh.output</output-file>
+<status>completed</status>
+<summary>Background command "Watch PR #76 CI checks until done" completed (exit code 0)</summary>
+</task-notification>
+
+### Claude response
+
+M8 is done and up for review as **PR #76**, with all 14 CI checks passing. That includes the new `phase8 agent` job, which runs the agent's tests against the self-hosted `llama3.2:1b`. That was M8's deliverable. I also deleted the merged M7 branch, on GitHub and locally.
+
+**What M8 adds:** a new `outcome-prediction-agent` package. A clinician asks in plain language ("What is the hospitalization risk for Jane Doe?") and gets the scoring service's estimate. The agent uses only three tools that the service publishes (find a patient, get the risk, describe the model) and talks to the service over HTTP, without importing its code.
+
+**One design decision that departs from the plan (O69):** the language model never writes the reply. It only works out which patient is meant and calls the tools. Code then builds every reply from what the service returned: the probability, the comparison score, the percentile, the reasons, any input warnings, the model version and the planning-aid note. A check holds back any reply containing a number the service didn't return. Design §9 had the model narrate under a constrained prompt. I changed that because in live runs the 1B model made up patient IDs and numbers; a prompt can only ask, while a template plus a check guarantees it. Tell me if you'd rather keep model-written narration.
+
+**How the adversarial requests come out:**
+- **"Rank everyone over 20%"** is refused before any tool is called.
+- **"Adjust for her new diagnosis"** or **"what if she were 40"** returns the service's unchanged estimate with a note that it can't be adjusted. Any extra inputs the model tries to pass never reach the service.
+- **"Is that high risk?"** returns the estimate with a note that no risk bands have been clinically agreed. No band is ever stated.
+- **A made-up patient ID** is refused. The agent only accepts IDs that the patient search returned or the clinician typed.
+- **Several patients matching** sends the choice back to the clinician.
+
+**Live results on the 1B model (25 runs):** every reply passed the number check. 13 of 20 risk questions ended with the service's estimate, up from about 1 in 4 before I added the guards, and 5 of 5 "how was it built?" questions got the model description. The other 7 risk questions ended safely by asking which patient was meant. A stronger model would finish more of them, but switching models (`LLM_PROVIDER`) isn't needed for safety.
+
+**Tests:**
+- Agent: 39, including 7 against the live model. Like `mcp-agent`'s live tests, these fail rather than skip when Ollama isn't running.
+- Service, client and lab: 278 pass, 6 of them new.
+- `triage-service` and `mcp-agent`: unchanged at 146 passing; the same 4 tests error on `main` too, because they need a local Ollama model.
+
+**CI and setup changes to check:**
+- A new `phase8 agent` CI job with Ollama, reusing `phase1`'s model cache. The agent can't run in `phase1`, which must hold Phase 1 packages only.
+- The agent's tests are added to the root `pytest.ini`.
+- The agent is added to the install lines in CLAUDE.md and `.ona`.
+- No paid model provider is configured anywhere.
+
+**Files:**
+- **New agent package:** `outcome-prediction-agent/`, with `agent.py`, `explain.py`, `service.py`, `policy.md`, `testing.py`, its tests, recorded service outputs and a README.
+- **Service:** new `tools.py`, plus the tool endpoints in `api.py` and their tests.
+- **Docs:** decisions O69–O70, design §9, PRD (FR-A1–A3 done), milestone plan, status pages.
+- **Setup:** the CI workflow, `pytest.ini`, CLAUDE.md and `.ona`.
+
+**Branch and commit:** `feature/phase8-m8-agent`, commit `635b37a9`.
+
+**Limitations:** the agent is a command-line tool and Python library, with no HTTP or session interface yet. With the 1B model, about one risk question in three ends by asking for the patient rather than answering.
+
+**Next:** I haven't merged anything. Once you merge PR #76, I'll ask before deleting the branch. M9 is next: the end-to-end acceptance case and demo.
+
 <details>
-<summary>Execution details — 752 tool events</summary>
+<summary>Execution details — 827 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6003,6 +6167,198 @@ def sub(path, old, new):
     p = Path(path); s = p.read_text(); assert s.count(old) == 1, (path, old[:60]); p.write_text(s.replace(old, new))
 S = "outcome-pr…`
 - **Bash** `docker compose --profile phase8 up -d --build outcome-prediction 2>&1 | tail -1; for i in $(seq 1 60); do s=$(docker inspect -f '{{.State.Health.Status}}' fhir-agent-outcome-prediction 2>/dev/null); […`
+- **Bash** `grep -n "    def score" -A40 outcome-prediction-service/src/outcome_prediction/scoring.py`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-service/src/outcome_prediction/scoring.py"); s = p.read_text()
+old = s[s.index("    def score(self, rows"):]
+new = '''    def sc…`
+- **Bash** `cat >> outcome-prediction-service/src/outcome_prediction/tests/test_api.py <<'EOF'
+
+
+def test_batch_reasons_equal_one_at_a_time(artifact):
+    scorer = scoring.Scorer(artifact)
+    rows = pd.DataFrame…`
+- **Bash** `docker compose --profile phase8 rm -sf fhir outcome-prediction 2>&1 | tail -2; docker ps --format '{{.Names}}' | grep -c fhir-agent || true`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+def sub(path, old, new):
+    p = Path(path); s = p.read_text(); assert s.count(old) == 1, (path, old[:70]); p.write_text(s.replace(old, new))
+G = "docs/phase…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+D = Path("docs/phase8/decisions.md"); s = D.read_text()
+heading = "## Supersession notes\n"
+assert s.count(heading) == 1
+block = """## M7 — the scoring servi…`
+- **Bash** `grep -n 'outcome-prediction-service\[dev\]' CLAUDE.md .clinerules .ona/automations.yaml 2>/dev/null | cut -c1-120; python3 - <<'EOF'
+from pathlib import Path
+def sub(path, old, new, count=1):
+    p =…`
+- **Bash** `ls -la .clinerules* 2>&1 | head; grep -rn "pip install" .clinerules* 2>/dev/null | head -3`
+- **Bash** `grep -rln "pip install" .clinerules/ ; grep -rn "outcome-prediction" .clinerules/ | head -5`
+- **Bash** `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:1 PYTHONWARNINGS=ignore MLFLOW_DISABLE_AGENT_HINT=1 python -m pytest outcome-prediction-service client/clinical/tests outcome-prediction-lab/src/outcome_pr…`
+- **Bash** `git mv -f outcome-prediction-service/src/outcome_prediction/tests/test_api.py outcome-prediction-service/src/outcome_prediction/tests/test_scoring_api.py 2>/dev/null || mv outcome-prediction-service/s…`
+- **Bash** `git add -A .github/workflows/tests.yml .ona/automations.yaml CLAUDE.md docker-compose.yml docs outcome-prediction-service && git status --short | head -30 && git commit -q -F - <<'EOF'
+feat(phase8): M…`
+- **Bash** `gh pr create --base main --head feature/phase8-m7-scoring-service --title "Phase 8 M7: scoring service returning FHIR RiskAssessment" --body-file - <<'EOF' 2>&1 | tail -1
+## Summary
+
+M7 adds the scori…`
+- **Bash** `sleep 20; timeout 1500 gh pr checks 75 --watch --interval 30 >/dev/null 2>&1; gh pr checks 75 2>&1 | awk -F'\t' '{print $2" — "$1}' | sort | uniq -c`
+
+### Turn 55 activity
+
+- **Bash** `gh pr view 75 --json state,mergedAt -q '"\(.state) \(.mergedAt)"' && git switch -q main && git pull -q --ff-only origin main && git fetch -q --prune && git branch -a --merged origin/main | grep m7; gi…`
+- **Bash** `git push -q origin --delete feature/phase8-m7-scoring-service && git branch -d feature/phase8-m7-scoring-service && git branch -a`
+- **Bash** `sed -n '/^### M8/,/^### M9/p' docs/phase8/milestone-plan.md; grep -n "^| FR-A" docs/phase8/prd.md | cut -c1-300; grep -n "^| O15 \|^| O16 " docs/phase8/decisions.md | cut -c1-400; sed -n '/^## 9\. The…`
+- **Bash** `grep -rl "from agent_platform\|import agent_platform" --include=*.py . | grep -v "^./agent-platform" | sed 's|/src/.*||; s|/tests/.*||' | sort | uniq -c; ls provider-search-agent provider-search-agent…`
+- **Bash** `cat agent-platform/src/agent_platform/__init__.py | head -60; sed -n 1,80p agent-platform/src/agent_platform/output_gate.py`
+- **Bash** `ls mcp-agent/src/agent mcp-agent/tests; wc -l mcp-agent/src/agent/*.py; grep -n "ollama\|OLLAMA\|llama3" .github/workflows/tests.yml | head -20`
+- **Bash** `sed -n 1,140p mcp-agent/src/agent/agent.py`
+- **Bash** `sed -n 140,420p mcp-agent/src/agent/agent.py`
+- **Bash** `sed -n 420,560p mcp-agent/src/agent/agent.py; sed -n 1,60p mcp-agent/tests/test_provider_integration.py`
+- **Bash** `sed -n 56,100p docs/phase8/design.md; grep -n "FR-A\|grounding\|adversarial\|explain.py\|outcome-prediction-agent" docs/phase8/design.md | sed -n 1,30p`
+- **Bash** `sed -n 1,80p mcp-agent/tests/conftest.py; grep -n "class ResolvedProvider" -A12 agent-platform/src/agent_platform/providers.py; grep -n "def build_llm_client" -A20 agent-platform/src/agent_platform/pr…`
+- **Bash** `sed -n 36,80p .github/workflows/tests.yml; cat mcp-agent/pyproject.toml | sed -n 1,30p; cat mcp-agent/policy.md | head -30`
+- **Bash** `git switch -q -c feature/phase8-m8-agent && git branch --show-current && grep -n "def search_patients" -A3 client/clinical/src/fhir_clinical_client/fhir_client.py | head -4`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/tools.py`
+- **Bash** `cat >> outcome-prediction-service/src/outcome_prediction/api.py <<'EOF'
+
+
+# ── the agent's tools (design.md §9; tools.py) ───────────────────────────────────────
+
+@app.get("/agent-tools")
+def agent_to…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-service/src/outcome_prediction/api.py"); s = p.read_text()
+old = '''    client = request.app.dependency_overrides.get(get_client…`
+- **Bash** `mkdir -p /workspaces/fhir-agent/outcome-prediction-agent/src/outcome_prediction_agent && cd /workspaces/fhir-agent/outcome-prediction-agent && cat > pyproject.toml <<'EOF'
+[build-system]
+requires = ["…`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-agent/src/outcome_prediction_agent/explain.py`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-agent/src/outcome_prediction_agent/service.py`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("src/outcome_prediction_agent/explain.py"); s = p.read_text()
+old = s[s.index("BAND_CUES = re.compile("):s.index("\n\n\ndef _ext(")]
+new = '''BAND_C…`
+- **Bash** `cat > src/outcome_prediction_agent/policy.md <<'EOF'
+# Hospitalization Risk Assistant Policy
+
+These rules always apply. They are loaded into the system prompt, not retrieved (Phase 6 H6).
+
+## Scope
+
+T…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("src/outcome_prediction_agent/agent.py"); s = p.read_text()
+old = 'ID_TOKEN = re.compile(r"\\b(?:Patient/)?([A-Za-z0-9\\-.]{1,64})\\b")'
+new = '# A…`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-agent/tests/record_service_outputs.py`
+- **Bash** `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:1 PYTHONWARNINGS=ignore python outcome-prediction-agent/tests/record_service_outputs.py 2>&1 | grep -vE "export|Transient|UNAVAILABLE"; python3 -c "
+import…`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-agent/tests/conftest.py`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-agent/tests/test_agent.py`
+- **Bash** `cd /workspaces/fhir-agent/outcome-prediction-agent && touch tests/__init__.py && OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:1 python -m pytest tests/test_agent.py -q -p no:cacheprovider 2>&1 | grep…`
+- **Bash** `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:1 python -m pytest tests/test_agent.py -q -p no:cacheprovider -k extra_tool 2>&1 | grep -E "^E " | head -6`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+t = Path("tests/test_agent.py"); s = t.read_text()
+def sub(old, new):
+    global s; assert s.count(old) == 1, old[:60]; s = s.replace(old, new)
+sub('''def te…`
+- **Bash** `docker run -d --rm --name phase8-m8-ollama -p 11434:11434 ollama/ollama:0.6.5 >/dev/null && for i in $(seq 1 60); do curl -sf localhost:11434/api/tags >/dev/null && break; sleep 2; done && curl -s loc…`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-agent/tests/test_explain.py`
+- **Bash** `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:1 python -m pytest tests/test_explain.py -q -p no:cacheprovider 2>&1 | grep -vE "export|Transient|UNAVAILABLE" | tail -8`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+e = Path("src/outcome_prediction_agent/explain.py"); s = e.read_text()
+old = '''ASK_PATIENT = ("I can give the 12-month hospitalization risk estimate for one…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("src/outcome_prediction_agent/agent.py"); s = p.read_text()
+old = '''        reply = _run(llm, model, question, service, gen_ai_system)
+        safe…`
+- **Bash** `cd /workspaces/fhir-agent && grep -n "def __init__" -A6 agent-platform/src/agent_platform/providers.py | head -12; grep -n "OpenAICompatibleProvider(" mcp-agent/tests/test_provider_integration.py | he…`
+- **Bash** `cat pytest.ini; grep -n "^  phase8-lab:" -A30 .github/workflows/tests.yml | head -34`
+- **Bash** `grep -rhn "^from tests\|^import tests\|^from \.\|^from conftest" mcp-agent/tests provider-search-agent/tests provider-curation-agent/tests claims-agent/tests 2>/dev/null | sort | uniq -c | head; grep…`
+- **Bash** `cd /workspaces/fhir-agent/outcome-prediction-agent && python3 - <<'EOF'
+from pathlib import Path
+import re
+c = Path("tests/conftest.py"); s = c.read_text()
+s = s.replace('''@pytest.fixture
+def service…`
+- **Bash** `cat /tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/tasks/b0cse5bo0.output | tail -2; cd /workspaces/fhir-agent/outcome-prediction-agent && python3 - <<'EOF'
+from pathlib…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("tests/conftest.py"); s = p.read_text()
+old = '''def FakeService(unavailable: bool = False) -> ReplayService:  # noqa: N802 — reads like the class i…`
+- **Bash** `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:1 python3 - 2>&1 <<'EOF' | grep -vE "export|Transient|UNAVAILABLE"
+import json, collections
+from pathlib import Path
+from agent_platform.providers import O…`
+- **Bash** `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:1 python3 - 2>&1 <<'EOF' | grep -vE "export|Transient|UNAVAILABLE"
+import json
+from pathlib import Path
+from agent_platform.providers import OpenAICompatib…`
+- **Bash** `cd /workspaces/fhir-agent/outcome-prediction-agent && python3 - <<'EOF'
+from pathlib import Path
+p = Path("src/outcome_prediction_agent/agent.py"); s = p.read_text()
+def sub(old, new):
+    global s; a…`
+- **Bash** `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:1 python -m pytest outcome-prediction-agent/tests/test_agent.py -q -p no:cacheprovider -k made_up 2>&1 | grep -E "^E " | head -5`
+- **Bash** `cd /workspaces/fhir-agent/outcome-prediction-agent && python3 - <<'EOF'
+from pathlib import Path
+p = Path("src/outcome_prediction_agent/agent.py"); s = p.read_text()
+for old, new in [
+    ('''…`
+- **Bash** `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:1 python3 - 2>&1 <<'EOF' | grep -vE "export|Transient|UNAVAILABLE"
+import json, collections
+from pathlib import Path
+from agent_platform.providers import O…`
+- **Bash** `cd /workspaces/fhir-agent/outcome-prediction-agent && python3 - <<'EOF'
+from pathlib import Path
+e = Path("src/outcome_prediction_agent/explain.py"); s = e.read_text()
+old = '''# Questions about more…`
+- **Bash** `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:1 python -m pytest outcome-prediction-agent/tests -q -p no:cacheprovider 2>&1 | grep -vE "export|Transient|UNAVAILABLE" | tail -3`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path(".github/workflows/tests.yml"); s = p.read_text()
+anchor = '''      - name: Notebooks are committed without outputs (decisions.md O38)
+        run:…`
+- **Bash** `grep -rn "outcome-prediction-lab" README.md docs/README.md CLAUDE.md 2>/dev/null | cut -c1-160 | head`
+- **Bash** `cat > outcome-prediction-agent/README.md <<'EOF'
+# outcome-prediction-agent
+
+Ask for a patient's 12-month hospitalization risk in plain language (Phase 8 M8). Built on
+`agent-platform` (Phase 6); self…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+def sub(path, old, new):
+    p = Path(path); s = p.read_text(); assert s.count(old) == 1, (path, old[:70]); p.write_text(s.replace(old, new))
+D = Path("docs/…`
+
+### Turn 57 activity
+
+- **Bash** `git branch --show-current && OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:1 PYTHONWARNINGS=ignore MLFLOW_DISABLE_AGENT_HINT=1 python -m pytest outcome-prediction-service client/clinical/tests outcome-…`
+- **Bash** `docker stop phase8-m8-ollama >/dev/null 2>&1; docker ps --format '{{.Names}}' | grep -c phase8 || true; python -m pytest triage-service mcp-agent -q -p no:cacheprovider 2>/dev/null | tail -1; git ls-f…`
+- **Bash** `cd /workspaces/fhir-agent/outcome-prediction-agent/tests && mv test_agent.py test_risk_agent.py && mv test_explain.py test_risk_explain.py && grep -rln "test_agent.py\|test_explain.py\|test_live_model…`
+- **Bash** `cd /workspaces/fhir-agent/outcome-prediction-agent && sed -i 's/`test_agent.py` and `test_explain.py`/`test_risk_agent.py` and `test_risk_explain.py`/' README.md && grep -n "test_live_model.py\|test_a…`
+- **Bash** `git add .github/workflows/tests.yml .ona/automations.yaml CLAUDE.md pytest.ini docs outcome-prediction-service outcome-prediction-agent && git status --short | grep -c . && git status --short | grep -…`
+- **Bash** `gh pr create --base main --head feature/phase8-m8-agent --title "Phase 8 M8: outcome-prediction-agent, grounded on the self-hosted model" --body-file - <<'EOF' 2>&1 | tail -1
+## Summary
+
+M8 adds a new…`
+- **Bash** `sleep 30; timeout 2400 gh pr checks 76 --watch --interval 30 >/dev/null 2>&1; gh pr checks 76 2>&1 | awk -F'\t' '{print $2" — "$1}' | sort | uniq -c`
+- **Bash** `timeout 2400 gh pr checks 76 --watch --interval 30 >/dev/null 2>&1; gh pr checks 76 2>&1 | awk -F'\t' '{print $2" — "$1}' | sort | uniq -c`
+
+### Turn 58 activity
+
+- **Bash** `cat /tmp/claude-1000/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4/tasks/b0bvh93dh.output`
 
 </details>
 
@@ -6013,6 +6369,6 @@ S = "outcome-pr…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 17:30 UTC
-- **Turns:** 54
+- **Last updated:** 18 October 2026, 18:41 UTC
+- **Turns:** 58
 - **Status:** Complete
