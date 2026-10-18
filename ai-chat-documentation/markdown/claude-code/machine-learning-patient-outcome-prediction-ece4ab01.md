@@ -3666,6 +3666,31 @@ Before running `promote`, I'm checking what M12 (the promotion milestone) owns, 
 
 That "Still open" paragraph now lists resolved items, which reads badly. Rewriting it:
 
+M3 is finished and closed, and PR #71 is updated with all 13 CI checks passing. The only blockers were your three decisions (the scorecard scores, which prediction to promote first, and closing M3), which you've answered.
+
+**Round 000 (M3's original deliverable).** I ran M2's two models through the lab's command line, and the test results match M2's to every digit. That includes AUROC 0.769008189627725 for the main model and 0.7076200378839681 for the comparison model, plus AUPRC, Brier and mean predicted. It matches exactly because the lab now calls the service's own fitting code instead of a copy. Two new config options do this, and they only accept M2's fixed inputs. Cross-validation, which M2 never had, gives 0.768 and 0.686. Both models now have a model card. Re-scoring the test panels counted as two more logged looks, though M2 had already reported those results.
+
+**Scorecards.** The scores a person has to give are now recorded for all four focus models in each round's `criteria/` folder, marked as drafted by me and adopted by you. The main point they carry: high cost is scored "finance, not need" and must never be used alone to decide who gets care.
+
+**Decisions:**
+- **O59** settles O40: the first prediction to promote is the hospital stay not related to pregnancy or childbirth (`nonobstetric-v2`).
+- **O60** closes M3. The lab stays available for new rounds whenever you want one.
+
+I did not run `promote`. That step belongs to M12, which builds the promotion record and makes the service refuse models that haven't been promoted.
+
+I also fixed a small bug: `confirm` failed if the round had no `runs/` folder yet.
+
+**Changes:**
+- **Code:** `features.py` (wrapper around the service's fitting code), `runs.py` (the two M2 model options, a matching card line, the `confirm` fix), `fairness.py`, and two new tests.
+- **New rounds content:** the `rounds/000-baseline-reproduction/` folder, the four `criteria/*.json` files and the regenerated scorecards.
+- **Docs:** decisions, milestone plan, PRD (FR-X4 marked done; the "still open" decision list corrected), prediction targets, the Phase 8 status page and the lab README.
+
+**Checks:** 153 tests pass (30 lab, 123 service) and the notebook check is clean.
+
+**Branch:** `feature/phase8-m3-round-001`, commit `befdbb59`.
+
+**Next:** I haven't merged anything. Once you merge PR #71, I'll ask before deleting the branch. After that comes M4 and the service work (M6, M7, M12), built around non-obstetric hospital stay.
+
 <details>
 <summary>Execution details — 537 tool events</summary>
 
@@ -5050,6 +5075,6 @@ p = Path(sys.argv[1]); s = p.read_text(…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 14:55 UTC
+- **Last updated:** 18 October 2026, 14:58 UTC
 - **Turns:** 48
 - **Status:** Complete
