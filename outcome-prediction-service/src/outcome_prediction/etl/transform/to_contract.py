@@ -18,6 +18,7 @@ import re
 import numpy as np
 import pandas as pd
 
+from outcome_prediction.etl import codelists
 from outcome_prediction.etl.canonical import Canonical, as_of_view
 from outcome_prediction.model import CATEGORICAL, FEATURES, LABEL
 
@@ -40,7 +41,8 @@ STATE_REGION = {state: code for code, states in REGION.items() for state in stat
 
 RACE = {"white": 2, "black": 3, "asian": 4}            # anything else non-Hispanic -> 5
 
-# Description patterns — stand-ins until M13's code lists (prototype-baseline.md §6.3).
+# Description patterns: the prototype's rule (prototype-baseline.md §6.3), kept for
+# `prototype_training_rows` only. Contract rows use the code lists (etl/codelists, M13).
 DX_PATTERNS = {
     "hibpdx": r"hypertension",
     "chddx": r"ischemic heart disease|coronary artery",
@@ -251,10 +253,12 @@ def contract_rows(view: Canonical, as_of: pd.Timestamp, explain: bool = False):
     enc_cost = _per_person(ids, w.cost.fillna(0).groupby(w.person_id).sum())  # a running stay's claim: unknown
     out["totexpy1"] = (enc_cost + _per_person(ids, cost.groupby(med.person_id).sum())).round()
 
+    # Diagnosis flags from the versioned code lists (M13): each condition's code -> ICD-10-CM
+    # (SNOMED mapped) -> the flags its prefixes set. Unmapped codes set nothing.
     cond = view.condition[view.condition.person_id.isin(ids)]
-    desc = cond.description.str.lower()
-    for flag, pattern in DX_PATTERNS.items():
-        hits = cond[desc.str.contains(pattern, regex=True)]
+    cond_flags = cond.code.map(codelists.flags_for_code)
+    for flag in DX_PATTERNS:
+        hits = cond[cond_flags.map(lambda fs, f=flag: f in fs).astype(bool)]
         cite(flag, hits)
         out[flag] = ids.isin(hits.person_id.unique()).astype(int)
 

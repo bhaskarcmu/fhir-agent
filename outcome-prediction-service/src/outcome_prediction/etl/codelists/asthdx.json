@@ -1,0 +1,17 @@
+{
+ "flag": "asthdx",
+ "meaning": "Ever told they had asthma",
+ "version": 1,
+ "status": "unreviewed",
+ "status_note": "No clinical owner signs off code lists yet (decisions.md O27).",
+ "code_system": "ICD-10-CM",
+ "release": "CDC/NCHS FY2026",
+ "match": "a diagnosis code starting with any prefix (dots ignored)",
+ "codes": [
+  {
+   "prefix": "J45",
+   "description": "Asthma"
+  }
+ ],
+ "notes": []
+}

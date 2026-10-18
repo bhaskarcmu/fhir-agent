@@ -36,3 +36,7 @@ where = ["src"]
 
 [tool.setuptools.package-dir]
 "" = "src"
+
+# Data the code reads at run time: MEPS aggregates (M6/M7), the diagnosis code lists and SNOMED map (M13).
+[tool.setuptools.package-data]
+outcome_prediction = ["etl/*.json", "etl/codelists/*.json", "etl/codelists/maps/*.json"]

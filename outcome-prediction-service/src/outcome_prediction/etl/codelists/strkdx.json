@@ -1,0 +1,39 @@
+{
+ "flag": "strkdx",
+ "meaning": "Ever told they had a stroke",
+ "version": 1,
+ "status": "unreviewed",
+ "status_note": "No clinical owner signs off code lists yet (decisions.md O27).",
+ "code_system": "ICD-10-CM",
+ "release": "CDC/NCHS FY2026",
+ "match": "a diagnosis code starting with any prefix (dots ignored)",
+ "codes": [
+  {
+   "prefix": "I60",
+   "description": "Nontraumatic subarachnoid hemorrhage"
+  },
+  {
+   "prefix": "I61",
+   "description": "Nontraumatic intracerebral hemorrhage"
+  },
+  {
+   "prefix": "I62",
+   "description": "Other and unspecified nontraumatic intracranial hemorrhage"
+  },
+  {
+   "prefix": "I63",
+   "description": "Cerebral infarction"
+  },
+  {
+   "prefix": "I69",
+   "description": "Sequelae of cerebrovascular disease"
+  },
+  {
+   "prefix": "Z86.73",
+   "description": "Personal history of transient ischemic attack (TIA), and cerebral infarction without residual deficits"
+  }
+ ],
+ "notes": [
+  "G45 (transient ischemic attack) is excluded: MEPS asks about stroke"
+ ]
+}

@@ -1,0 +1,59 @@
+{
+ "flag": "arthdx",
+ "meaning": "Ever told they had arthritis (MEPS: including rheumatoid arthritis, gout, lupus, fibromyalgia)",
+ "version": 1,
+ "status": "unreviewed",
+ "status_note": "No clinical owner signs off code lists yet (decisions.md O27).",
+ "code_system": "ICD-10-CM",
+ "release": "CDC/NCHS FY2026",
+ "match": "a diagnosis code starting with any prefix (dots ignored)",
+ "codes": [
+  {
+   "prefix": "M05",
+   "description": "Rheumatoid arthritis with rheumatoid factor"
+  },
+  {
+   "prefix": "M06",
+   "description": "Other rheumatoid arthritis"
+  },
+  {
+   "prefix": "M08",
+   "description": "Juvenile arthritis"
+  },
+  {
+   "prefix": "M10",
+   "description": "Gout"
+  },
+  {
+   "prefix": "M15",
+   "description": "Polyosteoarthritis"
+  },
+  {
+   "prefix": "M16",
+   "description": "Osteoarthritis of hip"
+  },
+  {
+   "prefix": "M17",
+   "description": "Osteoarthritis of knee"
+  },
+  {
+   "prefix": "M18",
+   "description": "Osteoarthritis of first carpometacarpal joint"
+  },
+  {
+   "prefix": "M19",
+   "description": "Other and unspecified osteoarthritis"
+  },
+  {
+   "prefix": "M32",
+   "description": "Systemic lupus erythematosus (SLE)"
+  },
+  {
+   "prefix": "M79.7",
+   "description": "Fibromyalgia"
+  }
+ ],
+ "notes": [
+  "M26.6 (temporomandibular joint disorders) is excluded: a jaw disorder the prototype's description match counted as arthritis"
+ ]
+}

@@ -1,0 +1,32 @@
+{
+ "flag": "chddx",
+ "meaning": "Ever told they had coronary heart disease",
+ "version": 1,
+ "status": "unreviewed",
+ "status_note": "No clinical owner signs off code lists yet (decisions.md O27).",
+ "code_system": "ICD-10-CM",
+ "release": "CDC/NCHS FY2026",
+ "match": "a diagnosis code starting with any prefix (dots ignored)",
+ "codes": [
+  {
+   "prefix": "I24",
+   "description": "Other acute ischemic heart diseases"
+  },
+  {
+   "prefix": "I25",
+   "description": "Chronic ischemic heart disease"
+  },
+  {
+   "prefix": "Z95.1",
+   "description": "Presence of aortocoronary bypass graft"
+  },
+  {
+   "prefix": "Z98.61",
+   "description": "Coronary angioplasty status"
+  }
+ ],
+ "notes": [
+  "I20 (angina) and I21–I22 (myocardial infarction) are their own flags (angidx, midx)",
+  "I25 includes I25.2, old myocardial infarction, which also sets midx"
+ ]
+}

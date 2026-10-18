@@ -29,7 +29,7 @@ outcome-prediction-service/       # NEW (O2) — training pipeline, ETL, scoring
       extract/synthea_csv.py      # reproduction/parity harness (O8)
       extract/fhir.py             # NEW vs. the prototype: canonical tables from client/clinical (M6)
       transform/to_contract.py    # canonical → contract rows; training vs scoring mode (§6)
-      codelists/                  # M13: versioned ICD-10-CM 3-char lists per flag
+      codelists/                  # M13: versioned ICD-10-CM prefix lists per flag + the SNOMED map (O73)
     fhir/
       risk_assessment.py          # Phase 8's own RiskAssessment/Bundle models + builder (O3, §4)
     api.py                        # FastAPI app (§5)
@@ -229,7 +229,7 @@ RxNav (R11):
 |---|---|---|---|
 | `person` | `get_demographics`: Patient gender, birthDate, deceasedDateTime, address.state, US Core race / ethnicity | All present; state is a postal code; **no income** | State code → name; `povcaty1` defaulted to 4 with a warning (O66) |
 | `encounter` | `get_encounters`: class + period; cost from `get_care_costs` | Matches CSV one-to-one (ID, start). Class folds CSV classes: AMB = ambulatory + wellness + **outpatient** + urgent care; IMP = inpatient + **SNF**; HH = home + **hospice**. Neither `type` nor place of service separates them | Counted as office / inpatient / home health. Cost = billed total of the encounter's claims (equals the CSV cost for all 4,307) |
-| `condition` | `get_condition_history` (paged — 6% of people have > 100) | Onset matches; description = SNOMED display | Onset, else recorded date; description regex until M13 |
+| `condition` | `get_condition_history` (paged — 6% of people have > 100) | Onset matches; description = SNOMED display | Onset, else recorded date; diagnosis flags from the versioned code lists (`etl/codelists`, O73) |
 | `medication_fill` | `get_medication_dispenses`; else `get_care_costs` pharmacy claims | **No `MedicationDispense`, no `dispenseRequest`, no stop date**; one pharmacy claim per prescription | One fill per dispense; else one fill per pharmacy claim, priced at its billed amount, with a note. Fills undercount by ~6× on Synthea |
 | `coverage` | `get_coverage`; else the payer on each claim | **No `Coverage`** | Claim payer for the claim's service period; payer name → ownership (Medicare / Medicaid / Dual Eligible → government; `NO_INSURANCE`; else private) |
 

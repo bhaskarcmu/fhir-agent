@@ -22,6 +22,7 @@ import re
 from html.parser import HTMLParser
 from pathlib import Path
 
+from outcome_prediction.etl.codelists import ICD10CM   # CDC ICD-10-CM FY2026: one pin, in the service
 from outcome_prediction.meps.download import ensure_archive
 from outcome_prediction.meps.manifest import archive_dir, load_manifest
 from outcome_prediction.settings import processed_dir
@@ -30,12 +31,6 @@ from outcome_prediction_lab.data import CONDITIONS, PRESCRIBED
 
 VOCAB = "vocabulary.json"
 CCSR_LABEL_WIDTH = 57      # measured: 26 CCSR labels stop at exactly this length, mid-word
-ICD10CM = {   # CDC/NCHS ICD-10-CM FY2026 code descriptions (public domain)
-    "url": "https://ftp.cdc.gov/pub/Health_Statistics/NCHS/Publications/ICD10CM/2026/icd10cm-Code%20Descriptions-2026.zip",
-    "name": "icd10cm-code-descriptions-2026.zip",
-    "sha256": "a852eb91b3344ae38476e63816976ee1eeb94dcced7151118324f060e8499f88",
-    "member": "icd10cm-order-2026.txt",
-}
 # Acronyms that must stay upper case after sentence-casing AHRQ's capitals.
 KEEP_UPPER = {"HIV", "AIDS", "COPD", "ADHD", "HMG-COA", "NSAID", "NSAIDS", "ACE", "ARB", "SGLT-2",
               "GLP-1", "DPP-4", "COVID-19", "CNS", "GI", "ENT", "UTI", "MRSA", "TB"}

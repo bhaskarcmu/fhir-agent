@@ -1,0 +1,140 @@
+{
+ "flag": "ohrtdx",
+ "meaning": "Ever told they had any other kind of heart disease or condition",
+ "version": 1,
+ "status": "unreviewed",
+ "status_note": "No clinical owner signs off code lists yet (decisions.md O27).",
+ "code_system": "ICD-10-CM",
+ "release": "CDC/NCHS FY2026",
+ "match": "a diagnosis code starting with any prefix (dots ignored)",
+ "codes": [
+  {
+   "prefix": "I05",
+   "description": "Rheumatic mitral valve diseases"
+  },
+  {
+   "prefix": "I06",
+   "description": "Rheumatic aortic valve diseases"
+  },
+  {
+   "prefix": "I07",
+   "description": "Rheumatic tricuspid valve diseases"
+  },
+  {
+   "prefix": "I08",
+   "description": "Multiple valve diseases"
+  },
+  {
+   "prefix": "I09",
+   "description": "Other rheumatic heart diseases"
+  },
+  {
+   "prefix": "I30",
+   "description": "Acute pericarditis"
+  },
+  {
+   "prefix": "I31",
+   "description": "Other diseases of pericardium"
+  },
+  {
+   "prefix": "I32",
+   "description": "Pericarditis in diseases classified elsewhere"
+  },
+  {
+   "prefix": "I33",
+   "description": "Acute and subacute endocarditis"
+  },
+  {
+   "prefix": "I34",
+   "description": "Nonrheumatic mitral valve disorders"
+  },
+  {
+   "prefix": "I35",
+   "description": "Nonrheumatic aortic valve disorders"
+  },
+  {
+   "prefix": "I36",
+   "description": "Nonrheumatic tricuspid valve disorders"
+  },
+  {
+   "prefix": "I37",
+   "description": "Nonrheumatic pulmonary valve disorders"
+  },
+  {
+   "prefix": "I38",
+   "description": "Endocarditis, valve unspecified"
+  },
+  {
+   "prefix": "I39",
+   "description": "Endocarditis and heart valve disorders in diseases classified elsewhere"
+  },
+  {
+   "prefix": "I40",
+   "description": "Acute myocarditis"
+  },
+  {
+   "prefix": "I41",
+   "description": "Myocarditis in diseases classified elsewhere"
+  },
+  {
+   "prefix": "I42",
+   "description": "Cardiomyopathy"
+  },
+  {
+   "prefix": "I43",
+   "description": "Cardiomyopathy in diseases classified elsewhere"
+  },
+  {
+   "prefix": "I44",
+   "description": "Atrioventricular and left bundle-branch block"
+  },
+  {
+   "prefix": "I45",
+   "description": "Other conduction disorders"
+  },
+  {
+   "prefix": "I46",
+   "description": "Cardiac arrest"
+  },
+  {
+   "prefix": "I47",
+   "description": "Paroxysmal tachycardia"
+  },
+  {
+   "prefix": "I48",
+   "description": "Atrial fibrillation and flutter"
+  },
+  {
+   "prefix": "I49",
+   "description": "Other cardiac arrhythmias"
+  },
+  {
+   "prefix": "I50",
+   "description": "Heart failure"
+  },
+  {
+   "prefix": "I51",
+   "description": "Complications and ill-defined descriptions of heart disease"
+  },
+  {
+   "prefix": "I52",
+   "description": "Other heart disorders in diseases classified elsewhere"
+  },
+  {
+   "prefix": "Z95.2",
+   "description": "Presence of prosthetic heart valve"
+  },
+  {
+   "prefix": "Z95.3",
+   "description": "Presence of xenogenic heart valve"
+  },
+  {
+   "prefix": "Z95.4",
+   "description": "Presence of other heart-valve replacement"
+  }
+ ],
+ "notes": [
+  "Covers rheumatic and valve disease, cardiomyopathy, conduction disorders and arrhythmias, heart failure, and valve replacement status",
+  "Z95.0 (pacemaker) is excluded: a device, not a diagnosis by itself"
+ ]
+}
