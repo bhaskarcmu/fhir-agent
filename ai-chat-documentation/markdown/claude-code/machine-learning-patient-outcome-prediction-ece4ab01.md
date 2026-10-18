@@ -3820,8 +3820,10 @@ The generator is running. Meanwhile I'm reading the rest of the contract's field
 
 Now `to_contract.py`, the prototype's rules from `prototype-baseline.md` §6.3 as-is:
 
+Now the commit-1 tests. They cover the fixture's schema, the `coronary` regression case, the pinned generation command, and the checksum guard:
+
 <details>
-<summary>Execution details — 569 tool events</summary>
+<summary>Execution details — 573 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5237,6 +5239,10 @@ s…`
 - **Bash** `sed -i 's/^from outcome_prediction.model import CATEGORICAL, FEATURES, LABEL$/from outcome_prediction.model import FEATURES, LABEL/' outcome-prediction-service/src/outcome_prediction/etl/transform/to_…`
 - **Bash** `grep -n "^def \|^class " outcome-prediction-service/src/outcome_prediction/model/artifact.py; grep -n "def main\|argparse\|add_argument" outcome-prediction-service/src/outcome_prediction/model/train.p…`
 - **Bash** `sed -n 29,40p outcome-prediction-service/src/outcome_prediction/model/artifact.py; sed -n 79,88p outcome-prediction-service/src/outcome_prediction/model/artifact.py; sed -n 111,140p outcome-prediction…`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/etl/synthea.py`
+- **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/tests/test_etl_synthea.py`
+- **Bash** `sed -i '/^import numpy as np$/d' outcome-prediction-service/src/outcome_prediction/etl/synthea.py && PYTHONWARNINGS=ignore python -m pytest outcome-prediction-service/src/outcome_prediction/tests/test…`
+- **Bash** `git add outcome-prediction-service/src/outcome_prediction/etl outcome-prediction-service/src/outcome_prediction/tests/test_etl_synthea.py outcome-prediction-service/src/outcome_prediction/tests/fixtur…`
 
 </details>
 
@@ -5247,6 +5253,6 @@ s…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 15:43 UTC
+- **Last updated:** 18 October 2026, 15:44 UTC
 - **Turns:** 50
 - **Status:** Complete
