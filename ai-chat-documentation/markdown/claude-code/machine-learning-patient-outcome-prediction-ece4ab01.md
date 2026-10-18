@@ -4032,6 +4032,44 @@ The heading is restored, and this time the script asserts it exists exactly once
 
 All four PRD requirements are marked done and the status is updated. Stopping the throwaway HAPI container, then a final run of the changed suites:
 
+M6 is done and up for review as **PR #74**, with all 13 CI checks passing. Nothing needed your input. I've also deleted the merged M5 branch, on `origin` and locally.
+
+**Parity holds.** I generated one Synthea population as both CSV and FHIR, loaded the FHIR into a local HAPI v7.2.0, and ran the same 20 adults through both paths. For 2023, 19 of 26 columns are identical: demographics, insurance, every hospital-stay and ER count, and all 11 diagnosis flags. 2022 holds too. Each remaining difference has a cause that code checks for every person it affects:
+- **Income:** FHIR doesn't record it, so a default applies (16 people).
+- **Office vs outpatient visits:** FHIR records them as one class, so they can't be split, but their total is equal (8).
+- **Hospice and SNF stays:** FHIR files them under home health and inpatient (one person each).
+- **Prescription fills and costs** (18 and 19 people): FHIR has no fill counts, so fills come from pharmacy claims. The encounter part of spending matches exactly.
+
+A difference no check explains makes the comparison fail, and a test confirms that it does.
+
+**The rest of M6:**
+- **No look-ahead on the FHIR path.** Records dated after the cut-off, injected into the server's responses, don't change any row.
+- **Every feature value can name its source records**, which `RiskAssessment.basis` will need.
+- **The data-quality report** checks ranges, defaults applied, unmappable codes and drift from MEPS (the survey the model was trained on). On the 3,000-person Synthea population it raises 10 alerts, including Synthea's coronary disease rate of 24.1% vs 5.4% in MEPS, the case the plan named. It runs offline against a committed 4 KB file of MEPS aggregates.
+- **Missing income** used to become "high income" silently, which is the lowest-risk category. It now defaults to "middle income" (MEPS's median) with a warning (O66).
+
+**Problems found and fixed:**
+- **Truncated condition lists.** The old `get_conditions()` stops at 100 conditions, and 6% of people have more. I added a paged `get_condition_history()` and left the old method unchanged.
+- **Missing drug codes.** 53% of Synthea's prescriptions name the medicine by reference, so the M5 client returned them with empty codes. It now resolves the reference.
+- **My docs mistake again:** my M5 edit, merged in PR #73, again deleted the "Supersession notes" heading in `decisions.md`, the same slip as in PR #71. This PR restores it, and the edit script now asserts the heading is still there afterwards.
+
+**One CI change to flag:** the `phase8 (python)` job now also installs `client/clinical`, since the extractor tests use it. It's a one-line, test-only change; I made it without asking, so tell me if you'd rather approve those first.
+
+**Files:**
+- **New ETL code:** `etl/extract/fhir.py`, `etl/parity.py`, `etl/quality.py`, `etl/meps_reference.json`.
+- **Changed:** `to_contract.py` (source records, warnings, income default).
+- **Client:** `client/clinical` gets the two fixes and one new 8 KB recorded page.
+- **Tests and fixtures:** `test_etl_fhir.py` (18 new tests); `fhir_recording.json` (504 KB) with its recorder script.
+- **Docs and CI:** design §7 now has the confirmed mapping rules; decisions O65 and O66; milestone plan, PRD, READMEs; the CI install line.
+
+**Tests:** 246 pass across the service, client and lab, 21 of them new. `triage-service` and `mcp-agent` are unchanged: 146 pass, with the same 4 errors as on `main` from tests that need a local Ollama model (CI provides it).
+
+**Branch and commit:** `feature/phase8-m6-fhir-extractor`, commit `9683f541`.
+
+**Limitations:** all of this is checked on Synthea data. A real EHR may record dispenses, insurance cover and ER admit sources. The rules use those first when present, but that path is tested only on hand-built examples.
+
+**Next:** I haven't merged anything. Once you merge PR #74, I'll ask before deleting the branch. M7 is next: the scoring service that returns a FHIR `RiskAssessment`.
+
 <details>
 <summary>Execution details — 718 tool events</summary>
 
@@ -5864,6 +5902,6 @@ M6 builds t…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 17:08 UTC
+- **Last updated:** 18 October 2026, 17:12 UTC
 - **Turns:** 53
 - **Status:** Complete
