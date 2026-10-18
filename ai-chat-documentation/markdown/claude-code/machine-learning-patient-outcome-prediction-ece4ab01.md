@@ -3707,6 +3707,91 @@ First I'll check that PR #71 is merged and see which branches exist. Worktree: `
 
 PR #71 is merged, and both copies of the branch are already contained in `origin/main`. I'm switching to `main` and fast-forwarding it before deleting:
 
+Branch cleanup is done. `feature/phase8-m3-round-001` is deleted on `origin` and locally (it was fully merged into `main`). You're now on `main` at `ce380479`, the PR #71 merge. Only `main` and `ai-chat-history` remain.
+
+---
+
+# ML concepts used in Phase 8 so far
+
+I've grouped them roughly the way a data science / ML course usually orders them. Each one says what it is, where we used it and what happened. I don't know the exact MIT syllabus, so match these to your modules by topic name.
+
+## 1. Framing the problem: supervised classification
+- **Binary classification with probabilities.** Every focus prediction answers "how likely is this adult to have event X in the next 12 months?" We needed a calibrated probability, not just a yes/no, because the output goes into a FHIR `RiskAssessment`.
+- **Choosing the label (target engineering).** This was the most important lesson of the phase. The prototype predicted "any hospital stay", and it turned out that much of what the model learned was simply that pregnant people give birth. Changing the label to non-obstetric stays gave a model that means what a care manager means.
+  - *Review topic:* problem formulation; the label is a modelling choice.
+- **Other prediction forms we tried:**
+  - *count regression* for the number of ER visits (Poisson);
+  - *cost regression* on log-spending;
+  - *binarising at a threshold* for "high cost" (the top 10%).
+
+## 2. Models
+- **Logistic regression.** Used as the interpretable baseline: the "simple rule" each model must beat, such as age plus prior stays.
+- **Gradient-boosted trees (HistGradientBoosting).** Our workhorse: an ensemble of shallow trees, each correcting the previous ones' errors.
+- **Random forest.** Bagged trees, compared against boosting. It was about the same.
+- **A single decision tree.** Fully readable, but it lost about 0.056 AUROC. This is the classic accuracy-versus-interpretability trade-off.
+- **Hyperparameter tuning.** We tuned learning rate, tree size, minimum leaf size and regularisation by cross-validation. The gain was small, a reminder that defaults are often close.
+- **Monotonic constraints.** We built in domain knowledge, for example "more prior stays should never lower risk". There was no accuracy cost, and the model became more trustworthy.
+
+## 3. Feature engineering and representation
+- **Missing values, handled honestly.** "Refused" or "don't know" became *missing*, not "no". Trees can learn from the fact that a value is missing.
+- **Missingness augmentation.** During training we randomly hid income for half the rows, so the model learned to work without it. Production rarely has income, and this kept predictions calibrated.
+  - *Review topics:* missing-data mechanisms (MCAR, MAR, MNAR); train/serve skew.
+- **Drop, don't impute, for inputs production never has.** An imputed value is just a function of the other inputs, so it adds no information, only miscalibration risk.
+- **Text as features:**
+  - **Bag-of-words and TF-IDF** on diagnosis and drug codes treated as "documents".
+  - **LSA (truncated SVD)** compressed the sparse TF-IDF matrix into 32 dense dimensions. This is dimensionality reduction, closely related to PCA.
+  - **Character n-grams** handled messy drug names: they recognise "METFORMIN HCL" as close to "metformin".
+  - *Review topics:* NLP basics; SVD/PCA; dimensionality reduction.
+- **Autoencoders and denoising autoencoders.** Small neural networks that learn a compressed code from the input. They matched LSA but cost about 8× more, so the simpler method won.
+  - *Review topics:* neural networks; representation learning; unsupervised learning.
+- **Expert-derived features.** Charlson and Elixhauser comorbidity scores and the hospital frailty score gave a small gain. This is domain knowledge as features.
+
+## 4. Evaluation methodology (where most of the rigour went)
+- **Train/test split by time.** We trained on earlier survey panels and tested on later ones, which simulates deploying a model into the future.
+- **Grouped cross-validation (leave-one-panel-out).** Each fold holds out a whole panel, never random rows, which avoids leakage between related records.
+- **Holdout discipline.** The test set is looked at only after the look is pre-registered and logged. This guards against overfitting to the test set, sometimes called the garden of forking paths.
+- **Discrimination metrics:**
+  - **AUROC:** ranking quality.
+  - **AUPRC:** more informative when events are rare.
+  - **Top-10% precision and sensitivity:** the practical "worklist" view.
+- **Calibration metrics:** **Brier score**, mean predicted versus observed rate, and calibration by decile.
+- **Uncertainty:** **bootstrap confidence intervals** and a **paired bootstrap** to compare two models on the same people.
+- **Baselines.** Every model must beat a simple rule. Lift over the baseline matters more than raw AUROC.
+
+## 5. Explainability
+- **Permutation importance.** Global: how much worse the model gets when a feature is scrambled.
+- **SHAP values (TreeExplainer).** Local: how much each feature pushed one patient's prediction up or down. These feed the plain-language, per-patient explanations.
+- **Surrogate models.** A simple tree trained to imitate the complex model.
+- **The marginal-versus-conditional caveat.** An explanation describes what the model weighed, not what causes the outcome.
+  - *Review topics:* interpretability; correlation versus causation.
+
+## 6. Fairness, subgroups and robustness
+- **Subgroup evaluation** by race/ethnicity, insurance, sex and age. For each group we looked at:
+  - AUROC with confidence intervals;
+  - calibration ratio;
+  - equal opportunity: the share of each group's cases the flag catches.
+- **Label bias.** Outcomes that measure *use* of care rather than *need* under-flag people with poor access, such as the uninsured. This is the well-known Obermeyer et al. (2019) result about cost-based risk scores.
+- **Specialist versus general model.** A 65+-only model lost to the general one. More data, even from younger adults, beat a narrower population.
+- **Distribution shift and portability.** Models were retrained using only inputs a real customer's records can supply. This touches on domain adaptation and train/serve skew.
+
+## 7. Causal limits
+- **Prediction is not uplift.** Our models rank risk; they can't say who would *benefit* from outreach. That needs intervention data, which this survey (MEPS) doesn't have.
+  - *Review topics:* causal inference; treatment effects.
+
+## 8. MLOps and reproducibility
+- **Pipelines that refit inside each cross-validation fold.** No preprocessing leaks from test folds into training.
+- **Experiment tracking** with MLflow.
+- **Pinned data with checksums**, and model cards in the spirit of the TRIPOD+AI reporting guideline.
+- **Exact reproduction of a baseline.** Round 000 matched M2 to every digit before anything was changed.
+
+---
+
+**Where to see them in the repo:**
+- **Concept by concept:** the round 001 report §5 in [outcome-prediction-lab/rounds/001-what-and-how/report.md](outcome-prediction-lab/rounds/001-what-and-how/report.md) has the verdict for each concept.
+- **Fairness and the 65+ check:** round 004 in [outcome-prediction-lab/rounds/004-focus-four-readiness/report.md](outcome-prediction-lab/rounds/004-focus-four-readiness/report.md).
+
+If you tell me which MIT modules you're revisiting, I can map each one to the exact files and results here.
+
 <details>
 <summary>Execution details — 540 tool events</summary>
 
@@ -5097,6 +5182,6 @@ p = Path(sys.argv[1]); s = p.read_text(…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 15:04 UTC
+- **Last updated:** 18 October 2026, 15:05 UTC
 - **Turns:** 49
 - **Status:** Complete
