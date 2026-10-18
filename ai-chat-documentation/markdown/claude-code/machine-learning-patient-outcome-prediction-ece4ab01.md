@@ -3361,8 +3361,235 @@ pandas 3's copy-on-write returns a **read-only** array from `.notna().to_numpy()
 
 All 28 lab tests pass. Now round 004's pre-registration and configs, written before running anything:
 
+## Turn 47
+
+### Prompt
+
+This session is being continued from a previous conversation that ran out of context. The summary below covers the earlier portion of the conversation.
+
+Summary:
+1. **Primary Request and Intent**
+
+   **Phase 8 overall.** Phase 8 (ML patient outcome prediction) lives in the repo `/workspaces/fhir-agent`, a monorepo with strict conventions; the git rules are in CLAUDE.md. The user's iterative requests:
+   - Turn the handoff into conformant docs, and remove the raw handoff files from the repo and history.
+   - M1/M2: reproduce the prototype.
+   - Data management: manifest, private mirrors, then a local GCS emulator instead of a real bucket.
+   - Tests must populate missing data rather than skip, both when run individually and in CI.
+   - `mcp` pin PR.
+   - M3: a multi-prompt learning milestone (M10/M11 folded in). Concepts: TF-IDF, autoencoders, random forest with per-patient explanations, missing values, feature importance. Coaching style: intuition, practical judgement and conceptual coaching, no equations.
+   - Rounds 001–003. Round 002 included the CLI tooling, scorecard/model-card generators, notebook check, drug-class names, TF-IDF on code descriptions, char n-grams on drug names, and self-explanatory per-patient narratives with full code names and comparison aggregates.
+   - Round 003: portable contract.
+   - Focus decision: "Moving forward I want to focus on 4 predictions only, unless I explicitly say otherwise":
+     1. admission through the ER;
+     2. hospital stay not related to pregnancy or childbirth;
+     3. any ER visit;
+     4. being a high-cost patient.
+
+     Document how we got here without losing other work.
+   - "Find similar patients" was dropped.
+
+   **Most recent request:** "Address all of this now. I will not approve the PR without it:" quoting my statement: "admission through the ER is the only one of the four without a production-contract model, because round 003 covered the other three. I'd make it the first item of the next round, alongside fairness metrics and a 65+ check for all four."
+
+2. **Key Technical Concepts**
+   - **Data and features:**
+     - MEPS longitudinal panels 21–27 (training 21–25, test 26–27); leave-one-panel-out CV.
+     - Honest missing encoding.
+     - TF-IDF → LSA (TruncatedSVD 32) code features; autoencoders (sklearn MLP); gradient boosting (HGB, tuned params lr 0.03, 15 leaves, min leaf 120, L2 1.0, 600 iterations).
+     - SHAP TreeExplainer narratives.
+     - Portable contract `meps-portable-v2`, with tiers always / usually / rarely / claims_only / not_portable.
+     - Missingness augmentation as a pipeline step (`MissingnessAugmenter`, masks only in `fit_transform`).
+     - Rule: drop always-missing features, never impute (O53). Outcome observability (O54); high cost needs claims.
+   - **Discipline and records:**
+     - Holdout ledger (`outcome-prediction-lab/holdout-ledger.md`): `holdout.record` and `holdout.require`; pre-registered test looks.
+     - Model cards (TRIPOD+AI spirit); target scorecards (person criteria owed); promotion records (O33).
+     - Plain-language vocabulary from AHRQ docs plus CDC ICD-10-CM (O49).
+     - Narratives: templated, observed group rates, no race, no outcomes (O50).
+     - Drug class at the most specific Multum level (O51).
+   - **Tooling and infrastructure:**
+     - MLflow via SQLite (optional extra).
+     - Lab requires Python 3.12 (shap ≥ 0.52); service supports Python 3.11. CI jobs: `phase8 (python)` and `phase8 lab (python 3.12)`.
+     - Manifest-pinned MEPS files (28 files, including SAS-transport HC-188A); GCS emulator fixtures.
+
+3. **Files and Code Sections**
+
+   **Recent / current work**
+
+   `outcome-prediction-lab/src/outcome_prediction_lab/runs.py` — CLI engine. ALLOWED keys now include `"augment_missing"`, `"simulate_missing_at_scoring"` and `"population"`. Added:
+   ```python
+   def _in_population(df, cfg):
+       pop = cfg.get("population") or {}
+       if unknown := set(pop) - {"age_min", "age_max"}:
+           raise ConfigError(f"population supports age_min / age_max, not {sorted(unknown)}")
+       keep = df[cfg["label"]].notna().to_numpy().copy()     # pandas 3 hands back read-only views
+       if "age_min" in pop: keep &= (df.agey1x >= pop["age_min"]).to_numpy()
+       if "age_max" in pop: keep &= (df.agey1x <= pop["age_max"]).to_numpy()
+       return keep
+   ```
+   - It is used in `run`, `fit_on_training_panels`, `confirm` (test rows), and the baseline training rows.
+   - `_scoring_hook(cfg)` blanks the `simulate_missing_at_scoring` columns.
+   - `card()` now includes `{_fairness_section(round_id, name)}`, which reads `rounds/<round>/fairness/<name>.json` and emits a summary table (otherwise "Not yet assessed — run `outcome-prediction-lab fairness`"). The old "fairness not yet reported" limitation line was removed.
+   - Cards also show the feature contract, missing-input handling and outcome observability (`contract.LABEL_OBSERVABILITY`).
+   - `TUNED` params constant; `fitted_path` → `models_dir()/lab-round-<round>/<name>.joblib`.
+
+   `outcome-prediction-lab/src/outcome_prediction_lab/fairness.py` (NEW):
+   - Groups: race/ethnicity (RACE dict 1–5), insurance (1 any private, 2 public only, 3 uninsured), sex, age band (`narrate.band`).
+   - `report(y, p, df, flag_share=0.10)`: per group n, events, rate, AUROC with 200-sample bootstrap CI (`MIN_EVENTS=20`, else a note), mean_predicted, calibration_ratio, flagged_share, share_of_cases_flagged, precision_if_flagged.
+   - `summarise`: ranges and gap. `markdown(rep, title)`.
+   - `run(round_id, name)`: requires ledger entry `f"{name}:fairness"` and a fitted model (from `confirm`); scores test rows with the scoring hook; writes `rounds/<round>/fairness/<name>.json` and `.md`.
+
+   `outcome-prediction-lab/src/outcome_prediction_lab/cli.py` — subcommands: run, compare, confirm (`--record`), card, scorecard (`--criteria`), promote (`--decision`), explain (`--patient` / `--sample` / `--all`, `--write`), drug-names, notebooks-check, notebooks-strip, and the new `fairness <round> <name> [--record WHY]` (prints summary ranges). `explain` blanks `simulate_missing_at_scoring` columns when ranking.
+
+   `outcome-prediction-lab/src/outcome_prediction_lab/tests/test_lab_tooling.py` — added:
+   - `test_population_filter_restricts_training_and_scoring`
+   - `test_fairness_report_covers_groups_and_flags_small_ones`
+   - `test_fairness_needs_its_own_ledger_entry`
+
+   Lab tests: **28 passed**.
+
+   **Earlier key files (already committed in PR #71)**
+   - `outcome-prediction-service/src/outcome_prediction/contract.py`:
+     - `CONTRACT_VERSION="meps-portable-v2"`; `Feature` dataclass; `FEATURES` with tiers.
+     - Notable tiers: totexpy1 not_portable; rxtoty1 and hhtotdy1 claims_only; povcaty1 rarely.
+     - New portable features: n_icd_chapters, n_distinct_drugs, knowledge scores.
+     - `TEXT_COLUMN="tokens_icd"`; `icd10_chapter()` with chapter ranges; `CATEGORICAL`; `OPTIONAL`; `names(tiers)`; `DEFAULT_TIERS`, `WITH_CLAIMS_TIERS`.
+     - `LABEL_OBSERVABILITY`, including `admit_via_er_y2` ("records … or claims") and `high_cost_y2` ("claims only…").
+   - `outcome-prediction-lab/src/outcome_prediction_lab/features.py`:
+     - FEATURE_SETS includes `"portable-v2"` and `"portable-v2+claims"`.
+     - TEXT_BLOCKS: lsa, ae, dae, icd_lsa, desc_lsa, drug_char_lsa. CODE_KINDS = ("lsa","ae","dae","icd_lsa").
+     - `make_model(..., augment=None)` inserts `MissingnessAugmenter`.
+   - `data.py`:
+     - `build_lab_table(rx_class_level="most_specific"|"level3_only")`; `normalize_ids`.
+     - Columns: tokens, tokens_icd, drug_names, n_icd_chapters, n_distinct_drugs; labels via `add_targets`.
+   - Other lab modules: `narrate.py` (Narrator, Aggregates, OUTCOMES/OUTCOMES_SHORT including `admit_via_er_y2`: "were admitted through the ER"), `vocabulary.py`, `drugnames.py`, `notebooks.py`, `holdout.py`, `evaluate.py`, `knowledge.py`, `explain.py`, `round_001.py`.
+   - Rounds: `rounds/001-what-and-how`, `002-text-and-explanations`, `003-portable-contract`. Round 003 configs: `{nonobstetric,any-ed,high-cost}-{research,v2,v2-claims}`; confirmed `nonobstetric-v2`, `any-ed-v2`, `high-cost-v2-claims`, with fitted models in gitignored `models/lab-round-003-portable-contract/`.
+   - Docs: `docs/phase8/prediction-targets.md` (four-target focus, decision path, parked work, dropped ideas); decisions O1–O55; milestone-plan; experimentation-protocol (§1a default scope, §2a CLI); README status; prd; docs/README.
+
+4. **Errors and fixes**
+   - The raw handoff files caused phase-number confusion. Removed, and history rewritten at the user's request.
+   - `shap==0.54.1` needs Python ≥ 3.12, which failed CI on 3.11. Fixed with lab `requires-python>=3.12` and a separate `phase8-lab` job on 3.12. My earlier wheel check was wrong; I admitted it.
+   - MEPS person-ID format drift left Panel 22 with no codes. Fixed with `normalize_ids`.
+   - Panel 21 uses SF-12, not VR-12 (treated as missing); ADBMI2 dropped.
+   - Missingness hooks weren't passed, giving identical results. Fixed.
+   - `comorbidipy` breaks under pandas 3. Its tables were vendored (MIT, attributed in NOTICE).
+   - MLflow file store was retired. Switched to SQLite plus full mlflow as an optional extra.
+   - A model binary was saved in the round dir. Moved to gitignored `models/`.
+   - Drug-class level3-only defect fixed (O51); round 001 pinned to the old behaviour.
+   - Narrative issues fixed:
+     - duplicate phrases;
+     - "100%" percentile;
+     - pronouns;
+     - CCSR labels truncated at 57 characters (marked with "…");
+     - the U07 COVID override;
+     - the marginal-vs-conditional note;
+     - income blanking in explanations.
+   - Ollama download flake in CI. The GitHub token can't re-run jobs; a push re-triggered CI instead.
+   - **Most recent:** "ValueError: output array is read-only" in `_in_population` (pandas 3 copy-on-write). Fixed with `.copy()`.
+
+5. **Problem Solving**
+
+   Results so far, on test panels:
+
+   | Model | AUROC |
+   |---|---|
+   | Prototype reproduced | 0.769 |
+   | Non-obstetric admission, production v2 | 0.795 |
+   | Any ER visit, v2 | 0.740 |
+   | High cost, v2 with claims | 0.834 |
+   | Admission via ER, round 001 research model only | 0.788 |
+
+   CI on PR #71 was green after round 003 and the focus docs (13 checks).
+
+6. **All user messages** (non-tool)
+   - "I want to use Machine Learning to predict patient outcomes sich as likelihood of hospitalization. I want to start a brand new phase for this. Tell me what phase number it should be."
+   - Decisions: new service; RiskAssessment output with probability. "Internalize the above, then I will upload some work…"
+   - Asked for the three handoff markdowns one at a time (PRD, preliminary design, developer notes), then pasted each.
+   - Repo conventions with 7 phases must be followed; prepare a docs PR matching earlier phases.
+   - Remove raw handoff files from repo and locally (phase-number confusion).
+   - "I want them gone from the branch history now as well, act accordingly!"
+   - Dedicated revisitable exploration milestone; critique first.
+   - Answers: package name `outcome-prediction-lab`; broader scope (b). Then list milestones.
+   - Merged PR #65; delete branches; proceed to M1.
+   - Merged PR #66; delete branches (ignore duplicate-files issue); check merged branches.
+   - Proceed with M2.
+   - Industry practice for saving data?
+   - Merged PR #68; delete branches; implement all data recommendations (skip DVC, private buckets).
+   - Can we skip the GCP bucket and use a local mimic?
+   - Has an off-workspace location already; implement the rest; combine with PR #69 if OK.
+   - Open the `mcp` pin PR. Wants assurance that tests populate missing cache/emulator data for individual or CI runs: "Have you done this?"
+   - Merged PR #70; delete branches; make PR #69 ready to merge.
+   - Merged PR #69; delete branches; wait before M3.
+   - Basic common understanding of M3: multi-step, explore what and how, learning.
+   - Concepts list (TF-IDF, autoencoders, random forest with per-patient text, missing values, feature importance): critique and suggest.
+   - Answers: intuition / no equations; merge milestones freely. Asked about NHS / research knowledge sources.
+   - Iterate: identify targets; improve the prototype; new predictions; concept usefulness; business narratives; report.
+   - Do: lab tooling (CLI, scorecard / model-card generators, notebook check); drug-class names; TF-IDF on descriptions, char n-grams; per-patient self-explanatory sentences with aggregates, no codes.
+   - Autoencoder "find similar patients": critique first.
+   - Drop similar patients; what remains to complete M3 and the phase?
+   - Summarize predictions with clinical and business value.
+   - ETL considerations; high-cost without last-year spend?
+   - "Yes, go ahead and implment your recommendations…"
+   - Focus on four predictions; capture and document the path; don't lose other work.
+   - **Latest:** "Address all of this now. I will not approve the PR without it: 'admission through the ER is the only one of the four without a production-contract model, because round 003 covered the other three. I'd make it the first item of the next round, alongside fairness metrics and a 65+ check for all four.'"
+
+   **Standing constraints** (CLAUDE.md, verbatim essentials):
+   - "Never commit directly to `main`."
+   - Default to a feature branch plus PR; "Never merge branches yourself."
+   - "After a PR is merged, always ask to delete the feature branch… Delete only after I confirm, and never delete `main` or `ai-chat-history`."
+   - "Before any Git write operation, briefly state: current worktree, current branch, intended target branch."
+   - "Stop and ask before: deleting files, destructive Git operations, changing infra or deployment config, or modifying security-sensitive code. Protect secrets."
+   - "Run one logical operation per state-changing or order-dependent step."
+   - Never send real patient data to LLMs.
+   - Never commit data or model binaries.
+
+7. **Pending Tasks** (round 004 on PR #71, required for approval)
+   1. Production-contract model for admission through the ER (`admit_via_er_y2`):
+      - configs `er-admit-research`, `er-admit-v2`, `er-admit-v2-claims` (baseline inputs `["agey1x","ipdisy1","ertoty1"]`; v2 uses `features "portable-v2"`, `text ["icd_lsa"]`, `augment_missing {"povcaty1":0.5}`, `simulate_missing_at_scoring ["povcaty1"]`);
+      - CV runs;
+      - a pre-registered single confirmation of `er-admit-v2`.
+   2. Fairness metrics for all four production models (`003-portable-contract`: `nonobstetric-v2`, `any-ed-v2`, `high-cost-v2-claims`; and `004`: `er-admit-v2`) via `outcome-prediction-lab fairness <round> <name> --record "…"`. Each is a logged look.
+   3. 65+ check for all four:
+      - report 65+ performance and calibration (fairness age bands, `auroc_65plus`);
+      - CV specialist configs with `"population": {"age_min": 65}`, compared against the general model's CV `auroc_65plus`;
+      - pre-registered rule: adopt and confirm the specialist only if it beats the general model by ≥ +0.005.
+   4. Regenerate cards and scorecards (with fairness sections) for all four.
+   5. Round 004 README (pre-registration, written BEFORE runs), report, decisions (e.g. O56 ER production model, O57 fairness, O58 65+ decision).
+   6. Update: `prediction-targets.md` (ER model row now built), milestone-plan, Phase README status, lab README (round 004, fairness command, population key), experimentation-protocol CLI table (fairness), design §12 CLI table.
+   7. Run all tests (service and lab), notebook check, duplicate-filename check, staging check.
+   8. Commit on `feature/phase8-m3-round-001`, push, update the PR #71 description, watch CI.
+
+8. **Current Work**
+
+   Round 004 code infrastructure was just completed:
+   - population filter in `runs.py`;
+   - new `fairness.py`;
+   - CLI `fairness` subcommand;
+   - fairness section in model cards;
+   - three new tests.
+
+   The last action fixed the read-only array bug with `.copy()`, and lab tests now pass (28 passed). Nothing for round 004 is committed yet. No round 004 directory, configs or runs exist yet. Git context: worktree `/workspaces/fhir-agent`, branch `feature/phase8-m3-round-001` (PR #71, target `main`, OPEN). Last commit: `548f63b5` (focus docs).
+
+9. **Optional Next Step**
+
+   Continue the round 004 work the user demanded ("Address all of this now. I will not approve the PR without it: '…admission through the ER is the only one of the four without a production-contract model… alongside fairness metrics and a 65+ check for all four.'"):
+   1. Create `outcome-prediction-lab/rounds/004-focus-four-readiness/README.md` with pre-registration: the er-admit configs; confirm `er-admit-v2`; fairness looks for all four; 65+ specialist rule (≥ +0.005 CV AUROC on 65+ to adopt and confirm).
+   2. Write configs: er-admit-research, er-admit-v2, er-admit-v2-claims, plus 65+ specialists for all four (e.g. `nonobstetric-v2-65plus`, `any-ed-v2-65plus`, `high-cost-v2-claims-65plus`, `er-admit-v2-65plus` with `"population": {"age_min": 65}`).
+   3. Run CV via `outcome-prediction-lab run`.
+   4. `confirm` `er-admit-v2` with `--record`.
+   5. Run `fairness` for the four production models with `--record`.
+   6. Apply the 65+ rule.
+   7. Regenerate cards and scorecards, write the report and docs, test, commit, push, update PR #71, watch CI.
+
+If you need specific details from before compaction (like exact code snippets, error messages, or content you generated), read the full transcript at: /home/vscode/.claude/projects/-workspaces-fhir-agent/ece4ab01-8424-4908-a0ba-5c09fa9936d4.jsonl
+Continue the conversation from where it left off without asking the user any further questions. Resume directly — do not acknowledge the summary, do not recap what was happening, do not preface with "I'll continue" or similar. Pick up the last task as if the break never happened.
+
+The messages after this summary are the most recent messages from before compaction, kept verbatim. The summary was written without seeing them, so something it says has not happened yet may already have happened in them.
+
+### Claude response
+
+CV is done. To apply the 65+ rule I need each general model's CV AUROC on 65+. Checking whether the run records hold it:
+
 <details>
-<summary>Execution details — 477 tool events</summary>
+<summary>Execution details — 482 tool events</summary>
 
 ### Turn 1 activity
 
@@ -4598,6 +4825,21 @@ s=s.replace(o,'''    keep…`
 **Type:** production-readiness roun…`
 - **Bash** `set -o pipefail && MLFLOW_DISABLE_AGENT_HINT=1 PYTHONWARNINGS=ignore outcome-prediction-lab run 004-focus-four-readiness er-admit-research er-admit-v2 er-admit-v2-claims nonobstetric-v2-65plus any-ed-…`
 
+### Turn 47 activity
+
+- **Bash** `cd /workspaces/fhir-agent/outcome-prediction-lab && ls rounds/004-focus-four-readiness/runs/ && python3 -c "
+import json,glob
+for f in sorted(glob.glob('rounds/00[34]*/runs/*.json')):
+    d=json.load(…`
+- **Bash** `python3 -c "
+import json; d=json.load(open('rounds/003-portable-contract/runs/nonobstetric-v2.json')); print(list(d)); print({k:(v if not isinstance(v,(list,dict)) or len(str(v))<300 else str(v)[:300]…`
+- **Bash** `python3 -c "
+import json
+L=lambda r,n: json.load(open(f'rounds/{r}/runs/{n}.json'))['cv']
+for gr,g,s in [('003-portable-contract','nonobstetric-v2','nonobstetric-v2-65plus'),('003-portable-contract','…`
+- **Bash** `cd /workspaces/fhir-agent && set -o pipefail && MLFLOW_DISABLE_AGENT_HINT=1 PYTHONWARNINGS=ignore outcome-prediction-lab confirm 004-focus-four-readiness er-admit-v2 --record "Round 004 pre-registered…`
+- **Bash** `export MLFLOW_DISABLE_AGENT_HINT=1 PYTHONWARNINGS=ignore; for rn in "003-portable-contract nonobstetric-v2" "003-portable-contract any-ed-v2" "003-portable-contract high-cost-v2-claims" "004-focus-fou…`
+
 </details>
 
 ---
@@ -4607,6 +4849,6 @@ s=s.replace(o,'''    keep…`
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 14:29 UTC
-- **Turns:** 46
+- **Last updated:** 18 October 2026, 14:31 UTC
+- **Turns:** 47
 - **Status:** Complete
