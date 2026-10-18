@@ -4099,7 +4099,7 @@ Now the dependencies and tests. Looking at how existing tests build a throwaway 
 Now the API tests. The fixture trains a real artifact from the synthetic table, and patient scoring runs against M6's recorded FHIR conversation through the `client/clinical` replay:
 
 <details>
-<summary>Execution details — 742 tool events</summary>
+<summary>Execution details — 743 tool events</summary>
 
 ### Turn 1 activity
 
@@ -5967,6 +5967,11 @@ new = '''dev = ["pytest>=8", "httpx>=0.27"]
 # The sc…`
 - **Write** `/workspaces/fhir-agent/outcome-prediction-service/src/outcome_prediction/tests/test_api.py`
 - **Bash** `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:1 PYTHONWARNINGS=ignore python -m pytest outcome-prediction-service/src/outcome_prediction/tests/test_api.py -q -p no:cacheprovider 2>&1 | grep -vE "export…`
+- **Bash** `python3 - <<'EOF'
+from pathlib import Path
+p = Path("outcome-prediction-service/src/outcome_prediction/tests/test_api.py"); s = p.read_text()
+def sub(old, new):
+    global s; assert s.count(old) == 1,…`
 
 </details>
 
@@ -5977,6 +5982,6 @@ new = '''dev = ["pytest>=8", "httpx>=0.27"]
 - **Source:** Claude Code
 - **Session ID:** `ece4ab01-8424-4908-a0ba-5c09fa9936d4`
 - **Created:** 17 October 2026, 15:37 UTC
-- **Last updated:** 18 October 2026, 17:23 UTC
+- **Last updated:** 18 October 2026, 17:24 UTC
 - **Turns:** 54
 - **Status:** Complete
