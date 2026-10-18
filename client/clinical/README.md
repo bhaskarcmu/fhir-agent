@@ -125,7 +125,8 @@ Complete histories: these methods read every page of results, not just the first
 |---|---|---|
 | `get_demographics(patient_id)` | `Demographics` | Gender, birth and death dates, state, race, ethnicity, source-system IDs |
 | `get_encounters(patient_id, since=None)` | `list[Encounter]` | Visits, ER attendances, hospital stays — with setting, times, type, and whether a stay began in the ER (when recorded) |
-| `get_medication_history(patient_id)` | `list[Prescription]` | Every prescription, any status, with refill and supply details when recorded |
+| `get_medication_history(patient_id)` | `list[Prescription]` | Every prescription, any status, with refill and supply details when recorded; medicines named by reference are resolved |
+| `get_condition_history(patient_id)` | `list[Condition]` | Every condition (all pages — `get_conditions()` stops at 100) |
 | `get_medication_dispenses(patient_id)` | `list[Dispense]` | Fills handed over by a pharmacy (empty if the system doesn't record them) |
 | `get_care_costs(patient_id, since=None)` | `list[CareCost]` | Billed and paid amounts per claim, with payer and linked encounters or medicines |
 | `get_coverage(patient_id)` | `list[InsuranceCoverage]` | Recorded periods of insurance cover |

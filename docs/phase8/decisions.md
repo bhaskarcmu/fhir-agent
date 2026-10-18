@@ -164,6 +164,16 @@ per-patient explanations, missing values, feature importance). Results:
 | O64 | **What Synthea v4.0.0's FHIR actually carries** (O21, checked in M5): Encounter class folds CSV classes (AMB = ambulatory + wellness + outpatient + urgent care; IMP = inpatient + SNF; HH = home + hospice), so office vs hospital-outpatient needs `Encounter.type`; **no `Coverage`** — the payer is on each ExplanationOfBenefit; **no `MedicationDispense`, no `dispenseRequest`** — one pharmacy claim per prescription, no fill count; **no `hospitalization.admitSource`**; state as a postal code ("AZ"); HAPI assigns its own IDs, the Synthea ID survives as `Patient.identifier` | Accepted — input to M6 | M6 decides each mapping rule from these facts (fills and ER-origin admissions have no direct FHIR source in Synthea). `design.md` §7. |
 
 
+## M6 — FHIR extractor, parity, data quality
+
+| ID | Decision | Status | Rationale / where it lives |
+|---|---|---|---|
+| O65 | **The FHIR → canonical mapping rules** (`etl/extract/fhir.py`, `design.md` §7): encounter classes that FHIR folds are counted as office (AMB), inpatient (IMP) and home health (HH); fills = dispenses if recorded, **else one per pharmacy claim** (with a note); insurance = Coverage if recorded, **else the payer on each claim**; encounter cost = billed total of its claims; conditions read in full (paged). Parity with the CSV path holds with every difference explained and **verified by code** (`etl/parity.py`) | Accepted; **resolves O21** | Checked on one Synthea run exported both ways (20 adults, years 2022 and 2023): 19–20 of 26 columns identical. What can't be recovered from Synthea's FHIR — the outpatient/SNF/hospice split, fill counts, stop dates — is a property of the export, not of the rules; a customer's EHR may carry `MedicationDispense` and `Coverage`, which the rules use first. `meps-portable-v2` already treats fills as claims-only (O52). |
+| O66 | **Missing income → `povcaty1` = 4 ("middle income", MEPS's median category) with a warning**, for `meps25-v1` rows | Accepted | FHIR never carries income. The mode (5) is the lowest-risk group and would quietly understate risk; before M6 the code silently produced 5. The warning travels with the row (`to_contract`'s `explain=True`). Production `meps-portable-v2` models need no default — they learned to score without income (O53). |
+
+## Supersession notes
+
+
 - **O44 supersedes O17's last clause** ("tests that need the MEPS cache self-skip when it's
   absent; MEPS downloads stay out of required CI"). The rest of O17 — artifacts never committed,
   manifest verified before deserialisation, a throwaway model trained on a synthetic fixture for
@@ -181,6 +191,8 @@ per-patient explanations, missing values, feature importance). Results:
   O11's row is left as written.
 - **O64 confirms part of O21** (the FHIR mapping sketch): the encounter, coverage and fill risks it
   named are real in Synthea v4.0.0. M6 still validates each mapping rule. O21's row is left as written.
+- **O65 resolves O21**: the FHIR mapping sketch is validated and replaced by the rules in `design.md`
+  §7. O21's row is left as written.
 - **O46 refines O30**: same tool (MLflow), different store (SQLite instead of the retired file
   store), now an optional extra.
 

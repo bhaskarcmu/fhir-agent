@@ -149,6 +149,12 @@ def prototype_training_rows(canon: Canonical, year: int) -> pd.DataFrame:
 
 MONTH_DAYS = 30.4375
 UNKNOWN_REGION = 0                      # contract: 0 if the state is unknown or not a US state
+# meps25-v1 requires povcaty1, but FHIR never carries income. Default to MEPS's median category
+# (4, "middle income") with a warning — not the mode (5, the lowest-risk group), which would
+# quietly understate risk (O66). meps-portable-v2 models need no default (O53).
+DEFAULT_POVCAT = 4
+WARN_INCOME = "povcaty1 defaulted to 4 (middle income): household income not recorded"
+WARN_SEX = "sex not recorded as male or female"
 
 
 def encode_categoricals(rows: pd.DataFrame) -> pd.DataFrame:
@@ -168,12 +174,23 @@ def _fill_rate(med: pd.DataFrame) -> pd.Series:
     return pd.Series(last.reindex(keys).to_numpy(), index=med.index).fillna(1.0)
 
 
-def contract_rows(view: Canonical, as_of: pd.Timestamp) -> pd.DataFrame:
+def contract_rows(view: Canonical, as_of: pd.Timestamp, explain: bool = False):
     """Features for adults alive at `as_of`, from the 12 months ending at `as_of`.
 
     `view` must already be `as_of_view(canon, as_of)`: nothing dated after `as_of`, running
     records truncated, values only known at a record's end set to unknown.
+
+    With `explain=True`, returns `(rows, basis, warnings)`: `basis` lists, per patient and
+    feature, the `source_ref` of every record that contributed (FR-F4 — a RiskAssessment's
+    `basis`); `warnings` lists defaults applied.
     """
+    basis = []
+
+    def cite(feature: str, records: pd.DataFrame) -> None:
+        if explain and len(records):
+            basis.append(pd.DataFrame({"patient_ref": records.person_id.to_numpy(), "feature": feature,
+                                       "source_ref": records.source_ref.to_numpy()}))
+
     hi = pd.Timestamp(as_of).normalize() + pd.Timedelta(days=1)            # exclusive
     lo = hi - pd.DateOffset(years=1)
     p = view.person[view.person.death_date.isna()].copy()                  # alive at as_of
@@ -182,21 +199,32 @@ def contract_rows(view: Canonical, as_of: pd.Timestamp) -> pd.DataFrame:
     ids = p.index
 
     out = pd.DataFrame(index=ids)
+    people = p.reset_index()
+    for f in ("sex", "racethx", "regiony1", "agey1x", "povcaty1"):
+        cite(f, people)
     out["sex"] = p.sex.map({"M": 1, "F": 2})
     out["racethx"] = np.where(p.ethnicity == "hispanic", 1, p.race.map(RACE).fillna(5))
     out["regiony1"] = p.state.map(STATE_REGION).fillna(UNKNOWN_REGION)    # §11.3 fixed
     out["agey1x"] = p.age.clip(upper=85)
 
     cov = view.coverage[view.coverage.person_id.isin(ids)]
-    owners = cov[(cov.start < hi) & (cov.stop >= lo)].groupby("person_id").ownership.agg(set)
+    cov = cov[(cov.start < hi) & (cov.stop >= lo)]
+    cite("inscovy1", cov)
+    owners = cov.groupby("person_id").ownership.agg(set)
     owners = owners.reindex(ids).apply(lambda s: s if isinstance(s, set) else set())
     out["inscovy1"] = owners.map(lambda s: 1 if "PRIVATE" in s else 2 if "GOVERNMENT" in s else 3)
-    out["povcaty1"] = _poverty_category(p.income, pd.Timestamp(as_of).year)
+    out["povcaty1"] = _poverty_category(p.income, pd.Timestamp(as_of).year).where(p.income.notna(), DEFAULT_POVCAT)
 
     enc = view.encounter[view.encounter.person_id.isin(ids)]
     w = enc[enc.start >= lo]
     cls = w.encounter_class
     ip = w[cls == "inpatient"]
+    cite("ipdisy1", ip)
+    cite("ipngtdy1", ip)
+    cite("ertoty1", w[cls == "emergency"])
+    cite("obtotvy1", w[cls.isin(OFFICE_CLASSES)])
+    cite("optotvy1", w[cls == "outpatient"])
+    cite("hhtotdy1", w[cls == "home"])
     out["ipdisy1"] = _per_person(ids, ip.groupby("person_id").size())
     nights = ((ip.stop - ip.start).dt.total_seconds() / 86_400).round()   # a running stay: nights so far
     out["ipngtdy1"] = _per_person(ids, nights.groupby(ip.person_id).sum())
@@ -217,6 +245,8 @@ def contract_rows(view: Canonical, as_of: pd.Timestamp) -> pd.DataFrame:
     est = np.ceil(elapsed / MONTH_DAYS * _fill_rate(med)).where(elapsed > 0, 0)
     fills = (med.dispenses * frac).where(known, est)
     cost = (med.total_cost * frac).where(known, est * med.unit_cost)
+    cite("rxtoty1", med[fills > 0])
+    cite("totexpy1", pd.concat([w[w.cost.fillna(0) > 0], med[cost.fillna(0) > 0]]))
     out["rxtoty1"] = _per_person(ids, fills.groupby(med.person_id).sum()).round()
     enc_cost = _per_person(ids, w.cost.fillna(0).groupby(w.person_id).sum())  # a running stay's claim: unknown
     out["totexpy1"] = (enc_cost + _per_person(ids, cost.groupby(med.person_id).sum())).round()
@@ -224,17 +254,26 @@ def contract_rows(view: Canonical, as_of: pd.Timestamp) -> pd.DataFrame:
     cond = view.condition[view.condition.person_id.isin(ids)]
     desc = cond.description.str.lower()
     for flag, pattern in DX_PATTERNS.items():
-        out[flag] = ids.isin(cond[desc.str.contains(pattern, regex=True)].person_id.unique()).astype(int)
+        hits = cond[desc.str.contains(pattern, regex=True)]
+        cite(flag, hits)
+        out[flag] = ids.isin(hits.person_id.unique()).astype(int)
 
+    warnings = pd.concat([pd.DataFrame({"patient_ref": ids[p.income.isna().to_numpy()], "warning": WARN_INCOME}),
+                          pd.DataFrame({"patient_ref": ids[out.sex.isna().to_numpy()], "warning": WARN_SEX})],
+                         ignore_index=True)
     out = encode_categoricals(out[FEATURES].copy()).astype("int64")
     out.index.name = "patient_ref"
-    return out.reset_index()
+    rows = out.reset_index()
+    if not explain:
+        return rows
+    cols = ["patient_ref", "feature", "source_ref"]
+    return rows, (pd.concat(basis, ignore_index=True) if basis else pd.DataFrame(columns=cols)), warnings
 
 
-def scoring_rows(canon: Canonical, as_of: pd.Timestamp) -> pd.DataFrame:
+def scoring_rows(canon: Canonical, as_of: pd.Timestamp, explain: bool = False):
     """Scoring mode: features as of `as_of`, no label. Applies the as-of boundary itself, so a
-    caller can't pass records from after `as_of` by mistake."""
-    return contract_rows(as_of_view(canon, as_of), as_of)
+    caller can't pass records from after `as_of` by mistake. `explain` as in `contract_rows`."""
+    return contract_rows(as_of_view(canon, as_of), as_of, explain=explain)
 
 
 def training_rows(canon: Canonical, year: int) -> pd.DataFrame:
