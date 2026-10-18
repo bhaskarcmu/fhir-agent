@@ -4371,8 +4371,10 @@ Recording the crosswalk's licence in both established places (O13): `NOTICE` for
 
 The wheel now carries all 13 data files (11 lists, the map and the MEPS aggregates). Final checks:
 
+M13 is done and up for review as PR #78. I'm now waiting for CI to finish, and will report the results when it does.
+
 <details>
-<summary>Execution details — 904 tool events</summary>
+<summary>Execution details — 906 tool events</summary>
 
 ### Turn 1 activity
 
@@ -6664,6 +6666,11 @@ from pathlib import Path
 p = Path("outcome-prediction-service/src/outcome_prediction/tests/test_etl_fhir.py"); s = p.read_text()
 old = '''    assert set(rep["unknown_codes"].values()…`
 - **Bash** `git add NOTICE data/reference/README.md docs outcome-prediction-lab/src/outcome_prediction_lab/vocabulary.py outcome-prediction-service && git status --short | grep -cE "^A|^M" && git commit -q -F - <…`
+- **Bash** `gh pr create --base main --head feature/phase8-m13-code-lists --title "Phase 8 M13: versioned diagnosis code lists, SNOMED mapped" --body-file - <<'EOF' 2>&1 | tail -1
+## Summary
+
+M13 replaces the pro…`
+- **Bash** `timeout 2400 gh pr checks 78 --watch --interval 30 >/dev/null 2>&1; gh pr checks 78 2>&1 | awk -F'\t' '{print $2" — "$1}' | sort | uniq -c`
 
 </details>
 
