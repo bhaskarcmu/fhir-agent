@@ -349,8 +349,65 @@ inotify events are firing for the transcript, so the watcher's own `inotifywait`
 
 The Monitor will report any watcher.log activity in the next 60 seconds.
 
+## Turn 11
+
+### Prompt
+
+<task-notification>
+<task-id>b4cfeoidg</task-id>
+<tool-use-id>toolu_01Cq8GAfaHHhziiWT1Rfik7Q</tool-use-id>
+<output-file>/tmp/claude-1000/-workspaces-fhir-agent/7057d269-60d3-4d82-b584-b1bb258f6d89/tasks/b4cfeoidg.output</output-file>
+<status>completed</status>
+<summary>Monitor "Watch watcher.log for activity for 60s" stream ended</summary>
+<event>[watch] sessions=1 publish=pushed
+[watch] sessions=1 publish=pushed</event>
+</task-notification>
+
+### Claude response
+
+It pushed. The watcher wasn't stuck: the earlier silence was just the debounce, which kept resetting while this turn wrote to the transcript continuously. I'll check the archive worktree again, since a push while 1 behind should have been rejected.
+
+The watcher pulled in `644996ae` itself before pushing, so the worktree is now level with `origin`. I'll run the requested pull anyway, which should be a no-op.
+
+The switch is done: `/workspaces/fhir-agent` is on `main` at `48a5d65c`, and the local feature branch is deleted. Two unsigned commits that didn't come from this Codespace need you to confirm they're yours. Nothing was committed, rebuilt or restarted.
+
+**Results**
+1. **Status before switching:** clean, with nothing modified or untracked. The only ignored files were build and cache output plus the restored `mlflow.db` and `models/`.
+2. **Switch:**
+   - `git fetch --prune` removed `origin/feature/codespaces-devcontainer`.
+   - `git switch main` *created* local `main`, tracking `origin/main`, because the Codespace was created from the PR branch and had no local `main`. That's why `git pull --ff-only` reported "Already up to date."
+   - Before deleting, I confirmed `a39c1983` is in `origin/main`. Then `git branch -d feature/codespaces-devcontainer` succeeded.
+   - I ran these as separate steps rather than one `&&` chain, per CLAUDE.md.
+3. **Verification:** `git log -1 --oneline` shows `48a5d65c Merge pull request #82…`, and `git diff origin/main -- .devcontainer` is empty.
+4. **Archive worktree:** it's on `ai-chat-history`, and `git pull --ff-only` reported "Already up to date." The watcher had already pulled in the one missing commit itself before its 23:05 pushes.
+
+**Things that look strange**
+- **Two commits I didn't make, both unsigned.** Both carry your name and a Claude co-author line, but every commit made from this Codespace is signed. They were most likely made outside the Codespace, probably in another Claude session:
+  - `7a13c420` was added to PR #82 at 22:53, after my last push, and merged with it. It prevents a second watcher from starting next to a surviving one, and adds a `/workspaces/.no-fhir-autostart` opt-out file.
+  - `644996ae` was pushed straight to `ai-chat-history` at 22:55. It makes git failures report git's actual error message, which fixes the vague exit-status-128 error from earlier.
+
+  I reviewed both diffs and they look correct and benign. **Please confirm they're yours.** If they aren't, someone else can push to this repo under your name.
+- **The running watcher uses the old code.** It started at 22:32, before both commits, so it won't run the new `7a13c420` or `644996ae` code until the next restart or rebuild. Archiving works in the meantime; its 23:05 pushes went through.
+- **Not a problem after all:** the watcher logged nothing from 22:33 to 23:05 while this session was active. I checked and it isn't stuck: transcript writes do trigger file events. It waits for 15 seconds of quiet before archiving, and a busy session keeps postponing that.
+
+## Turn 12
+
+### Prompt
+
+<task-notification>
+<task-id>bxmcq5mfv</task-id>
+<tool-use-id>toolu_01QPqkrRUYi2vL6nMpSs3fWE</tool-use-id>
+<output-file>/tmp/claude-1000/-workspaces-fhir-agent/7057d269-60d3-4d82-b584-b1bb258f6d89/tasks/bxmcq5mfv.output</output-file>
+<status>failed</status>
+<summary>Background command "Background inotify probe on transcript directory" failed with exit code 124</summary>
+</task-notification>
+
+### Claude response
+
+That "failed" notice is the 45-second inotify probe stopping at its time limit (exit code 124). That's expected and doesn't change anything in my report.
+
 <details>
-<summary>Execution details — 82 tool events</summary>
+<summary>Execution details — 84 tool events</summary>
 
 ### Turn 1 activity
 
@@ -476,6 +533,11 @@ fix(devcontainer): don't start the archive watcher without a GitHub token…`
 - **Bash** `sleep 5; stat -c '%y' /workspaces/.claude-home/projects/-workspaces-fhir-agent/7057d269-60d3-4d82-b584-b1bb258f6d89.jsonl; cat /tmp/claude-1000/-workspaces-fhir-agent/7057d269-60d3-4d82-b584-b1bb258f6…`
 - **Monitor** `L=/workspaces/.ai-chat-history/ai-chat-documentation/logs/watcher.log; s=$(stat -c %Y $L); for i in $(seq 1 12); do sleep 5; [ "$(stat -c %Y $L)" != "$s" ] && { tail -n 2 $L | cut -c1-200; exit 0; };…`
 
+### Turn 11 activity
+
+- **Bash** `cd /workspaces/.ai-chat-history && git fetch -q origin ai-chat-history; git status -sb | head -3; git log --format='%h %ci %G? %s' -4 origin/ai-chat-history; git merge-base --is-ancestor 644996ae HEAD…`
+- **Bash** `cd /workspaces/.ai-chat-history && git branch --show-current && git pull --ff-only 2>&1 | tail -2; git status -sb | head -1`
+
 </details>
 
 ---
@@ -485,6 +547,6 @@ fix(devcontainer): don't start the archive watcher without a GitHub token…`
 - **Source:** Claude Code
 - **Session ID:** `7057d269-60d3-4d82-b584-b1bb258f6d89`
 - **Created:** 25 October 2026, 21:52 UTC
-- **Last updated:** 25 October 2026, 23:05 UTC
-- **Turns:** 10
+- **Last updated:** 25 October 2026, 23:06 UTC
+- **Turns:** 12
 - **Status:** Complete
