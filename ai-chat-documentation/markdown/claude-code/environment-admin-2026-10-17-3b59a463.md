@@ -747,8 +747,34 @@ b) push local-only files into GitHub itself as temporary content of some kind, o
 
 First (a). I'll make sure `core` really is a crash dump and that git doesn't track it before deleting anything.
 
+The zip is 2.2 MB with all 18 files and passes the integrity check. Last, a full restore test: extract it into the scratchpad and verify every checksum.
+
+Step 0 is done on my side: the core dump is deleted, and your local-only files are packed into a zip, ready to download.
+
+**a) Core dump:** deleted. It was a 4.9 GB crash dump from VS Code Server, not tracked by git, and it likely contained a copy of that process's memory, secrets included. That freed about 5 GB.
+
+**b) Zip, not GitHub.** Your repo is **public**, so anything pushed there, even "temporarily", is visible to everyone and stays in the history permanently.
+- **File:** `step0-local-files.zip` in the repo root (2.2 MB).
+- **Contents:** `mlflow.db` (7 experiments, 152 runs) and all of `models/` (2 promoted + 5 lab-round models), 16 files.
+- **Extras inside:** a SHA-256 checksum manifest and a short README.
+- **Checked:** I extracted it in a scratch folder and all 16 checksums matched.
+- **Can't be committed by accident:** it's listed in `.git/info/exclude`, a local-only ignore list that's never pushed.
+- **Left out on purpose** because it can be recreated: the MEPS data, Ollama models, Docker images and build output.
+
+**What you do now:**
+1. **Download it:** in the VS Code file explorer, right-click `step0-local-files.zip` → **Download**. Keep it somewhere private.
+2. **Later, in Codespaces:**
+   - drag the zip from your computer into the root of the Codespaces file explorer;
+   - then paste this to Claude Code there:
+
+> I uploaded `step0-local-files.zip` to the repo root. It holds local-only files from my old Ona environment. Please restore it: from the repo root, run `python3 -m zipfile -e step0-local-files.zip .`, then `sha256sum -c STEP0-MANIFEST.sha256` and confirm all 16 checksums pass. Check that `outcome-prediction-lab/mlflow.db` and `outcome-prediction-service/models/` are gitignored, and that `git status` shows nothing new. Then delete the zip and the two `STEP0-*` files, and do not commit any of these files.
+
+The MLflow database points to the path `/workspaces/fhir-agent/mlruns`, and Codespaces also checks the repo out at `/workspaces/fhir-agent`, so it should open without changes there.
+
+Let me know when you've downloaded it and I'll delete the copy here. After that, Step 0 is complete and we can move on to Step 1.
+
 <details>
-<summary>Execution details — 150 tool events</summary>
+<summary>Execution details — 154 tool events</summary>
 
 ### Turn 3 activity
 
@@ -983,6 +1009,14 @@ items = d if isinstance(d,list) else (d.get('comments') or list(d.va…`
 - **Bash** `cd /workspaces/fhir-agent; python3 -c "
 import json; d=json.load(open('.ona/review/comments.json'))
 for k,v in d.items(): print(k, '->', type(v).__name__, (len(v) if hasattr(v,'__len__') else v))"`
+- **Bash** `cd /workspaces/fhir-agent; gh repo view --json visibility,isPrivate --jq '"\(.visibility)"'; git check-ignore -v step0-local-files.zip || echo "not ignored"`
+- **Bash** `echo "step0-local-files.zip" >> .git/info/exclude && git check-ignore -v step0-local-files.zip`
+- **Bash** `python3 - <<'EOF'
+import hashlib, zipfile, pathlib, datetime
+root = pathlib.Path(".")
+files = [pathlib.Path("outcome-prediction-lab/mlflow.db")] + sorted(
+    p for p in pathlib.Path("outcome-predicti…`
+- **Bash** `S=/tmp/claude-1000/-workspaces-fhir-agent/3b59a463-d6e4-4a7f-94ea-7dfea0acdc2b/scratchpad/restore-test; rm -rf $S && mkdir -p $S && cd $S && python3 -m zipfile -e /workspaces/fhir-agent/step0-local-fi…`
 
 </details>
 
@@ -993,6 +1027,6 @@ for k,v in d.items(): print(k, '->', type(v).__name__, (len(v) if hasattr(v,'__l
 - **Source:** Claude Code
 - **Session ID:** `3b59a463-d6e4-4a7f-94ea-7dfea0acdc2b`
 - **Created:** 17 October 2026, 15:43 UTC
-- **Last updated:** 25 October 2026, 20:57 UTC
+- **Last updated:** 25 October 2026, 20:58 UTC
 - **Turns:** 21
 - **Status:** Incomplete
