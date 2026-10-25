@@ -457,6 +457,47 @@ The safe route: I list secret **names** only, and you run a command in **your ow
 
 Here are the names. `compgen -e` prints variable names without values, even multi-line ones:
 
+Nothing above is a value, only names. Of these, these are the ones to carry over to Codespaces:
+
+| Variable | Notes |
+|---|---|
+| `CLAUDE_API_KEY` | `ANTHROPIC_API_KEY` is set from the same Ona secret, so they should match |
+| `GH_TOKEN` | Copilot fine-grained PAT |
+| `GITHUB_TOKEN_REPO` | Classic repo PAT; may be unnecessary in Codespaces (point 6 above) |
+| `NEON_DB_URL` | Likely contains the DB password |
+| `SPRING_DATASOURCE_URL` | May contain credentials |
+| `POSTHOG_API_KEY` | Not referenced in this repo's config; possibly injected by Ona or a tool. Check whether you actually own it |
+
+Leave these behind: `CLAUDE_CODE_MESSAGING_TOKEN`, `GITPOD_SSH_PUBKEY_SHA256` and `VSCODE_CLI_REQUIRE_TOKEN` are created by the platform for each session. `SPRING_DATASOURCE_DRIVER_CLASS_NAME` isn't a secret. Ona's own git credential file is also managed by Ona and doesn't need to move.
+
+## How to get the values safely
+
+Run these in **your own VS Code terminal** (Terminal → New Terminal). Don't run them through me, and don't use Claude Code's `!` prefix: that also adds the output to this transcript.
+
+**Option A — print to your terminal:**
+```bash
+for v in CLAUDE_API_KEY GH_TOKEN GITHUB_TOKEN_REPO NEON_DB_URL SPRING_DATASOURCE_URL POSTHOG_API_KEY; do printf '%s=%s\n' "$v" "${!v}"; done
+```
+
+**Option B — save to a private file and download it:**
+```bash
+( umask 077; for v in CLAUDE_API_KEY GH_TOKEN GITHUB_TOKEN_REPO NEON_DB_URL SPRING_DATASOURCE_URL POSTHOG_API_KEY; do printf '%s=%s\n' "$v" "${!v}"; done > ~/ona-secrets.env )
+code ~/ona-secrets.env
+```
+Then use **File → Save As…** and click **Show Local** to save a copy on your own machine. The file stays out of GitHub because:
+- it's in your home folder, outside both git worktrees, so it can't be committed or archived;
+- `umask 077` makes it readable only by you.
+
+Afterwards, delete it from the environment:
+```bash
+shred -u ~/ona-secrets.env
+```
+
+**Three warnings:**
+- Don't paste any value back into this chat. Everything here is archived to GitHub.
+- When you recreate these as Codespaces secrets, enter them at github.com → Settings → Codespaces → Secrets, scoped to this repo. Don't put them in `devcontainer.json`.
+- Once Codespaces works, revoke or rotate the Ona-era tokens, especially the two GitHub PATs.
+
 <details>
 <summary>Execution details — 116 tool events</summary>
 
