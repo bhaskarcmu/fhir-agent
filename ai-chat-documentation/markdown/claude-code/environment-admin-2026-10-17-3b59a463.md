@@ -518,6 +518,45 @@ The project scope printed its usage text instead of results, so it probably need
 
 `~/.docker/config.json` exists. I'll check whether it holds registry logins by printing only its keys and registry hostnames:
 
+The authoritative list is **7 Ona project secrets**, all injected as environment variables. My earlier list missed `HIBERNATE_DIALECT` and wrongly left out `SPRING_DATASOURCE_DRIVER_CLASS_NAME`. Nothing has ever printed a value.
+
+**How I checked** (names only throughout):
+- **Ona itself:** `gitpod project secret list <project-id> -f name`.
+- **Every environment variable in this session:** compared against what Ona supplies.
+- **Every variable the repo references:** compose `${…}`, Spring YAML, Python/Java `getenv`, and `.env.example`.
+- **The watcher's process environment:** Ona starts it directly, so it shows exactly what Ona injects.
+- **Credential files:** checked for existence only, never read.
+
+## What to export (corrected Option A)
+
+| # | Ona secret | Sensitive? | Notes |
+|---|---|---|---|
+| 1 | `CLAUDE_API_KEY` | Yes | `ANTHROPIC_API_KEY` is copied from this by `devcontainer.json`, so it isn't a separate secret |
+| 2 | `GH_TOKEN` | Yes | Copilot fine-grained PAT |
+| 3 | `GITHUB_TOKEN_REPO` | Yes | Classic repo PAT |
+| 4 | `NEON_DB_URL` | Yes | Nothing in the repo reads it; probably for manual `psql` or scripts |
+| 5 | `SPRING_DATASOURCE_URL` | Yes | Neon JDBC URL with the password embedded |
+| 6 | `SPRING_DATASOURCE_DRIVER_CLASS_NAME` | No | Fixed value `org.postgresql.Driver`, already in the repo's docs |
+| 7 | `HIBERNATE_DIALECT` | No | Fixed value, already in `application-neon.yaml` |
+
+Run this in **your own VS Code terminal**, not through me and not with the `!` prefix:
+```bash
+for v in CLAUDE_API_KEY GH_TOKEN GITHUB_TOKEN_REPO NEON_DB_URL SPRING_DATASOURCE_URL SPRING_DATASOURCE_DRIVER_CLASS_NAME HIBERNATE_DIALECT; do printf '%s=%s\n' "$v" "${!v}"; done
+```
+
+## Other findings
+
+- **`SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT` is missing everywhere.** [application-neon.yaml](fhir-service/src/main/resources/application-neon.yaml) marks it REQUIRED and says to set both dialect variables. Neither Ona nor this environment has it; the Neon profile only works through the `HIBERNATE_DIALECT` fallback.
+- **The two constants (rows 6–7) shouldn't be secrets in Codespaces.** Their values are already public in the repo. They belong in `devcontainer.json` `containerEnv`, alongside the missing `SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT`. That leaves 5 real secrets, or 3 if Codespaces' built-in `GITHUB_TOKEN` replaces both PATs.
+- **`POSTHOG_API_KEY` isn't yours to migrate.** It isn't an Ona secret, the Ona-started watcher doesn't have it, and nothing in the repo uses it. It only appears in the VS Code Server process tree, so it's probably a VS Code or extension telemetry key.
+- **Ona user-level secrets couldn't be listed from inside.** The CLI requires a user ID that this environment's session doesn't provide. Any user-level secret would still be injected container-wide, though, and the only unexplained variable in the container is `POSTHOG_API_KEY`, which isn't. So I'm fairly confident there are none. To be certain, check Ona's web UI under user settings → Secrets.
+- **Optional keys the repo can use but that aren't set anywhere:**
+  - `FHIR_API_KEY` and `CLAIMS_API_KEY` (Kong keys, which compose says to "omit for local dev");
+  - `LLM_API_KEY` and `DATABASE_URL`.
+
+  There's nothing to export for these. Create them in Codespaces only if you use the gated Kong setup or a remote LLM.
+- **File-based credentials:** there are no gcloud, kube, `.netrc`, `.pgpass`, `.git-credentials` or gitignored `.env`/k8s/Kong secret files. `~/.docker/config.json` holds no registry logins. `~/.claude/.credentials.json` is your Claude Code login; don't copy it, just log in again in Codespaces.
+
 <details>
 <summary>Execution details — 132 tool events</summary>
 
