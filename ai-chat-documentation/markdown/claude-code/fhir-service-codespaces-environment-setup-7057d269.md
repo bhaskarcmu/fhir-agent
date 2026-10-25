@@ -277,8 +277,53 @@ No new commit arrived within 3 minutes. I'll check the watcher's logs and whethe
 
 Now I'll test the guard. I'll stop the broken watcher by PID, run `post-start.sh` with `GITHUB_TOKEN` removed (it should *not* start the watcher), then run it with the normal environment (it should).
 
+The watcher is back and now has `GITHUB_TOKEN` in its environment. I'll wait for it to push this session.
+
+The Monitor will report when the watcher pushes a commit for this session.
+
+## Turn 9
+
+### Prompt
+
+<task-notification>
+<task-id>b9qlv8zwv</task-id>
+<tool-use-id>toolu_017bdwKYdBYjScY6dT5MeyvF</tool-use-id>
+<output-file>/tmp/claude-1000/-workspaces-fhir-agent/7057d269-60d3-4d82-b584-b1bb258f6d89/tasks/b9qlv8zwv.output</output-file>
+<status>completed</status>
+<summary>Monitor "Wait for a post-rebuild archive commit for this session" stream ended</summary>
+<event>30dc03bb 2026-10-25 22:33:00 +0000 Archive Claude Code conversations: 2026-10-25 22:33 UTC</event>
+</task-notification>
+
+### Claude response
+
+The restarted watcher pushed `30dc03bb`, which contains this session. Now I'll commit the guard fix. Worktree: `/workspaces/fhir-agent`. Current branch: `feature/codespaces-devcontainer`. Target: that same branch, which updates PR #82.
+
+The rebuild is confirmed, and history and memory survived it. All six checks pass now, but check 4 only passed after I fixed a new bug the rebuild exposed.
+
+**Rebuild evidence:** `/etc/bash.bashrc` contains the new terminal hook, which only a rebuild with the updated Dockerfile could add. `creation.log` shows a new `postStartCommand` run at 22:22, and the FHIR container and watcher had new process IDs and 22:20 start times.
+
+| # | Check | Result |
+|---|---|---|
+| 1 | Env vars | ✅ `CLAUDE_API_KEY`, `SPRING_DATASOURCE_URL` and `NEON_DB_URL` are set; `ANTHROPIC_API_KEY` is not set. No values were printed. |
+| 2 | `CLAUDE_CONFIG_DIR` / transcript | ✅ It's `/workspaces/.claude-home`. This session's transcript and the `never-expose-secret-values` memory survived the rebuild. |
+| 3 | FHIR `metadata` and `setup.log` | ✅ FHIR came up on its own after the rebuild, and `setup.log` has no errors. |
+| 4 | Archive watcher | ⚠️ ✅ It started on its own but couldn't commit. After my fix it's running on `ai-chat-history` and pushed `30dc03bb`, which contains this session. |
+| 5 | `gh` | ✅ It's logged in as `bhaskarcmu` with the built-in `GITHUB_TOKEN` (token redacted), and `gh pr list` shows PR #82 as open. |
+| 6 | `pytest client/clinical/tests triage-service/src/triage/tests -q` | ✅ 107 passed. The warnings afterwards are only about exporting telemetry to `localhost:4317`. |
+
+**The bug the rebuild exposed:**
+- **What happened:** right after the image build, the devcontainer CLI runs an interactive shell to read the user environment, before Codespaces adds the GitHub tokens. That shell triggered my new terminal hook, which started the watcher. Without `GITHUB_TOKEN` the watcher can't sign or push, so every archive commit failed with exit status 128. The log message was too vague to tell you that.
+- **The fix:** `post-start.sh` now starts the watcher only when `GITHUB_TOKEN` is set, and a later run (attach or a real terminal) starts it instead. FHIR doesn't need the token, so it still starts early, which is why check 3 passed by itself.
+- **Tests:** without the token, `post-start.sh` didn't start the watcher; with it, the watcher started, had the token, and pushed `30dc03bb`.
+
+**Branch and commit:** commit `a39c1983` on `feature/codespaces-devcontainer`, pushed to PR #82. The only file changed is `.devcontainer/scripts/post-start.sh`.
+
+**Not yet proven:** that the watcher starts by itself after a rebuild with this guard in place. Today I restarted it by hand. One more **Rebuild Container** and the same prompt would confirm it. Look for a `post-start(postAttach)` or `post-start(terminal)` "archive watcher: starting" line after the rebuild, and a new archive commit pushed for this session.
+
+The root `mlruns/` gitignore gap and the MLflow `[tracking]` install are still on hold.
+
 <details>
-<summary>Execution details — 61 tool events</summary>
+<summary>Execution details — 64 tool events</summary>
 
 ### Turn 1 activity
 
@@ -375,6 +420,13 @@ echo "--- rebuild evidence"; uptime -s; grep -E 'Running the postStartCommand|po
 - **Edit** `/workspaces/fhir-agent/.devcontainer/scripts/post-start.sh`
 - **Bash** `kill 469 476; sleep 1; ps -eo pid,args | grep -E '[a]rchive-watcher\.sh$|python3 -m [a]rchive_ai watch$' || echo "watcher stopped"; cd /workspaces/fhir-agent; env -u GITHUB_TOKEN CODESPACES=true bash…`
 - **Bash** `cd /workspaces/fhir-agent; CODESPACES=true bash .devcontainer/scripts/post-start.sh terminal; sleep 3; ps -eo pid,args | grep -E '[a]rchive-watcher\.sh$|python3 -m [a]rchive_ai watch$'; tr '\0' '\n' <…`
+- **Monitor** `cd /workspaces/.ai-chat-history; until git fetch -q origin ai-chat-history && [ "$(git log -1 --format=%h origin/ai-chat-history -- '*7057d269*')" != bb272d2c ]; do sleep 10; done; git log -1 --format…`
+
+### Turn 9 activity
+
+- **Bash** `git branch --show-current && git status --short && git add .devcontainer/scripts/post-start.sh && git commit -q -F - <<'EOF'
+fix(devcontainer): don't start the archive watcher without a GitHub token…`
+- **Bash** `git push -q origin feature/codespaces-devcontainer 2>&1 | tail -3; git status -sb | head -1`
 
 </details>
 
@@ -385,6 +437,6 @@ echo "--- rebuild evidence"; uptime -s; grep -E 'Running the postStartCommand|po
 - **Source:** Claude Code
 - **Session ID:** `7057d269-60d3-4d82-b584-b1bb258f6d89`
 - **Created:** 25 October 2026, 21:52 UTC
-- **Last updated:** 25 October 2026, 22:32 UTC
-- **Turns:** 8
+- **Last updated:** 25 October 2026, 22:33 UTC
+- **Turns:** 9
 - **Status:** Complete
