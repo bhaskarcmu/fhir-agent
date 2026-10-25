@@ -245,8 +245,40 @@ To test the fix for real, run **Codespaces: Rebuild Container** and paste this p
 - The watcher has new process IDs.
 - This session's transcript and the `never-expose-secret-values` memory are still under `/workspaces/.claude-home`.
 
+## Turn 7
+
+### Prompt
+
+Okay, I rebuilt the container. Now run these checks again after verifying that I rebuilt:
+
+==========
+
+CLAUDE_API_KEY, SPRING_DATASOURCE_URL and NEON_DB_URL are set, and ANTHROPIC_API_KEY is not set. CLAUDE_CONFIG_DIR is /workspaces/.claude-home, and this session's transcript is stored under it. curl -sf http://localhost:8080/fhir/metadata succeeds, and /workspaces/setup.log shows no errors. The archive watcher is running, /workspaces/.ai-chat-history is on branch ai-chat-history, and it has pushed a commit for this session. gh pr list and gh auth status work using the built-in token. pytest client/clinical/tests triage-service/src/triage/tests -q passes.
+
+### Claude response
+
+First I'll confirm the rebuild actually happened, then rerun the checks without printing any values.
+
+The Monitor will notify me when the new watcher pushes a commit for this session.
+
+## Turn 8
+
+### Prompt
+
+<task-notification>
+<task-id>b5hkgbe6f</task-id>
+<summary>Monitor event: "Wait for a post-rebuild archive commit for this session"</summary>
+<event>[Monitor expired after 3m with no events delivered. Re-arm it if you still need the watch — and widen the filter if silence was unexpected.]</event>
+</task-notification>
+
+### Claude response
+
+No new commit arrived within 3 minutes. I'll check the watcher's logs and whether this session's transcript has changed since the last push.
+
+Now I'll test the guard. I'll stop the broken watcher by PID, run `post-start.sh` with `GITHUB_TOKEN` removed (it should *not* start the watcher), then run it with the normal environment (it should).
+
 <details>
-<summary>Execution details — 49 tool events</summary>
+<summary>Execution details — 61 tool events</summary>
 
 ### Turn 1 activity
 
@@ -325,6 +357,25 @@ for v in CLAUDE_API_KEY SPRING_DATASOURCE_URL NEON_DB_URL ANTHROPIC_API_KEY; do 
 echo "CLAUDE_CONFIG_DIR=$CLAUDE…`
 - **Bash** `pytest client/clinical/tests triage-service/src/triage/tests -q 2>&1 | grep -E 'passed|failed|error' | head -3`
 
+### Turn 7 activity
+
+- **Bash** `cd /workspaces/fhir-agent
+echo "--- rebuild evidence"; uptime -s; grep -E 'Running the postStartCommand|postAttachCommand' /workspaces/.codespaces/.persistedshare/creation.log | cut -c1-90 | tail -4;…`
+- **Bash** `pytest client/clinical/tests triage-service/src/triage/tests -q 2>&1 | grep -E 'passed|failed|error' | head -3`
+- **Monitor** `cd /workspaces/.ai-chat-history; until git fetch -q origin ai-chat-history && [ "$(git log -1 --format=%h origin/ai-chat-history -- '*7057d269*')" != bb272d2c ]; do sleep 10; done; git log -1 --format…`
+
+### Turn 8 activity
+
+- **Bash** `L=/workspaces/.ai-chat-history/ai-chat-documentation/logs; for f in watcher.log sync.log; do echo "== $f"; tail -n 6 $L/$f | cut -c1-200; done; echo "== transcript mtime"; stat -c '%y %s' /workspaces/…`
+- **Bash** `cd /workspaces/.ai-chat-history; for k in user.name user.email commit.gpgsign gpg.program gpg.format; do printf '%s: ' $k; git config --show-origin $k 2>/dev/null | cut -c1-120 || echo "(unset)"; done…`
+- **Bash** `cd /workspaces/.ai-chat-history; git commit-tree -S 'HEAD^{tree}' -m signing-probe </dev/null 2>&1 | tail -4; echo "--- unsigned probe"; git -c commit.gpgsign=false commit-tree 'HEAD^{tree}' -m probe…`
+- **Bash** `grep -n 'error' /workspaces/.ai-chat-history/ai-chat-documentation/logs/watcher.log | tail -3 | cut -c1-400; echo "--- env names in my shell but not in watcher (pid 476)"; comm -23 <(env | cut -d= -f1…`
+- **Bash** `tr '\0' '\n' < /proc/476/environ | cut -d= -f1 | sort | tr '\n' ' '; echo; grep -n '22:20:1' /workspaces/.codespaces/.persistedshare/creation.log | head -5 | cut -c1-160`
+- **Edit** `/workspaces/fhir-agent/.devcontainer/scripts/post-start.sh`
+- **Edit** `/workspaces/fhir-agent/.devcontainer/scripts/post-start.sh`
+- **Bash** `kill 469 476; sleep 1; ps -eo pid,args | grep -E '[a]rchive-watcher\.sh$|python3 -m [a]rchive_ai watch$' || echo "watcher stopped"; cd /workspaces/fhir-agent; env -u GITHUB_TOKEN CODESPACES=true bash…`
+- **Bash** `cd /workspaces/fhir-agent; CODESPACES=true bash .devcontainer/scripts/post-start.sh terminal; sleep 3; ps -eo pid,args | grep -E '[a]rchive-watcher\.sh$|python3 -m [a]rchive_ai watch$'; tr '\0' '\n' <…`
+
 </details>
 
 ---
@@ -334,6 +385,6 @@ echo "CLAUDE_CONFIG_DIR=$CLAUDE…`
 - **Source:** Claude Code
 - **Session ID:** `7057d269-60d3-4d82-b584-b1bb258f6d89`
 - **Created:** 25 October 2026, 21:52 UTC
-- **Last updated:** 25 October 2026, 22:17 UTC
-- **Turns:** 6
+- **Last updated:** 25 October 2026, 22:32 UTC
+- **Turns:** 8
 - **Status:** Complete
