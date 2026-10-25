@@ -773,8 +773,74 @@ The MLflow database points to the path `/workspaces/fhir-agent/mlruns`, and Code
 
 Let me know when you've downloaded it and I'll delete the copy here. After that, Step 0 is complete and we can move on to Step 1.
 
+## Turn 22
+
+### Prompt
+
+I have downloaded step0-local-files.zip . You can delete that. Now guide me through Step 1
+
+### Claude response
+
+I'll delete the zip and remove its line from the local ignore list, so nothing is left behind.
+
+Done: the zip is deleted, the ignore entry is removed, and `git status` is clean. Before the walkthrough, I'll check whether I can verify your Codespaces secrets from here afterwards (names only):
+
+I can't verify the secrets from here, because the current token lacks Codespaces permission. That's fine: we'll confirm them inside the codespace in Step 3. Here's Step 1. It all happens on github.com in your browser and takes about 10 minutes.
+
+# Step 1 — GitHub website setup
+
+## 1.1 Set a spending budget (do this first)
+This makes sure Codespaces can never bill you unexpectedly.
+
+1. Go to **github.com** → click your **profile picture** (top right) → **Settings**.
+2. In the left sidebar, click **Billing and licensing** → **Budgets and alerts**.
+3. Click **New budget**, choose **Codespaces**, and enter an amount. **$0** means you only use the free monthly allowance.
+4. Turn on **Stop usage when budget limit is reached**, then save.
+5. **Optional:** under **Billing and licensing** → **Usage**, look up your free Codespaces core-hours and storage. A 4-core machine uses 4 core-hours per hour.
+
+## 1.2 Set Codespaces defaults
+1. Still in **Settings**, click **Codespaces** in the left sidebar.
+2. Set these:
+
+   | Setting | Recommended | Why |
+   |---|---|---|
+   | **Editor preference** | Visual Studio Code (desktop) or browser | Your choice |
+   | **Default idle timeout** | 30 minutes | Stops the codespace when you walk away, which saves hours |
+   | **Default retention period** | 14 days | Deletes stopped codespaces you've forgotten about, which saves storage |
+   | **Region** | Nearest to you | Faster |
+
+   Ignore **Dotfiles** and **Trusted repositories** for now.
+
+## 1.3 Add the secrets
+On the same **Settings → Codespaces** page, scroll to **Codespaces secrets**. For each row below, click **New secret**, fill in **Name** and **Value**, set **Repository access** to `bhaskarcmu/fhir-agent`, then click **Add secret**.
+
+| Name | Value |
+|---|---|
+| `ANTHROPIC_API_KEY` | the value you saved for `CLAUDE_API_KEY` |
+| `CLAUDE_API_KEY` | the same value again |
+| `SPRING_DATASOURCE_URL` | your saved value |
+| `NEON_DB_URL` | your saved value |
+
+**When pasting values:**
+- Paste **only what comes after the first `=`** on each saved line. The database URLs contain more `=` signs inside them (like `?user=…&password=‹redacted:url-query-password› and those are part of the value.
+- No quotes and no trailing spaces or line breaks.
+
+**Don't add:**
+- `GH_TOKEN` or `GITHUB_TOKEN_REPO`: Codespaces gives you a GitHub token automatically, and an extra `GH_TOKEN` would override it.
+- `HIBERNATE_DIALECT` or `SPRING_DATASOURCE_DRIVER_CLASS_NAME`: these aren't secret, so they go in the repo config in Step 2.
+
+**Good to know:**
+- Secrets only reach codespaces created *after* you add them, or after a restart.
+- Once saved, a secret's value can never be viewed again, only replaced.
+- With `ANTHROPIC_API_KEY` set, Claude Code in Codespaces bills that API key, the same as it does in Ona today.
+
+## 1.4 Prebuild
+Skip it for now. It needs the Step 2 config merged first.
+
+Tell me when 1.1–1.3 are done, and I'll start **Step 2**: the devcontainer PR, built for a 4-core machine. Building it doesn't affect your Ona environment.
+
 <details>
-<summary>Execution details — 154 tool events</summary>
+<summary>Execution details — 156 tool events</summary>
 
 ### Turn 3 activity
 
@@ -1018,6 +1084,11 @@ files = [pathlib.Path("outcome-prediction-lab/mlflow.db")] + sorted(
     p for p in pathlib.Path("outcome-predicti…`
 - **Bash** `S=/tmp/claude-1000/-workspaces-fhir-agent/3b59a463-d6e4-4a7f-94ea-7dfea0acdc2b/scratchpad/restore-test; rm -rf $S && mkdir -p $S && cd $S && python3 -m zipfile -e /workspaces/fhir-agent/step0-local-fi…`
 
+### Turn 22 activity
+
+- **Bash** `rm -f step0-local-files.zip && sed -i '/^step0-local-files\.zip$/d' .git/info/exclude && ls step0-local-files.zip 2>&1 | head -1 && grep -c step0 .git/info/exclude; git status --short | head -2`
+- **Bash** `gh api user/codespaces/secrets --jq '"can read: \(.total_count) secret(s) currently: " + ([.secrets[].name] | join(", "))' 2>&1 | sed -E 's/(gh[pousr]_|github_pat_)[A-Za-z0-9_]+/***/g' | head -2`
+
 </details>
 
 ---
@@ -1027,6 +1098,6 @@ files = [pathlib.Path("outcome-prediction-lab/mlflow.db")] + sorted(
 - **Source:** Claude Code
 - **Session ID:** `3b59a463-d6e4-4a7f-94ea-7dfea0acdc2b`
 - **Created:** 17 October 2026, 15:43 UTC
-- **Last updated:** 25 October 2026, 20:58 UTC
-- **Turns:** 21
+- **Last updated:** 25 October 2026, 21:05 UTC
+- **Turns:** 22
 - **Status:** Incomplete
