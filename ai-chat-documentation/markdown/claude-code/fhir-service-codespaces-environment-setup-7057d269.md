@@ -495,7 +495,7 @@ Ona's config never installed Ollama either, and the STEP0 README lists the Ollam
 Both suites read `TEST_DATABASE_URL`. These are throwaway local credentials published in the repo's compose file, not secrets. Rerunning:
 
 <details>
-<summary>Execution details — 115 tool events</summary>
+<summary>Execution details — 116 tool events</summary>
 
 ### Turn 1 activity
 
@@ -663,6 +663,7 @@ echo "==…`
 - **Bash** `grep -rhoE 'os\.environ\.get\("[A-Z_]*DATABASE_URL"[^)]*\)' --include=conftest.py --include=*.py agent-platform/tests provider-*/ data/scripts 2>/dev/null | sort | uniq -c; docker exec fhir-agent-post…`
 - **Bash** `grep -rn -E 'TEST_DATABASE_URL|_test"' agent-platform/tests/conftest.py agent-platform/tests/test_session_store.py provider-registry-service/src/provider_registry/tests/conftest.py 2>/dev/null | cut -…`
 - **Bash** `P=postgresql://provider_registry:‹redacted:url-credentials›localhost:5432/provider_registry; for s in provider-registry-service/src/provider_registry/tests provider-curation-agent/tests provider-mcp-server/te…`
+- **Bash** `for s in mcp-agent/tests outcome-prediction-agent/tests; do r=$(pytest -q -p no:cacheprovider -rs "$s" 2>&1); printf '%-36s %s\n' "$s" "$(echo "$r" | grep -E '[0-9]+ (passed|failed|error)' | tail -1)"…`
 
 </details>
 
@@ -673,6 +674,6 @@ echo "==…`
 - **Source:** Claude Code
 - **Session ID:** `7057d269-60d3-4d82-b584-b1bb258f6d89`
 - **Created:** 25 October 2026, 21:52 UTC
-- **Last updated:** 25 October 2026, 23:37 UTC
+- **Last updated:** 25 October 2026, 23:39 UTC
 - **Turns:** 15
 - **Status:** Incomplete
