@@ -422,8 +422,58 @@ That "failed" notice is the 45-second inotify probe stopping at its time limit (
 
 *[Claude has not completed this turn yet.]*
 
+## Turn 14
+
+### Prompt
+
+This codespace was just stopped and started, after switching to main (PR #82 merged). Verify that background services started by themselves. Report only: don't fix or change anything, and never print secret values.
+
+1. grep -E "post-start\(" /workspaces/setup.log | tail -8: which runs (postStart / postAttach / terminal) started FHIR and the archive watcher after this start?
+
+2. ps -eo pid,lstart,args | grep -E "[a]rchive-watcher|[a]rchive_ai|[i]notifywait": exactly one supervisor and one archive_ai watch, started after this start?
+
+3. tail -15 /workspaces/.ai-chat-history/ai-chat-documentation/logs/watcher.log: any [watch] error or push error lines?
+
+4. Using git -C /workspaces/.ai-chat-history fetch -q origin, has origin/ai-chat-history received an archive commit containing this session, made after this start?
+
+5. curl -sf http://localhost:8080/fhir/metadata >/dev/null && echo FHIR OK
+
+Summarise pass or fail for each item. If anything failed, include the relevant log lines.
+
+### Claude response
+
+I'll first find this start's timestamp, then run the five read-only checks against it.
+
+To pin down which run actually started FHIR, I'll check the container's start time and the FHIR result lines logged since 23:13 (read-only).
+
+All five checks pass: both background services came up by themselves after this start (container up at 23:10:50, `postStartCommand` at 23:13:43).
+
+| # | Check | Result |
+|---|---|---|
+| 1 | Which runs started the services | ✅ Pass. All three launch paths fired after this start (details below). |
+| 2 | Exactly one supervisor and one watcher | ✅ Pass. Supervisor PID 909 and `archive_ai watch` PID 957, both started at 23:14:10, plus their one `inotifywait` (PID 2162). |
+| 3 | Errors in `watcher.log` | ✅ Pass. There are no error lines after this start's `[autostart] 2026-10-25T23:14:11Z` entry; it shows one `noop` and one `pushed`. The three exit-status-128 lines in the tail are from 22:29–22:32, before the token-guard fix. |
+| 4 | Archive commit for this session after this start | ✅ Pass. `be22dbc1`, made at 23:15:27, contains this session and is on `origin/ai-chat-history`. The local worktree is level with origin. |
+| 5 | `curl -sf …/fhir/metadata` | ✅ Pass. `FHIR OK`. |
+
+**Detail for item 1**, from `grep -E "post-start\(" /workspaces/setup.log | tail -8`:
+```
+[post-start(postStart)] 2026-10-25T23:13:50Z FHIR: starting
+[post-start(postStart)] 2026-10-25T23:13:51Z archive watcher: starting
+[post-start(terminal)] 2026-10-25T23:14:11Z FHIR: starting   (×3)
+[post-start(terminal)] 2026-10-25T23:14:11Z archive watcher: starting
+[post-start(terminal)] 2026-10-25T23:14:16Z FHIR: starting
+[post-start(postAttach)] 2026-10-25T23:14:17Z FHIR: starting
+```
+- **Archive watcher:** I believe the terminal run at 23:14:11 is the one still running. The terminal run only logs "starting" when the supervisor lock is free, so the watcher launched by postStart at 23:13:51 must already have died. That matches the earlier finding that jobs launched from lifecycle commands get killed. The surviving watcher's 23:14:10 start time is one second before that log line, which is normal clock drift between `ps` and `date`.
+- **FHIR:** all six runs called `docker compose up`, and all six logged `FHIR: started`. That's harmless because the call is idempotent. The container started at 23:14:16, but I can't tell which run won.
+
+**Two observations; I didn't change anything:**
+- **Duplicate FHIR starts:** several shells opened at once at 23:14:11, and each one saw FHIR not yet running and started it. That's redundant but works, as above.
+- **The watcher now runs the latest code:** it restarted at 23:14, after `7a13c420` and `644996ae`, so their changes are now live.
+
 <details>
-<summary>Execution details — 84 tool events</summary>
+<summary>Execution details — 87 tool events</summary>
 
 ### Turn 1 activity
 
@@ -554,6 +604,13 @@ fix(devcontainer): don't start the archive watcher without a GitHub token…`
 - **Bash** `cd /workspaces/.ai-chat-history && git fetch -q origin ai-chat-history; git status -sb | head -3; git log --format='%h %ci %G? %s' -4 origin/ai-chat-history; git merge-base --is-ancestor 644996ae HEAD…`
 - **Bash** `cd /workspaces/.ai-chat-history && git branch --show-current && git pull --ff-only 2>&1 | tail -2; git status -sb | head -1`
 
+### Turn 14 activity
+
+- **Bash** `echo "now: $(date -u +%FT%TZ)"; echo "container uptime since: $(uptime -s)"; grep -E 'Running the postStartCommand' /workspaces/.codespaces/.persistedshare/creation.log | tail -2 | cut -c1-80
+echo "==…`
+- **Bash** `cd /workspaces/.ai-chat-history && git fetch -q origin && git branch --show-current && git status -sb | head -1 && git log --format='%h %ci %G? %s' -4 origin/ai-chat-history -- '*7057d269*'`
+- **Bash** `docker inspect -f 'FHIR container StartedAt {{.State.StartedAt}}' fhir-agent-fhir; awk '/post-start\(postStart\)\] 2026-10-25T23:13/{p=1} p' /workspaces/setup.log | grep -vE '^\[post-start' | grep -E…`
+
 </details>
 
 ---
@@ -563,6 +620,6 @@ fix(devcontainer): don't start the archive watcher without a GitHub token…`
 - **Source:** Claude Code
 - **Session ID:** `7057d269-60d3-4d82-b584-b1bb258f6d89`
 - **Created:** 25 October 2026, 21:52 UTC
-- **Last updated:** 25 October 2026, 23:15 UTC
-- **Turns:** 13
+- **Last updated:** 25 October 2026, 23:20 UTC
+- **Turns:** 14
 - **Status:** Incomplete
