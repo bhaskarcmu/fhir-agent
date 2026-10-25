@@ -3,8 +3,13 @@
   "build": {
     "dockerfile": "Dockerfile"
   },
+  "hostRequirements": {
+    "cpus": 4,
+    "memory": "16gb",
+    "storage": "32gb"
+  },
   "features": {
-    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
     "ghcr.io/devcontainers/features/github-cli:1": {},
     "ghcr.io/devcontainers/features/node:1": {
       "version": "20"
@@ -19,6 +24,7 @@
   "customizations": {
     "vscode": {
       "extensions": [
+        "anthropic.claude-code",
         "eamodio.gitlens",
         "github.vscode-pull-request-GitHub",
         "googlecloudtools.cloudcode",
@@ -54,10 +60,17 @@
   "remoteUser": "vscode",
   "containerEnv": {
     "JAVA_HOME": "/usr/lib/jvm/java-21-openjdk-amd64",
-    "CLAUDE_API_KEY": "${localEnv:CLAUDE_API_KEY}",
-    "ANTHROPIC_API_KEY": "${localEnv:CLAUDE_API_KEY}",
-    "GH_TOKEN": "${localEnv:GH_TOKEN}",
-    "GITHUB_TOKEN_REPO": "${localEnv:GITHUB_TOKEN_REPO}",
-    "CLAUDE_CODE_USE_BEDROCK": "0"
+    "CLAUDE_CODE_USE_BEDROCK": "0",
+    "CLAUDE_CONFIG_DIR": "/workspaces/.claude-home",
+    "CLAUDE_PROJECTS_BASE": "/workspaces/.claude-home/projects",
+    "SPRING_DATASOURCE_DRIVER_CLASS_NAME": "org.postgresql.Driver",
+    "HIBERNATE_DIALECT": "ca.uhn.fhir.jpa.model.dialect.HapiFhirPostgresDialect"
+  },
+  "onCreateCommand": "npm install -g @anthropic-ai/claude-code",
+  "updateContentCommand": "bash .devcontainer/scripts/install-dependencies.sh",
+  "postStartCommand": "bash .devcontainer/scripts/post-start.sh",
+  "forwardPorts": [8080],
+  "portsAttributes": {
+    "8080": { "label": "FHIR server", "onAutoForward": "notify" }
   }
 }
