@@ -154,8 +154,16 @@ The FHIR server and the archive worktree are both up. I'll check the watcher pro
 
 The watcher is running and pushing. I'll confirm the pushed commits actually include this session.
 
+I'll tidy two awkward constructs in that draft: the inverted `if`, and the `basename` used on the caller tag.
+
+`XDG_RUNTIME_DIR` is unset in both contexts, so both use `/tmp`. Next I'll update the watcher's comment, add `postAttachCommand`, and add the terminal backstop to the Dockerfile.
+
+Ubuntu's `/etc/bash.bashrc` returns early for non-interactive shells, so the backstop only fires in real terminals. I'll check that, then test the no-op path with everything already running.
+
+That exit code means `pkill -f` matched my own command line, which contained the pattern, and killed the shell. I'll check what state things are in.
+
 <details>
-<summary>Execution details — 32 tool events</summary>
+<summary>Execution details — 42 tool events</summary>
 
 ### Turn 1 activity
 
@@ -204,6 +212,19 @@ import yaml,json;d=yaml.safe_load(open('docker-compose.yml'));s=d['services']['f
 - **Bash** `L=/workspaces/.ai-chat-history/ai-chat-documentation/logs; for f in sync.log watcher.log; do echo "== $f"; tail -n 8 $L/$f | cut -c1-200; done; echo "== git"; git -C /workspaces/.ai-chat-history log -…`
 - **Bash** `git -C /workspaces/.ai-chat-history show --stat --format='%h %s' 824460d2 | head -8; git -C /workspaces/.ai-chat-history grep -l 7057d269 824460d2 | head -3`
 - **Bash** `cd /workspaces/fhir-agent/.devcontainer && cat scripts/install-dependencies.sh; echo "=== Dockerfile"; cat Dockerfile; echo "=== setup-credentials refs"; grep -rn setup-credentials . | head -3`
+- **Write** `/workspaces/fhir-agent/.devcontainer/scripts/post-start.sh`
+- **Bash** `cd /workspaces/fhir-agent/.devcontainer/scripts && python3 - <<'EOF'
+p='post-start.sh';s=open(p).read()
+s=s.replace('TAG="post-start($(basename "${1:-start}"))"','TAG="post-start(${1:-manual})"')
+s=s.…`
+- **Bash** `echo "XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR:-unset}"; tr '\0' '\n' < /proc/16390/environ | grep -c '^XDG_RUNTIME_DIR=' ; sed -i 's/^flock -n 9 || exit 0$/flock -w 5 9 || exit 0/' /workspaces/fhir-agent/.d…`
+- **Bash** `cd /workspaces/fhir-agent/.devcontainer && sed -i 's/^# Started detached by post-start.sh; a lock makes extra copies exit at once.$/# Started detached by post-start.sh; a lock makes extra copies exit…`
+- **Edit** `/workspaces/fhir-agent/.devcontainer/devcontainer.json`
+- **Edit** `/workspaces/fhir-agent/.devcontainer/Dockerfile`
+- **Bash** `grep -n 'PS1" ] && return' /etc/bash.bashrc; cd /workspaces/fhir-agent && cp /workspaces/setup.log /tmp/claude-1000/-workspaces-fhir-agent/7057d269-60d3-4d82-b584-b1bb258f6d89/scratchpad/setup.before;…`
+- **Bash** `docker stop fhir-agent-fhir >/dev/null && pkill -f 'archive-watcher.sh' ; pkill -f 'archive_ai watch'; sleep 1; ps -eo args | grep -cE '^(bash .*archive-watcher.sh|python3 -m archive_ai watch)'; CODES…`
+- **Bash** `ps -eo pid,args | grep -E '[a]rchive-watcher\.sh$|[a]rchive_ai watch' ; docker ps -a --format '{{.Names}} {{.Status}}'`
+- **Bash** `kill 16434; S=/tmp/claude-1000/-workspaces-fhir-agent/7057d269-60d3-4d82-b584-b1bb258f6d89/scratchpad/kick.sh; printf '%s\n' 'cd /workspaces/fhir-agent' 'export CODESPACES=true' 'bash .devcontainer/sc…`
 
 </details>
 
@@ -214,6 +235,6 @@ import yaml,json;d=yaml.safe_load(open('docker-compose.yml'));s=d['services']['f
 - **Source:** Claude Code
 - **Session ID:** `7057d269-60d3-4d82-b584-b1bb258f6d89`
 - **Created:** 25 October 2026, 21:52 UTC
-- **Last updated:** 25 October 2026, 22:11 UTC
+- **Last updated:** 25 October 2026, 22:12 UTC
 - **Turns:** 4
 - **Status:** Complete
