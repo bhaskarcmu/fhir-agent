@@ -490,8 +490,10 @@ Three suites have errors: `mcp-agent` (4), `claims-agent` (2) and `outcome-predi
 
 Ona's config never installed Ollama either, and the STEP0 README lists the Ollama models as "re-creatable". I'll check the archive for how Ollama actually ran on Ona.
 
+`claims-agent` needs only `anthropic` and `httpx`, so I'll test it from source via `PYTHONPATH` rather than installing anything. Next I'll start the two Postgres services and an Ollama container.
+
 <details>
-<summary>Execution details — 103 tool events</summary>
+<summary>Execution details — 106 tool events</summary>
 
 ### Turn 1 activity
 
@@ -647,6 +649,9 @@ echo "==…`
 - **Bash** `pytest -q -p no:cacheprovider mcp-agent/tests/test_provider_integration.py 2>&1 | grep -E '^E |Error|ollama|skip' | sort | uniq -c | head -8 | cut -c1-250; echo "--- CI claims-agent install"; grep -n…`
 - **Bash** `git log --oneline -S ollama -- .devcontainer .ona | head -5; grep -rn -iE 'ollama (serve|pull)|install.*ollama|ollama\.com/install' docs/*.md README.md mcp-agent/README.md 2>/dev/null | cut -c1-200 |…`
 - **Bash** `cd /workspaces/.ai-chat-history/ai-chat-documentation/raw && grep -rhoE '(curl -fsSL https://ollama.com/install.sh[^"\\]{0,40}|docker run [^"\\]{0,60}ollama/ollama[^"\\]{0,20}|/usr/local/bin/ollama|ol…`
+- **Bash** `cd /workspaces/fhir-agent/fhir-service && env -u SPRING_DATASOURCE_URL -u NEON_DB_URL ./mvnw -q -B clean verify > /tmp/claude-1000/-workspaces-fhir-agent/7057d269-60d3-4d82-b584-b1bb258f6d89/scratchpa…`
+- **Bash** `ls claims-agent; grep -A8 '^dependencies' claims-agent/pyproject.toml | head -10; echo "--- compose db services"; docker compose --profile phase3 --profile phase6 config --format json 2>/dev/null | py…`
+- **Bash** `PYTHONPATH=claims-agent/src pytest -q -p no:cacheprovider claims-agent/tests 2>&1 | tail -1; docker compose --profile phase3 --profile phase6 up -d postgres agent-db 2>&1 | tail -2; docker run -d --na…`
 
 </details>
 
