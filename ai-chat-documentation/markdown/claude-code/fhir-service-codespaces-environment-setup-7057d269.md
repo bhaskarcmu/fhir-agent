@@ -575,8 +575,10 @@ The MEPS data is present: 726 MB in `outcome-prediction-service/data/raw/meps`, 
 
 Phase 2 and Phase 4 e2e pass (11 tests), but 7 Phase 8 tests error during setup: the hardcoded demo patient `e7149b17…` isn't among the seeded patients. I'll check where the test gets its patients.
 
+The emulator is stopped. The other containers are still up, so I'll remove them now; `fhir` stays.
+
 <details>
-<summary>Execution details — 141 tool events</summary>
+<summary>Execution details — 144 tool events</summary>
 
 ### Turn 1 activity
 
@@ -785,6 +787,9 @@ import sys,json
 for line in open(sys.argv[1]):
     if 'e7149b17' in lin…`
 - **Bash** `O=/tmp/claude-1000/-workspaces-fhir-agent/7057d269-60d3-4d82-b584-b1bb258f6d89/scratchpad/synthea-r20261018; mkdir -p $O; cd $O && java -Xmx4g -jar /workspaces/fhir-agent/outcome-prediction-service/da…`
+- **Bash** `pid=$(pgrep -f 'epic-emulator-0.1.0.jar'); [ -n "$pid" ] && kill $pid && echo "epic-emulator stopped ($pid)"; docker rm -f certify-ollama >/dev/null && echo "ollama container removed"; docker compose…`
+- **Bash** `ps -eo pid,args | grep '[e]pic-emulator-0' | grep -v grep || echo "epic-emulator: not running"; docker ps -a --format '{{.Names}} {{.Status}}'`
+- **Bash** `docker rm -f certify-ollama >/dev/null && echo "ollama container removed"; docker compose --profile phase2 --profile phase3 --profile phase6 rm -sf triage mcp-agent rxclaim-emulator claims-service cla…`
 
 </details>
 
@@ -795,6 +800,6 @@ for line in open(sys.argv[1]):
 - **Source:** Claude Code
 - **Session ID:** `7057d269-60d3-4d82-b584-b1bb258f6d89`
 - **Created:** 25 October 2026, 21:52 UTC
-- **Last updated:** 25 October 2026, 23:58 UTC
+- **Last updated:** 25 October 2026, 23:59 UTC
 - **Turns:** 19
 - **Status:** Incomplete
