@@ -927,8 +927,56 @@ It was a false alarm: no supervisor is running and no lock was created, so the g
 
 The install script succeeded end to end (exit 0): all Python packages installed, then the Maven warm-up ran. Committing:
 
+Step 2 is ready for review as **[PR #82](https://github.com/bhaskarcmu/fhir-agent/pull/82)**. It covers all your Step 1 choices, and the parts I could test here pass.
+
+**What changed** (only `.devcontainer/`):
+- **`devcontainer.json`:**
+  - The Ona secret wiring is gone, including the line that forced `ANTHROPIC_API_KEY`, so `/login` can switch between your subscription and the API. I checked that every part of the project falls back to `CLAUDE_API_KEY`.
+  - The two non-secret Neon settings now live in the config, with the same values as before.
+  - Claude Code's history and memory now live under `/workspaces/.claude-home`, so they survive rebuilds.
+  - Docker is switched to docker-in-docker.
+  - Startup steps, port 8080, a 4-core minimum and the Claude Code extension are added.
+- **3 new scripts:**
+  - [install-dependencies.sh](.devcontainer/scripts/install-dependencies.sh) installs dependencies; it runs during prebuilds.
+  - [post-start.sh](.devcontainer/scripts/post-start.sh) starts FHIR and the archive watcher.
+  - [archive-watcher.sh](.devcontainer/scripts/archive-watcher.sh) keeps the watcher alive, replacing Ona's supervision.
+- **Ona is left alone:** both lifecycle scripts do nothing unless they're running in Codespaces, so this environment can't end up with a second watcher.
+
+**Tested here:**
+- The official devcontainer CLI resolves the config and all its features.
+- The watcher keeper, tested in isolation: it restores the worktree, restarts the watcher, allows only one copy, and clears stale locks. This caught and fixed a bug where crash exit codes were always logged as 0.
+- Outside Codespaces, both scripts do nothing and the Ona watcher is untouched.
+- The install script runs end to end with exit 0.
+
+**Can only be tested in a real codespace:**
+- FHIR starting under docker-in-docker;
+- the watcher staying up after startup;
+- history and login surviving a rebuild;
+- the secrets and the built-in GitHub token working.
+
+**Branch:** `feature/codespaces-devcontainer`; commit `bdc169b3`.
+
+## Next: Step 3 (don't merge yet)
+1. On the repo page, click **Code** → **Codespaces** → **⋯** → **New with options**.
+2. Set **Branch** to `feature/codespaces-devcontainer` and **Machine type** to **4-core**, then click **Create codespace**. The first build takes several minutes.
+3. In the codespace, open Claude Code and run `/login`.
+4. Upload your `step0-local-files.zip` and paste the restore prompt from Step 0.
+5. Then paste this:
+
+> This codespace was created from PR #82 (branch `feature/codespaces-devcontainer`) to verify the Ona → Codespaces migration. Check and report each item. Never print secret values; print only whether each variable is set.
+> 1. `CLAUDE_API_KEY`, `SPRING_DATASOURCE_URL` and `NEON_DB_URL` are set, and `ANTHROPIC_API_KEY` is **not** set.
+> 2. `CLAUDE_CONFIG_DIR` is `/workspaces/.claude-home`, and this session's transcript is stored under it.
+> 3. `curl -sf http://localhost:8080/fhir/metadata` succeeds, and `/workspaces/setup.log` shows no errors.
+> 4. The archive watcher is running, `/workspaces/.ai-chat-history` is on branch `ai-chat-history`, and it has pushed a commit for this session.
+> 5. `gh pr list` and `gh auth status` work using the built-in token.
+> 6. `pytest client/clinical/tests triage-service/src/triage/tests -q` passes.
+>
+> Report the results, then tell me to run **Codespaces: Rebuild Container** and paste this prompt again to confirm history and memory survived.
+
+Report back what it finds, or paste its summary here, and I'll fix anything that fails on the same PR.
+
 <details>
-<summary>Execution details — 183 tool events</summary>
+<summary>Execution details — 184 tool events</summary>
 
 ### Turn 3 activity
 
@@ -1216,6 +1264,9 @@ feat(devcontainer): run natively in GitHub Codespaces
 Ona is retiring; make .devcontainer the self-sufficient environment
 definition so the same config runs in Codespaces.…`
 - **Bash** `git push -q -u origin feature/codespaces-devcontainer 2>&1 | grep -v "^remote:" ; echo "rc=${PIPESTATUS[0]}"`
+- **Bash** `gh pr create --base main --head feature/codespaces-devcontainer --title "feat(devcontainer): run natively in GitHub Codespaces" --body-file - <<'EOF'
+## Why
+Ona is retiring. This makes `.devcontainer/…`
 
 </details>
 
@@ -1226,6 +1277,6 @@ definition so the same config runs in Codespaces.…`
 - **Source:** Claude Code
 - **Session ID:** `3b59a463-d6e4-4a7f-94ea-7dfea0acdc2b`
 - **Created:** 17 October 2026, 15:43 UTC
-- **Last updated:** 25 October 2026, 21:32 UTC
+- **Last updated:** 25 October 2026, 21:33 UTC
 - **Turns:** 24
 - **Status:** Incomplete
