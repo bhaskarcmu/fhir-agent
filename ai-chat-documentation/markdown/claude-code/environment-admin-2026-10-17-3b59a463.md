@@ -913,8 +913,14 @@ start step 2, please update it with anything that might have changes with your m
 
 I'll start by re-reading the current config and the parts of the repo the new startup scripts will touch.
 
+Next, the three scripts: dependency install, startup, and the watcher keeper. First, dependency install. It runs during prebuilds, so it doesn't add to startup time:
+
+The files are written. Now validation, starting with static checks: JSON validity, shell syntax, shellcheck if it's installed, and file modes matching the existing script.
+
+The static checks pass. I'll make the new scripts executable to match `setup-credentials.sh`, then have the official devcontainer CLI parse the config and resolve every feature reference:
+
 <details>
-<summary>Execution details — 160 tool events</summary>
+<summary>Execution details — 170 tool events</summary>
 
 ### Turn 3 activity
 
@@ -1172,6 +1178,16 @@ files = [pathlib.Path("outcome-prediction-lab/mlflow.db")] + sorted(
 
 - **Bash** `cd /workspaces/fhir-agent; git status -sb | head -1; git log --oneline -1; cat .devcontainer/devcontainer.json | sed -n '/"remoteUser"/,$p'; echo ---; sed -n 1,35p docker-compose.yml`
 - **Bash** `cd /workspaces/fhir-agent; git grep -n -E 'HIBERNATE_DIALECT|DRIVER_CLASS|SPRING_DATASOURCE' -- 'fhir-service/src/main/resources/*' 'docker-compose.yml' | grep -v '^fhir-service/src/main/resources/app…`
+- **Bash** `git switch -c feature/codespaces-devcontainer`
+- **Read** `/workspaces/fhir-agent/.devcontainer/devcontainer.json`
+- **Edit** `/workspaces/fhir-agent/.devcontainer/devcontainer.json`
+- **Edit** `/workspaces/fhir-agent/.devcontainer/devcontainer.json`
+- **Edit** `/workspaces/fhir-agent/.devcontainer/devcontainer.json`
+- **Write** `/workspaces/fhir-agent/.devcontainer/scripts/install-dependencies.sh`
+- **Write** `/workspaces/fhir-agent/.devcontainer/scripts/post-start.sh`
+- **Write** `/workspaces/fhir-agent/.devcontainer/scripts/archive-watcher.sh`
+- **Bash** `cd /workspaces/fhir-agent/.devcontainer; python3 -c "import json; d=json.load(open('devcontainer.json')); print('JSON OK; keys:', ', '.join(d))"; for f in scripts/*.sh; do bash -n "$f" && echo "syntax…`
+- **Bash** `cd /workspaces/fhir-agent && chmod +x .devcontainer/scripts/install-dependencies.sh .devcontainer/scripts/post-start.sh .devcontainer/scripts/archive-watcher.sh && npx -y @devcontainers/cli@0.71.0 rea…`
 
 </details>
 
@@ -1182,6 +1198,6 @@ files = [pathlib.Path("outcome-prediction-lab/mlflow.db")] + sorted(
 - **Source:** Claude Code
 - **Session ID:** `3b59a463-d6e4-4a7f-94ea-7dfea0acdc2b`
 - **Created:** 17 October 2026, 15:43 UTC
-- **Last updated:** 25 October 2026, 21:28 UTC
+- **Last updated:** 25 October 2026, 21:30 UTC
 - **Turns:** 24
 - **Status:** Incomplete
