@@ -518,8 +518,49 @@ I'll wait for the `fhir-service` rerun to report back.
 
 The Phase 2 stack is building; I'll continue when it reports back.
 
+## Turn 17
+
+### Prompt
+
+<task-notification>
+<task-id>brkbp6trk</task-id>
+<tool-use-id>toolu_01FFK5JVsvJ79rYtkxzR3HCQ</tool-use-id>
+<output-file>/tmp/claude-1000/-workspaces-fhir-agent/7057d269-60d3-4d82-b584-b1bb258f6d89/tasks/brkbp6trk.output</output-file>
+<status>completed</status>
+<summary>Background command "Build and start Phase 2 compose stack" completed (exit code 0)</summary>
+</task-notification>
+
+### Claude response
+
+The Phase 2 stack is healthy. The Phase 4 acceptance test also needs `epic-emulator` running, but it isn't a compose service. I'll check how that test expects to reach it.
+
+The test expects the emulator jar running on :8092 with a fixture test client, which is a public test key and safe to use. I'll package the jar and start it in the background.
+
+The Monitor will report once `epic-emulator` answers on :8092.
+
+## Turn 18
+
+### Prompt
+
+<task-notification>
+<task-id>bwwsj1df3</task-id>
+<tool-use-id>toolu_01R637rnDnZkDP3MzYe1EH85</tool-use-id>
+<output-file>/tmp/claude-1000/-workspaces-fhir-agent/7057d269-60d3-4d82-b584-b1bb258f6d89/tasks/bwwsj1df3.output</output-file>
+<status>completed</status>
+<summary>Monitor "Wait for epic-emulator to answer" stream ended</summary>
+<event>epic up: 401</event>
+</task-notification>
+
+### Claude response
+
+The emulator is up; the 401 means its auth gate is working. I'll run the full `e2e/` suite in the background. The Phase 8 test builds and tears down its own stack, so this may take a while.
+
+While e2e runs, I'll check whether resuming a Phase 8 research round needs MLflow (not installed here), and whether the gateway and observability compose profiles at least parse.
+
+The MEPS data is present: 726 MB in `outcome-prediction-service/data/raw/meps`, gitignored. Now waiting on the e2e run.
+
 <details>
-<summary>Execution details — 122 tool events</summary>
+<summary>Execution details — 131 tool events</summary>
 
 ### Turn 1 activity
 
@@ -698,6 +739,21 @@ echo "==…`
 - **Bash** `cat /tmp/claude-1000/-workspaces-fhir-agent/7057d269-60d3-4d82-b584-b1bb258f6d89/tasks/b0okdy67b.output`
 - **Bash** `docker compose --profile phase2 up --build -d > /tmp/claude-1000/-workspaces-fhir-agent/7057d269-60d3-4d82-b584-b1bb258f6d89/scratchpad/phase2-up.log 2>&1; echo "rc=$?"; tail -n 12 /tmp/claude-1000/-w…`
 
+### Turn 17 activity
+
+- **Bash** `cat /tmp/claude-1000/-workspaces-fhir-agent/7057d269-60d3-4d82-b584-b1bb258f6d89/tasks/brkbp6trk.output | cut -c1-160`
+- **Bash** `sed -n '1,40p' e2e/test_epic_emulator_acceptance.py | grep -vE '^\s*$' | cut -c1-170 | head -30`
+- **Bash** `mvn -q -B -f epic-emulator/pom.xml -DskipTests package 2>&1 | tail -3; ls epic-emulator/target/*.jar`
+- **Bash** `JWK=$(python3 -c "import json; print(json.dumps(json.load(open('e2e/fixtures/epic_emulator_test_client_public_jwk.json'))))") EPIC_AUTH_CLIENTS_0_CLIENT_ID=e2e-acceptance-test-client EPIC_AUTH_CLIENTS…`
+- **Monitor** `for i in $(seq 1 40); do curl -s -o /dev/null -w '%{http_code}' localhost:8092/fhir/metadata 2>/dev/null | grep -qE '^[1-4]' && { echo "epic up: $(curl -s -o /dev/null -w '%{http_code}' localhost:8092…`
+
+### Turn 18 activity
+
+- **Bash** `timeout 2400 pytest -q -p no:cacheprovider -rs e2e/ > /tmp/claude-1000/-workspaces-fhir-agent/7057d269-60d3-4d82-b584-b1bb258f6d89/scratchpad/e2e.log 2>&1; echo "rc=$?"; grep -E '^(FAILED|ERROR|SKIPPE…`
+- **Bash** `grep -n -B3 -A3 'import mlflow' outcome-prediction-lab/src/outcome_prediction_lab/runs.py | cut -c1-150 | head -16; grep -n -iE 'mlflow|tracking' docs/phase8/experimentation-protocol.md | cut -c1-170…`
+- **Bash** `sed -n '227,240p' outcome-prediction-lab/src/outcome_prediction_lab/runs.py; sed -n '74,80p' docs/phase8/experimentation-protocol.md | cut -c1-220`
+- **Bash** `du -sh outcome-prediction-service/data/raw 2>/dev/null; ls outcome-prediction-service/data/raw | head; git check-ignore -q outcome-prediction-service/data/raw && echo "raw/ is gitignored"`
+
 </details>
 
 ---
@@ -707,6 +763,6 @@ echo "==…`
 - **Source:** Claude Code
 - **Session ID:** `7057d269-60d3-4d82-b584-b1bb258f6d89`
 - **Created:** 25 October 2026, 21:52 UTC
-- **Last updated:** 25 October 2026, 23:51 UTC
-- **Turns:** 16
+- **Last updated:** 25 October 2026, 23:55 UTC
+- **Turns:** 18
 - **Status:** Incomplete
