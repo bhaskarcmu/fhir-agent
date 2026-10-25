@@ -857,6 +857,52 @@ Doubts:
 
 Two of these depend on facts I can check, so I'll look first. Question 1 depends on whether every part of the project can run with only `CLAUDE_API_KEY`. Question 2 depends on whether you already have a dotfiles repo.
 
+## 1. Omit `ANTHROPIC_API_KEY`? **Yes, omit it, and keep only `CLAUDE_API_KEY`.**
+
+- **Why it gets in your way:** if `ANTHROPIC_API_KEY` is set, Claude Code uses it in place of your Claude.ai subscription. `/logout` and `/login` can't change that, because the variable is always present. You'd be billing the API without meaning to.
+- **What happens without it:** `/login` offers you a choice each time:
+  - **Claude account with subscription** for your Claude.ai plan;
+  - **Anthropic Console account** for API billing.
+
+  You switch the way you do now, without any environment variable involved.
+- **The project still works:** I checked every place that reads the key (mcp-agent, both API routes, claims-agent, provider-curation-agent, provider-search-agent and agent-platform). Each one falls back to `CLAUDE_API_KEY`, and `docker-compose.yml` passes `CLAUDE_API_KEY` into the containers. Claude Code itself ignores `CLAUDE_API_KEY`. That's exactly what makes this split work.
+- **In Step 2** I'll also remove the line in `devcontainer.json` that copies `CLAUDE_API_KEY` into `ANTHROPIC_API_KEY`; otherwise the problem would come back.
+
+**Updated secrets list:** `CLAUDE_API_KEY`, `SPRING_DATASOURCE_URL`, `NEON_DB_URL`. That's three.
+
+## 2. "Automatically install dotfiles"? **Leave it off.**
+
+- **What it does:** "dotfiles" are your personal shell and editor config files, such as `.bashrc`, aliases and git settings. With this on, GitHub copies a repo of yours named `dotfiles` into every codespace and runs its install script.
+- **Why it's off by default:** it runs your own script in every codespace, and it only does anything if you have such a repo.
+- **For you:** you have no `dotfiles` repo, so it would do nothing. This project's setup belongs in `devcontainer.json`, where it's shared and reviewed in PRs. Revisit it only if you start missing personal shell tweaks across codespaces.
+
+## 3. GPG verification? **Yes, turn it on, for `bhaskarcmu/fhir-agent` only.**
+
+- **What it does:** commits you make inside a codespace get signed by GitHub, so they show a green **Verified** badge. That proves the commit really came from your account and wasn't forged with your name. Anyone can put any name and email on a git commit, so the badge is what proves it.
+- **What it means for you:**
+  - **Upside:** a trustworthy history, which suits a healthcare project. It also lets you turn on "require signed commits" branch protection later.
+  - **Cost:** essentially none. It's automatic, with no keys to manage.
+  - **Side effects:** only commits made *in Codespaces* are signed; commits made elsewhere aren't affected. The chat-archive commits made in Codespaces would be signed too, which is harmless.
+- **"Trusted repositories" here** means the list of repos where GitHub signs for you. Pick only `bhaskarcmu/fhir-agent`, not "All repositories".
+
+## 4. Settings Sync? **Optional. Turn it on only if you have personal VS Code settings you'd miss.**
+
+- **What it does:** syncs your personal VS Code setup between your own VS Code and your codespaces: settings, keyboard shortcuts, themes, snippets and extensions.
+- **Why it's off by default:** the sync works both ways. A codespace could change settings that then flow back to your laptop and every other codespace. A codespace from a random or malicious repo could plant settings or extensions that way.
+- **"Trusted repositories" here** means the repos whose codespaces are allowed to take part in that two-way sync. Trust only `bhaskarcmu/fhir-agent`.
+- **For you:** this project's extensions are already listed in `devcontainer.json`, so you'll get them either way. Settings Sync only adds *your personal* preferences on top. If you mostly work in the browser, or don't customise VS Code much, leave it off. If you do turn it on, sync can pull in a lot of extra extensions, which slows startup; you can untick **Extensions** in the sync options.
+
+## Summary of your choices
+
+| Setting | Choice |
+|---|---|
+| Secrets | `CLAUDE_API_KEY`, `SPRING_DATASOURCE_URL`, `NEON_DB_URL` (**not** `ANTHROPIC_API_KEY`) |
+| Dotfiles | Off |
+| GPG verification | On, `bhaskarcmu/fhir-agent` only |
+| Settings Sync | Your call; if on, trust only `bhaskarcmu/fhir-agent` |
+
+Tell me when Step 1 is done and I'll start Step 2.
+
 <details>
 <summary>Execution details — 158 tool events</summary>
 
@@ -1121,6 +1167,6 @@ files = [pathlib.Path("outcome-prediction-lab/mlflow.db")] + sorted(
 - **Source:** Claude Code
 - **Session ID:** `3b59a463-d6e4-4a7f-94ea-7dfea0acdc2b`
 - **Created:** 17 October 2026, 15:43 UTC
-- **Last updated:** 25 October 2026, 21:21 UTC
+- **Last updated:** 25 October 2026, 21:22 UTC
 - **Turns:** 23
 - **Status:** Incomplete
