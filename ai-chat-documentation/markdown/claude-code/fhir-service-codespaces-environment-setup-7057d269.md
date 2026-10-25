@@ -162,8 +162,10 @@ Ubuntu's `/etc/bash.bashrc` returns early for non-interactive shells, so the bac
 
 That exit code means `pkill -f` matched my own command line, which contained the pattern, and killed the shell. I'll check what state things are in.
 
+The Monitor will report when both services are back.
+
 <details>
-<summary>Execution details — 42 tool events</summary>
+<summary>Execution details — 43 tool events</summary>
 
 ### Turn 1 activity
 
@@ -225,6 +227,7 @@ s=s.…`
 - **Bash** `docker stop fhir-agent-fhir >/dev/null && pkill -f 'archive-watcher.sh' ; pkill -f 'archive_ai watch'; sleep 1; ps -eo args | grep -cE '^(bash .*archive-watcher.sh|python3 -m archive_ai watch)'; CODES…`
 - **Bash** `ps -eo pid,args | grep -E '[a]rchive-watcher\.sh$|[a]rchive_ai watch' ; docker ps -a --format '{{.Names}} {{.Status}}'`
 - **Bash** `kill 16434; S=/tmp/claude-1000/-workspaces-fhir-agent/7057d269-60d3-4d82-b584-b1bb258f6d89/scratchpad/kick.sh; printf '%s\n' 'cd /workspaces/fhir-agent' 'export CODESPACES=true' 'bash .devcontainer/sc…`
+- **Monitor** `until curl -sf -o /dev/null http://localhost:8080/fhir/metadata && pgrep -fx 'python3 -m archive_ai watch' >/dev/null; do sleep 5; done; echo ready`
 
 </details>
 
