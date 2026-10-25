@@ -493,7 +493,7 @@ Ona's config never installed Ollama either, and the STEP0 README lists the Ollam
 `claims-agent` needs only `anthropic` and `httpx`, so I'll test it from source via `PYTHONPATH` rather than installing anything. Next I'll start the two Postgres services and an Ollama container.
 
 <details>
-<summary>Execution details — 106 tool events</summary>
+<summary>Execution details — 107 tool events</summary>
 
 ### Turn 1 activity
 
@@ -652,6 +652,7 @@ echo "==…`
 - **Bash** `cd /workspaces/fhir-agent/fhir-service && env -u SPRING_DATASOURCE_URL -u NEON_DB_URL ./mvnw -q -B clean verify > /tmp/claude-1000/-workspaces-fhir-agent/7057d269-60d3-4d82-b584-b1bb258f6d89/scratchpa…`
 - **Bash** `ls claims-agent; grep -A8 '^dependencies' claims-agent/pyproject.toml | head -10; echo "--- compose db services"; docker compose --profile phase3 --profile phase6 config --format json 2>/dev/null | py…`
 - **Bash** `PYTHONPATH=claims-agent/src pytest -q -p no:cacheprovider claims-agent/tests 2>&1 | tail -1; docker compose --profile phase3 --profile phase6 up -d postgres agent-db 2>&1 | tail -2; docker run -d --na…`
+- **Bash** `docker exec certify-ollama ollama pull llama3.2:1b 2>&1 | tail -1 | tr '\r' '\n' | tail -1; curl -s localhost:11434/api/tags | python3 -c "import json,sys;print([m['name'] for m in json.load(sys.stdin…`
 
 </details>
 
@@ -662,6 +663,6 @@ echo "==…`
 - **Source:** Claude Code
 - **Session ID:** `7057d269-60d3-4d82-b584-b1bb258f6d89`
 - **Created:** 25 October 2026, 21:52 UTC
-- **Last updated:** 25 October 2026, 23:32 UTC
+- **Last updated:** 25 October 2026, 23:36 UTC
 - **Turns:** 15
 - **Status:** Incomplete
