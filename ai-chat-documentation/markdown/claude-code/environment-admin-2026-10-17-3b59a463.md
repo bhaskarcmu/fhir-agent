@@ -569,6 +569,43 @@ I'll trace this through the Kong config, both the local compose setup and the GK
 
 That covers the server side. Now the client side: how the agents send a key, how the Kong Admin API is exposed, and whether this environment can reach any deployed Kong.
 
+You authenticate in two different ways depending on which Kong you mean, and **from this environment you can't currently reach either one**. Nothing Kong-related needs to move into Codespaces secrets.
+
+## The two Kongs
+
+**1. Local Phase 2 Kong** (`docker compose --profile gateway`, no database):
+- **Callers:** a single shared `apikey`, generated fresh on every `docker compose up` and printed to the container log ([docker-compose.yml:178-182](docker-compose.yml#L178-L182)).
+- **Identity:** there's one consumer, `local-dev`, so every caller is the same identity. No per-user identity.
+- **Client side:** you copy the key from `docker compose logs kong` into `CLAIMS_API_KEY` / `FHIR_API_KEY`, which the clients send as the `apikey` header.
+- **Admin:** the Admin API is switched off (`KONG_ADMIN_LISTEN: "off"`). The config is fixed at startup.
+- **Persistence:** none. Nothing to migrate.
+
+**2. Phase 1 Kong on GKE** (Kong Ingress Controller + Helm; [gateway/README.md](gateway/README.md) calls it "deployed today"):
+- **Callers:** an `apikey` header *or* query parameter, with one consumer per client (`mcp-agent`, `triage-service`, `dev-local`). The consumer name is your identity: rate limits are counted and request logs attributed per consumer.
+- **Admin (you):** the Admin API has **no Kong-level authentication**. It's an internal-only cluster service, reached via `kubectl port-forward`. So your admin identity is really your **Google identity**: gcloud credentials → GKE IAM/RBAC → port-forward → full access. `create-key.sh` and `rotate-key.sh` use that path.
+- **Kong's database:** Neon `kongdb`, with credentials in a Kubernetes Secret `kong-db-secret` that you created by hand from the `.example` file. It isn't in the repo or Ona.
+- **Where the keys live:** in `kongdb`, and wherever you stored them when `create-key.sh` printed them (the docs say a password manager or GCP Secret Manager).
+
+## In this environment
+
+There's no gcloud installed or logged in, and the kubeconfig has no contexts. `FHIR_API_KEY` and `CLAIMS_API_KEY` aren't set, and no Kong container is running. So this environment has no route to the GKE Kong and no Kong keys. I also can't confirm the GKE deployment still exists.
+
+For Codespaces, if you want to manage the GKE Kong from there:
+- install gcloud with the GKE auth plugin;
+- run `gcloud auth login` (interactive, as you) and `gcloud container clusters get-credentials …`;
+- avoid service-account key files.
+
+Add `FHIR_API_KEY` as a Codespaces secret only if you want to call the gated endpoints.
+
+## Problems I found along the way
+
+1. **The docs overstate how keys are protected.** [kong-consumers.yaml](gateway/kong/kong-consumers.yaml) says "Kong stores only a hash… cannot be retrieved again". But [rotate-key.sh](gateway/tools/rotate-key.sh) reads `.key` straight back from the Admin API. Open-source Kong stores key-auth keys readably, so anyone with port-forward access, or read access to `kongdb`, can list every consumer's key.
+2. **Keys are accepted as query parameters.** `?apikey=…` tends to end up in URLs, browser history and logs. The global `file-log` plugin writes request details to Cloud Logging. I haven't confirmed whether it records the query string *before* `hide_credentials` strips it, but header-only (`key_names` plus disabling query and body keys) removes the risk.
+3. **No admin authentication at the Kong layer.** It's acceptable while access is limited to the cluster, but anyone with GKE port-forward rights has full gateway admin. Keep GKE IAM tight.
+4. **Local dev keys end up in logs by design.** That's fine for a throwaway key. But if you ever ask me to read `docker compose logs kong`, the key goes into this archived transcript. It isn't a production secret, but worth knowing.
+
+If you want, I can fix 1 and 2 (correct the docs, and make the plugin header-only) in a small PR. That's a security-sensitive config change, so I'll wait for your go-ahead.
+
 <details>
 <summary>Execution details — 139 tool events</summary>
 
