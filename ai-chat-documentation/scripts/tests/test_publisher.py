@@ -113,6 +113,19 @@ class PublisherTest(unittest.TestCase):
             capture_output=True, text=True, check=True).stdout
         self.assertEqual(remote_index, "v2\n")
 
+    def test_git_failure_reports_gits_own_message(self):
+        # Regression: in Codespaces, commits failed because signing needed a
+        # token not yet present; the log only said "exit status 128".
+        work, _ = make_repo_with_remote()
+        git(work, "config", "commit.gpgsign", "true")
+        git(work, "config", "gpg.program", "false")
+        pub = Publisher(work, SUBDIR, BRANCH)
+        (work / SUBDIR / "INDEX.md").write_text("x", encoding="utf-8")
+        with self.assertRaises(PublishError) as ctx:
+            pub.publish("should fail to sign")
+        self.assertIn("git commit failed", str(ctx.exception))
+        self.assertIn("gpg failed to sign", str(ctx.exception))
+
     def test_missing_worktree_raises(self):
         pub = Publisher(Path("/nonexistent/worktree"), SUBDIR, BRANCH)
         with self.assertRaises(PublishError):

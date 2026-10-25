@@ -35,10 +35,19 @@ class Publisher:
         self.remote = remote
 
     def _git(self, *args: str, check: bool = True) -> subprocess.CompletedProcess:
-        return subprocess.run(
+        proc = subprocess.run(
             ["git", "-C", str(self.worktree), *args],
-            capture_output=True, text=True, check=check,
+            capture_output=True, text=True,
         )
+        if check and proc.returncode != 0:
+            # Surface git's own message (e.g. "gpg failed to sign the data"),
+            # not just an exit status, so the watcher log shows the cause.
+            lines = (proc.stderr or proc.stdout).strip().splitlines()
+            raise PublishError(
+                f"git {args[0]} failed (exit {proc.returncode}): "
+                + (" | ".join(lines)[:500] or "no output")
+            )
+        return proc
 
     def current_branch(self) -> str:
         return self._git("rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
