@@ -645,10 +645,10 @@ Outline all the steps for this migration for me and explain everything concisely
 
 ### Claude response
 
-*[Claude has not completed this turn yet.]*
+Before writing the plan I'll run the Step 0 checks read-only, so the plan can say exactly what's at risk in this Ona environment rather than speak in general terms.
 
 <details>
-<summary>Execution details — 140 tool events</summary>
+<summary>Execution details — 142 tool events</summary>
 
 ### Turn 3 activity
 
@@ -859,6 +859,11 @@ installDependencies does a broad editable Python instal…`
 ### Turn 19 activity
 
 - **Bash** `ls -la ~/ona-secrets.env 2>/dev/null || echo "no ~/ona-secrets.env"; echo ---; for h in ~/.bash_history ~/.zsh_history; do [ -f "$h" ] && echo "$h: $(grep -c 'printf .%s=%s' "$h") line(s) with the exp…`
+
+### Turn 20 activity
+
+- **Bash** `cd /workspaces/fhir-agent; git fetch -q --all --prune; echo "== branches/worktrees"; git worktree list; echo "== local branches not fully on origin"; git for-each-ref --format='%(refname:short) %(upst…`
+- **Bash** `cd /workspaces/fhir-agent; echo "== large gitignored content (top)"; git status --ignored --porcelain | grep '^!!' | cut -c4- | while read p; do du -sh "$p" 2>/dev/null; done | sort -h | tail -8; echo…`
 
 </details>
 
