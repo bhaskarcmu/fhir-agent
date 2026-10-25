@@ -492,8 +492,10 @@ Ona's config never installed Ollama either, and the STEP0 README lists the Ollam
 
 `claims-agent` needs only `anthropic` and `httpx`, so I'll test it from source via `PYTHONPATH` rather than installing anything. Next I'll start the two Postgres services and an Ollama container.
 
+Both suites read `TEST_DATABASE_URL`. These are throwaway local credentials published in the repo's compose file, not secrets. Rerunning:
+
 <details>
-<summary>Execution details — 112 tool events</summary>
+<summary>Execution details — 115 tool events</summary>
 
 ### Turn 1 activity
 
@@ -658,6 +660,9 @@ echo "==…`
 - **Bash** `cd /workspaces/fhir-agent/fhir-service && env -u SPRING_DATASOURCE_URL -u NEON_DB_URL -u SPRING_DATASOURCE_DRIVER_CLASS_NAME -u HIBERNATE_DIALECT ./mvnw -q -B clean verify > /tmp/claude-1000/-workspac…`
 - **Bash** `cd /workspaces/fhir-agent && git log --format='%h %ad %s' --date=short -S SPRING_DATASOURCE_DRIVER_CLASS_NAME -- .devcontainer/devcontainer.json | tail -2`
 - **Bash** `sleep 3; for s in provider-registry-service/src/provider_registry/tests provider-curation-agent/tests provider-mcp-server/tests provider-search-agent/tests data/scripts agent-platform/tests; do r=$(py…`
+- **Bash** `grep -rhoE 'os\.environ\.get\("[A-Z_]*DATABASE_URL"[^)]*\)' --include=conftest.py --include=*.py agent-platform/tests provider-*/ data/scripts 2>/dev/null | sort | uniq -c; docker exec fhir-agent-post…`
+- **Bash** `grep -rn -E 'TEST_DATABASE_URL|_test"' agent-platform/tests/conftest.py agent-platform/tests/test_session_store.py provider-registry-service/src/provider_registry/tests/conftest.py 2>/dev/null | cut -…`
+- **Bash** `P=postgresql://provider_registry:‹redacted:url-credentials›localhost:5432/provider_registry; for s in provider-registry-service/src/provider_registry/tests provider-curation-agent/tests provider-mcp-server/te…`
 
 </details>
 
