@@ -345,8 +345,12 @@ Before switching, I'll confirm the branch's commits are actually in `origin/main
 
 There was no local `main` before; the Codespace was created from the PR branch. `git switch` just created it, tracking `origin/main`. Running the pull anyway:
 
+inotify events are firing for the transcript, so the watcher's own `inotifywait` should be seeing them too. I'll give it one debounce window (15s) to react before calling it stuck.
+
+The Monitor will report any watcher.log activity in the next 60 seconds.
+
 <details>
-<summary>Execution details — 78 tool events</summary>
+<summary>Execution details — 82 tool events</summary>
 
 ### Turn 1 activity
 
@@ -467,6 +471,10 @@ fix(devcontainer): don't start the archive watcher without a GitHub token…`
 - **Bash** `date -u +%FT%TZ; stat -c 'transcript mtime %y' /workspaces/.claude-home/projects/-workspaces-fhir-agent/7057d269-60d3-4d82-b584-b1bb258f6d89.jsonl; ls -t /workspaces/.claude-home/projects/-workspaces-…`
 - **Bash** `ps -o pid,stat,lstart,args --ppid 12989 2>/dev/null; echo "---"; ps -o pid,stat,wchan:20,args -p 12989; ls -l /proc/12989/fd 2>/dev/null | grep -c inotify; ls -l --time-style=+%T /workspaces/.ai-chat-…`
 - **Bash** `timeout 20 inotifywait -m -q -e create,close_write,modify,moved_to --format '%T %w%f %e' --timefmt %T /workspaces/.claude-home/projects/-workspaces-fhir-agent 2>&1 | sort | uniq -c | head -5; echo "ex…`
+- **Bash** `timeout 45 inotifywait -m -q -e create,close_write,modify,moved_to --format '%T %f %e' --timefmt %T /workspaces/.claude-home/projects/-workspaces-fhir-agent > /tmp/claude-1000/-workspaces-fhir-agent/7…`
+- **Bash** `sleep 3; stat -c '%y' /workspaces/.claude-home/projects/-workspaces-fhir-agent/7057d269-60d3-4d82-b584-b1bb258f6d89.jsonl`
+- **Bash** `sleep 5; stat -c '%y' /workspaces/.claude-home/projects/-workspaces-fhir-agent/7057d269-60d3-4d82-b584-b1bb258f6d89.jsonl; cat /tmp/claude-1000/-workspaces-fhir-agent/7057d269-60d3-4d82-b584-b1bb258f6…`
+- **Monitor** `L=/workspaces/.ai-chat-history/ai-chat-documentation/logs/watcher.log; s=$(stat -c %Y $L); for i in $(seq 1 12); do sleep 5; [ "$(stat -c %Y $L)" != "$s" ] && { tail -n 2 $L | cut -c1-200; exit 0; };…`
 
 </details>
 
