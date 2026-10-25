@@ -919,8 +919,14 @@ The files are written. Now validation, starting with static checks: JSON validit
 
 The static checks pass. I'll make the new scripts executable to match `setup-credentials.sh`, then have the official devcontainer CLI parse the config and resolve every feature reference:
 
+Four of the five checks pass, but the restart message never appeared in the log. I'll look at the output to see why:
+
+The count of 1 is probably my own shell matching the search pattern, since the command text itself contains `archive-watcher.sh`. I'll check the real process list, excluding this shell:
+
+It was a false alarm: no supervisor is running and no lock was created, so the guard works. Now the positive case, where the install script runs end to end with `CODESPACES=true`:
+
 <details>
-<summary>Execution details — 170 tool events</summary>
+<summary>Execution details — 180 tool events</summary>
 
 ### Turn 3 activity
 
@@ -1188,6 +1194,19 @@ files = [pathlib.Path("outcome-prediction-lab/mlflow.db")] + sorted(
 - **Write** `/workspaces/fhir-agent/.devcontainer/scripts/archive-watcher.sh`
 - **Bash** `cd /workspaces/fhir-agent/.devcontainer; python3 -c "import json; d=json.load(open('devcontainer.json')); print('JSON OK; keys:', ', '.join(d))"; for f in scripts/*.sh; do bash -n "$f" && echo "syntax…`
 - **Bash** `cd /workspaces/fhir-agent && chmod +x .devcontainer/scripts/install-dependencies.sh .devcontainer/scripts/post-start.sh .devcontainer/scripts/archive-watcher.sh && npx -y @devcontainers/cli@0.71.0 rea…`
+- **Bash** `S=/tmp/claude-1000/-workspaces-fhir-agent/3b59a463-d6e4-4a7f-94ea-7dfea0acdc2b/scratchpad/sup-test; rm -rf $S && mkdir -p $S && cd $S
+git clone -q --bare /workspaces/fhir-agent bare.git
+git -C bare.gi…`
+- **Bash** `S=/tmp/claude-1000/-workspaces-fhir-agent/3b59a463-d6e4-4a7f-94ea-7dfea0acdc2b/scratchpad/sup-test; SUP=/workspaces/fhir-agent/.devcontainer/scripts/archive-watcher.sh
+export ARCHIVE_SOURCE_WORKTREE=$…`
+- **Bash** `cat /tmp/claude-1000/-workspaces-fhir-agent/3b59a463-d6e4-4a7f-94ea-7dfea0acdc2b/scratchpad/sup-test/sup1.out | head -5`
+- **Edit** `/workspaces/fhir-agent/.devcontainer/scripts/archive-watcher.sh`
+- **Bash** `S=/tmp/claude-1000/-workspaces-fhir-agent/3b59a463-d6e4-4a7f-94ea-7dfea0acdc2b/scratchpad/sup-test; export ARCHIVE_SOURCE_WORKTREE=$S/repo ARCHIVE_WORKTREE=$S/wt ARCHIVE_SUPERVISOR_RETRY_SECONDS=1 XDG…`
+- **Edit** `/workspaces/fhir-agent/.devcontainer/scripts/post-start.sh`
+- **Edit** `/workspaces/fhir-agent/.devcontainer/scripts/install-dependencies.sh`
+- **Bash** `cd /workspaces/fhir-agent; L=/workspaces/.ai-chat-history/ai-chat-documentation/logs/watcher.lock; before=$(cat $L 2>/dev/null | head -1); bash .devcontainer/scripts/post-start.sh; echo "post-start rc…`
+- **Bash** `ps -eo pid,args | grep "[a]rchive-watcher\.sh" | grep -v "ps -eo" | grep -v "$$" || echo "no archive-watcher.sh supervisor running"; ls /tmp/archive-watcher-supervisor.lock 2>/dev/null || echo "no sup…`
+- **Bash** `CODESPACES=true bash .devcontainer/scripts/install-dependencies.sh > /tmp/claude-1000/-workspaces-fhir-agent/3b59a463-d6e4-4a7f-94ea-7dfea0acdc2b/scratchpad/install.log 2>&1; echo "rc=$?"; grep -E "Su…`
 
 </details>
 
@@ -1198,6 +1217,6 @@ files = [pathlib.Path("outcome-prediction-lab/mlflow.db")] + sorted(
 - **Source:** Claude Code
 - **Session ID:** `3b59a463-d6e4-4a7f-94ea-7dfea0acdc2b`
 - **Created:** 17 October 2026, 15:43 UTC
-- **Last updated:** 25 October 2026, 21:30 UTC
+- **Last updated:** 25 October 2026, 21:31 UTC
 - **Turns:** 24
 - **Status:** Incomplete
