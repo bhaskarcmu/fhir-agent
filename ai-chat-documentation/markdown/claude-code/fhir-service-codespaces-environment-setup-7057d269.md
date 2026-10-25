@@ -150,8 +150,12 @@ The container started. Next I'll launch the watcher exactly as `post-start.sh` d
 
 While that starts, I'll look for Codespaces' own lifecycle logs to see why the post-start jobs died.
 
+The FHIR server and the archive worktree are both up. I'll check the watcher process, the worktree branch, and its logs.
+
+The watcher is running and pushing. I'll confirm the pushed commits actually include this session.
+
 <details>
-<summary>Execution details — 27 tool events</summary>
+<summary>Execution details — 32 tool events</summary>
 
 ### Turn 1 activity
 
@@ -195,6 +199,11 @@ import yaml,json;d=yaml.safe_load(open('docker-compose.yml'));s=d['services']['f
 - **Monitor** `until curl -sf -o /dev/null http://localhost:8080/fhir/metadata && [ -e /workspaces/.ai-chat-history/.git ]; do sleep 5; done; echo ready`
 - **Bash** `ls -la /workspaces/.codespaces/.persistedshare/ 2>&1 | head; grep -n -iE 'post-?start|postStart|kill|terminat' /workspaces/.codespaces/.persistedshare/creation.log 2>/dev/null | tail -20`
 - **Bash** `sed -n '4125,4175p' /workspaces/.codespaces/.persistedshare/creation.log | cut -c1-220`
+- **Bash** `grep -rln -E 'post-start\.sh|postStartCommand|archive-watcher\.sh' --exclude-dir=.git . | head; git log --oneline -1; git status --short | head`
+- **Bash** `ps -eo pid,args | grep -E '[a]rchive-watcher.sh|[a]rchive_ai' | cut -c1-120; git -C /workspaces/.ai-chat-history branch --show-current; tail -5 /workspaces/.ai-chat-history/ai-chat-documentation/logs/…`
+- **Bash** `L=/workspaces/.ai-chat-history/ai-chat-documentation/logs; for f in sync.log watcher.log; do echo "== $f"; tail -n 8 $L/$f | cut -c1-200; done; echo "== git"; git -C /workspaces/.ai-chat-history log -…`
+- **Bash** `git -C /workspaces/.ai-chat-history show --stat --format='%h %s' 824460d2 | head -8; git -C /workspaces/.ai-chat-history grep -l 7057d269 824460d2 | head -3`
+- **Bash** `cd /workspaces/fhir-agent/.devcontainer && cat scripts/install-dependencies.sh; echo "=== Dockerfile"; cat Dockerfile; echo "=== setup-credentials refs"; grep -rn setup-credentials . | head -3`
 
 </details>
 
@@ -205,6 +214,6 @@ import yaml,json;d=yaml.safe_load(open('docker-compose.yml'));s=d['services']['f
 - **Source:** Claude Code
 - **Session ID:** `7057d269-60d3-4d82-b584-b1bb258f6d89`
 - **Created:** 25 October 2026, 21:52 UTC
-- **Last updated:** 25 October 2026, 22:10 UTC
+- **Last updated:** 25 October 2026, 22:11 UTC
 - **Turns:** 4
 - **Status:** Complete
