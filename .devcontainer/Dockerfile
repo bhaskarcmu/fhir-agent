@@ -24,6 +24,13 @@ RUN python3 -m venv /opt/pyenv \
     # can register editable installs without sudo.
     && chmod -R a+w /opt/pyenv/lib /opt/pyenv/bin
 
+# Codespaces: each interactive terminal restarts any background service the
+# lifecycle commands could not keep alive (no-op when all are running).
+RUN printf '%s\n' \
+    '[ "${CODESPACES:-}" = true ] && [ -f /workspaces/fhir-agent/.devcontainer/scripts/post-start.sh ] \' \
+    '  && bash /workspaces/fhir-agent/.devcontainer/scripts/post-start.sh terminal' \
+    >> /etc/bash.bashrc
+
 ENV VIRTUAL_ENV=/opt/pyenv
 ENV PATH="/opt/pyenv/bin:${PATH}"
 

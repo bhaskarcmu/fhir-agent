@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Keeps the AI chat archive watcher running: restores the ai-chat-history
 # worktree if it is missing, runs its autostart.sh, and restarts it if it exits.
-# Started detached by post-start.sh; a lock makes extra copies exit at once.
+# Started detached by post-start.sh; a lock makes extra copies exit (after a
+# short wait, since post-start.sh probes the same lock to see if one is running).
 set -u
 REPO="${ARCHIVE_SOURCE_WORKTREE:-/workspaces/fhir-agent}"
 ARCHIVE="${ARCHIVE_WORKTREE:-/workspaces/.ai-chat-history}"
@@ -9,7 +10,7 @@ RETRY_SECONDS="${ARCHIVE_SUPERVISOR_RETRY_SECONDS:-30}"
 LOCK_DIR="${XDG_RUNTIME_DIR:-/tmp}"
 
 exec 9> "$LOCK_DIR/archive-watcher-supervisor.lock"
-flock -n 9 || exit 0
+flock -w 5 9 || exit 0
 
 # This supervisor is the only launcher, so any watcher.lock left over from before
 # a restart is stale (and its PID may since have been reused by another process).
