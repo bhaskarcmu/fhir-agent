@@ -647,6 +647,93 @@ Outline all the steps for this migration for me and explain everything concisely
 
 Before writing the plan I'll run the Step 0 checks read-only, so the plan can say exactly what's at risk in this Ona environment rather than speak in general terms.
 
+I've run the Step 0 checks. All your code is safely on GitHub, but a few local-only files would be lost, so Step 0 handles those. Here's the full plan in plain terms.
+
+# Migration plan: Ona → GitHub Codespaces
+
+## Step 0 — Prepare in Ona (before leaving)
+
+| # | What | Status / action |
+|---|---|---|
+| 0.1 | All code pushed to GitHub | ✅ Checked: no unpushed branches, stashes or uncommitted changes in either worktree |
+| 0.2 | Secrets saved | ✅ You did this |
+| 0.3 | **Save local-only files git doesn't track** | ⚠️ `outcome-prediction-lab/mlflow.db` (your ML experiment history; can't be recreated exactly) and `outcome-prediction-service/models/` (trained models, 3.8 MB). In VS Code's file explorer, right-click each → **Download** |
+| 0.4 | Skip what can be re-downloaded | MEPS data (3.3 GB, re-run `python -m outcome_prediction.meps.download`), Ollama models, Docker images, build output |
+| 0.5 | Junk to delete | A 4.3 GB `core` file (a crash dump) in the repo root. I'll delete it if you say yes |
+| 0.6 | **Keep Ona running** | Don't delete it until Codespaces is proven working (Step 4) |
+
+## Step 1 — Set up on the GitHub website (browser)
+
+1. **Set a spending budget first.** Go to github.com → your avatar → **Settings** → **Billing and licensing** → **Budgets and alerts**, and add a Codespaces budget. Your plan includes free monthly core-hours and storage; check the current amounts on that page. Larger machines use them up faster.
+2. **Set Codespaces defaults.** Go to **Settings** → **Codespaces** and set:
+   - **Default idle timeout:** 30 minutes, so it stops itself when you're away;
+   - **Default retention period:** for example 14 days, after which stopped codespaces are deleted;
+   - **Editor preference:** VS Code desktop or the browser;
+   - **Region:** the one nearest you.
+3. **Add secrets.** On the same page, under **Codespaces secrets**, click **New secret**. For each one, paste the value and set **Repository access** to `bhaskarcmu/fhir-agent`:
+
+   | Create this secret | Value |
+   |---|---|
+   | `ANTHROPIC_API_KEY` | your old `CLAUDE_API_KEY` value |
+   | `CLAUDE_API_KEY` | the same value (the repo accepts both names) |
+   | `SPRING_DATASOURCE_URL` | from your saved file |
+   | `NEON_DB_URL` | from your saved file |
+
+   **Don't create** `GH_TOKEN` or `GITHUB_TOKEN_REPO`. Codespaces gives you a GitHub token automatically, and Copilot signs in with your account. A `GH_TOKEN` secret would actually get in the way.
+   **Don't create** `HIBERNATE_DIALECT` or `SPRING_DATASOURCE_DRIVER_CLASS_NAME`. They're fixed, non-secret settings, so they go in the repo config instead (Step 2).
+4. **Prebuild:** comes later, in Step 4.
+
+## Step 2 — Repo changes (I do this as one PR)
+
+The changes go in `.devcontainer/devcontainer.json` and a small startup script:
+- **Lifecycle:** install dependencies at creation time (prebuild-friendly), and on every start launch the FHIR server and the chat-archive watcher. The watcher gets a restart loop, since Codespaces has no Ona-style supervisor.
+- **Worktree:** recreate `/workspaces/.ai-chat-history` automatically.
+- **Secrets wiring:** remove the Ona `${localEnv:…}` lines, so the Codespaces secrets come through untouched.
+- **Fixed settings:** add the two constant Neon settings, plus the one that was missing (`SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT`).
+- **Claude Code data:** keep `~/.claude` under `/workspaces`, so a rebuild doesn't wipe transcripts and memory.
+- **Docker:** switch to `docker-in-docker`, so compose file mounts work.
+- **Ports:** forward 8080 (FHIR) and the other service ports, private by default.
+- **Machine size:** set a minimum in the config.
+
+`.ona/` stays untouched for now, so Ona keeps working during the switch.
+
+## Step 3 — Test-drive a codespace (browser)
+
+On the repo page, click **Code** → **Codespaces** → **⋯** → **New with options**, pick the **PR branch** and the machine type, and click **Create codespace**. Then check:
+- the FHIR server answers on the forwarded port 8080;
+- the tests run;
+- `gh pr list` works;
+- Claude Code starts (sign in if asked);
+- the chat archive pushes to `ai-chat-history`;
+- **rebuild survival:** run **Codespaces: Rebuild Container** and confirm your Claude history is still there.
+
+I fix anything that fails on the same PR.
+
+## Step 4 — Switch over
+
+1. You merge the PR.
+2. **Prebuild:** go to repo **Settings** → **Codespaces** → **Set up prebuild**, choose branch `main` and your region, and set the trigger to **on configuration change**. Startup is then fast *and* dependencies install automatically, which solves the PR #81 trade-off. Prebuilds use some storage quota.
+3. Create your everyday codespace from `main`, and delete the test one.
+
+## Step 5 — Clean up the repo (second PR)
+
+- Replace "Ona" wording in CLAUDE.md, `.clinerules`, the READMEs, `.env.example` and the comments.
+- Point the CI secret-scan step at `.devcontainer` instead of `.ona`.
+- Delete `.ona/`.
+
+## Step 6 — Shut down Ona
+
+1. Confirm the last chat-archive push landed, then stop and delete the Ona environment, and delete its project secrets.
+2. Go to GitHub → **Settings** → **Applications**, and revoke Ona/Gitpod under both **Authorized OAuth Apps** and **Installed GitHub Apps**.
+3. Under **Settings** → **Developer settings** → **Personal access tokens**, delete the two PATs (`GH_TOKEN`, `GITHUB_TOKEN_REPO`).
+4. **Recommended:** rotate the Anthropic key and the Neon password, since Ona held them. Then update the Codespaces secrets.
+
+## Decisions before I start Step 2
+
+1. **Machine size.** I'm changing my earlier advice: a **4-core** (16 GB RAM, 32 GB disk) should be enough. The 40 GB used here was mostly the crash dump, a full Docker build cache and the MEPS data. 4-core gives you twice the free hours of 8-core. Use 8-core only for full-stack or Phase 8 data work.
+2. **The `core` file:** OK to delete?
+3. **Step 0.3:** let me know once you've downloaded `mlflow.db` and `models/`.
+
 <details>
 <summary>Execution details — 142 tool events</summary>
 
@@ -874,6 +961,6 @@ installDependencies does a broad editable Python instal…`
 - **Source:** Claude Code
 - **Session ID:** `3b59a463-d6e4-4a7f-94ea-7dfea0acdc2b`
 - **Created:** 17 October 2026, 15:43 UTC
-- **Last updated:** 25 October 2026, 20:45 UTC
+- **Last updated:** 25 October 2026, 20:46 UTC
 - **Turns:** 20
 - **Status:** Incomplete
