@@ -149,7 +149,7 @@ The `fhir` service hardcodes in-memory H2 and doesn't pass through any host secr
 The container started. Next I'll launch the watcher exactly as `post-start.sh` does, detached and logging to `setup.log`.
 
 <details>
-<summary>Execution details — 24 tool events</summary>
+<summary>Execution details — 25 tool events</summary>
 
 ### Turn 1 activity
 
@@ -190,6 +190,7 @@ echo "CLAUDE_CONF…`
 import yaml,json;d=yaml.safe_load(open('docker-compose.yml'));s=d['services']['fhir'];print(json.dumps({k:s.get(k) for k in ('image','build','environment','env_file','ports','profiles')},…`
 - **Bash** `docker compose -f docker-compose.yml up -d fhir 2>&1 | tail -5`
 - **Bash** `setsid nohup bash /workspaces/fhir-agent/.devcontainer/scripts/archive-watcher.sh >> /workspaces/setup.log 2>&1 < /dev/null & echo launched`
+- **Monitor** `until curl -sf -o /dev/null http://localhost:8080/fhir/metadata && [ -e /workspaces/.ai-chat-history/.git ]; do sleep 5; done; echo ready`
 
 </details>
 
