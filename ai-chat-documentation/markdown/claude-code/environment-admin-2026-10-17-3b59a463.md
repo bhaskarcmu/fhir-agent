@@ -925,8 +925,10 @@ The count of 1 is probably my own shell matching the search pattern, since the c
 
 It was a false alarm: no supervisor is running and no lock was created, so the guard works. Now the positive case, where the install script runs end to end with `CODESPACES=true`:
 
+The install script succeeded end to end (exit 0): all Python packages installed, then the Maven warm-up ran. Committing:
+
 <details>
-<summary>Execution details — 180 tool events</summary>
+<summary>Execution details — 183 tool events</summary>
 
 ### Turn 3 activity
 
@@ -1207,6 +1209,13 @@ export ARCHIVE_SOURCE_WORKTREE=$…`
 - **Bash** `cd /workspaces/fhir-agent; L=/workspaces/.ai-chat-history/ai-chat-documentation/logs/watcher.lock; before=$(cat $L 2>/dev/null | head -1); bash .devcontainer/scripts/post-start.sh; echo "post-start rc…`
 - **Bash** `ps -eo pid,args | grep "[a]rchive-watcher\.sh" | grep -v "ps -eo" | grep -v "$$" || echo "no archive-watcher.sh supervisor running"; ls /tmp/archive-watcher-supervisor.lock 2>/dev/null || echo "no sup…`
 - **Bash** `CODESPACES=true bash .devcontainer/scripts/install-dependencies.sh > /tmp/claude-1000/-workspaces-fhir-agent/3b59a463-d6e4-4a7f-94ea-7dfea0acdc2b/scratchpad/install.log 2>&1; echo "rc=$?"; grep -E "Su…`
+- **Bash** `git add .devcontainer && git status --short && git diff --cached --stat | tail -1`
+- **Bash** `git commit -q -F - <<'EOF'
+feat(devcontainer): run natively in GitHub Codespaces
+
+Ona is retiring; make .devcontainer the self-sufficient environment
+definition so the same config runs in Codespaces.…`
+- **Bash** `git push -q -u origin feature/codespaces-devcontainer 2>&1 | grep -v "^remote:" ; echo "rc=${PIPESTATUS[0]}"`
 
 </details>
 
@@ -1217,6 +1226,6 @@ export ARCHIVE_SOURCE_WORKTREE=$…`
 - **Source:** Claude Code
 - **Session ID:** `3b59a463-d6e4-4a7f-94ea-7dfea0acdc2b`
 - **Created:** 17 October 2026, 15:43 UTC
-- **Last updated:** 25 October 2026, 21:31 UTC
+- **Last updated:** 25 October 2026, 21:32 UTC
 - **Turns:** 24
 - **Status:** Incomplete
