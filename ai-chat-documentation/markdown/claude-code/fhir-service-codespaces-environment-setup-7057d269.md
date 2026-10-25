@@ -164,8 +164,53 @@ That exit code means `pkill -f` matched my own command line, which contained the
 
 The Monitor will report when both services are back.
 
+## Turn 5
+
+### Prompt
+
+<task-notification>
+<task-id>bpaerx2j0</task-id>
+<tool-use-id>toolu_017F57f24BgmrPAb3eLkfnGo</tool-use-id>
+<output-file>/tmp/claude-1000/-workspaces-fhir-agent/7057d269-60d3-4d82-b584-b1bb258f6d89/tasks/bpaerx2j0.output</output-file>
+<status>completed</status>
+<summary>Monitor "Wait for FHIR and watcher to recover" stream ended</summary>
+<event>ready</event>
+</task-notification>
+
+### Claude response
+
+Both services came back. I'll check that each started only once and see what got logged.
+
+Exactly one supervisor and one watcher are running. FHIR got two `compose up` calls, which is harmless because `compose up -d` is idempotent. I'll review the diff before committing.
+
+Worktree: `/workspaces/fhir-agent`. Current branch: `feature/codespaces-devcontainer`. Target: that same branch, which updates PR #82. I'll commit.
+
+2a and 2b are both done, and the fix is pushed to PR #82. The last step, the container rebuild, is yours to run.
+
+**2a: services started by hand**
+- **FHIR server:** I started it with `docker compose up -d fhir`. It answers `curl -sf http://localhost:8080/fhir/metadata`. It uses the H2 in-memory database hardcoded in the compose file and gets none of the Neon secrets.
+- **Archive watcher:** I read `archive-watcher.sh` and `autostart.sh` first. The watcher is now running, `/workspaces/.ai-chat-history` exists on branch `ai-chat-history`, and archive commit `824460d2` (pushed to `origin/ai-chat-history`) contains this session's transcript.
+
+**2b: the cause and the fix**
+- **Cause:** Codespaces' `creation.log` shows `postStartCommand` returning in about 60ms. The jobs it launched in the background died before logging anything.
+- **`post-start.sh`:** it now skips anything already running and logs each launch, so a silent death shows up in `setup.log`.
+- **Where it runs:** besides `postStartCommand`, it now runs from `postAttachCommand` and from every interactive terminal via `/etc/bash.bashrc`. The terminal hook is the one launch path I've confirmed keeps its jobs alive.
+- **`archive-watcher.sh`:** it now waits up to 5s for its lock, so the new running-check in `post-start.sh` can't make a starting watcher exit.
+
+**Validation**
+- **Everything running:** a run took 78ms and wrote nothing to `setup.log`.
+- **Recovery:** I stopped FHIR and killed the watcher, then ran `post-start.sh` twice at once. Both services came back, with exactly one supervisor and one watcher.
+- **Not yet tested:** whether the `postAttachCommand` and terminal paths behave this way after a real rebuild. That's what step 1 checks.
+- **A slip in testing:** a `pkill -f` matched my own shell and briefly left the watcher half-stopped. I cleaned it up and reran the test.
+
+**Branch and commit:** `feature/codespaces-devcontainer`, commit `a132dedd`, pushed to PR #82. The files changed are `.devcontainer/Dockerfile`, `devcontainer.json`, `scripts/post-start.sh` and `scripts/archive-watcher.sh`.
+
+**Your next step:** run **Codespaces: Rebuild Container** and paste the verification prompt again. The rebuild is also needed for the terminal hook, since that change is in the Dockerfile. After the rebuild, check `/workspaces/setup.log`: entries tagged `post-start(postStart)`, `post-start(postAttach)` or `post-start(terminal)` show which launch path actually started each service.
+
+**Still on hold:** the root `mlruns/` gitignore gap, and installing the `outcome-prediction-lab[tracking]` extra for MLflow.
+
 <details>
-<summary>Execution details — 43 tool events</summary>
+<summary>Execution details — 47 tool events</summary>
 
 ### Turn 1 activity
 
@@ -229,6 +274,14 @@ s=s.…`
 - **Bash** `kill 16434; S=/tmp/claude-1000/-workspaces-fhir-agent/7057d269-60d3-4d82-b584-b1bb258f6d89/scratchpad/kick.sh; printf '%s\n' 'cd /workspaces/fhir-agent' 'export CODESPACES=true' 'bash .devcontainer/sc…`
 - **Monitor** `until curl -sf -o /dev/null http://localhost:8080/fhir/metadata && pgrep -fx 'python3 -m archive_ai watch' >/dev/null; do sleep 5; done; echo ready`
 
+### Turn 5 activity
+
+- **Bash** `ps -eo pid,args | grep -E '[a]rchive-watcher\.sh$|^ *[0-9]+ python3 -m [a]rchive_ai watch$'; echo "---"; tail -n 6 /workspaces/setup.log`
+- **Bash** `git status --short && git diff --stat && git diff .devcontainer/devcontainer.json .devcontainer/Dockerfile`
+- **Bash** `git add .devcontainer/Dockerfile .devcontainer/devcontainer.json .devcontainer/scripts/archive-watcher.sh .devcontainer/scripts/post-start.sh && git commit -q -F - <<'EOF'
+fix(devcontainer): restart b…`
+- **Bash** `git push -q origin feature/codespaces-devcontainer 2>&1 | tail -3; git status -sb | head -1`
+
 </details>
 
 ---
@@ -238,6 +291,6 @@ s=s.…`
 - **Source:** Claude Code
 - **Session ID:** `7057d269-60d3-4d82-b584-b1bb258f6d89`
 - **Created:** 25 October 2026, 21:52 UTC
-- **Last updated:** 25 October 2026, 22:12 UTC
-- **Turns:** 4
+- **Last updated:** 25 October 2026, 22:13 UTC
+- **Turns:** 5
 - **Status:** Complete
