@@ -366,6 +366,83 @@ Before critiquing, I'll check exactly what in the repo is Ona-specific and what 
 
 I'll also check what's using the 40 GB on `/workspaces`, because Codespaces disk size is tied to machine size.
 
+This is very doable. The devcontainer is already a standard spec that Codespaces reads directly, and the Ona-specific surface is small. But "lift and shift" undersells it: a few Ona behaviours have no direct Codespaces equivalent, and copying them over 1:1 would break things quietly. Here's my critique, ordered by risk.
+
+## What carries over vs. what doesn't
+
+| Ona today | Codespaces equivalent | Effort |
+|---|---|---|
+| `.devcontainer/` (Dockerfile + features) | Used as-is | None |
+| `installDependencies` on `prebuild` and `postDevcontainerStart` | `onCreateCommand` / `updateContentCommand` (prebuilds) | Low, and an improvement (see below) |
+| `setupCredentials` (manual) | `postCreateCommand`, or drop most of it | Low |
+| `fhirServer` service, which Ona supervises with a readiness check | `postStartCommand` running `docker compose up -d`; compose healthchecks cover readiness | Low |
+| `aiChatArchiveWatcher` service, which Ona restarts if it crashes | **No supervisor in Codespaces**; needs a restart wrapper | Medium |
+| `gitpod environment port open 8080` | `forwardPorts` + `portsAttributes` (private by default) | Low |
+| Ona secrets → `${localEnv:…}` in `containerEnv` | Codespaces secrets arrive as environment variables directly | **Medium, risky** |
+| "Codex (Native)" Ona agent service | None; drop it | None |
+
+## Risks and critique
+
+1. **Secrets wiring will probably break silently.** `devcontainer.json` maps `CLAUDE_API_KEY`, `ANTHROPIC_API_KEY`, `GH_TOKEN` and `GITHUB_TOKEN_REPO` from `${localEnv:…}`. Codespaces puts its secrets into the environment directly. I believe `localEnv` resolves on the host VM in Codespaces, where these aren't set, so the variables would come through empty and could override the real secrets. I'd verify that in a test codespace, but the fix is the same either way: remove those `containerEnv` entries and create Codespaces secrets with the names the tools expect. That could also retire the `CLAUDE_API_KEY` alias.
+
+2. **Your home directory doesn't survive a rebuild.** Codespaces keeps only `/workspaces` across rebuilds (a stop/start is fine). That wipes:
+   - `~/.claude`: the 155 MB of session transcripts that haven't been archived yet, plus my memory directory;
+   - `~/.m2` (Maven cache) and the gh login.
+
+   The archiver handles transcripts that already exist, but anything written after its last sync and before a rebuild is lost. Fix: point `CLAUDE_CONFIG_DIR` (or a symlink) at somewhere under `/workspaces`, and update the watcher's `CLAUDE_PROJECTS_BASE` to match.
+
+3. **Disk won't fit a 4-core machine.** This environment uses about 40 GB of a 79 GB disk:
+
+   | What | Size |
+   |---|---|
+   | Docker images | 26 GB |
+   | Docker build cache | 6.4 GB |
+   | `outcome-prediction-service` (MEPS data) | 3.3 GB |
+
+   A 4-core codespace has 32 GB of storage and an 8-core has 64 GB. You'll need an 8-core, or to stop building the whole compose stack by default. That has a cost impact (point 9).
+
+4. **Docker-outside-of-docker plus relative bind mounts.** `docker-compose.yml` mounts `./docker/healthcheck/...`, `./gateway/kong/...` and `./data/payer-kb`. With docker-outside-of-docker in Codespaces, those paths resolve on the host, not inside the container, so the mounts can come up empty or fail. Switching to the `docker-in-docker` feature avoids this and is the usual Codespaces setup.
+
+5. **The archive watcher loses its supervisor.** Ona restarted it on crash and checked readiness. In Codespaces it would be a background process started by `postStartCommand`, with no restart. It needs a small restart loop, and that loop also has to recreate the `.ai-chat-history` worktree; the bootstrap logic from PR #64 can be reused. When a codespace stops after the default 30-minute idle timeout, the watcher stops too. That's acceptable, because its startup sync catches up on the next start.
+
+6. **GitHub token tangle.** Codespaces gives you a repo-scoped `GITHUB_TOKEN` automatically, and that already covers `git push`, `gh pr` and pushing the archive branch. Two current behaviours conflict with it:
+   - `gh` prefers `GH_TOKEN` over `GITHUB_TOKEN`. If your Copilot fine-grained PAT is set as a `GH_TOKEN` secret, it takes over all `gh` calls, and PR creation can fail.
+   - `setup-credentials.sh` runs `gh auth login --with-token`, which `gh` refuses while a `GITHUB_TOKEN` variable is present.
+
+   I'd simplify to the built-in token plus at most one PAT, and only if you need access beyond this repo.
+
+7. **The startup warm-up dilemma goes away.** Codespaces prebuilds run `onCreateCommand`/`updateContentCommand` ahead of time and bake the result into the image. The heavy pip and Maven warm-up would then cost nothing at startup and need no manual step. That resolves the PR #81 trade-off.
+
+8. **Ona references to update:**
+   - CLAUDE.md and `.clinerules` (the "Ona secret" wording and the `.ona/automations.yaml` pointer);
+   - `README.md`, `docs/demo-guide.md`, `fhir-service/README.md`, `mcp-agent/README.md`, `.env.example`;
+   - `application-neon.yaml` and `docker-compose.yml` comments, and the Dockerfile's "diagnostic build" comment;
+   - the secret-scan step in `.github/workflows/tests.yml`, which greps `.ona` and should cover `.devcontainer` instead.
+
+9. **Cost model changes.** Codespaces bills per core-hour plus storage, and prebuild storage counts too. Personal accounts get a monthly free allowance; I'd confirm the current figures before choosing machine size. On an 8-core machine the allowance runs out after relatively few hours.
+
+10. **Ollama.** It isn't installed in this environment either. CI installs it, and the live-model tests fail without it. Adding it to the image makes the dev environment match CI. CPU-only is fine for `llama3.2:1b`, at the cost of about 1–2 GB of disk.
+
+## The framing itself
+
+Don't port `automations.yaml` 1:1. Make `devcontainer.json` the **single source of truth** for lifecycle, ports and dependencies. The same config then runs in Codespaces, in local VS Code Dev Containers, and on any other devcontainer host, so the next platform retirement is a non-event. Delete `.ona/` only after a codespace has been verified end to end.
+
+## Suggested sequencing
+
+1. **PR 1, environment:**
+   - `devcontainer.json` lifecycle commands, ports, `docker-in-docker`, and secrets cleanup;
+   - persistent `~/.claude`;
+   - a watcher wrapper that restarts it and restores the worktree;
+   - Ollama, optionally.
+2. **Test in a real codespace:** create one from the PR branch and check FHIR health, the test suites, archive pushes, `gh pr`, and a rebuild that keeps memory and transcripts.
+3. **PR 2, docs:** the Ona → Codespaces text updates and the CI secret-scan path.
+4. **PR 3:** remove `.ona/` once you've cut over.
+
+Decisions I need from you before starting:
+- **Machine size:** 8-core, or 4-core with a slimmer default Docker stack?
+- **Ona during transition:** keep `.ona/` working until cutover, or remove it now?
+- **Tokens:** are you happy dropping `GITHUB_TOKEN_REPO`/`GH_TOKEN` in favour of the Codespaces built-in token, unless the Copilot CLI still needs its own?
+
 <details>
 <summary>Execution details — 115 tool events</summary>
 
@@ -551,6 +628,6 @@ installDependencies does a broad editable Python instal…`
 - **Source:** Claude Code
 - **Session ID:** `3b59a463-d6e4-4a7f-94ea-7dfea0acdc2b`
 - **Created:** 17 October 2026, 15:43 UTC
-- **Last updated:** 25 October 2026, 19:45 UTC
+- **Last updated:** 25 October 2026, 19:46 UTC
 - **Turns:** 15
 - **Status:** Incomplete
