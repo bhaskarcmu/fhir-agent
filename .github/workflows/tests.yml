@@ -25,7 +25,7 @@ jobs:
         run: |
           var_name="LLM""_PROVIDER"
           pattern="${var_name}[=:] *[\"']?(anthropic|openai_compatible)"
-          hits=$(grep -rEn "$pattern" .github/workflows .ona 2>/dev/null || true)
+          hits=$(grep -rEn "$pattern" .github/workflows .devcontainer 2>/dev/null || true)
           if [ -n "$hits" ]; then
             echo "$hits"
             echo "::error::The LLM provider env var was found pinned to a paid/third-party value in CI config above. CI must never spend money automatically (docs/phase6/decisions.md H50) -- only a human's deliberate choice may select a paid provider (H46). Remove it; CI should always use the free, self-hosted ollama default."

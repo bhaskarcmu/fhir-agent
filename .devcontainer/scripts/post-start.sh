@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Starts the local FHIR server and the AI chat archive watcher, both detached so
-# the codespace is usable immediately. Codespaces has no service supervisor
-# (unlike Ona), so archive-watcher.sh keeps the watcher alive itself.
+# the codespace is usable immediately. Codespaces has no service supervisor, so
+# archive-watcher.sh keeps the watcher alive itself.
 # Logs go to /workspaces/setup.log.
 #
 # Idempotent, and run from three places: postStartCommand, postAttachCommand and
@@ -12,8 +12,8 @@
 # To keep FHIR stopped (e.g. after `docker compose down`), create
 # /workspaces/.no-fhir-autostart; delete it to resume auto-start.
 #
-# Codespaces only: Ona runs its own fhirServer / aiChatArchiveWatcher services
-# (.ona/automations.yaml), and a second watcher there would fight the first.
+# Codespaces only: the archive watcher signs and pushes with the Codespaces
+# GITHUB_TOKEN. In a local Dev Container, start FHIR with `docker compose up -d fhir`.
 [ "${CODESPACES:-}" = "true" ] || exit 0
 LOG="${SETUP_LOG:-/workspaces/setup.log}"
 SCRIPTS="$(cd "$(dirname "$0")" && pwd)"

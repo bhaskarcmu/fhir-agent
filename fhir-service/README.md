@@ -74,7 +74,9 @@ curl http://localhost:8080/fhir/metadata
 
 ## Running with Neon (PostgreSQL)
 
-Set the following environment variables (or store them as Ona project secrets):
+Set the following environment variables (or store them as GitHub Codespaces secrets).
+In Codespaces, `SPRING_DATASOURCE_DRIVER_CLASS_NAME` and `HIBERNATE_DIALECT` are preset by
+`.devcontainer/devcontainer.json`; `SPRING_DATASOURCE_URL` comes from a Codespaces secret.
 
 ```bash
 export SPRING_DATASOURCE_URL="jdbc:postgresql://host/db?user=USER&password=PASS&sslmode=require"

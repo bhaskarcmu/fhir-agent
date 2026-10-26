@@ -39,7 +39,7 @@ serve different audiences and should not modify each other's code.
 ## Build & test
 
 ```
-# Python packages (editable installs + test tooling — see .ona/automations.yaml)
+# Python packages (editable installs + test tooling — the devcontainer runs .devcontainer/scripts/install-dependencies.sh automatically)
 python -m pip install -e "client/clinical[dev]" -e "agent-platform[dev]" -e "triage-service[dev]" -e "mcp-agent[dev]" -e "provider-registry-service[dev]" -e "provider-curation-agent[dev]" -e "provider-mcp-server[dev]" -e "provider-search-agent[dev]" -e "outcome-prediction-service[dev,api]" -e "outcome-prediction-lab[dev]" -e "outcome-prediction-agent[dev]"
 pytest <path>                       # run focused tests for the changed package
 
@@ -53,7 +53,9 @@ cd fhir-service && ./mvnw clean verify        # full build + tests
 cd fhir-service && ./mvnw spring-boot:run     # run locally on :8080 (H2)
 ```
 
-The mcp-agent accepts `ANTHROPIC_API_KEY` or `CLAUDE_API_KEY` (the Ona secret name).
+The mcp-agent accepts `ANTHROPIC_API_KEY` or `CLAUDE_API_KEY` (the Codespaces secret name).
+`ANTHROPIC_API_KEY` is deliberately not set in the devcontainer, so Claude Code's
+`/login` can switch between a Claude.ai subscription and the API.
 
 Run only the tests relevant to a change when practical. Never claim tests
 passed unless they actually ran; if they can't run, say why.
@@ -67,6 +69,9 @@ environments and never confuse them:
   pull requests, code review.
 - `/workspaces/.ai-chat-history` — branch `ai-chat-history`. AI conversation
   archive, export scripts, archive tooling.
+
+In Codespaces, `.devcontainer/scripts/archive-watcher.sh` recreates
+`/workspaces/.ai-chat-history` automatically.
 
 Before any Git write operation, briefly state: **current worktree, current
 branch, intended target branch.** Refuse to run Git commands if the intended

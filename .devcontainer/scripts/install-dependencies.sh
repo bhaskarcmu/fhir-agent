@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 # Editable Python installs + Maven dependency warm-up.
-# Runs as devcontainer.json's updateContentCommand: inside Codespaces prebuilds
-# when configured (so startup stays fast), otherwise once on codespace creation.
-# Codespaces only: Ona runs the same install via its installDependencies task.
+# Runs as devcontainer.json's updateContentCommand, in Codespaces (including
+# prebuilds, so startup stays fast) and in local Dev Containers.
 set -euo pipefail
-[ "${CODESPACES:-}" = "true" ] || exit 0
 cd "$(dirname "$0")/../.."
 
 python -m pip install --upgrade pip

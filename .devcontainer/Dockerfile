@@ -2,9 +2,9 @@ FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04
 
 USER root
 
-# Minimal build: Java 21, Maven, Python 3, and MCP service dependencies.
-# This is a diagnostic build to confirm the base image + apt install works
-# on this Ona environment before adding devcontainer features back.
+# Base toolchain: Java 21, Maven, Python 3 (venv at /opt/pyenv) and inotify-tools (AI chat
+# archive watcher). Docker-in-Docker, Node, gh, Terraform and kubectl/Helm come from the
+# devcontainer features in devcontainer.json.
 RUN apt-get update && apt-get install -y \
     openjdk-21-jdk \
     maven \
