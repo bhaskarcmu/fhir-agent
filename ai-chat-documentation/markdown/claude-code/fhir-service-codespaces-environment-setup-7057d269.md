@@ -796,8 +796,41 @@ All edits A–J are applied. Next, Step 3 verification. Checks 1–4 are read-on
 
 Checks 1–4 pass, and the devcontainers CLI reads the configuration. Next, check 5: running the now-unguarded install script, which reinstalls the Python packages and warms Maven.
 
+Check 5 passes with exit 0. Check 6: `post-start.sh manual` should be a no-op, leaving exactly one supervisor and one watcher.
+
+All six checks pass. I'll review the complete diff and confirm the install didn't leave any stray files.
+
+Committed. Next I'll push and set the upstream to `origin/chore/remove-ona`; the branch currently tracks `origin/main` because of how it was created.
+
+Ona is removed from the repo in PR #83, open against `main` and not merged. All six verification checks pass.
+
+**Pending work:** there wasn't any. `main` was clean, with no stashes and no unpushed commits on any branch, so I didn't need a separate branch for leftovers.
+
+**Branch and commit:** `chore/remove-ona`, created from `origin/main` at `48a5d65c`. One commit, `1a8e6a88`, changes 15 files: the two approved deletions plus 13 edits.
+
+**PR:** https://github.com/bhaskarcmu/fhir-agent/pull/83
+
+**What changed:** everything in A–J went in exactly as you described it.
+- I deleted only the two paths you approved: `.ona/` and `setup-credentials.sh`.
+- The install script's `CODESPACES` guard is gone; the one in `post-start.sh` stays.
+- The CI gate now scans `.devcontainer` instead of `.ona`. The comment block above it didn't mention `.ona`, so it needed no change.
+- The 3 historical records in K, `devcontainer.json`, `archive-watcher.sh` and the archive worktree are untouched.
+
+**Verification:**
+
+| # | Check | Result |
+|---|---|---|
+| 1 | Ona `git grep` | ✅ Only the 3 historical lines remain. |
+| 2 | `bash -n`, JSON parse, devcontainers CLI 0.71.0 `read-configuration` | ✅ All pass. |
+| 3 | CI gate locally, and `tests.yml` YAML parse | ✅ No hits, and the YAML parses. |
+| 4 | `diff CLAUDE.md .clinerules` | ✅ Only lines 1 and 3–4 differ, same as on `main`. |
+| 5 | Unguarded `install-dependencies.sh` | ✅ Exit 0; all packages reinstalled with no errors. |
+| 6 | `post-start.sh manual` | ✅ A no-op that added nothing to `setup.log`. Exactly one supervisor (PID 909) and one `archive_ai watch` (PID 957) are running. |
+
+This Codespace is now on `chore/remove-ona`. Once PR #83 is merged, I'll ask before deleting the branch, locally and on `origin`.
+
 <details>
-<summary>Execution details — 171 tool events</summary>
+<summary>Execution details — 177 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1050,6 +1083,16 @@ reps=[
 echo "=== 2 syntax"; for f in .devcontainer/scripts/*.sh; do bash -n "$f" && echo "ok $f"; done; python3 -…`
 - **Bash** `npx -y @devcontainers/cli@0.71.0 read-configuration --workspace-folder . > /tmp/claude-1000/-workspaces-fhir-agent/7057d269-60d3-4d82-b584-b1bb258f6d89/scratchpad/readcfg.json 2>/tmp/claude-1000/-work…`
 - **Bash** `bash .devcontainer/scripts/install-dependencies.sh > /tmp/claude-1000/-workspaces-fhir-agent/7057d269-60d3-4d82-b584-b1bb258f6d89/scratchpad/install.log 2>&1; echo "exit=$?"; grep -E '^Successfully in…`
+- **Bash** `echo "CODESPACES=${CODESPACES:-unset}"; n0=$(wc -l < /workspaces/setup.log); bash .devcontainer/scripts/post-start.sh manual; echo "exit=$?"; sleep 6; n1=$(wc -l < /workspaces/setup.log); echo "setup.…`
+- **Bash** `git status --short; git diff --stat HEAD | tail -1; git diff HEAD -- .devcontainer/scripts/install-dependencies.sh .devcontainer/scripts/post-start.sh .github/workflows/tests.yml | grep -E '^[+-][^+-]…`
+- **Bash** `git add .clinerules .devcontainer/Dockerfile .devcontainer/scripts/install-dependencies.sh .devcontainer/scripts/post-start.sh .env.example .github/workflows/tests.yml CLAUDE.md README.md docker-compo…`
+- **Bash** `git branch --show-current && git commit -q -F - <<'EOF'
+chore: remove Ona configuration and references (Codespaces migration step 5)
+
+Ona is retiring; GitHub Codespaces replaced it in PR #82. This rem…`
+- **Bash** `git push -q -u origin chore/remove-ona 2>&1 | grep -v '^remote:' | tail -3; git status -sb | head -1`
+- **Bash** `gh pr create --base main --head chore/remove-ona --title "chore: remove Ona configuration and references (Codespaces migration step 5)" --body-file - <<'EOF'
+Ona is retiring; GitHub Codespaces replace…`
 
 </details>
 
@@ -1060,6 +1103,6 @@ echo "=== 2 syntax"; for f in .devcontainer/scripts/*.sh; do bash -n "$f" && ech
 - **Source:** Claude Code
 - **Session ID:** `7057d269-60d3-4d82-b584-b1bb258f6d89`
 - **Created:** 25 October 2026, 21:52 UTC
-- **Last updated:** 26 October 2026, 00:21 UTC
+- **Last updated:** 26 October 2026, 00:23 UTC
 - **Turns:** 21
 - **Status:** Incomplete
