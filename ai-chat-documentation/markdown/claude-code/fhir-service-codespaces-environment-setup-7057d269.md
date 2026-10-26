@@ -644,8 +644,160 @@ You don't need to be concerned. I left Phases 5 and 7 out because neither has an
 
 **Caveat:** the Phase 7 agent will default to Ollama, like the other agents, so gap 4 from my earlier report applies to it too.
 
+## Turn 21
+
+### Prompt
+
+Perform the following:
+
+# Task: Ona → Codespaces migration, - remove Ona from the repo
+
+Ona is retiring; this codespace replaced it (PR #82, merged as 48a5d65c). Your job: remove every
+*current* Ona dependency/reference from the repo in ONE separate feature branch + PR. Follow
+CLAUDE.md throughout (state worktree/branch/target before any git write; one logical step per
+command; never commit to main; never merge).
+
+## Ground rules
+- Never print secret values. Do NOT touch /workspaces/.ai-chat-history or the `ai-chat-history`
+  branch (its copy of `.ona/` is history). Do NOT rebuild the container. Do NOT force-push.
+- Leave the gitignored Step 0 files (outcome-prediction-lab/mlflow.db, outcome-prediction-service/models/) alone.
+- The user has APPROVED deleting exactly these two paths, nothing else:
+  `.ona/automations.yaml` (the whole `.ona/` dir) and `.devcontainer/scripts/setup-credentials.sh`.
+- If anything doesn't match what's described below, STOP and report instead of improvising.
+
+## Step 1 — Protect your pending work FIRST
+1. In /workspaces/fhir-agent report: current branch, `git status --short`, `git stash list`, and any
+   local commits not on origin (`git log --oneline origin/main..HEAD`, and for each local branch).
+2. If there are uncommitted changes: do NOT discard them and do NOT carry them into the Step 5
+   branch. Commit them on their own branch (not main), e.g. `chore/codespaces-build-verify`
+   (push it, but don't open a PR unless the user asks). If you're unsure whether they're meant to be
+   kept, stop and ask the user.
+3. Confirm `git status` is clean, then: `git fetch --prune origin` and
+   `git switch -c chore/remove-ona origin/main`. Verify HEAD is 48a5d65c or newer.
+
+## Step 2 — Changes (exactly these)
+
+**A. Delete** `.ona/` and `.devcontainer/scripts/setup-credentials.sh`.
+Why setup-credentials.sh: Ona-only (invoked only from .ona/automations.yaml); its
+`gh auth login` with GITHUB_TOKEN_REPO and the GH_TOKEN Copilot install conflict with
+Codespaces' built-in GITHUB_TOKEN; neither PAT exists anymore.
+
+**B. `.devcontainer/scripts/install-dependencies.sh`** — remove the line
+`[ "${CODESPACES:-}" = "true" ] || exit 0` and the comment line
+`# Codespaces only: Ona runs the same install via its installDependencies task.`
+Update the header comment to say it runs as devcontainer.json's updateContentCommand in Codespaces
+(including prebuilds) and in local Dev Containers. Why: the guard only existed to avoid a double
+install under Ona, and GitHub may not set CODESPACES inside prebuild jobs — so the guard would
+make a future prebuild silently skip the install.
+
+**C. `.devcontainer/scripts/post-start.sh`** — KEEP the `CODESPACES` guard (the archive watcher needs
+the Codespaces GITHUB_TOKEN to sign/push). Only reword comments:
+- line ~4: drop "(unlike Ona)" → "Codespaces has no service supervisor, so archive-watcher.sh keeps
+  the watcher alive itself."
+- lines ~15-16: replace the Ona explanation with: "Codespaces only: the archive watcher signs and
+  pushes with the Codespaces GITHUB_TOKEN. In a local Dev Container, start FHIR with
+  `docker compose up -d fhir`."
+
+**D. `.devcontainer/Dockerfile`** lines 5-7 — replace the stale "diagnostic build … on this Ona
+environment" comment with an accurate one, e.g.:
+`# Base toolchain: Java 21, Maven, Python 3 (venv at /opt/pyenv) and inotify-tools (AI chat`
+`# archive watcher). Docker-in-Docker, Node, gh, Terraform and kubectl/Helm come from the`
+`# devcontainer features in devcontainer.json.`
+Comment-only: no RUN line changes. Do NOT rebuild because of it.
+
+**E. `.github/workflows/tests.yml`** line ~28 (job `ci-config-llm-provider-gate`): change
+`grep -rEn "$pattern" .github/workflows .ona` → `... .github/workflows .devcontainer`
+(devcontainer.json's containerEnv is now where an LLM_PROVIDER pin could hide). Check the job's
+comment block above it for any `.ona` mention and update it too.
+
+**F. `CLAUDE.md` AND `.clinerules`** (identical edits — they must stay in sync):
+- line ~42: `(editable installs + test tooling — see .ona/automations.yaml)` →
+  `(editable installs + test tooling — the devcontainer runs .devcontainer/scripts/install-dependencies.sh automatically)`
+- line ~56: `(the Ona secret name)` → `(the Codespaces secret name). ANTHROPIC_API_KEY is deliberately
+  not set, so Claude Code's /login can switch between a Claude.ai subscription and the API.`
+- In "Repository layout — two worktrees", add one sentence: in Codespaces,
+  `.devcontainer/scripts/archive-watcher.sh` recreates `/workspaces/.ai-chat-history` automatically.
+
+**G. `README.md`** "Development Environment" section (~lines 316-327):
+- Dockerfile bullet: keep; it's accurate.
+- Extensions bullet: add Claude Code.
+- Replace "Post-start automation — configures AI tools … using secrets stored in Ona" with
+  "Lifecycle scripts (`.devcontainer/scripts/`) — install dependencies, start the FHIR server and the
+  AI chat archive watcher".
+- Replace "**Cloud (Ona):** The container builds automatically on first launch" with
+  "**Cloud (GitHub Codespaces):** Code → Codespaces → Create codespace on main. Set
+  `CLAUDE_API_KEY`, `SPRING_DATASOURCE_URL` and `NEON_DB_URL` as Codespaces secrets
+  (github.com → Settings → Codespaces)."
+- line ~436: replace the `[Ona (Gitpod)](https://ona.com)` entry with
+  `[GitHub Codespaces](https://github.com/features/codespaces) — cloud development environment`.
+
+**H. `docs/demo-guide.md`** ~lines 247-250: "or in the cloud (Ona). `.ona/automations.yaml` scripts
+dependency install and credential setup." → "or in the cloud (GitHub Codespaces). The
+devcontainer's lifecycle scripts install dependencies and start services automatically."
+
+**I. Neon docs** — `fhir-service/README.md` ~line 77 and
+`fhir-service/src/main/resources/application-neon.yaml` ~line 11: "Ona project secrets" →
+"GitHub Codespaces secrets". In both places add one line: in Codespaces,
+`SPRING_DATASOURCE_DRIVER_CLASS_NAME` and `HIBERNATE_DIALECT` are preset by
+`.devcontainer/devcontainer.json`; `SPRING_DATASOURCE_URL` comes from a Codespaces secret.
+Read the surrounding text first and keep the wording consistent with it.
+
+**J. "(the Ona secret name)" → "(the Codespaces secret name)"** in: `mcp-agent/README.md` ~48,
+`.env.example` ~13, `docker-compose.yml` ~71 (comment only).
+
+**K. Do NOT change historical records:** `docs/phase2/plan.md:147`,
+`docs/phase2/requirements.md:100`, `docs/phase6/decisions.md:75` (H50). They describe past
+decisions and stay as written.
+
+**L. Don't touch:** `devcontainer.json`, `archive-watcher.sh` (no Ona references).
+
+## Step 3 — Verify (all must pass)
+1. `git grep -n -I -iE "gitpod|\bona\b|\.ona/|setup-credentials"` → ONLY the 3 historical lines in K remain.
+2. `bash -n` on every `.devcontainer/scripts/*.sh`; `python3 -c "import json;json.load(open('.devcontainer/devcontainer.json'))"`;
+   `npx -y @devcontainers/cli@0.71.0 read-configuration --workspace-folder .` succeeds.
+3. CI gate, run locally: `var_name="LLM""_PROVIDER"; pattern="${var_name}[=:] *[\"']?(anthropic|openai_compatible)"; grep -rEn "$pattern" .github/workflows .devcontainer`
+   → no output. And `python3 -c "import yaml;yaml.safe_load(open('.github/workflows/tests.yml'))"` succeeds.
+4. `diff CLAUDE.md .clinerules` → only the title/intro lines 1-4 differ (same as on main).
+5. `bash .devcontainer/scripts/install-dependencies.sh` (now unguarded) → exit 0.
+6. `bash .devcontainer/scripts/post-start.sh manual` → no-op; afterwards exactly ONE archive
+   supervisor and ONE `archive_ai watch` process (`ps -eo pid,args | grep -E "[a]rchive-watcher|[a]rchive_ai"`).
+
+## Step 4 — Commit, push, PR (do not merge)
+- One commit on `chore/remove-ona`: `chore: remove Ona configuration and references (Codespaces migration step 5)`,
+  body summarising A–J and why setup-credentials.sh and the install guard were removed.
+- Push, then open a PR to `main` summarising: what was removed or reworded, what was deliberately
+  kept (historical records, post-start.sh guard), validation results, and this note: "The old Ona
+  environment loses its automations config once this merges. That's fine: the remaining Ona step
+  (a final archive sync) is manual."
+- Report to the user: what happened to your pending work (branch/commit), plus branch, commit hash,
+  PR URL and the verification results.
+
+### Claude response
+
+I'll start with Step 1, checking for pending work before touching anything.
+
+There's no pending work: I'm on `main`, the tree is clean, there are no stashes, and no branch has unpushed commits. So Step 1.2 doesn't apply. Next, the fetch.
+
+Worktree: `/workspaces/fhir-agent`. Current branch: `main`. Target: a new branch `chore/remove-ona` from `origin/main`.
+
+HEAD is `48a5d65c`. Before editing, I'll take a baseline of every Ona reference and check that it matches the task's description. I'll stop if it doesn't.
+
+The CI job's comment block doesn't mention `.ona`, so E is just the one `grep` line. Starting the changes with A, the two approved deletions:
+
+Now B, C, D and E:
+
+Both files are updated and differ only in lines 1–4, as on `main`. Next, G (README). I'll read the section first.
+
+Now H (demo guide), then I: I'll read the Neon text first so the new line matches its wording.
+
+The credentials in both files are placeholders already in the repo (`USER`/`PASS`, `xxxxxxxx`), not real secrets. Applying I and J:
+
+All edits A–J are applied. Next, Step 3 verification. Checks 1–4 are read-only, so I'll run them together.
+
+Checks 1–4 pass, and the devcontainers CLI reads the configuration. Next, check 5: running the now-unguarded install script, which reinstalls the Python packages and warms Maven.
+
 <details>
-<summary>Execution details — 149 tool events</summary>
+<summary>Execution details — 171 tool events</summary>
 
 ### Turn 1 activity
 
@@ -866,6 +1018,39 @@ for line in open(sys.argv[1]):
 - **Bash** `sed -n '1,40p' docs/phase7/design.md | cut -c1-170; grep -n -iE 'RxNav|NLM|UMLS|api key|download|external' docs/phase7/design.md docs/phase7/milestone-plan.md | cut -c1-180 | head -8`
 - **Bash** `curl -s -m 15 -o /dev/null -w 'RxNav HTTP %{http_code} in %{time_total}s\n' 'https://rxnav.nlm.nih.gov/REST/rxcui.json?name=lisinopril'`
 
+### Turn 21 activity
+
+- **Bash** `git branch --show-current; echo "--- status"; git status --short; echo "--- stash"; git stash list; echo "--- origin/main..HEAD"; git log --oneline origin/main..HEAD; echo "--- branches"; git for-each…`
+- **Bash** `git fetch --prune origin 2>&1 | tail -3; git log -1 --oneline origin/main`
+- **Bash** `git switch -c chore/remove-ona origin/main 2>&1 | tail -2; git log -1 --oneline`
+- **Bash** `git grep -n -I -iE "gitpod|\bona\b|\.ona/|setup-credentials" | cut -c1-230`
+- **Bash** `sed -n '8,32p' .github/workflows/tests.yml; echo "=== install-deps"; sed -n '1,8p' .devcontainer/scripts/install-dependencies.sh; echo "=== post-start"; sed -n '1,17p' .devcontainer/scripts/post-start…`
+- **Bash** `git ls-files .ona .devcontainer/scripts/setup-credentials.sh && git rm -q -r .ona .devcontainer/scripts/setup-credentials.sh && git status --short`
+- **Edit** `/workspaces/fhir-agent/.devcontainer/scripts/install-dependencies.sh`
+- **Edit** `/workspaces/fhir-agent/.devcontainer/scripts/post-start.sh`
+- **Edit** `/workspaces/fhir-agent/.devcontainer/scripts/post-start.sh`
+- **Edit** `/workspaces/fhir-agent/.devcontainer/Dockerfile`
+- **Edit** `/workspaces/fhir-agent/.github/workflows/tests.yml`
+- **Bash** `python3 - <<'EOF'
+reps = [
+ ("# Python packages (editable installs + test tooling — see .ona/automations.yaml)",
+  "# Python packages (editable installs + test tooling — the devcontainer runs .devcont…`
+- **Bash** `sed -n '312,330p;432,438p' README.md`
+- **Bash** `python3 - <<'EOF'
+f="README.md"; s=open(f).read()
+reps=[
+ ("- VS Code extensions — Java, Spring Boot, Python, GitHub Copilot, Continue, Roo Code\n",
+  "- VS Code extensions — Claude Code, Java, Spring…`
+- **Edit** `/workspaces/fhir-agent/docs/demo-guide.md`
+- **Bash** `sed -n '70,92p' fhir-service/README.md; echo "=== yaml"; sed -n '1,22p' fhir-service/src/main/resources/application-neon.yaml`
+- **Edit** `/workspaces/fhir-agent/fhir-service/README.md`
+- **Edit** `/workspaces/fhir-agent/fhir-service/src/main/resources/application-neon.yaml`
+- **Bash** `for f in mcp-agent/README.md .env.example docker-compose.yml; do c=$(grep -c '(the Ona secret name)' $f); [ "$c" = 1 ] || { echo "UNEXPECTED count $c in $f"; continue; }; sed -i 's/(the Ona secret nam…`
+- **Bash** `echo "=== 1 grep"; git grep -n -I -iE "gitpod|\bona\b|\.ona/|setup-credentials" | cut -c1-110
+echo "=== 2 syntax"; for f in .devcontainer/scripts/*.sh; do bash -n "$f" && echo "ok $f"; done; python3 -…`
+- **Bash** `npx -y @devcontainers/cli@0.71.0 read-configuration --workspace-folder . > /tmp/claude-1000/-workspaces-fhir-agent/7057d269-60d3-4d82-b584-b1bb258f6d89/scratchpad/readcfg.json 2>/tmp/claude-1000/-work…`
+- **Bash** `bash .devcontainer/scripts/install-dependencies.sh > /tmp/claude-1000/-workspaces-fhir-agent/7057d269-60d3-4d82-b584-b1bb258f6d89/scratchpad/install.log 2>&1; echo "exit=$?"; grep -E '^Successfully in…`
+
 </details>
 
 ---
@@ -875,6 +1060,6 @@ for line in open(sys.argv[1]):
 - **Source:** Claude Code
 - **Session ID:** `7057d269-60d3-4d82-b584-b1bb258f6d89`
 - **Created:** 25 October 2026, 21:52 UTC
-- **Last updated:** 26 October 2026, 00:05 UTC
-- **Turns:** 20
+- **Last updated:** 26 October 2026, 00:21 UTC
+- **Turns:** 21
 - **Status:** Incomplete
