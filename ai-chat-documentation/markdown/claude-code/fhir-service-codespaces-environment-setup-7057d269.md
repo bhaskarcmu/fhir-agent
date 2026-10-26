@@ -962,8 +962,36 @@ Worktree: `/workspaces/.ai-chat-history`. Branch: `ai-chat-history`. Target: `ai
 
 Now I'll restart the watcher the normal way. Its startup sync should re-archive this session on top of your Ona commits.
 
+Last item: `fhir-service/target`. I'll confirm it's gitignored and contains nothing tracked, then remove it. That's equivalent to `./mvnw clean`.
+
+Both jobs are done: the archive is fixed, and free disk space is back to **20 GB** (from 7 GB). Everything I deleted can be re-pulled or rebuilt.
+
+**1. Archive conflict**
+- I stopped the watcher by PID, reset `/workspaces/.ai-chat-history` to `origin/ai-chat-history`, discarding `a90efb43` as you approved, and restarted it via `post-start.sh`.
+- Its startup sync pushed `8af5e2c2` on top of your two Ona commits. The worktree is level with `origin`, and both sessions (`7057d269` and `3b59a463`) are in the raw archive and `INDEX.md`.
+- Exactly one supervisor and one watcher are running.
+
+**2. Disk space**
+
+| Removed | Size | How it comes back |
+|---|---:|---|
+| Unused Docker images: Ollama, Elasticsearch, Testcontainers' Ryuk, Postgres, and 6 `fhir-agent-*` images | 9.15 GB | `docker compose --profile <name> up --build` rebuilds or re-pulls the stack images. `fhir-service` tests re-pull Elasticsearch and Ryuk automatically. For Ollama, run `docker run -d -p 11434:11434 ollama/ollama:0.6.5`, then `ollama pull llama3.2:1b`. |
+| Docker build cache | 3.1 GB | Rebuilt on the next `--build`; only the first build is slower. |
+| 2 anonymous test volumes | 97 MB | Created fresh by `docker compose --profile phase3` / `phase6 up`. They only held my certification test databases. |
+| `fhir-service/target` | 1.1 GB | `cd fhir-service && ./mvnw package` (or `verify`). |
+
+**Kept** (in use, slow to rebuild, or impossible to recreate):
+- The `hapi` image, which the running FHIR server uses. FHIR still answers.
+- `~/.m2` (723 MB of Maven dependencies, for fast offline builds), plus the pip and npm caches.
+- The MEPS data (726 MB) and the pinned Synthea jar.
+- The Step 0 files `mlflow.db` and `models/`, plus the small Java `target/` folders.
+
+The repo's git status is still clean.
+
+One reminder that isn't about disk: the Synthea demo set cached at `outcome-prediction-service/data/raw/synthea/fhir-5-s42` was generated with the wrong date (the Phase 8 issue from earlier). Delete it once the reference-date pin is fixed.
+
 <details>
-<summary>Execution details — 218 tool events</summary>
+<summary>Execution details — 225 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1291,6 +1319,13 @@ echo "== git"; git branch --show-current; git status --short | head -5; git fetc
 - **Bash** `cd /workspaces/.ai-chat-history && tail -n 2 ai-chat-documentation/logs/sync.log | cut -c1-160; git fetch -q origin; git status -sb | head -1; git log --format='%h %ci %s' -3 origin/ai-chat-history; e…`
 - **Bash** `docker images --format '{{.Repository}}:{{.Tag}}\t{{.Size}}\t{{.ID}}' | sort; echo "== in use by containers"; docker ps -a --format '{{.Image}} {{.Names}} {{.Status}}'; echo "== volumes"; docker volum…`
 - **Bash** `du -sh ~/.cache/pip ~/.npm ~/.cache/ms-playwright /tmp/claude-1000/-workspaces-fhir-agent/7057d269-60d3-4d82-b584-b1bb258f6d89/scratchpad 2>/dev/null; du -sh */target 2>/dev/null; du -sh outcome-predi…`
+- **Bash** `git grep -n -E 'elasticsearch:8|ElasticsearchContainer|testcontainers' -- '*.java' '*.yml' '*.yaml' '*.xml' | cut -c1-140 | head -5; docker image inspect elasticsearch:8.19.10 --format '{{.Created}}'…`
+- **Bash** `docker image prune -a -f 2>&1 | tail -1; docker images --format '{{.Repository}}:{{.Tag}} {{.Size}}'`
+- **Bash** `docker builder prune -a -f 2>&1 | tail -1`
+- **Bash** `docker volume rm 5ce3878fb620ecdace8f9d922e1d4af7388434d31ddf8a1f495816f61e8921bd 106ab50638d0695c12bb976925d3c23b343534952f2ff3b7ecad2376bc88f2dc`
+- **Bash** `git check-ignore -q fhir-service/target && echo "target/ is gitignored"; git ls-files fhir-service/target | wc -l`
+- **Bash** `rm -rf /workspaces/fhir-agent/fhir-service/target && echo removed`
+- **Bash** `df -h /workspaces | tail -1 | awk '{print "disk free: "$4" (used "$5")"}'; docker system df | head -5; curl -sf -o /dev/null localhost:8080/fhir/metadata && echo "FHIR still OK"; cd /workspaces/fhir-a…`
 
 </details>
 
@@ -1301,6 +1336,6 @@ echo "== git"; git branch --show-current; git status --short | head -5; git fetc
 - **Source:** Claude Code
 - **Session ID:** `7057d269-60d3-4d82-b584-b1bb258f6d89`
 - **Created:** 25 October 2026, 21:52 UTC
-- **Last updated:** 26 October 2026, 01:20 UTC
+- **Last updated:** 26 October 2026, 01:22 UTC
 - **Turns:** 25
 - **Status:** Incomplete
