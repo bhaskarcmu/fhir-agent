@@ -829,8 +829,69 @@ Ona is removed from the repo in PR #83, open against `main` and not merged. All 
 
 This Codespace is now on `chore/remove-ona`. Once PR #83 is merged, I'll ask before deleting the branch, locally and on `origin`.
 
+## Turn 22
+
+### Prompt
+
+Incorporate these 2 items of feedback and resubmit PR #83:
+
+
+1. Decision H50 now reads out of date. It says the CI gate scans "workflow YAML or .ona/automations.yaml", but the gate now scans .devcontainer. Keeping history unchanged was the right call, but a one-line dated note on H50 would stop readers being misled. 
+
+2. mcp-agent/README.md marks ANTHROPIC_API_KEY as "Required: Yes". That was already inaccurate before this PR: the default provider is self-hosted Ollama, and the key is only needed with LLM_PROVIDER=anthropic. It now stands out more, since Codespaces deliberately leaves the variable unset. Fis this problem appripriately using your judgement for how
+
+3. README's "Dockerfile" bullet credits Docker-in-Docker, kubectl, Helm, Terraform and Node to the Dockerfile. They come from devcontainer features, as the new Dockerfile comment correctly says. This is a minor inconsistency that was already there - please fix it appropriately using your judgement for how.
+
+4. Wording in CLAUDE.md/.clinerules: "ANTHROPIC_API_KEY is deliberately not set" doesn't say where. "is deliberately not set in the devcontainer" would be clearer. Make the change.
+
+### Claude response
+
+I'll read the H50 entry, the `mcp-agent` env table, and how the provider is actually selected, so the README fix is accurate.
+
+Before editing H50, I'll check how `decisions.md` already annotates entries, so the dated note follows house style.
+
+Line 57 now runs past the file's ~80-column wrap, so I'll rewrap the sentence the same way in both files.
+
+Now item 2. Before rewording, I'll check whether the README intro's "built directly on the Anthropic tool-use API" is still true.
+
+The agent still uses the Anthropic SDK's tool-use message format and translates for other providers, so the intro is defensible and I'll leave it. Fixing the run example and the env table:
+
+My opt-in example leaves out `FHIR_GATEWAY_URL`, which the table marks as required, so I'll add it.
+
+I'll check that the defaults I wrote match the code itself, not just the docstring.
+
+The defaults match the code. Item 3: I'll split the README bullet so each tool is credited to where it really comes from, matching the Dockerfile and `devcontainer.json`.
+
+All four items are done. I'll rerun the affected checks: the Ona grep (H50 is still the only line there, now with its note), the CLAUDE.md/`.clinerules` diff, and a look at the changed lines.
+
+The note contains no `|`, so the H50 row keeps its columns. I'll also confirm every row in the `mcp-agent` env table has the same number of cells.
+
+Both tables are intact. Worktree: `/workspaces/fhir-agent`. Current branch: `chore/remove-ona`. Target: that same branch, which updates PR #83. Committing:
+
+I'll update the PR description too, since its "Deliberately kept" section now needs the H50 caveat and a list of the review fixes.
+
+All four review items are fixed and pushed to PR #83 (your note said 2 items but listed 4, so I did all four). The PR description now has a "Review follow-ups" section.
+
+1. **H50 note** (`docs/phase6/decisions.md`): I added a dated note right after the out-of-date phrase: *"(Note, 2026-10-26: `.ona/` was removed in the Codespaces migration, PR #83; the gate now scans workflow YAML and `.devcontainer/`.)"* The decision text is unchanged, and the table keeps its column count.
+2. **`mcp-agent/README.md`:**
+   - `ANTHROPIC_API_KEY` is now marked "Only with `LLM_PROVIDER=anthropic`", and the table notes that setting the key alone doesn't switch provider.
+   - Just changing that column would have pointed at variables the README never mentioned, so I also added rows for `LLM_PROVIDER`, `LLM_MODEL`, `LLM_BASE_URL`, `LLM_API_KEY` and `DEPLOYMENT_ENV`. Their defaults are checked against the code.
+   - The "Running locally" example had the same problem: it set `ANTHROPIC_API_KEY`, which wouldn't select Claude anyway. It now runs on the Ollama default, plus an explicit opt-in example for Claude that warns patient data then leaves the host.
+   - I left the intro ("built directly on the Anthropic tool-use API") alone. It's still accurate: the agent uses the Anthropic SDK's tool-use format and translates for the other providers.
+3. **README Dockerfile bullet:** I split it in two. The `Dockerfile` provides Java 21, Maven, Python 3 and inotify-tools. A new bullet credits Docker-in-Docker, Node.js, GitHub CLI, Terraform, kubectl and Helm to the devcontainer features.
+4. **CLAUDE.md and `.clinerules`:** both now say "deliberately not set in the devcontainer", rewrapped to the files' line width. They still differ only in lines 1–4.
+
+**Branch and commit:** `chore/remove-ona`, new commit `13097842` on top of `1a8e6a88`, pushed without a force-push.
+
+**Validation:**
+- The Ona `git grep` still returns only the 3 historical lines.
+- The CLAUDE.md/`.clinerules` diff is unchanged apart from lines 1–4.
+- All edited tables have consistent cell counts.
+
+I didn't rerun checks 2, 3, 5 and 6 from the original verification, because this commit only touches documentation.
+
 <details>
-<summary>Execution details — 177 tool events</summary>
+<summary>Execution details — 198 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1094,6 +1155,41 @@ Ona is retiring; GitHub Codespaces replaced it in PR #82. This rem…`
 - **Bash** `gh pr create --base main --head chore/remove-ona --title "chore: remove Ona configuration and references (Codespaces migration step 5)" --body-file - <<'EOF'
 Ona is retiring; GitHub Codespaces replace…`
 
+### Turn 22 activity
+
+- **Bash** `git branch --show-current; git status --short; sed -n '75p' docs/phase6/decisions.md | fold -w 220 | grep -n -iE 'ona|gate|scan' ; echo "=== mcp-agent env table"; sed -n '40,60p' mcp-agent/README.md;…`
+- **Bash** `sed -n '30,50p' mcp-agent/src/agent/agent.py; echo "=== rest of README table"; sed -n '52,66p' mcp-agent/README.md; grep -n 'LLM_PROVIDER' mcp-agent/README.md | head -5 | cut -c1-160; echo "=== README…`
+- **Bash** `grep -n -iE 'ollama|provider|anthropic' mcp-agent/README.md | cut -c1-170 | head -12; wc -l mcp-agent/README.md`
+- **Bash** `sed -n '1,40p' mcp-agent/README.md`
+- **Bash** `sed -n '60,82p' docker-compose.yml`
+- **Bash** `grep -noE '\*?\(?(Note|Update|Amended|Superseded)[^|]{0,30}20[0-9]{2}-[0-9]{2}-[0-9]{2}[^|]{0,60}' docs/phase*/decisions.md | head -6; grep -noE '[^|]{0,40}_?\(?(updated|amended|note)[^|]{0,20}\)?[^|]…`
+- **Bash** `grep -ohE '(\*\*)?(Note|Update|Amended|Superseded|Correction)[a-z]*( \(| — | on |: )20[0-9]{2}-[0-9]{2}-[0-9]{2}' docs/phase*/decisions.md | sort | uniq -c | head; grep -ohE '\((20[0-9]{2}-[0-9]{2}-[0…`
+- **Bash** `python3 - <<'EOF'
+f="docs/phase6/decisions.md"; s=open(f).read()
+o="anywhere in CI config (workflow YAML or `.ona/automations.yaml`)"
+assert s.count(o)==1, s.count(o)
+s=s.replace(o, o+" *(Note, 2026-1…`
+- **Bash** `python3 - <<'EOF'
+o=("`ANTHROPIC_API_KEY` is deliberately not set in the devcontainer, so Claude Code's `/login` can switch between a\n"
+   "Claude.ai subscription and the API.\n")
+n=("`ANTHROPIC_API_…`
+- **Bash** `grep -n -E '^(import|from) ' mcp-agent/src/agent/agent.py | head -15; grep -n -E 'import anthropic|import openai|OpenAI\(' agent-platform/src/agent_platform/providers.py | head -5`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/README.md`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/README.md`
+- **Edit** `/workspaces/fhir-agent/mcp-agent/README.md`
+- **Bash** `grep -rnE '"(claude-sonnet-4-5|llama3\.2:1b)"|11434/v1|DEPLOYMENT_ENV' agent-platform/src/agent_platform/providers.py mcp-agent/src/agent/agent.py | cut -c1-150 | head -8`
+- **Bash** `grep -nE 'DEFAULT_OLLAMA_MODEL *=|llama3\.2' agent-platform/src/agent_platform/providers.py | head -3; sed -n '316,330p' README.md`
+- **Edit** `/workspaces/fhir-agent/README.md`
+- **Bash** `git grep -n -I -iE "gitpod|\bona\b|\.ona/|setup-credentials" | cut -c1-60; diff CLAUDE.md .clinerules | grep -E '^[0-9]'; git diff --stat; git diff -U0 README.md docs/phase6/decisions.md | grep -E '^[…`
+- **Bash** `awk '/^## Environment variables/{t=1} t && /^\|/{print gsub(/\|/,"|")}' mcp-agent/README.md | sort | uniq -c; awk -F'|' 'NR==75{print NF}' docs/phase6/decisions.md; git show HEAD:docs/phase6/decisions…`
+- **Bash** `git branch --show-current && git add .clinerules CLAUDE.md README.md docs/phase6/decisions.md mcp-agent/README.md && git commit -q -F - <<'EOF'
+docs: address PR #83 review feedback
+
+- docs/phase6/deci…`
+- **Bash** `git push -q origin chore/remove-ona 2>&1 | grep -v '^remote:' | tail -3; git status -sb | head -1`
+- **Bash** `gh pr view 83 --json body -q .body > /tmp/claude-1000/-workspaces-fhir-agent/7057d269-60d3-4d82-b584-b1bb258f6d89/scratchpad/pr83.md && python3 - <<'EOF'
+p="/tmp/claude-1000/-workspaces-fhir-agent/705…`
+
 </details>
 
 ---
@@ -1103,6 +1199,6 @@ Ona is retiring; GitHub Codespaces replace…`
 - **Source:** Claude Code
 - **Session ID:** `7057d269-60d3-4d82-b584-b1bb258f6d89`
 - **Created:** 25 October 2026, 21:52 UTC
-- **Last updated:** 26 October 2026, 00:23 UTC
-- **Turns:** 21
+- **Last updated:** 26 October 2026, 00:32 UTC
+- **Turns:** 22
 - **Status:** Incomplete
