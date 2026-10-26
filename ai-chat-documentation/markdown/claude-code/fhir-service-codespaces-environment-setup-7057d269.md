@@ -577,6 +577,36 @@ Phase 2 and Phase 4 e2e pass (11 tests), but 7 Phase 8 tests error during setup:
 
 The emulator is stopped. The other containers are still up, so I'll remove them now; `fhir` stays.
 
+**Partly certified.** You can resume Phases 1, 2, 3, 4 and 6 here today. Phase 8 can resume for development, but not for research rounds until MLflow is installed. Nothing was installed or committed. I tested with temporary Postgres and Ollama containers and removed them afterwards; only the FHIR server is still running.
+
+| Phase | Verdict | Evidence |
+|---|---|---|
+| **1** Triage (fhir-service, triage, mcp-agent, client) | ✅ with 1 workaround | `fhir-service` full build: 73 tests pass, but only after the workaround in gap 1 below. `triage` 48, `client/clinical` 59 and `mcp-agent` 102 pass, including its live-model tests against a local Ollama. Only `fhir`, `mcp-agent` and `triage` run without a profile, as the Phase 1 independence check requires. |
+| **2** Claims | ✅ | `claims-service` 58, `rxclaim-emulator` 8 and `claims-agent` 8 pass, and all 7 end-to-end golden paths pass. `claims-agent` isn't installed (see gap 4), so I tested it from source. |
+| **3** Provider search | ✅ | All suites pass with no skips against the Phase 3 Postgres: registry 40, MCP server 14, curation 13, search 10 (including the billed groundedness eval) and `data/scripts` 31. All 5 Terraform modules pass `terraform validate`. |
+| **4** Epic emulator | ✅ | 24 unit tests and 2 end-to-end acceptance tests pass. The open safety finding in the docs is unrelated to the environment. |
+| **6** Agent hardening | ✅ | `agent-platform` 124 pass, including the database-backed session tests. The gateway and observability compose profiles parse. |
+| **8** Outcome prediction | ⚠️ | Service 224 pass (2 skipped need the `[gcs]` extra), lab 31 and agent 45 (with live model) pass. **7 of 9 end-to-end acceptance tests error** (gap 2). |
+
+**Gaps, most important first:**
+
+1. **The migration broke the `fhir-service` tests.** `bdc169b3` added Postgres settings to `containerEnv`: `SPRING_DATASOURCE_DRIVER_CLASS_NAME` and `HIBERNATE_DIALECT`. Unsetting `SPRING_DATASOURCE_URL` and `NEON_*`, as CLAUDE.md says, isn't enough anymore: `MdmTest` fails with "Driver org.postgresql.Driver claims to not accept jdbcUrl, jdbc:h2:mem:…". The workaround is to unset those two as well. The fix is to drop them from `containerEnv`, or to update the CLAUDE.md instructions.
+2. **The Phase 8 acceptance test depends on the date (a repo bug, not the migration).** Synthea's reference date defaults to today, so the same seed produces different demo patients on different days. I confirmed it: with `-r 20261018` the expected patient `e7149b17` appears, and without it that patient is missing. It passed on Ona only because Ona still had data generated on Oct 18. The fix is to pin `-r` in `generate_command`. The wrong-date demo set is now cached in `outcome-prediction-service/data/raw/synthea/fhir-5-s42`, so delete that directory once the pin is in.
+3. **MLflow isn't installed, so research runs silently go untracked.** `runs.py` swallows the import error, which means new runs would quietly be missing from the restored history. Before resuming a research round, install the tracking extra: `pip install -e "outcome-prediction-lab[tracking]"`.
+4. **Missing from the automatic install** (it matches Ona's list, which had the same holes):
+   - **`claims-agent`** isn't installed.
+   - **Ollama** isn't installed, though it's mcp-agent's default model provider. Without it the live-model tests *fail* rather than skip, despite what the testing guide says. Start it with `docker run -d -p 11434:11434 ollama/ollama:0.6.5`, then pull `llama3.2:1b`.
+   - **`gcloud`** is missing. Ona installed it through its manual `setupCredentials` task, which has no Codespaces equivalent, and `setup-credentials.sh` isn't wired up. You need it for any GKE or cloud work, such as Phase 3b.
+5. **Database tests need `TEST_DATABASE_URL`.** Their default `*_test` databases don't exist in the compose Postgres, so set it to `…/provider_registry` (Phase 3) or `…/agent_platform` on :5433 (Phase 6). This is documented, just easy to miss.
+6. **Running `pytest` from the repo root crashes** because two `tests/conftest.py` files collide. Ona had the same problem, and CI runs each suite separately, so run them one at a time.
+
+**Side effects:**
+- The in-memory FHIR server now holds the end-to-end seed data.
+- The images built for the Phase 2 stack are still cached in Docker.
+- `pkill`-style matching killed my own shell once more during cleanup. The cleanup finished and nothing was left behind.
+
+Gaps 1–4 each have a small fix on a feature branch. Do you want me to start with gap 1, the one the migration caused?
+
 <details>
 <summary>Execution details — 144 tool events</summary>
 
