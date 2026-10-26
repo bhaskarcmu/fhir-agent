@@ -54,8 +54,8 @@ cd fhir-service && ./mvnw spring-boot:run     # run locally on :8080 (H2)
 ```
 
 The mcp-agent accepts `ANTHROPIC_API_KEY` or `CLAUDE_API_KEY` (the Codespaces secret name).
-`ANTHROPIC_API_KEY` is deliberately not set, so Claude Code's `/login` can switch between a
-Claude.ai subscription and the API.
+`ANTHROPIC_API_KEY` is deliberately not set in the devcontainer, so Claude Code's
+`/login` can switch between a Claude.ai subscription and the API.
 
 Run only the tests relevant to a change when practical. Never claim tests
 passed unless they actually ran; if they can't run, say why.

@@ -316,7 +316,8 @@ HIBERNATE_DIALECT="ca.uhn.fhir.jpa.model.dialect.HapiFhirPostgresDialect" \
 
 The project uses a **devcontainer** to ensure a consistent environment across all contributors. The `.devcontainer/` directory defines:
 
-- `Dockerfile` — Java 21, Python 3, Node.js, Maven, Docker-in-Docker, kubectl, Helm, Terraform
+- `Dockerfile` — Java 21, Maven, Python 3 and inotify-tools
+- Devcontainer features (`devcontainer.json`) — Docker-in-Docker, Node.js, GitHub CLI, Terraform, kubectl, Helm
 - VS Code extensions — Claude Code, Java, Spring Boot, Python, GitHub Copilot, Continue, Roo Code
 - Lifecycle scripts (`.devcontainer/scripts/`) — install dependencies, start the FHIR server and the AI chat archive watcher
 
