@@ -963,7 +963,7 @@ Worktree: `/workspaces/.ai-chat-history`. Branch: `ai-chat-history`. Target: `ai
 Now I'll restart the watcher the normal way. Its startup sync should re-archive this session on top of your Ona commits.
 
 <details>
-<summary>Execution details — 215 tool events</summary>
+<summary>Execution details — 218 tool events</summary>
 
 ### Turn 1 activity
 
@@ -1288,6 +1288,9 @@ echo "== git"; git branch --show-current; git status --short | head -5; git fetc
 - **Bash** `kill 992 998 1237; sleep 2; ps -eo pid,args | grep -E '[a]rchive-watcher\.sh$|python3 -m [a]rchive_ai|[i]notifywait -m -q' || echo "watcher stopped"`
 - **Bash** `cd /workspaces/.ai-chat-history && git branch --show-current && git fetch -q origin ai-chat-history && git reset -q --hard origin/ai-chat-history && git status -sb | head -1 && git log -1 --format='%h…`
 - **Bash** `bash .devcontainer/scripts/post-start.sh manual; sleep 4; ps -eo pid,args | grep -E '[a]rchive-watcher\.sh$|python3 -m [a]rchive_ai'; tail -n 1 /workspaces/setup.log`
+- **Bash** `cd /workspaces/.ai-chat-history && tail -n 2 ai-chat-documentation/logs/sync.log | cut -c1-160; git fetch -q origin; git status -sb | head -1; git log --format='%h %ci %s' -3 origin/ai-chat-history; e…`
+- **Bash** `docker images --format '{{.Repository}}:{{.Tag}}\t{{.Size}}\t{{.ID}}' | sort; echo "== in use by containers"; docker ps -a --format '{{.Image}} {{.Names}} {{.Status}}'; echo "== volumes"; docker volum…`
+- **Bash** `du -sh ~/.cache/pip ~/.npm ~/.cache/ms-playwright /tmp/claude-1000/-workspaces-fhir-agent/7057d269-60d3-4d82-b584-b1bb258f6d89/scratchpad 2>/dev/null; du -sh */target 2>/dev/null; du -sh outcome-predi…`
 
 </details>
 
