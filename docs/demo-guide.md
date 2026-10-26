@@ -246,8 +246,8 @@ claims-agent ──▶ claims-service ──┬──▶ rxclaim-emulator  (lega
 
 3. **The environment is machine-independent.** A devcontainer (`.devcontainer/`) pins Java 21,
    Python, Maven, Docker-in-Docker, kubectl, Helm, Terraform. Same image locally (Docker Desktop)
-   or in the cloud (Ona). `.ona/automations.yaml` scripts dependency install and credential
-   setup. *"There is no 'works on my machine'. There is no my machine."*
+   or in the cloud (GitHub Codespaces). The devcontainer's lifecycle scripts install dependencies
+   and start services automatically. *"There is no 'works on my machine'. There is no my machine."*
 
 4. **The AI conversations are version-controlled.** This is the part that surprises people. The
    repo uses **two git worktrees**:

@@ -68,7 +68,7 @@ services:
       dockerfile: mcp-agent/Dockerfile
     container_name: fhir-agent-mcp
     environment:
-      # ANTHROPIC_API_KEY is preferred; CLAUDE_API_KEY (the Ona secret name) is
+      # ANTHROPIC_API_KEY is preferred; CLAUDE_API_KEY (the Codespaces secret name) is
       # accepted as a fallback by the agent.
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       CLAUDE_API_KEY: ${CLAUDE_API_KEY:-}

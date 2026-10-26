@@ -317,13 +317,13 @@ HIBERNATE_DIALECT="ca.uhn.fhir.jpa.model.dialect.HapiFhirPostgresDialect" \
 The project uses a **devcontainer** to ensure a consistent environment across all contributors. The `.devcontainer/` directory defines:
 
 - `Dockerfile` — Java 21, Python 3, Node.js, Maven, Docker-in-Docker, kubectl, Helm, Terraform
-- VS Code extensions — Java, Spring Boot, Python, GitHub Copilot, Continue, Roo Code
-- Post-start automation — configures AI tools (Claude Code, Continue, Roo Code) using secrets stored in Ona
+- VS Code extensions — Claude Code, Java, Spring Boot, Python, GitHub Copilot, Continue, Roo Code
+- Lifecycle scripts (`.devcontainer/scripts/`) — install dependencies, start the FHIR server and the AI chat archive watcher
 
 **Opening the project:**
 
 - **Local (Docker Desktop):** Open the folder in VS Code and click *Reopen in Container*
-- **Cloud (Ona):** The container builds automatically on first launch
+- **Cloud (GitHub Codespaces):** Code → Codespaces → Create codespace on main. Set `CLAUDE_API_KEY`, `SPRING_DATASOURCE_URL` and `NEON_DB_URL` as Codespaces secrets (github.com → Settings → Codespaces).
 
 ### Build and test before committing
 
@@ -433,4 +433,4 @@ Proprietary. All rights reserved. Third-party components are used under their re
 
 - [HAPI FHIR](https://hapifhir.io) — open-source FHIR implementation for Java (Apache License 2.0)
 - [Neon](https://neon.tech) — serverless PostgreSQL
-- [Ona (Gitpod)](https://ona.com) — cloud development environment
+- [GitHub Codespaces](https://github.com/features/codespaces) — cloud development environment

@@ -45,7 +45,7 @@ docker compose run --rm mcp-agent --query "Check refill risk for Kristle Mraz"
 
 | Variable | Required | Description |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | Yes | Anthropic API key. `CLAUDE_API_KEY` (the Ona secret name) is accepted as a fallback. |
+| `ANTHROPIC_API_KEY` | Yes | Anthropic API key. `CLAUDE_API_KEY` (the Codespaces secret name) is accepted as a fallback. |
 | `FHIR_GATEWAY_URL` | Yes | FHIR server base URL, e.g. `http://localhost:8080/fhir` |
 | `FHIR_API_KEY` | No | Kong API key — omit for local dev without Kong |
 | `TRIAGE_SERVICE_URL` | No | Triage service base URL (default `http://localhost:8001`) |

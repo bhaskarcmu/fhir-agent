@@ -8,8 +8,11 @@
 #   SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT → spring.jpa.properties.hibernate.dialect
 #
 # ─────────────────────────────────────────────────────────────────────────────
-# REQUIRED ENVIRONMENT VARIABLES (set as Ona project secrets or export locally)
+# REQUIRED ENVIRONMENT VARIABLES (set as GitHub Codespaces secrets or export locally)
 # ─────────────────────────────────────────────────────────────────────────────
+#
+# In Codespaces, SPRING_DATASOURCE_DRIVER_CLASS_NAME and HIBERNATE_DIALECT are preset by
+# .devcontainer/devcontainer.json; SPRING_DATASOURCE_URL comes from a Codespaces secret.
 #
 # 1. SPRING_DATASOURCE_URL  (REQUIRED)
 #    Format:  jdbc:postgresql://HOST/DBNAME?user=USERNAME&password=PASSWORD&sslmode=require
