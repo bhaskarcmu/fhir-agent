@@ -975,8 +975,598 @@ Step 2 is ready for review as **[PR #82](https://github.com/bhaskarcmu/fhir-agen
 
 Report back what it finds, or paste its summary here, and I'll fix anything that fails on the same PR.
 
+## Turn 25
+
+### Prompt
+
+After I rebuilt the container, the Claude Code session there is just stuck waiting on itself, stating this:
+
+======
+
+<pasted_content id="cc14">
+Confirmed the rebuild happened — the terminal hook is in /etc/bash.bashrc and creation.log shows a new postStartCommand run at 22:22 — but the latest archive commit (22:17) still predates it, so I'll wait for the watcher to push an updated commit.
+Monitor
+IN
+{
+  "command": "cd /workspaces/.ai-chat-history; until git fetch -q origin ai-chat-history && [ \"$(git log -1 --format=%h origin/ai-chat-history -- '*7057d269*')\" != bb272d2c ]; do sleep 10; done; git log -1 --format='%h %ci %s' origin/ai-chat-history -- '*7057d269*'",
+  "description": "Wait for a post-rebuild archive commit for this session",
+  "timeout_ms": 180000
+}
+OUT
+Monitor started (task b5hkgbe6f, expires in 3m unless the source ends first; you get one notice at expiry — re-arm if you still need the watch). You will be notified on each event. Keep working — do not poll or sleep. Events may arrive while you are waiting for the user — an event is not their reply.
+3:28 PM
+The Monitor will notify me when the new watcher pushes a commit for this session.
+</pasted_content id="cc14">
+
+============
+
+What is this "updated commit" business and how can we break the deadlock?
+
+### Claude response
+
+That message isn't a real deadlock. The Claude session in the codespace is running check #4, which confirms the archive watcher is working after the rebuild. It's waiting for the watcher to push a **new archive commit** that includes its own session (`7057d269`), and it gives up after 3 minutes. If the commit never arrives, the watcher in the codespace isn't pushing. The codespace's archive pushes go to the same GitHub branch as this environment's, so I can investigate from here.
+
+The data shows two different problems. I'll confirm the first one by checking what the stuck local commit here contains:
+
+It isn't a deadlock in the codespace itself. There are two separate problems, and the first is confirmed from here.
+
+## What the "updated commit" is
+Check #4 asks whether the archive watcher still works after a rebuild. The codespace's Claude looked at GitHub, saw that the last archive commit for its session (`7057d269`) was made at **22:17**, *before* the 22:22 rebuild. So it's waiting for the restarted watcher to push a newer one. If no commit ever comes, it isn't stuck forever: its wait gives up after 3 minutes. But a missing commit means the check **failed**.
+
+## Problem 1 (confirmed): two archivers are writing to the same branch
+This Ona environment's watcher and the codespace's watcher both push to `ai-chat-history`. Each one rewrites the same two shared files, `INDEX.md` and `manifests/claude-code.json`. At about 22:10 they collided, and git couldn't merge the two versions. **The Ona watcher has been stuck since then:** every cycle it commits locally, hits the same conflict, and pushes nothing (1 commit ahead, 9 behind).
+- **No conversation data is lost.** The transcripts are separate files per session, and the two shared files are rebuilt from scratch on every run.
+- The archive tool was built for **one writer**, and running two at once breaks that assumption. That was my oversight in Step 3's plan.
+
+## Problem 2 (not yet known): the codespace watcher hasn't pushed since the rebuild
+This isn't a knock-on from Problem 1. Nothing has been pushed to GitHub since 22:17, so the codespace's watcher had nothing to conflict with. More likely it **didn't come back after the rebuild**, which is exactly what check #4 exists to catch. Only the codespace can show why.
+
+## How to break the wait
+1. In the codespace's Claude Code, press **Esc** to stop the wait.
+2. Paste this:
+
+> Stop waiting for the archive commit. Check #4 appears to have failed: the watcher hasn't pushed anything since the rebuild. Diagnose it **without changing anything**, and never print secret values. Report the output of:
+> 1. `ps -eo pid,args | grep -E "[a]rchive-watcher|[a]rchive_ai|[i]notifywait"`
+> 2. `tail -30 /workspaces/setup.log`
+> 3. `tail -20 /workspaces/.ai-chat-history/ai-chat-documentation/logs/watcher.log` and `tail -5 /workspaces/.ai-chat-history/ai-chat-documentation/logs/sync.log`
+> 4. `git -C /workspaces/.ai-chat-history status -sb | head -3` and `ls -la /workspaces/.ai-chat-history/ai-chat-documentation/logs/`
+> 5. `echo $CLAUDE_PROJECTS_BASE; ls -la $CLAUDE_PROJECTS_BASE`
+> 6. `ls -la /tmp/archive-watcher-supervisor.lock ${XDG_RUNTIME_DIR:-/tmp}/archive-watcher-supervisor.lock 2>&1`
+>
+> Then summarise what you think is wrong.
+
+Paste its report here and I'll fix the cause in PR #82.
+
+## What I suggest doing about Problem 1 now
+Only one environment should archive at a time, and the codespace is the one we're proving. I'd like to:
+1. **Stop the Ona watcher.** This is reversible. Until the codespace is confirmed working, conversations here won't be archived; nothing is lost, because the transcripts stay on disk.
+2. **Discard its stuck local commit** and resync from GitHub. This deletes one unpushed local commit, but its contents get rebuilt automatically. Because it removes a commit, I'm asking before doing it.
+
+At cutover (Step 6), I'd run one final Ona sync while the codespace watcher is paused, so this session's last turns are archived too. Separately, the archive tool could be made safe for two writers by regenerating `INDEX.md` and the manifest when a rebase conflicts. That would be a small change in the `ai-chat-history` tooling, worth doing if you expect more than one environment to run at once.
+
+Should I go ahead with 1 and 2?
+
+## Turn 26
+
+### Prompt
+
+Yes, perform 1 amd 2 as you suggested exactly.
+
+Now, Check PR#82 in deep detail because the other Claude Code running in CodeSpaces just made some changes, and said this:
+
+----------------------
+
+<pasted_content id="cc14">
+The rebuild is confirmed, and history and memory survived it. All six checks pass now, but check 4 only passed after I fixed a new bug the rebuild exposed.
+
+Rebuild evidence: /etc/bash.bashrc contains the new terminal hook, which only a rebuild with the updated Dockerfile could add. creation.log shows a new postStartCommand run at 22:22, and the FHIR container and watcher had new process IDs and 22:20 start times.
+
+#	Check	Result
+1	Env vars	✅ CLAUDE_API_KEY, SPRING_DATASOURCE_URL and NEON_DB_URL are set; ANTHROPIC_API_KEY is not set. No values were printed.
+2	CLAUDE_CONFIG_DIR / transcript	✅ It's /workspaces/.claude-home. This session's transcript and the never-expose-secret-values memory survived the rebuild.
+3	FHIR metadata and setup.log	✅ FHIR came up on its own after the rebuild, and setup.log has no errors.
+4	Archive watcher	⚠️ ✅ It started on its own but couldn't commit. After my fix it's running on ai-chat-history and pushed 30dc03bb, which contains this session.
+5	gh	✅ It's logged in as bhaskarcmu with the built-in GITHUB_TOKEN (token redacted), and gh pr list shows PR #82 as open.
+6	pytest client/clinical/tests triage-service/src/triage/tests -q	✅ 107 passed. The warnings afterwards are only about exporting telemetry to localhost:4317.
+The bug the rebuild exposed:
+
+What happened: right after the image build, the devcontainer CLI runs an interactive shell to read the user environment, before Codespaces adds the GitHub tokens. That shell triggered my new terminal hook, which started the watcher. Without GITHUB_TOKEN the watcher can't sign or push, so every archive commit failed with exit status 128. The log message was too vague to tell you that.
+The fix: post-start.sh now starts the watcher only when GITHUB_TOKEN is set, and a later run (attach or a real terminal) starts it instead. FHIR doesn't need the token, so it still starts early, which is why check 3 passed by itself.
+Tests: without the token, post-start.sh didn't start the watcher; with it, the watcher started, had the token, and pushed 30dc03bb.
+Branch and commit: commit a39c1983 on feature/codespaces-devcontainer, pushed to PR #82. The only file changed is .devcontainer/scripts/post-start.sh.
+
+Not yet proven: that the watcher starts by itself after a rebuild with this guard in place. Today I restarted it by hand. One more Rebuild Container and the same prompt would confirm it. Look for a post-start(postAttach) or post-start(terminal) "archive watcher: starting" line after the rebuild, and a new archive commit pushed for this session.
+</pasted_content id="cc14">
+
+### Claude response
+
+I'll do 1 and 2 first. Worktree: `/workspaces/.ai-chat-history`, branch `ai-chat-history`, target: reset to `origin/ai-chat-history`. First, stopping the Ona watcher:
+
+By the time it stopped, the stuck watcher had piled up **4** unpushed local commits, not 1. Before discarding them, I'll confirm they contain only archive output and no tool code:
+
+They're only archive snapshots of this session, and the live transcript stays on disk to be rebuilt later. Resetting:
+
+The codespace's Claude added two commits, `a132dedd` and `a39c1983`, which also touch the Dockerfile. I'll fast-forward my local branch, then read both commits in full:
+
+I've finished the deep review. The two commits from the codespace's Claude are **sound and well reasoned**, and everything I could verify from here passes. I found two real issues it didn't address, plus some follow-up items.
+
+## What the two new commits do
+
+**`a132dedd` — restart background services that the startup steps lose.**
+- **Problem it fixes:** on a fresh codespace, the FHIR server and watcher launched by `postStartCommand` died immediately. The startup step returned in about 60 ms and the background jobs never wrote a log line.
+- **Fix:**
+  - `post-start.sh` now skips anything already running, and logs each launch;
+  - it runs from three places: `postStartCommand`, a new `postAttachCommand`, and every interactive terminal (a hook in `/etc/bash.bashrc`);
+  - the watcher keeper waits up to 5 s for its lock instead of exiting straight away.
+- **Verdict:** a reasonable workaround. Codespaces has no service manager, so "restart whatever isn't running at every opportunity" is the practical answer.
+
+**`a39c1983` — don't start the watcher without a GitHub token.**
+- **Problem it fixes:** right after a rebuild, the devcontainer tooling opens an interactive shell before Codespaces adds `GITHUB_TOKEN`. The new terminal hook started the watcher from that shell, and every commit then failed (exit 128). The token is needed because you turned on **GPG verification** in Step 1, so every commit must be signed by GitHub.
+- **Fix:** only start the watcher when `GITHUB_TOKEN` is set.
+- **Verdict:** correct, and the root-cause analysis is good.
+
+## What I verified
+| Check | Result |
+|---|---|
+| The Dockerfile writes valid shell into `/etc/bash.bashrc` | ✅ |
+| The hook only runs in interactive shells (Ubuntu's `bash.bashrc` returns early on line 7 otherwise), so scripts and tool shells never trigger it | ✅ |
+| The hook prints nothing, so it can't break `scp`/`rsync` or shell startup | ✅ |
+| All scripts pass `bash -n`; the devcontainer CLI parses the config, including `postAttachCommand` | ✅ |
+| **Race test:** 3 keepers launched at the same moment, isolated with a stub watcher | ✅ Exactly 1 watcher ran; the other two exited within 5 s |
+| Ona is unaffected (the hook and scripts check `CODESPACES`) | ✅ |
+
+## Issues found
+1. **Possible duplicate watchers (medium; my bug, made more likely by these changes).** When the keeper starts, it deletes `watcher.lock` unconditionally. I assumed it was the only launcher, but there are now three launch points. If a keeper is killed while its Python watcher survives as an orphan, the next keeper deletes the live lock and starts a **second watcher in the same folder**. Two processes then run git commands concurrently, causing `index.lock` errors and failed commits. **Fix:** delete the lock only if the process ID in it isn't a running `archive_ai` process. That's about four lines.
+2. **FHIR can't stay stopped (low).** Every new terminal restarts FHIR if it isn't running, including after `docker compose down` on purpose. **Fix:** an opt-out, for example `touch /workspaces/.no-fhir-autostart`, or an environment variable.
+3. **The PR description is out of date.** It describes only `postStartCommand`, doesn't mention the Dockerfile hook or the token guard, and its "not yet validated" list has changed. I'd update it.
+4. **Not proven yet (agreed with the codespace's Claude):** whether the watcher starts *by itself* after a rebuild with the token guard. That depends on `postAttachCommand` running with `GITHUB_TOKEN` set. One more rebuild settles it.
+5. **Watch item:** the long-running watcher keeps the `GITHUB_TOKEN` it started with. If Codespaces rotates that token during a long session, signing and pushing could start failing hours later. The push-error logging I added earlier would show this in `watcher.log`. Nothing to do now.
+6. **Optional, in the archive tooling:** when `git commit` fails, the watcher logs only "exit status 128", without git's actual message. That's what made the token problem hard to diagnose. It's a small change on the `ai-chat-history` branch.
+
+## Recommendation
+Approve the direction. I'd fix 1–3 on the PR branch, then do one more **Rebuild Container** for item 4. Before I push: the codespace's Claude also commits to this branch, so **ask it to stop editing PR #82** until I've pushed, then to run `git pull` before doing anything else.
+
+Should I go ahead with fixes 1–3, and also 6?
+
+## Turn 27
+
+### Prompt
+
+I am going to skip item 4 ( whether the watcher starts by itself after a rebuild with the token guard.) for now. I will stop entering any prompts to the Claude Code running in Codespaces until I hear from you that PR#82 is merged and associated branches are deleted. Even after that I will ask you before I prompt anything into the Claude Code in Codespaces.
+
+Now, I suggest you perform all your recommended changes and fixes (except the Rebuild Container recommendation for Codespaces). I will merge the PR and come back here first to check with you.
+
+Critique the above approack for me before doing anything. I feel like container rebuild and verifying if the ai prompt watcher works on next containser start (and troubleshooting/fixing at that point) can happen later anyways after this PR is merged.
+
+### Claude response
+
+Your plan is sound. Testing the rebuild after the merge is reasonable because:
+- these changes only affect Codespaces (the scripts do nothing in Ona);
+- nothing in them can lose data;
+- any startup bug would just be fixed in a small follow-up PR.
+
+A few things should be adjusted, though.
+
+## What works well
+- **No two editors on one branch.** Pausing the codespace's Claude removes the risk of us both committing to PR #82 at once.
+- **The test happens anyway.** A rebuild isn't needed to prove the watcher starts by itself. The codespace stops after 30 idle minutes, and any normal **stop/start** runs the same startup steps, including the token check. The first real use after the merge *is* the test.
+- **My fixes don't need a rebuild.** Fixes 1–3 only change scripts, which are read fresh each time they run. They don't touch the Dockerfile, so they take effect on the next start or terminal, with no rebuild.
+
+## Risks and adjustments
+1. **Don't delete the existing codespace.** It holds things that exist nowhere else: the Step 0 files you restored (`mlflow.db`, `models/`) and that session's Claude history and memory in `/workspaces/.claude-home`. After the merge, switch it to `main` instead of creating a new codespace. Otherwise you'd need to restore the zip again, and the memory would be lost.
+2. **That codespace is on the PR branch.** Once the branch is deleted, its checkout will point at a branch that no longer exists. It needs a one-time `git switch main && git pull`. I'll give you the exact prompt when you come back. Also, the next codespace start will run the post-start script from whichever branch is checked out, which is another reason to switch first.
+3. **The archive has a gap until then.** The Ona watcher is stopped, so this session hasn't been archived since about 22:10. The codespace watcher only archives the codespace's own sessions. Nothing is lost, because the transcripts are on disk, but nothing reaches GitHub until we do Step 6's final Ona sync. Keep that step on the list.
+4. **The first codespace start after the merge needs a quick check.** If the watcher fails to start, it fails silently. So that first time, look before you rely on it: a two-minute check, and I'll write the prompt.
+5. **Fix 6 isn't part of this PR.** It lives on the `ai-chat-history` branch, which gets direct commits and no PRs. I'll commit it from this worktree and push it on its own; it's safe because the Ona watcher is stopped. The codespace's watcher picks it up on its next restart, after its automatic `pull --rebase`.
+6. **Testing limits.** I can test fix 1 the same way as before, in isolation with a stub watcher, but not in a real codespace. That's acceptable given point 4.
+
+## Order of work if you agree
+1. On the PR branch: fix 1 (safe lock cleanup), fix 2 (FHIR opt-out), fix 3 (refresh the PR description). Isolated tests, then push.
+2. On `ai-chat-history`: fix 6 (log git's real error message), with the tool's tests run before pushing.
+3. Report back. **You merge.** Then I ask before deleting the branch, and give you the switch-to-`main` prompt and the first-start check prompt.
+
+Should I proceed?
+
+## Turn 28
+
+### Prompt
+
+Agree with everything you just said. Proceed
+
+### Claude response
+
+Starting with fix 1, safe lock cleanup. One more detail turned up while designing it. If the keeper finds a **live** watcher, it shouldn't just skip deleting the lock: `autostart.sh` also runs a one-off `sync` that commits and pushes without taking the lock, and that would run alongside the live watcher. So the keeper will **wait** while a live watcher exists, and take over once it exits.
+
+Fix 2 works, and the token guard held during the same test. Last checks before committing: syntax, and confirming both scripts still do nothing in Ona.
+
+Worktree: `/workspaces/fhir-agent`, branch `feature/codespaces-devcontainer` (PR #82), target `origin/feature/codespaces-devcontainer`. Committing fixes 1 and 2:
+
+Fixes 1 and 2 are pushed (`7a13c420`). Now fix 3: rewriting the PR #82 description so it matches all five commits.
+
+The PR description is updated, and the PR is mergeable at `7a13c420`. Now fix 6 in the archive tooling, on the `ai-chat-history` branch. First, how the publisher handles a failed git command:
+
+Nothing depends on `CalledProcessError`, and the CLI already handles `PublishError` cleanly. Raising `PublishError` with git's message is therefore both more informative and better handled.
+
+All the agreed changes are done and pushed. PR #82 is ready for you to merge.
+
+**PR #82** (branch `feature/codespaces-devcontainer`, now at `7a13c420`, mergeable):
+- **Fix 1, no duplicate watchers:** [archive-watcher.sh](.devcontainer/scripts/archive-watcher.sh) now waits while a running watcher holds the lock and takes over when it exits, instead of deleting the lock. Locks left by dead or reused process IDs are still cleared. Isolated tests passed in all three cases.
+- **Fix 2, FHIR opt-out:** [post-start.sh](.devcontainer/scripts/post-start.sh) won't auto-start FHIR while `/workspaces/.no-fhir-autostart` exists. Tested with a fake `docker` command. The same test confirmed no watcher starts without `GITHUB_TOKEN`, and both scripts still do nothing in Ona.
+- **Fix 3:** the [PR description](https://github.com/bhaskarcmu/fhir-agent/pull/82) is rewritten. It covers all four commits, the codespace's own test results, my isolated tests, and the deferred checks.
+
+**Archive tooling, fix 6** (`ai-chat-history` branch, commit `644996ae`, pushed):
+- A failed git step now logs git's own message, for example `git commit failed (exit 128): … gpg failed to sign the data`, instead of just "exit status 128".
+- A new regression test reproduces the Codespaces signing failure; all 53 tests pass.
+- The codespace's watcher will use this after its next restart.
+
+**Current state:**
+- The Ona watcher is stopped, so nothing from this session is being archived until Step 6's final sync. Nothing is lost.
+- This checkout is on the PR branch.
+- I didn't change anything in the codespace.
+
+**Your turn:** merge PR #82, then come back here. I'll then:
+1. ask before deleting the branch, locally and on GitHub;
+2. give you the prompt that switches the existing codespace to `main`. Remember to keep that codespace, not delete it.
+3. give you a short check to run on the codespace's first start after the merge.
+
+## Turn 29
+
+### Prompt
+
+PR #82 merged. Delete the associated merged branches. and proceed with what you suggested for next
+
+### Claude response
+
+I'll confirm the merge first.
+
+PR #82 is merged (`48a5d65c`), and its branch is deleted both locally and on GitHub. This checkout is back on `main`, updated to the merge. You can use the codespace again. Do it in two prompts, with a restart in between; the restart doubles as the "does the watcher start on its own?" test we put off.
+
+## 1. Switch the codespace to `main` (paste into Claude Code in the codespace)
+
+> PR #82 is merged and its branch `feature/codespaces-devcontainer` was deleted on GitHub. This codespace is still checked out on that branch. Switch it to `main` safely:
+> 1. In `/workspaces/fhir-agent`, run `git status`. If anything is modified or untracked other than gitignored files, stop and report it. (The restored `mlflow.db` and `models/` are gitignored and expected.)
+> 2. Run `git fetch --prune origin && git switch main && git pull --ff-only`, then `git branch -d feature/codespaces-devcontainer`.
+> 3. Confirm that `git log -1 --oneline` shows `48a5d65c` (or newer), and that `git diff origin/main -- .devcontainer` is empty.
+> 4. In `/workspaces/.ai-chat-history`, confirm it's on `ai-chat-history` and run `git pull --ff-only`.
+>
+> Don't rebuild, don't restart anything, and don't commit. Report the results.
+
+No rebuild is needed: the merged Dockerfile matches what that codespace was already built from, and the script changes take effect the next time they run.
+
+## 2. Restart the codespace (in the browser or VS Code)
+Command Palette → **Codespaces: Stop Current Codespace**. Then reopen it from github.com → **Code** → **Codespaces** → your codespace. Wait about a minute after it opens, and open one terminal.
+
+## 3. First-start check (paste after the restart)
+
+> This codespace was just stopped and started, after switching to `main` (PR #82 merged). Verify that background services started **by themselves**. Report only: don't fix or change anything, and never print secret values.
+> 1. `grep -E "post-start\(" /workspaces/setup.log | tail -8`: which runs (postStart / postAttach / terminal) started FHIR and the archive watcher after this start?
+> 2. `ps -eo pid,lstart,args | grep -E "[a]rchive-watcher|[a]rchive_ai|[i]notifywait"`: exactly one supervisor and one `archive_ai watch`, started after this start?
+> 3. `tail -15 /workspaces/.ai-chat-history/ai-chat-documentation/logs/watcher.log`: any `[watch] error` or `push error` lines?
+> 4. Using `git -C /workspaces/.ai-chat-history fetch -q origin`, has `origin/ai-chat-history` received an archive commit containing this session, made after this start?
+> 5. `curl -sf http://localhost:8080/fhir/metadata >/dev/null && echo FHIR OK`
+>
+> Summarise pass or fail for each item. If anything failed, include the relevant log lines.
+
+Bring the report back here. If the watcher didn't start by itself, I'll fix it in a small follow-up PR.
+
+## Remaining migration steps after that
+- **Step 4 (browser, you):** turn on the prebuild: repo **Settings** → **Codespaces** → **Set up prebuild**, branch `main`, trigger **on configuration change**.
+- **Step 5 (me, PR):** replace the "Ona" wording in the docs, point CI's secret scan at `.devcontainer`, and delete `.ona/`.
+- **Step 6 (together):** with the codespace **stopped** so only one archiver runs, I do a final archive sync of this Ona session. Then you shut Ona down, revoke its GitHub access, delete the two old personal access tokens, and optionally rotate the Anthropic key and Neon password.
+
+## Turn 30
+
+### Prompt
+
+All tests passed, watcher started on its own as well. I dont want to give you detailed report.
+
+Help me proceed to step 4, taking all recent events into account
+
+### Claude response
+
+Taking recent events into account, my recommendation for Step 4 is to **skip the prebuild for now**. That's a change from my earlier plan, so here's why, plus how to set it up properly if you still want it.
+
+## Why skip it now
+1. **It only speeds up creating *new* codespaces.** A prebuild doesn't make your existing codespace start faster. Stop/start is already fast, as your restart just showed. You're keeping one long-lived codespace (it holds your restored Step 0 files and Claude memory), so you'd rarely benefit.
+2. **You no longer need it for the warm-up.** PR #81 was about avoiding a *manual* warm-up step. Without a prebuild, dependencies still install **automatically** when a codespace is created; the first creation just takes about 5–10 minutes longer.
+3. **It uses your free storage, and you set a $0 budget.** A prebuild keeps a stored snapshot (several GB), which counts toward the same monthly Codespaces storage allowance as your codespace. With the budget at $0, going over the allowance would **block your codespace**. That's a worse problem than a slow first creation.
+4. **It's untested with our scripts.** `install-dependencies.sh` only runs when `CODESPACES=true`, the guard that keeps Ona safe. I'm not certain GitHub sets that variable inside prebuild jobs. If it doesn't, the prebuild would silently skip the install, and codespaces made from it would have **no dependencies**, because prebuilt codespaces don't re-run that step. The guard can be changed once Ona is gone (Step 5 deletes `.ona/`), so this risk goes away then.
+
+**Recommendation:** skip now, and reconsider after Step 5, if you start creating fresh codespaces regularly.
+
+## If you want it anyway (after Step 5)
+1. Repo page → **Settings** → **Codespaces** → **Set up prebuild**.
+2. Set:
+   - **Branch:** `main`;
+   - **Configuration:** `.devcontainer/devcontainer.json`;
+   - **Region:** only the one you use, since each region is another stored copy;
+   - **Trigger:** **On configuration change**, so it rebuilds only when `.devcontainer/` changes, not on every push;
+   - **Template history:** **1** (keep only the latest);
+   - **Failure notifications:** add yourself.
+3. Click **Create**, then check the first run under the repo's **Actions** tab → **Codespaces Prebuilds**: the log should show the pip installs and Maven running.
+4. Watch storage under **Settings** → **Billing and licensing** → **Usage** for a few days.
+
+GitHub Actions minutes are free for public repos, so the main cost is storage.
+
+## Next
+If you agree to skip, Step 5 is next for me: the docs PR, the CI secret-scan path, and deleting `.ona/`. In that same PR I'd change the dependency-install check from "only in Codespaces" to "skip in Ona", which makes a future prebuild safe.
+
+Should I go ahead with Step 5?
+
+## Turn 31
+
+### Prompt
+
+I don't want you to actually perform any changes for step 5. I just want you ti give me a very detailed set of instructions for the other Claude Code within Codespaces to do what you would have done for step 5. The reason is that I asked the other Claude Code to verify it can build and test everything, so it may have some unpushed changes queued up already.
+
+### Claude response
+
+To make the instructions precise, I'll take an exact inventory of every Ona reference on `main` (read-only), along with the CI step and each file's context.
+
+Here's a ready-to-paste prompt for the Claude Code in your codespace. It covers everything I'd have done for Step 5, with exact files and lines taken from the current `main` (`48a5d65c`).
+
+- **Your pending work:** step 1 of the prompt makes it report its queued work and set it aside safely, so Step 5 goes in a **separate branch and PR** and nothing gets mixed or lost.
+- **Deletions:** your instructions require asking before deleting files, so I've written your approval into the prompt for exactly two of them.
+
+````markdown
+# Task: Ona → Codespaces migration, Step 5 (remove Ona from the repo)
+
+Ona is retiring; this codespace replaced it (PR #82, merged as 48a5d65c). Your job: remove every
+*current* Ona dependency/reference from the repo in ONE separate feature branch + PR. Follow
+CLAUDE.md throughout (state worktree/branch/target before any git write; one logical step per
+command; never commit to main; never merge).
+
+## Ground rules
+- Never print secret values. Do NOT touch /workspaces/.ai-chat-history or the `ai-chat-history`
+  branch (its copy of `.ona/` is history). Do NOT rebuild the container. Do NOT force-push.
+- Leave the gitignored Step 0 files (outcome-prediction-lab/mlflow.db, outcome-prediction-service/models/) alone.
+- The user has APPROVED deleting exactly these two paths, nothing else:
+  `.ona/automations.yaml` (the whole `.ona/` dir) and `.devcontainer/scripts/setup-credentials.sh`.
+- If anything doesn't match what's described below, STOP and report instead of improvising.
+
+## Step 1 — Protect your pending work FIRST
+1. In /workspaces/fhir-agent report: current branch, `git status --short`, `git stash list`, and any
+   local commits not on origin (`git log --oneline origin/main..HEAD`, and for each local branch).
+2. If there are uncommitted changes: do NOT discard them and do NOT carry them into the Step 5
+   branch. Commit them on their own branch (not main), e.g. `chore/codespaces-build-verify`
+   (push it, but don't open a PR unless the user asks). If you're unsure whether they're meant to be
+   kept, stop and ask the user.
+3. Confirm `git status` is clean, then: `git fetch --prune origin` and
+   `git switch -c chore/remove-ona origin/main`. Verify HEAD is 48a5d65c or newer.
+
+## Step 2 — Changes (exactly these)
+
+**A. Delete** `.ona/` and `.devcontainer/scripts/setup-credentials.sh`.
+Why setup-credentials.sh: Ona-only (invoked only from .ona/automations.yaml); its
+`gh auth login` with GITHUB_TOKEN_REPO and the GH_TOKEN Copilot install conflict with
+Codespaces' built-in GITHUB_TOKEN; neither PAT exists anymore.
+
+**B. `.devcontainer/scripts/install-dependencies.sh`** — remove the line
+`[ "${CODESPACES:-}" = "true" ] || exit 0` and the comment line
+`# Codespaces only: Ona runs the same install via its installDependencies task.`
+Update the header comment to say it runs as devcontainer.json's updateContentCommand in Codespaces
+(including prebuilds) and in local Dev Containers. Why: the guard only existed to avoid a double
+install under Ona, and GitHub may not set CODESPACES inside prebuild jobs — so the guard would
+make a future prebuild silently skip the install.
+
+**C. `.devcontainer/scripts/post-start.sh`** — KEEP the `CODESPACES` guard (the archive watcher needs
+the Codespaces GITHUB_TOKEN to sign/push). Only reword comments:
+- line ~4: drop "(unlike Ona)" → "Codespaces has no service supervisor, so archive-watcher.sh keeps
+  the watcher alive itself."
+- lines ~15-16: replace the Ona explanation with: "Codespaces only: the archive watcher signs and
+  pushes with the Codespaces GITHUB_TOKEN. In a local Dev Container, start FHIR with
+  `docker compose up -d fhir`."
+
+**D. `.devcontainer/Dockerfile`** lines 5-7 — replace the stale "diagnostic build … on this Ona
+environment" comment with an accurate one, e.g.:
+`# Base toolchain: Java 21, Maven, Python 3 (venv at /opt/pyenv) and inotify-tools (AI chat`
+`# archive watcher). Docker-in-Docker, Node, gh, Terraform and kubectl/Helm come from the`
+`# devcontainer features in devcontainer.json.`
+Comment-only: no RUN line changes. Do NOT rebuild because of it.
+
+**E. `.github/workflows/tests.yml`** line ~28 (job `ci-config-llm-provider-gate`): change
+`grep -rEn "$pattern" .github/workflows .ona` → `... .github/workflows .devcontainer`
+(devcontainer.json's containerEnv is now where an LLM_PROVIDER pin could hide). Check the job's
+comment block above it for any `.ona` mention and update it too.
+
+**F. `CLAUDE.md` AND `.clinerules`** (identical edits — they must stay in sync):
+- line ~42: `(editable installs + test tooling — see .ona/automations.yaml)` →
+  `(editable installs + test tooling — the devcontainer runs .devcontainer/scripts/install-dependencies.sh automatically)`
+- line ~56: `(the Ona secret name)` → `(the Codespaces secret name). ANTHROPIC_API_KEY is deliberately
+  not set, so Claude Code's /login can switch between a Claude.ai subscription and the API.`
+- In "Repository layout — two worktrees", add one sentence: in Codespaces,
+  `.devcontainer/scripts/archive-watcher.sh` recreates `/workspaces/.ai-chat-history` automatically.
+
+**G. `README.md`** "Development Environment" section (~lines 316-327):
+- Dockerfile bullet: keep; it's accurate.
+- Extensions bullet: add Claude Code.
+- Replace "Post-start automation — configures AI tools … using secrets stored in Ona" with
+  "Lifecycle scripts (`.devcontainer/scripts/`) — install dependencies, start the FHIR server and the
+  AI chat archive watcher".
+- Replace "**Cloud (Ona):** The container builds automatically on first launch" with
+  "**Cloud (GitHub Codespaces):** Code → Codespaces → Create codespace on main. Set
+  `CLAUDE_API_KEY`, `SPRING_DATASOURCE_URL` and `NEON_DB_URL` as Codespaces secrets
+  (github.com → Settings → Codespaces)."
+- line ~436: replace the `[Ona (Gitpod)](https://ona.com)` entry with
+  `[GitHub Codespaces](https://github.com/features/codespaces) — cloud development environment`.
+
+**H. `docs/demo-guide.md`** ~lines 247-250: "or in the cloud (Ona). `.ona/automations.yaml` scripts
+dependency install and credential setup." → "or in the cloud (GitHub Codespaces). The
+devcontainer's lifecycle scripts install dependencies and start services automatically."
+
+**I. Neon docs** — `fhir-service/README.md` ~line 77 and
+`fhir-service/src/main/resources/application-neon.yaml` ~line 11: "Ona project secrets" →
+"GitHub Codespaces secrets". In both places add one line: in Codespaces,
+`SPRING_DATASOURCE_DRIVER_CLASS_NAME` and `HIBERNATE_DIALECT` are preset by
+`.devcontainer/devcontainer.json`; `SPRING_DATASOURCE_URL` comes from a Codespaces secret.
+Read the surrounding text first and keep the wording consistent with it.
+
+**J. "(the Ona secret name)" → "(the Codespaces secret name)"** in: `mcp-agent/README.md` ~48,
+`.env.example` ~13, `docker-compose.yml` ~71 (comment only).
+
+**K. Do NOT change historical records:** `docs/phase2/plan.md:147`,
+`docs/phase2/requirements.md:100`, `docs/phase6/decisions.md:75` (H50). They describe past
+decisions and stay as written.
+
+**L. Don't touch:** `devcontainer.json`, `archive-watcher.sh` (no Ona references).
+
+## Step 3 — Verify (all must pass)
+1. `git grep -n -I -iE "gitpod|\bona\b|\.ona/|setup-credentials"` → ONLY the 3 historical lines in K remain.
+2. `bash -n` on every `.devcontainer/scripts/*.sh`; `python3 -c "import json;json.load(open('.devcontainer/devcontainer.json'))"`;
+   `npx -y @devcontainers/cli@0.71.0 read-configuration --workspace-folder .` succeeds.
+3. CI gate, run locally: `var_name="LLM""_PROVIDER"; pattern="${var_name}[=:] *[\"']?(anthropic|openai_compatible)"; grep -rEn "$pattern" .github/workflows .devcontainer`
+   → no output. And `python3 -c "import yaml;yaml.safe_load(open('.github/workflows/tests.yml'))"` succeeds.
+4. `diff CLAUDE.md .clinerules` → only the title/intro lines 1-4 differ (same as on main).
+5. `bash .devcontainer/scripts/install-dependencies.sh` (now unguarded) → exit 0.
+6. `bash .devcontainer/scripts/post-start.sh manual` → no-op; afterwards exactly ONE archive
+   supervisor and ONE `archive_ai watch` process (`ps -eo pid,args | grep -E "[a]rchive-watcher|[a]rchive_ai"`).
+
+## Step 4 — Commit, push, PR (do not merge)
+- One commit on `chore/remove-ona`: `chore: remove Ona configuration and references (Codespaces migration step 5)`,
+  body summarising A–J and why setup-credentials.sh and the install guard were removed.
+- Push, then open a PR to `main` summarising: what was removed or reworded, what was deliberately
+  kept (historical records, post-start.sh guard), validation results, and this note: "The old Ona
+  environment loses its automations config once this merges. That's fine: the remaining Ona step
+  (a final archive sync) is manual."
+- Report to the user: what happened to your pending work (branch/commit), plus branch, commit hash,
+  PR URL and the verification results.
+````
+
+**Notes for you:**
+- The prompt starts by setting its queued work aside. If it doesn't know whether that work should be kept, it will ask you rather than guess.
+- After it opens the PR, bring me the PR number if you'd like a review before merging.
+- **Before Step 6**, stop the codespace (Command Palette → **Codespaces: Stop Current Codespace**), so I can run the final Ona archive sync with only one archiver active.
+
+## Turn 32
+
+### Prompt
+
+Review PR#83 and give feedback here. Do not commit or push anything
+
+### Claude response
+
+I'll review it read-only, inspecting the PR through `git show` and `git grep` against the fetched ref, without switching branches. I won't commit or push anything.
+
+I've read the full diff and the description. Now I'll verify its claims independently against the PR's own files. I'm extracting the PR tree into a scratch folder, so nothing in the repo changes.
+
+PR #83 is good to merge once its last two CI checks finish. Nothing blocks it, and I found only small, optional issues. I didn't commit or push anything.
+
+## Verdict
+The PR matches the Step 5 spec item for item, with nothing extra. I checked its claims against its own files, not just its description:
+
+| Check | Result |
+|---|---|
+| Remaining Ona references | ✅ Only the 3 historical records we agreed to keep |
+| `.ona/` and `setup-credentials.sh` removed; no leftover references (including `GITHUB_TOKEN_REPO`) | ✅ |
+| The "no paid LLM provider" CI gate now scans `.github/workflows` and `.devcontainer` | ✅ No hits, and the gate job passed in CI |
+| `CLAUDE.md` and `.clinerules` in sync | ✅ Only the title and intro lines differ, same as on `main` |
+| Scripts pass `bash -n`; `tests.yml` and `devcontainer.json` parse | ✅ |
+| `install-dependencies.sh` guard removed; `post-start.sh` guard kept, with accurate comments | ✅ |
+| Based on current `main`, one commit, mergeable | ✅ |
+| CI | ✅ 12 passed; ⏳ 2 still running (`phase1 (independence)`, `phase8 agent (self-hosted model)`, both slow jobs) |
+
+## Optional issues (none block merging)
+1. **You may see a "rebuild" prompt.** The PR edits a comment in the Dockerfile, so after you pull `main`, Codespaces may say the configuration changed and offer a rebuild. You can dismiss it, because comment changes don't affect the build.
+2. **Decision H50 now reads out of date.** It says the CI gate scans "workflow YAML or `.ona/automations.yaml`", but the gate now scans `.devcontainer`. Keeping history unchanged was the right call, but a one-line dated note on H50 would stop readers being misled. Worth a small follow-up.
+3. **`mcp-agent/README.md` marks `ANTHROPIC_API_KEY` as "Required: Yes".** That was already inaccurate before this PR: the default provider is self-hosted Ollama, and the key is only needed with `LLM_PROVIDER=anthropic`. It now stands out more, since Codespaces deliberately leaves the variable unset. Separate follow-up.
+4. **README's "Dockerfile" bullet** credits Docker-in-Docker, kubectl, Helm, Terraform and Node to the Dockerfile. They come from devcontainer features, as the new Dockerfile comment correctly says. This is a minor inconsistency that was already there.
+5. **Wording in `CLAUDE.md`/`.clinerules`:** "`ANTHROPIC_API_KEY` is deliberately not set" doesn't say *where*. "is deliberately not set in the devcontainer" would be clearer. Minor.
+
+If you want 2–5 fixed, they fit together in one small docs PR after this merges. They don't need to hold this one up.
+
+## One thing to check with the codespace's Claude
+The prompt told it to put any queued build/test work on its own branch and push it, but there's **no such branch on GitHub**. Either it had no pending changes, or it left them uncommitted in the codespace. Its report to you should say which. Make sure nothing is sitting there unsaved before Step 6.
+
+## Next
+1. When both checks are green, merge #83 and come back here. I'll ask before deleting `chore/remove-ona`.
+2. **Before Step 6:** stop the codespace, so only one archiver runs while I do the final Ona sync.
+
+## Turn 33
+
+### Prompt
+
+PR #83 was merged and associated branches deleted. You don't have to vberify that this was done.
+
+Tell me what all work is left to finish off the migration
+
+### Claude response
+
+Here's everything left, in order. Only Step 6 is needed to finish the migration; the rest is optional cleanup.
+
+## Must do: Step 6, shut down Ona
+
+| # | Who | Task | Notes |
+|---|---|---|---|
+| 1 | You → codespace Claude | **Confirm nothing is unsaved in the codespace** | Earlier it had queued build/test work, but no branch for it ever reached GitHub. Ask it for `git status` and any unpushed commits. |
+| 2 | You | **Stop the codespace** (Command Palette → *Codespaces: Stop Current Codespace*) | So only one archiver writes to `ai-chat-history` during the next step. |
+| 3 | Me | **Final archive sync of this Ona session** | A one-off `sync`, not the watcher. Run it as the **last thing we do in Ona**: anything said here afterwards won't be archived. |
+| 4 | You | **Restart the codespace** | Its watcher resumes as the only archiver. The Ona sessions show in the archive index as "archived (source deleted)", which is expected. |
+| 5 | You (Ona website) | **Delete the Ona environment and its 7 project secrets** | Step 0 already saved everything local. |
+| 6 | You (GitHub) | **Revoke Ona's access:** Settings → Applications → *Installed GitHub Apps* and *Authorized OAuth Apps*, Ona/Gitpod → Revoke | |
+| 7 | You (GitHub) | **Delete the two old personal access tokens:** Settings → Developer settings → Personal access tokens (`GH_TOKEN` Copilot fine-grained, `GITHUB_TOKEN_REPO` classic) | Nothing uses them any more. |
+| 8 | You | **Rotate the Anthropic key and Neon password** (recommended) | Ona held them, and the deleted crash dump probably contained them too. See the caveat below. |
+
+**Caveat for step 8:** the Neon password may be shared. The example Kong database secret uses the same role, `neondb_owner`, and the GKE FHIR deployment uses `SPRING_DATASOURCE_URL`. If those GKE deployments still exist and use that role, rotating the password breaks them until their Kubernetes secrets are updated too. Check in the Neon dashboard which roles each database uses before rotating. After rotating, update the Codespaces secrets (`CLAUDE_API_KEY`, `SPRING_DATASOURCE_URL`, `NEON_DB_URL`) and restart the codespace so it picks them up.
+
+## Optional follow-ups (any order, all in Codespaces)
+1. **Small docs PR** with the four minor issues from the PR #83 review:
+   - a dated note on decision H50 (the CI gate now scans `.devcontainer`);
+   - the `mcp-agent/README.md` "ANTHROPIC_API_KEY: Required" fix;
+   - the README features bullet;
+   - "not set *in the devcontainer*" wording in `CLAUDE.md`/`.clinerules`.
+2. **Prebuild:** now safe, since PR #83 removed the install guard. It's only worth it if you'll create fresh codespaces regularly; it costs storage against your $0 budget.
+3. **Make the archive tool safe for two writers:** regenerate `INDEX.md` and the manifest when a rebase conflicts. That's only needed if you'll ever run two environments at once.
+4. **Kong security fixes** from the earlier review: correct the "keys are hashed" docs claim, and accept the API key in the header only.
+5. **Neon config gaps:** `SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT` is never set, and `HIBERNATE_DIALECT` is set to Postgres globally, which can trip local H2 runs.
+6. **Ollama in the devcontainer,** so the live-model tests run in Codespaces as they do in CI.
+7. **Billing check** after about a week: Settings → Billing and licensing → Usage, to confirm 4-core usage fits the free allowance.
+
+When steps 1–2 are done, tell me and I'll run the final sync (step 3).
+
+## Turn 34
+
+### Prompt
+
+I stopped the codespace, and took a screenshot of all the remaining sub-steps within step 6 that you marked for me (I will perform those later).
+
+Now, do this "Final archive of this Ona session". Then, tell me "Goodbye" and I will close this vscode window, then proceed with my mnaual steps referring to the screenshot I mentioned. Critique if this i sokay before doing anything!
+
+### Claude response
+
+Your plan is fine, with one small gap and one tweak to cover it.
+
+## What's right
+- **Single writer:** the codespace is stopped, so this Ona sync is the only thing writing to `ai-chat-history`, and there's no repeat of the earlier conflict.
+- **Closing the window is safe:** closing VS Code doesn't delete anything. The Ona environment and its files stay until you delete it in your manual steps.
+- **Leaving step 1 for later is fine:** a stopped codespace keeps its files, including any uncommitted work, so the codespace Claude can still report its unsaved work later. Make sure that check is in your screenshot, since it's step 1 and you mentioned only the stop.
+
+## The gap
+A sync captures the transcript **up to the moment it runs**. My reply reporting the result, and the "Goodbye", are written after it, so they would never be archived. It's only a few lines, but it's the ending of this session.
+
+## The tweak I'd suggest
+1. **Run the sync now,** check it pushed, and report the result to you. This covers everything except the last message.
+2. **Also start a delayed second sync,** running in the background about 2 minutes later. It picks up the final reply and "Goodbye". It keeps running after you close the window, because the Ona environment stays up.
+   - **Limitation:** I can't confirm the second one succeeded, because I'll be gone. It logs to `sync.log` in the archive, and the worst case is that only the goodbye is missing.
+   - **So:** wait at least about 3 minutes after "Goodbye" before **deleting** the Ona environment. Closing the window right away is fine.
+
+## Side effects to expect
+- **Codespace sessions briefly marked deleted:** Ona's sync can't see the codespace's sessions, so the archive index will briefly list them as "archived (source deleted)". The codespace watcher sets them back the next time you start the codespace. No data is affected.
+- **Size check:** this Ona session's transcript is large. The sync will warn me if its raw copy exceeds the 95 MB guard, and I'll tell you if that happens.
+
+Should I proceed with the sync now plus the delayed second sync, then say Goodbye?
+
+## Turn 35
+
+### Prompt
+
+yes!
+
+### Claude response
+
+Worktree: `/workspaces/.ai-chat-history`, branch `ai-chat-history`, target `origin/ai-chat-history`. First, a pre-flight check that no other archiver is running and the archive matches GitHub:
+
 <details>
-<summary>Execution details — 184 tool events</summary>
+<summary>Execution details — 230 tool events</summary>
 
 ### Turn 3 activity
 
@@ -1268,6 +1858,80 @@ definition so the same config runs in Codespaces.…`
 ## Why
 Ona is retiring. This makes `.devcontainer/…`
 
+### Turn 25 activity
+
+- **Bash** `cd /workspaces/.ai-chat-history && git fetch -q origin && echo "== last 12 archive commits on origin (UTC)"; git log -12 --date=format-local:'%H:%M:%S' --format='%h %ad %s' origin/ai-chat-history | se…`
+- **Bash** `L=/workspaces/.ai-chat-history/ai-chat-documentation/logs/watcher.log; echo "== this (Ona) watcher, last 12 lines"; tail -12 $L | cut -c1-200; echo "== error/failure counts today"; grep -c "push_faile…`
+- **Bash** `cd /workspaces/.ai-chat-history; echo "== files in the unpushed local (Ona) commit"; git show --stat --format='%h %ci' HEAD | tail -n +2 | cut -c1-110; echo "== files the codespace changed on origin s…`
+
+### Turn 26 activity
+
+- **Bash** `gitpod automations service stop aiChatArchiveWatcher 2>&1 | tail -2; gitpod automations service list 2>&1 | grep -A1 aiChat | tail -1; ps -eo pid,args | grep -E "[a]rchive_ai|[i]notifywait" || echo "n…`
+- **Bash** `cd /workspaces/.ai-chat-history && git fetch -q origin && ls .git >/dev/null 2>&1; d=$(git rev-parse --git-dir); ls "$d" | grep -E "rebase|MERGE" || echo "no rebase/merge in progress"; git status -sb…`
+- **Bash** `cd /workspaces/.ai-chat-history && git log --format='%h %s' origin/ai-chat-history..HEAD | sed 's/Archive Claude Code conversations: //'; echo "== files touched by those commits"; git diff --name-only…`
+- **Bash** `cd /workspaces/.ai-chat-history && git reset -q --hard origin/ai-chat-history && git status -sb | head -1 && git log --oneline -1`
+- **Bash** `git fetch -q origin && git log --format='%h %an | %s' origin/main..origin/feature/codespaces-devcontainer; echo ---; git diff --stat origin/main...origin/feature/codespaces-devcontainer; echo ---; gh…`
+- **Bash** `git pull -q --ff-only && git log --oneline -1 && git show a132dedd --format='%h%n%B' | head -200`
+- **Bash** `git show a39c1983 --format='%h%n%B'`
+- **Bash** `cd /workspaces/fhir-agent; S=/tmp/claude-1000/-workspaces-fhir-agent/3b59a463-d6e4-4a7f-94ea-7dfea0acdc2b/scratchpad; printf '%s\n' '[ "${CODESPACES:-}" = true ] && [ -f /workspaces/fhir-agent/.devcon…`
+- **Bash** `S=/tmp/claude-1000/-workspaces-fhir-agent/3b59a463-d6e4-4a7f-94ea-7dfea0acdc2b/scratchpad/race; rm -rf $S && mkdir -p $S && cd $S
+git clone -q --bare /workspaces/fhir-agent bare.git && git -C bare.git…`
+
+### Turn 28 activity
+
+- **Read** `/workspaces/fhir-agent/.devcontainer/scripts/archive-watcher.sh`
+- **Read** `/workspaces/fhir-agent/.devcontainer/scripts/post-start.sh`
+- **Edit** `/workspaces/fhir-agent/.devcontainer/scripts/archive-watcher.sh`
+- **Edit** `/workspaces/fhir-agent/.devcontainer/scripts/post-start.sh`
+- **Edit** `/workspaces/fhir-agent/.devcontainer/scripts/post-start.sh`
+- **Bash** `S=/tmp/claude-1000/-workspaces-fhir-agent/3b59a463-d6e4-4a7f-94ea-7dfea0acdc2b/scratchpad/lock; rm -rf $S && mkdir -p $S && cd $S
+git clone -q --bare /workspaces/fhir-agent bare.git && git -C bare.git…`
+- **Bash** `S=/tmp/claude-1000/-workspaces-fhir-agent/3b59a463-d6e4-4a7f-94ea-7dfea0acdc2b/scratchpad/fhir; rm -rf $S && mkdir -p $S/bin
+cat > $S/bin/docker <<EOF
+#!/usr/bin/env bash
+case "\$1" in ps) exit 0;; in…`
+- **Bash** `cd /workspaces/fhir-agent; for f in .devcontainer/scripts/*.sh; do bash -n $f || echo "SYNTAX FAIL $f"; done; echo "bash -n OK"; bash .devcontainer/scripts/post-start.sh; echo "post-start in Ona rc=$?…`
+- **Bash** `git fetch -q origin && git status -sb | head -1 && git add .devcontainer/scripts/archive-watcher.sh .devcontainer/scripts/post-start.sh && git commit -q -F - <<'EOF'
+fix(devcontainer): never start a s…`
+- **Bash** `git push -q origin feature/codespaces-devcontainer 2>&1 | grep -v "^remote:"; echo "rc=${PIPESTATUS[0]}"; git status -sb | head -1`
+- **Write** `/tmp/claude-1000/-workspaces-fhir-agent/3b59a463-d6e4-4a7f-94ea-7dfea0acdc2b/scratchpad/pr82.md`
+- **Bash** `gh pr edit 82 --body-file /tmp/claude-1000/-workspaces-fhir-agent/3b59a463-d6e4-4a7f-94ea-7dfea0acdc2b/scratchpad/pr82.md && gh pr view 82 --json headRefOid,mergeable,state --jq '"head \(.headRefOid[0…`
+- **Bash** `cd /workspaces/.ai-chat-history && git fetch -q origin && git status -sb | head -1 && git pull -q --ff-only && git log --oneline -1; sed -n 30,93p ai-chat-documentation/scripts/archive_ai/publisher.py`
+- **Bash** `cd /workspaces/.ai-chat-history/ai-chat-documentation/scripts && grep -rn "CalledProcessError\|PublishError" archive_ai tests | grep -v "^archive_ai/publisher.py:1[0-9]:"`
+- **Read** `/workspaces/.ai-chat-history/ai-chat-documentation/scripts/archive_ai/publisher.py`
+- **Read** `/workspaces/.ai-chat-history/ai-chat-documentation/scripts/tests/test_publisher.py`
+- **Edit** `/workspaces/.ai-chat-history/ai-chat-documentation/scripts/archive_ai/publisher.py`
+- **Edit** `/workspaces/.ai-chat-history/ai-chat-documentation/scripts/tests/test_publisher.py`
+- **Bash** `cd /workspaces/.ai-chat-history/ai-chat-documentation/scripts && PYTHONPATH=. python3 -m pytest tests -q -p no:cacheprovider 2>&1 | tail -3`
+- **Bash** `cd /workspaces/.ai-chat-history && git add ai-chat-documentation/scripts/archive_ai/publisher.py ai-chat-documentation/scripts/tests/test_publisher.py && git diff --cached --stat | tail -1 && git comm…`
+- **Bash** `cd /workspaces/.ai-chat-history && git pull -q --rebase origin ai-chat-history && git push -q origin ai-chat-history 2>&1 | grep -v "^remote:"; echo "rc=${PIPESTATUS[0]}"; git fetch -q origin && git s…`
+
+### Turn 29 activity
+
+- **Bash** `git fetch -q --prune origin && gh pr view 82 --json state,mergedAt,mergeCommit,headRefOid --jq '"\(.state) \(.mergedAt) merge=\(.mergeCommit.oid[0:8]) head=\(.headRefOid[0:8])"'; git branch -r --conta…`
+- **Bash** `git switch -q main && git pull -q --ff-only && git log --oneline -1`
+- **Bash** `git branch -d feature/codespaces-devcontainer`
+- **Bash** `git push origin --delete feature/codespaces-devcontainer 2>&1 | tail -1; git fetch -q --prune origin; git branch -a | grep -c codespaces-devcontainer | sed 's/^/remaining refs: /'`
+
+### Turn 31 activity
+
+- **Bash** `cd /workspaces/fhir-agent; git fetch -q origin; git status -sb | head -1; git log --oneline -1 origin/main; echo "== all Ona/gitpod refs on origin/main"; git grep -n -I -iE "gitpod|\bona\b|\.ona/|/usr…`
+- **Bash** `cd /workspaces/fhir-agent; echo "== CI secret-scan step"; git show origin/main:.github/workflows/tests.yml | sed -n 15,40p; echo "== Dockerfile header"; git show origin/main:.devcontainer/Dockerfile |…`
+- **Bash** `cd /workspaces/fhir-agent; git check-ignore -v .ona/review/comments.json 2>&1 | head -1; echo "== H50 context"; git show origin/main:docs/phase6/decisions.md | sed -n 75p | grep -oiE ".{80}\bona\b.{80…`
+
+### Turn 32 activity
+
+- **Bash** `cd /workspaces/fhir-agent; git fetch -q origin; gh pr view 83 --json title,state,headRefName,baseRefName,headRefOid,mergeable,commits,files,additions,deletions --jq '"\(.title)\n\(.state) \(.headRefNa…`
+- **Bash** `cd /workspaces/fhir-agent; git diff origin/main...pr/83 -- . ':!.ona' ':!.devcontainer/scripts/setup-credentials.sh'`
+- **Bash** `cd /workspaces/fhir-agent; gh pr view 83 --json body --jq .body`
+- **Bash** `cd /workspaces/fhir-agent; S=/tmp/claude-1000/-workspaces-fhir-agent/3b59a463-d6e4-4a7f-94ea-7dfea0acdc2b/scratchpad/pr83; rm -rf $S && mkdir -p $S && git archive pr/83 | tar -x -C $S
+echo "1. remaini…`
+- **Bash** `cd /workspaces/fhir-agent; echo "== CI checks on PR #83"; gh pr checks 83 2>&1 | awk -F'\t' '{print $2"\t"$1}' | sort | uniq -c | sort -rn | head -20; echo "== new remote branches (codespace pending w…`
+
+### Turn 35 activity
+
+- **Bash** `ps -eo pid,args | grep -E "[a]rchive_ai|[a]rchive-watcher" || echo "no archiver running"; cd /workspaces/.ai-chat-history && git fetch -q origin && git status -sb | head -1 && git pull -q --ff-only &&…`
+
 </details>
 
 ---
@@ -1277,6 +1941,6 @@ Ona is retiring. This makes `.devcontainer/…`
 - **Source:** Claude Code
 - **Session ID:** `3b59a463-d6e4-4a7f-94ea-7dfea0acdc2b`
 - **Created:** 17 October 2026, 15:43 UTC
-- **Last updated:** 25 October 2026, 21:33 UTC
-- **Turns:** 24
+- **Last updated:** 26 October 2026, 00:47 UTC
+- **Turns:** 35
 - **Status:** Incomplete
